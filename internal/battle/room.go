@@ -39,10 +39,10 @@ func (r *Room) Start() {
 	r.loop.Start()
 }
 
-func (r *Room) Join(playerID string, hero config.HeroConfig) {
+func (r *Room) Join(playerID string, hero config.HeroConfig, team world.Team) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.world.SpawnHero(playerID, hero)
+	r.world.SpawnHero(playerID, hero, team)
 }
 
 func (r *Room) AttachSession(playerID string, sender SnapshotSender) {
@@ -70,6 +70,7 @@ func (r *Room) apply(inputs []Input, tick uint64) protocol.Snapshot {
 		r.world.ApplyInput(input.PlayerID, input.Value, tick, r.skills, tickRate)
 		_ = r.publisher.PublishInput(r.id, input.PlayerID, input.Value)
 	}
+	r.world.Tick(tick, tickRate)
 
 	snapshot := BuildSnapshot(r.id, tick, r.world)
 	_ = r.publisher.PublishSnapshot(snapshot)

@@ -8,6 +8,7 @@ import (
 	"l-battle/internal/config"
 	"l-battle/internal/messaging/jetstream"
 	"l-battle/internal/protocol"
+	"l-battle/internal/world"
 )
 
 var (
@@ -50,7 +51,7 @@ func (m *Manager) CreateRoom(roomID string) (*Room, error) {
 	return room, nil
 }
 
-func (m *Manager) JoinRoom(roomID string, playerID string, heroID string) (*Room, error) {
+func (m *Manager) JoinRoom(roomID string, playerID string, heroID string, team world.Team) (*Room, error) {
 	if playerID == "" {
 		return nil, fmt.Errorf("player id is required")
 	}
@@ -62,7 +63,7 @@ func (m *Manager) JoinRoom(roomID string, playerID string, heroID string) (*Room
 	if err != nil {
 		return nil, err
 	}
-	room.Join(playerID, hero)
+	room.Join(playerID, hero, team)
 	return room, nil
 }
 

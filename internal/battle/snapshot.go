@@ -8,6 +8,7 @@ import (
 func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot {
 	players := w.Players()
 	dummies := w.Dummies()
+	units := w.Units()
 	width, height := w.Size()
 	snapshot := protocol.Snapshot{
 		RoomID: roomID,
@@ -17,12 +18,16 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Height: height,
 		},
 		Players: make([]protocol.PlayerSnapshot, 0, len(players)),
+		Units:   make([]protocol.UnitSnapshot, 0, len(units)),
 		Dummies: make([]protocol.DummySnapshot, 0, len(dummies)),
 	}
 	for _, entity := range players {
 		snapshot.Players = append(snapshot.Players, protocol.PlayerSnapshot{
 			PlayerID: entity.PlayerID,
 			HeroID:   entity.HeroID,
+			Team:     string(entity.Team),
+			Level:    entity.Level,
+			MaxLevel: world.MaxHeroLevel,
 			X:        entity.Position.X,
 			Y:        entity.Position.Y,
 			Stats:    buildStatsSnapshot(entity.Stats),
@@ -32,6 +37,19 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 	for _, entity := range dummies {
 		snapshot.Dummies = append(snapshot.Dummies, protocol.DummySnapshot{
 			ID:          entity.ID,
+			X:           entity.Position.X,
+			Y:           entity.Position.Y,
+			Radius:      entity.Radius,
+			Stats:       buildStatsSnapshot(entity.Stats),
+			LastHitTick: entity.Combat.LastHitTick,
+			LastDamage:  entity.Combat.LastDamage,
+		})
+	}
+	for _, entity := range units {
+		snapshot.Units = append(snapshot.Units, protocol.UnitSnapshot{
+			ID:          entity.ID,
+			Kind:        string(entity.Kind),
+			Team:        string(entity.Team),
 			X:           entity.Position.X,
 			Y:           entity.Position.Y,
 			Radius:      entity.Radius,

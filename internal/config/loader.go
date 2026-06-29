@@ -30,3 +30,16 @@ func LoadSkills(path string) (*SkillStore, error) {
 	}
 	return NewSkillStore(skills)
 }
+
+func LoadLevels(path string) (*LevelConfig, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var levels LevelConfig
+	if err := json.Unmarshal(data, &levels); err != nil {
+		return nil, err
+	}
+	return NewLevelConfig(levels)
+}

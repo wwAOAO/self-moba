@@ -12,6 +12,16 @@
       "attackRange": 120,
       "attackSpeed": 1
     },
+    "growth": {
+      "hp": 120,
+      "mp": 28,
+      "attack": 5,
+      "physicalDefense": 3,
+      "magicDefense": 2,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.025
+    },
     "radius": 18,
     "skills": {
       "passive": "warrior_toughness",
@@ -34,6 +44,16 @@
       "attackRange": 520,
       "attackSpeed": 1.25
     },
+    "growth": {
+      "hp": 85,
+      "mp": 36,
+      "attack": 6,
+      "physicalDefense": 2,
+      "magicDefense": 2,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.03
+    },
     "radius": 16,
     "skills": {
       "passive": "archer_focus",
@@ -55,6 +75,16 @@
       "moveSpeed": 5,
       "attackRange": 100,
       "attackSpeed": 0.85
+    },
+    "growth": {
+      "hp": 165,
+      "mp": 22,
+      "attack": 4,
+      "physicalDefense": 4,
+      "magicDefense": 3,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.02
     },
     "radius": 22,
     "skills": {

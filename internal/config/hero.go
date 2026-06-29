@@ -6,6 +6,7 @@ type HeroConfig struct {
 	HeroID string     `json:"heroId"`
 	Name   string     `json:"name"`
 	Base   BaseStats  `json:"base"`
+	Growth BaseStats  `json:"growth"`
 	Radius float64    `json:"radius"`
 	Skills HeroSkills `json:"skills"`
 }
@@ -73,6 +74,30 @@ func NewHeroStore(heroes []HeroConfig) (*HeroStore, error) {
 		}
 		if hero.Base.AttackSpeed <= 0 {
 			return nil, fmt.Errorf("hero %s attack speed must be positive", hero.HeroID)
+		}
+		if hero.Growth.HP < 0 {
+			return nil, fmt.Errorf("hero %s hp growth must not be negative", hero.HeroID)
+		}
+		if hero.Growth.MP < 0 {
+			return nil, fmt.Errorf("hero %s mp growth must not be negative", hero.HeroID)
+		}
+		if hero.Growth.Attack < 0 {
+			return nil, fmt.Errorf("hero %s attack growth must not be negative", hero.HeroID)
+		}
+		if hero.Growth.PhysicalDefense < 0 {
+			return nil, fmt.Errorf("hero %s physical defense growth must not be negative", hero.HeroID)
+		}
+		if hero.Growth.MagicDefense < 0 {
+			return nil, fmt.Errorf("hero %s magic defense growth must not be negative", hero.HeroID)
+		}
+		if hero.Growth.MoveSpeed < 0 {
+			return nil, fmt.Errorf("hero %s move speed growth must not be negative", hero.HeroID)
+		}
+		if hero.Growth.AttackRange < 0 {
+			return nil, fmt.Errorf("hero %s attack range growth must not be negative", hero.HeroID)
+		}
+		if hero.Growth.AttackSpeed < 0 {
+			return nil, fmt.Errorf("hero %s attack speed growth must not be negative", hero.HeroID)
 		}
 		if hero.Radius <= 0 {
 			return nil, fmt.Errorf("hero %s radius must be positive", hero.HeroID)

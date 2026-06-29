@@ -1,0 +1,24 @@
+{
+  "maxLevel": 18,
+  "totalExp": 20985,
+  "levels": [
+    { "level": 1, "nextExp": 280 },
+    { "level": 2, "nextExp": 340 },
+    { "level": 3, "nextExp": 460 },
+    { "level": 4, "nextExp": 640 },
+    { "level": 5, "nextExp": 880 },
+    { "level": 6, "nextExp": 1180 },
+    { "level": 7, "nextExp": 1150 },
+    { "level": 8, "nextExp": 1270 },
+    { "level": 9, "nextExp": 1350 },
+    { "level": 10, "nextExp": 1425 },
+    { "level": 11, "nextExp": 1495 },
+    { "level": 12, "nextExp": 1565 },
+    { "level": 13, "nextExp": 1685 },
+    { "level": 14, "nextExp": 1705 },
+    { "level": 15, "nextExp": 1775 },
+    { "level": 16, "nextExp": 1870 },
+    { "level": 17, "nextExp": 1915 },
+    { "level": 18, "nextExp": 0 }
+  ]
+}

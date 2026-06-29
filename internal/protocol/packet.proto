@@ -16,6 +16,7 @@ message JoinRoom {
   string room_id = 1;
   string player_id = 2;
   string hero_id = 3;
+  string team = 4;
 }
 
 message PlayerInput {
@@ -24,10 +25,17 @@ message PlayerInput {
   uint64 client_seq = 3;
   CastInput cast = 4;
   AttackInput attack = 5;
+  MoveInput move = 6;
+}
+
+message MoveInput {
+  double target_x = 1;
+  double target_y = 2;
 }
 
 message AttackInput {
   string target_id = 1;
+  bool clear = 2;
 }
 
 message CastInput {
@@ -42,6 +50,7 @@ message Snapshot {
   MapSnapshot map = 3;
   repeated PlayerSnapshot players = 4;
   repeated DummySnapshot dummies = 5;
+  repeated UnitSnapshot units = 6;
 }
 
 message MapSnapshot {
@@ -52,10 +61,13 @@ message MapSnapshot {
 message PlayerSnapshot {
   string player_id = 1;
   string hero_id = 2;
-  double x = 3;
-  double y = 4;
-  StatsSnapshot stats = 5;
-  repeated SkillSnapshot skills = 6;
+  string team = 3;
+  int32 level = 4;
+  int32 max_level = 5;
+  double x = 6;
+  double y = 7;
+  StatsSnapshot stats = 8;
+  repeated SkillSnapshot skills = 9;
 }
 
 message StatsSnapshot {
@@ -79,6 +91,18 @@ message DummySnapshot {
   StatsSnapshot stats = 5;
   uint64 last_hit_tick = 6;
   int32 last_damage = 7;
+}
+
+message UnitSnapshot {
+  string id = 1;
+  string kind = 2;
+  string team = 3;
+  double x = 4;
+  double y = 5;
+  double radius = 6;
+  StatsSnapshot stats = 7;
+  uint64 last_hit_tick = 8;
+  int32 last_damage = 9;
 }
 
 message SkillSnapshot {

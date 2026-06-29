@@ -28,6 +28,7 @@ func main() {
 	natsURL := env("NATS_URL", natsgo.DefaultURL)
 	heroConfigPath := env("HERO_CONFIG", "configs/heroes.json")
 	skillConfigPath := env("SKILL_CONFIG", "configs/skills.json")
+	levelConfigPath := env("LEVEL_CONFIG", "configs/levels.json")
 
 	heroes, err := config.LoadHeroes(heroConfigPath)
 	if err != nil {
@@ -45,6 +46,12 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("skill config loaded", "path", skillConfigPath, "count", skills.Count())
+	levels, err := config.LoadLevels(levelConfigPath)
+	if err != nil {
+		logger.Error("load level config", "path", levelConfigPath, "error", err)
+		os.Exit(1)
+	}
+	logger.Info("level config loaded", "path", levelConfigPath, "maxLevel", levels.MaxLevel, "totalExp", levels.TotalExp)
 
 	natsClient, err := messagingnats.Connect(natsURL, "battle-server")
 	if err != nil {

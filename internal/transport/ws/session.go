@@ -10,6 +10,7 @@ import (
 
 	"l-battle/internal/battle"
 	"l-battle/internal/protocol"
+	"l-battle/internal/world"
 )
 
 type Session struct {
@@ -66,7 +67,7 @@ func (s *Session) handlePacket(ctx context.Context, packet protocol.Packet) erro
 		if err := decodePayload(packet, &join); err != nil {
 			return err
 		}
-		room, err := s.manager.JoinRoom(join.RoomID, join.PlayerID, join.HeroID)
+		room, err := s.manager.JoinRoom(join.RoomID, join.PlayerID, join.HeroID, parseTeam(join.Team))
 		if err != nil {
 			return err
 		}
@@ -89,6 +90,13 @@ func (s *Session) handlePacket(ctx context.Context, packet protocol.Packet) erro
 	default:
 		return battle.ErrUnsupportedPacket
 	}
+}
+
+func parseTeam(value string) world.Team {
+	if world.Team(value) == world.TeamRed {
+		return world.TeamRed
+	}
+	return world.TeamBlue
 }
 
 func (s *Session) sendSnapshot(snapshot protocol.Snapshot) {

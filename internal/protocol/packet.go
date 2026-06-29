@@ -24,18 +24,26 @@ type JoinRoom struct {
 	RoomID   string `json:"roomId"`
 	PlayerID string `json:"playerId"`
 	HeroID   string `json:"heroId"`
+	Team     string `json:"team"`
 }
 
 type PlayerInput struct {
-	MoveX     float64      `json:"moveX"`
-	MoveY     float64      `json:"moveY"`
+	MoveX     float64      `json:"moveX,omitempty"`
+	MoveY     float64      `json:"moveY,omitempty"`
+	Move      *MoveInput   `json:"move,omitempty"`
 	Attack    *AttackInput `json:"attack,omitempty"`
 	Cast      *CastInput   `json:"cast,omitempty"`
 	ClientSeq uint64       `json:"clientSeq"`
 }
 
+type MoveInput struct {
+	TargetX float64 `json:"targetX"`
+	TargetY float64 `json:"targetY"`
+}
+
 type AttackInput struct {
 	TargetID string `json:"targetId"`
+	Clear    bool   `json:"clear,omitempty"`
 }
 
 type CastInput struct {
@@ -49,6 +57,7 @@ type Snapshot struct {
 	Tick    uint64           `json:"tick"`
 	Map     MapSnapshot      `json:"map"`
 	Players []PlayerSnapshot `json:"players"`
+	Units   []UnitSnapshot   `json:"units"`
 	Dummies []DummySnapshot  `json:"dummies"`
 }
 
@@ -60,6 +69,9 @@ type MapSnapshot struct {
 type PlayerSnapshot struct {
 	PlayerID string          `json:"playerId"`
 	HeroID   string          `json:"heroId"`
+	Team     string          `json:"team"`
+	Level    int             `json:"level"`
+	MaxLevel int             `json:"maxLevel"`
 	X        float64         `json:"x"`
 	Y        float64         `json:"y"`
 	Stats    StatsSnapshot   `json:"stats"`
@@ -68,6 +80,18 @@ type PlayerSnapshot struct {
 
 type DummySnapshot struct {
 	ID          string        `json:"id"`
+	X           float64       `json:"x"`
+	Y           float64       `json:"y"`
+	Radius      float64       `json:"radius"`
+	Stats       StatsSnapshot `json:"stats"`
+	LastHitTick uint64        `json:"lastHitTick"`
+	LastDamage  int           `json:"lastDamage"`
+}
+
+type UnitSnapshot struct {
+	ID          string        `json:"id"`
+	Kind        string        `json:"kind"`
+	Team        string        `json:"team"`
 	X           float64       `json:"x"`
 	Y           float64       `json:"y"`
 	Radius      float64       `json:"radius"`
