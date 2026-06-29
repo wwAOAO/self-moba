@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Battle Room PixiJS Test</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        color: #172026;
+        background: #e7ece8;
+      }
+
+      .app-shell {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        min-height: 100vh;
+      }
+
+      .panel {
+        padding: 20px;
+        border-right: 1px solid #cbd5cf;
+        background: #f6f8f4;
+      }
+
+      h1 {
+        margin: 0 0 18px;
+        font-size: 22px;
+        line-height: 1.2;
+      }
+
+      label {
+        display: block;
+        margin: 14px 0 6px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      input,
+      select {
+        width: 100%;
+        height: 38px;
+        padding: 0 10px;
+        border: 1px solid #b7c2bb;
+        border-radius: 6px;
+        font-size: 14px;
+        background: #fff;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      button {
+        height: 38px;
+        border: 0;
+        border-radius: 6px;
+        font-weight: 700;
+        cursor: pointer;
+        color: #fff;
+        background: #1f6f5b;
+      }
+
+      button.secondary {
+        color: #24312b;
+        background: #d7dfd8;
+      }
+
+      .status {
+        margin-top: 16px;
+        padding: 10px;
+        border-radius: 6px;
+        background: #e8efe9;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .status strong {
+        display: inline-block;
+        min-width: 78px;
+      }
+
+      .stats-card {
+        position: absolute;
+        left: 16px;
+        top: 16px;
+        z-index: 2;
+        width: 220px;
+        padding: 10px;
+        border: 2px solid #1f6f5b;
+        border-radius: 4px;
+        background: #f8fbf8;
+        box-shadow: 0 8px 22px rgba(23, 32, 38, 0.14);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .target-card {
+        position: absolute;
+        display: none;
+        right: 16px;
+        top: 16px;
+        z-index: 2;
+        width: 240px;
+        padding: 10px;
+        border: 2px solid #ef4444;
+        border-radius: 4px;
+        background: #f8fbf8;
+        box-shadow: 0 8px 22px rgba(23, 32, 38, 0.14);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .target-card strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .stats-card strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 8px;
+      }
+
+      .hint {
+        margin-top: 14px;
+        color: #516057;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .viewport {
+        position: relative;
+        min-width: 0;
+        overflow: hidden;
+        background: #9eb89f;
+      }
+
+      #stage {
+        width: 100%;
+        height: 100vh;
+      }
+
+      @media (max-width: 760px) {
+        .app-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .panel {
+          border-right: 0;
+          border-bottom: 1px solid #cbd5cf;
+        }
+
+        #stage {
+          height: 70vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="panel">
+        <h1>2D Battle Room</h1>
+
+        <label for="serverUrl">WebSocket</label>
+        <input id="serverUrl" />
+
+        <label for="roomId">Room ID</label>
+        <input id="roomId" value="demo-room" />
+
+        <label for="playerId">Player ID</label>
+        <input id="playerId" />
+
+        <label for="heroId">Hero</label>
+        <select id="heroId">
+          <option value="warrior">Warrior</option>
+          <option value="archer">Archer</option>
+          <option value="tank">Tank</option>
+        </select>
+
+        <div class="actions">
+          <button id="connectBtn">Connect</button>
+          <button id="leaveBtn" class="secondary">Leave</button>
+        </div>
+
+        <div class="status">
+          <div><strong>Status</strong><span id="status">Disconnected</span></div>
+          <div><strong>Tick</strong><span id="tick">0</span></div>
+          <div><strong>Players</strong><span id="playerCount">0</span></div>
+          <div><strong>Position</strong><span id="position">-</span></div>
+          <div><strong>Skills</strong><span id="skills">-</span></div>
+        </div>
+
+        <p class="hint">Right-click the map to move. Left-click the dummy to auto attack. Press Q/W/E/R to cast active skills.</p>
+      </aside>
+
+      <main class="viewport">
+        <div class="stats-card">
+          <strong>Stats</strong>
+          <div class="stats-grid">
+            <span>HP</span><span id="statHp">-</span>
+            <span>MP</span><span id="statMp">-</span>
+            <span>ATK</span><span id="statAttack">-</span>
+            <span>Phys DEF</span><span id="statPhysicalDefense">-</span>
+            <span>Magic DEF</span><span id="statMagicDefense">-</span>
+            <span>Move SPD</span><span id="statMoveSpeed">-</span>
+            <span>ATK Range</span><span id="statAttackRange">-</span>
+            <span>ATK SPD</span><span id="statAttackSpeed">-</span>
+          </div>
+        </div>
+        <div class="target-card">
+          <strong>Target</strong>
+          <span id="target">-</span>
+        </div>
+        <div id="stage"></div>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.2.6/dist/pixi.min.js"></script>
+    <script>
+      const state = {
+        socket: null,
+        roomId: "demo-room",
+        playerId: `p-${Math.floor(Math.random() * 10000)}`,
+        seq: 0,
+        map: { width: 2000, height: 2000 },
+        players: new Map(),
+        dummies: new Map(),
+        sprites: new Map(),
+        dummySprites: new Map(),
+        damageTexts: [],
+        moveTarget: null,
+        attackTargetId: "",
+        attackPausedUntil: 0,
+        attackFlashUntil: 0,
+        clearTargetTimer: 0,
+        frame: { scale: 1, offsetX: 0, offsetY: 0 },
+      };
+
+      const els = {
+        serverUrl: document.querySelector("#serverUrl"),
+        roomId: document.querySelector("#roomId"),
+        playerId: document.querySelector("#playerId"),
+        heroId: document.querySelector("#heroId"),
+        connectBtn: document.querySelector("#connectBtn"),
+        leaveBtn: document.querySelector("#leaveBtn"),
+        status: document.querySelector("#status"),
+        tick: document.querySelector("#tick"),
+        playerCount: document.querySelector("#playerCount"),
+        position: document.querySelector("#position"),
+        statHp: document.querySelector("#statHp"),
+        statMp: document.querySelector("#statMp"),
+        statAttack: document.querySelector("#statAttack"),
+        statPhysicalDefense: document.querySelector("#statPhysicalDefense"),
+        statMagicDefense: document.querySelector("#statMagicDefense"),
+        statMoveSpeed: document.querySelector("#statMoveSpeed"),
+        statAttackRange: document.querySelector("#statAttackRange"),
+        statAttackSpeed: document.querySelector("#statAttackSpeed"),
+        target: document.querySelector("#target"),
+        skills: document.querySelector("#skills"),
+        stage: document.querySelector("#stage"),
+      };
+
+      const heroSkillSlots = {
+        warrior: {
+          passive: "warrior_toughness",
+          q: "slash",
+          w: "dash",
+          e: "battle_cry",
+          r: "whirlwind",
+        },
+        archer: {
+          passive: "archer_focus",
+          q: "shot",
+          w: "roll",
+          e: "trap",
+          r: "arrow_rain",
+        },
+        tank: {
+          passive: "tank_armor",
+          q: "slam",
+          w: "guard",
+          e: "taunt",
+          r: "earthquake",
+        },
+      };
+
+      els.playerId.value = state.playerId;
+      els.serverUrl.value = websocketURL();
+
+      const app = new PIXI.Application();
+      const worldLayer = new PIXI.Container();
+      const gridLayer = new PIXI.Graphics();
+      const dummyLayer = new PIXI.Container();
+      const playerLayer = new PIXI.Container();
+      const effectLayer = new PIXI.Container();
+
+      async function bootPixi() {
+        await app.init({
+          resizeTo: els.stage,
+          antialias: true,
+          backgroundColor: 0x9eb89f,
+        });
+        els.stage.appendChild(app.canvas);
+        app.stage.addChild(worldLayer);
+        worldLayer.addChild(gridLayer);
+        worldLayer.addChild(dummyLayer);
+        worldLayer.addChild(playerLayer);
+        worldLayer.addChild(effectLayer);
+        app.ticker.add(draw);
+        app.canvas.addEventListener("contextmenu", (event) => {
+          event.preventDefault();
+        });
+        app.canvas.addEventListener("pointerdown", handlePointerDown);
+      }
+
+      function connect() {
+        if (state.socket?.readyState === WebSocket.OPEN) {
+          return;
+        }
+
+        state.roomId = els.roomId.value.trim() || "demo-room";
+        state.playerId = els.playerId.value.trim() || state.playerId;
+        els.serverUrl.value = els.serverUrl.value.trim() || websocketURL();
+        els.playerId.value = state.playerId;
+
+        const socket = new WebSocket(els.serverUrl.value.trim());
+        state.socket = socket;
+        setStatus("Connecting");
+
+        socket.addEventListener("open", () => {
+          setStatus("Connected");
+          sendPacket("join_room", {
+            roomId: state.roomId,
+            playerId: state.playerId,
+            heroId: els.heroId.value,
+          });
+        });
+
+        socket.addEventListener("message", (event) => {
+          const packet = JSON.parse(event.data);
+          if (packet.type === "snapshot") {
+            applySnapshot(packet.payload);
+          }
+          if (packet.type === "error") {
+            setStatus(packet.payload?.message || "Server error");
+          }
+        });
+
+        socket.addEventListener("close", () => setStatus("Disconnected"));
+        socket.addEventListener("error", () => setStatus("Connection error"));
+      }
+
+      function applySnapshot(snapshot) {
+        const previousDummies = state.dummies;
+        state.map = snapshot.map;
+        state.players = new Map(
+          snapshot.players.map((player) => [player.playerId, player]),
+        );
+        state.dummies = new Map(
+          (snapshot.dummies || []).map((dummy) => [dummy.id, dummy]),
+        );
+        updateAttackEffects(previousDummies);
+        els.tick.textContent = snapshot.tick;
+        els.playerCount.textContent = snapshot.players.length;
+        updatePositionLabel();
+      }
+
+      function updateAttackEffects(previousDummies) {
+        if (!state.attackTargetId) {
+          return;
+        }
+        const previous = previousDummies.get(state.attackTargetId);
+        const current = state.dummies.get(state.attackTargetId);
+        if (!previous || !current) {
+          return;
+        }
+        if (current.lastHitTick > previous.lastHitTick) {
+          state.attackFlashUntil = performance.now() + 180;
+          spawnDamageText(current, current.lastDamage || 0);
+        }
+      }
+
+      function leave() {
+        sendPacket("leave", null);
+        state.socket?.close();
+      }
+
+      function castSkill(slot) {
+        const self = state.players.get(state.playerId);
+        if (!self) {
+          return;
+        }
+        const skillId = heroSkillSlots[els.heroId.value]?.[slot];
+        if (!skillId) {
+          return;
+        }
+        const target = state.moveTarget || { x: self.x, y: self.y };
+        sendPacket("input", {
+          moveX: 0,
+          moveY: 0,
+          cast: {
+            skillId,
+            targetX: target.x,
+            targetY: target.y,
+          },
+          clientSeq: state.seq,
+        });
+      }
+
+      function sendPacket(type, payload) {
+        const socket = state.socket;
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          return;
+        }
+        socket.send(
+          JSON.stringify({
+            type,
+            roomId: state.roomId,
+            playerId: state.playerId,
+            seq: state.seq++,
+            payload,
+          }),
+        );
+      }
+
+      function sendInput() {
+        if (state.socket?.readyState !== WebSocket.OPEN) {
+          return;
+        }
+        const self = state.players.get(state.playerId);
+        if (!self) {
+          return;
+        }
+
+        let moveX = 0;
+        let moveY = 0;
+        const attackTarget = state.attackTargetId
+          ? state.dummies.get(state.attackTargetId)
+          : null;
+        const isAttackPaused = performance.now() < state.attackPausedUntil;
+        const chaseTarget =
+          !isAttackPaused &&
+          attackTarget &&
+          distanceTo(self, attackTarget) >
+            self.stats.attackRange + attackTarget.radius + 4
+            ? attackTarget
+            : null;
+        const destination = chaseTarget || state.moveTarget;
+
+        if (destination) {
+          const dx = destination.x - self.x;
+          const dy = destination.y - self.y;
+          const distance = Math.hypot(dx, dy);
+          if (distance < 8) {
+            if (!chaseTarget) {
+              state.moveTarget = null;
+            }
+          } else {
+            moveX = dx / distance;
+            moveY = dy / distance;
+          }
+        }
+
+        if (!Number.isFinite(moveX) || !Number.isFinite(moveY)) {
+          return;
+        }
+        if (moveX === 0 && moveY === 0 && !state.attackTargetId) {
+          return;
+        }
+        sendPacket("input", {
+          moveX,
+          moveY,
+          attack: state.attackTargetId && !isAttackPaused
+            ? {
+                targetId: state.attackTargetId,
+              }
+            : undefined,
+          clientSeq: state.seq,
+        });
+      }
+
+      function draw(ticker) {
+        const frame = calculateFrame();
+        drawMap(frame);
+        syncDummies(frame);
+        syncSprites(frame, ticker.deltaMS);
+        syncDamageTexts(frame, ticker.deltaMS);
+      }
+
+      function calculateFrame() {
+        const padding = 36;
+        const scale = Math.min(
+          (app.renderer.width - padding * 2) / state.map.width,
+          (app.renderer.height - padding * 2) / state.map.height,
+        );
+        state.frame = {
+          scale,
+          offsetX: (app.renderer.width - state.map.width * scale) / 2,
+          offsetY: (app.renderer.height - state.map.height * scale) / 2,
+        };
+        return state.frame;
+      }
+
+      function drawMap(frame) {
+        gridLayer.clear();
+        gridLayer.rect(
+          frame.offsetX,
+          frame.offsetY,
+          state.map.width * frame.scale,
+          state.map.height * frame.scale,
+        );
+        gridLayer.fill(0xbfd1bb);
+        gridLayer.stroke({ color: 0x35594b, width: 3 });
+
+        if (state.moveTarget) {
+          gridLayer.circle(
+            frame.offsetX + state.moveTarget.x * frame.scale,
+            frame.offsetY + state.moveTarget.y * frame.scale,
+            9,
+          );
+          gridLayer.stroke({ color: 0xf2f7f3, width: 2 });
+        }
+
+        if (state.attackTargetId) {
+          const self = state.players.get(state.playerId);
+          const target = state.dummies.get(state.attackTargetId);
+          const showAttackFlash =
+            self?.stats &&
+            target &&
+            performance.now() < state.attackFlashUntil;
+          if (showAttackFlash) {
+            gridLayer.circle(
+              frame.offsetX + self.x * frame.scale,
+              frame.offsetY + self.y * frame.scale,
+              self.stats.attackRange * frame.scale,
+            );
+            gridLayer.stroke({ color: 0x2f6fdd, width: 2, alpha: 0.75 });
+          }
+          if (target) {
+            gridLayer.circle(
+              frame.offsetX + target.x * frame.scale,
+              frame.offsetY + target.y * frame.scale,
+              Math.max(14, target.radius * frame.scale + 6),
+            );
+            gridLayer.stroke({ color: 0xf6d365, width: 3 });
+          }
+        }
+      }
+
+      function syncSprites(frame, deltaMS) {
+        const smoothing = 1 - Math.exp(-deltaMS / 80);
+
+        for (const [playerId, sprite] of state.sprites) {
+          if (!state.players.has(playerId)) {
+            playerLayer.removeChild(sprite.node);
+            state.sprites.delete(playerId);
+          }
+        }
+
+        for (const player of state.players.values()) {
+          let sprite = state.sprites.get(player.playerId);
+          if (!sprite) {
+            sprite = createPlayer(player.playerId, player.x, player.y);
+            state.sprites.set(player.playerId, sprite);
+            playerLayer.addChild(sprite.node);
+          }
+
+          sprite.targetX = player.x;
+          sprite.targetY = player.y;
+          updateBars(sprite, player.stats);
+          sprite.x += (sprite.targetX - sprite.x) * smoothing;
+          sprite.y += (sprite.targetY - sprite.y) * smoothing;
+          sprite.node.x = frame.offsetX + sprite.x * frame.scale;
+          sprite.node.y = frame.offsetY + sprite.y * frame.scale;
+        }
+      }
+
+      function syncDummies(frame) {
+        for (const [dummyId, sprite] of state.dummySprites) {
+          if (!state.dummies.has(dummyId)) {
+            dummyLayer.removeChild(sprite.node);
+            state.dummySprites.delete(dummyId);
+          }
+        }
+
+        for (const dummy of state.dummies.values()) {
+          let sprite = state.dummySprites.get(dummy.id);
+          if (!sprite) {
+            sprite = createDummy(dummy);
+            state.dummySprites.set(dummy.id, sprite);
+            dummyLayer.addChild(sprite.node);
+          }
+          updateBars(sprite, dummy.stats);
+          sprite.node.x = frame.offsetX + dummy.x * frame.scale;
+          sprite.node.y = frame.offsetY + dummy.y * frame.scale;
+        }
+      }
+
+      function createPlayer(playerId, x, y) {
+        const node = new PIXI.Container();
+        const body = new PIXI.Graphics();
+        const hpBack = new PIXI.Graphics();
+        const hpFill = new PIXI.Graphics();
+        const mpBack = new PIXI.Graphics();
+        const mpFill = new PIXI.Graphics();
+        const label = new PIXI.Text({
+          text: playerId,
+          style: {
+            fill: 0x172026,
+            fontFamily: "Arial",
+            fontSize: 13,
+            fontWeight: "700",
+          },
+        });
+
+        const isSelf = playerId === state.playerId;
+        body.circle(0, 0, isSelf ? 10 : 8);
+        body.fill(isSelf ? 0x2563eb : colorForPlayer(playerId));
+        body.stroke({ color: 0xffffff, width: 2 });
+        drawBar(hpBack, 0x24312b, 1, -29);
+        drawBar(hpFill, 0xd94948, 1, -29);
+        drawBar(mpBack, 0x24312b, 1, -23);
+        drawBar(mpFill, 0x3b82f6, 1, -23);
+        label.anchor.set(0.5, 0);
+        label.y = 16;
+        node.addChild(hpBack, hpFill, mpBack, mpFill, body, label);
+        return { node, x, y, targetX: x, targetY: y, hpFill, mpFill };
+      }
+
+      function createDummy(dummy) {
+        const node = new PIXI.Container();
+        const body = new PIXI.Graphics();
+        const hpFill = new PIXI.Graphics();
+        const label = new PIXI.Text({
+          text: "Dummy",
+          style: {
+            fill: 0x172026,
+            fontFamily: "Arial",
+            fontSize: 13,
+            fontWeight: "700",
+          },
+        });
+
+        body.roundRect(-18, -18, 36, 36, 4);
+        body.fill(0x8a5a32);
+        body.stroke({ color: 0xf2f7f3, width: 2 });
+        drawBar(hpFill, 0xd94948, 1, -34);
+        label.anchor.set(0.5, 0);
+        label.y = 22;
+        node.addChild(hpFill, body, label);
+        return { node, hpFill };
+      }
+
+      function spawnDamageText(target, damage) {
+        if (!damage) {
+          return;
+        }
+        const text = new PIXI.Text({
+          text: `-${damage}`,
+          style: {
+            fill: 0xff3333,
+            fontFamily: "Arial",
+            fontSize: 15,
+            fontWeight: "900",
+            stroke: { color: 0xffffff, width: 2 },
+          },
+        });
+        text.anchor.set(0.5, 0.5);
+        effectLayer.addChild(text);
+        state.damageTexts.push({
+          node: text,
+          x: target.x,
+          y: target.y - 42,
+          age: 0,
+          lifetime: 720,
+        });
+      }
+
+      function syncDamageTexts(frame, deltaMS) {
+        for (let i = state.damageTexts.length - 1; i >= 0; i--) {
+          const effect = state.damageTexts[i];
+          effect.age += deltaMS;
+          const progress = effect.age / effect.lifetime;
+          if (progress >= 1) {
+            effectLayer.removeChild(effect.node);
+            state.damageTexts.splice(i, 1);
+            continue;
+          }
+          effect.node.x = frame.offsetX + effect.x * frame.scale;
+          effect.node.y = frame.offsetY + (effect.y - progress * 80) * frame.scale;
+          effect.node.alpha = 1 - progress;
+        }
+      }
+
+      function updateBars(sprite, stats) {
+        if (!stats) {
+          return;
+        }
+        drawBar(sprite.hpFill, 0xd94948, ratio(stats.hp, stats.maxHp), -29);
+        if (sprite.mpFill) {
+          drawBar(sprite.mpFill, 0x3b82f6, ratio(stats.mp, stats.maxMp), -23);
+        }
+      }
+
+      function colorForPlayer(playerId) {
+        const colors = [
+          0xef4444, 0xf97316, 0xeab308, 0x22c55e, 0x14b8a6, 0x06b6d4,
+          0x8b5cf6, 0xd946ef, 0xf43f5e,
+        ];
+        let hash = 0;
+        for (let i = 0; i < playerId.length; i++) {
+          hash = (hash * 31 + playerId.charCodeAt(i)) >>> 0;
+        }
+        return colors[hash % colors.length];
+      }
+
+      function drawBar(graphics, color, value, y) {
+        graphics.clear();
+        graphics.roundRect(-18, y, 36 * value, 4, 1);
+        graphics.fill(color);
+      }
+
+      function updatePositionLabel() {
+        const self = state.players.get(state.playerId);
+        if (!self) {
+          els.position.textContent = "-";
+          setStatsCard(null);
+          return;
+        }
+        els.position.textContent = `${self.x.toFixed(1)}, ${self.y.toFixed(1)}`;
+        setStatsCard(self.stats);
+        setTargetCard(
+          state.attackTargetId ? state.dummies.get(state.attackTargetId) : null,
+        );
+        if (!self.skills || self.skills.length === 0) {
+          els.skills.textContent = "-";
+          return;
+        }
+        const tick = Number(els.tick.textContent || 0);
+        els.skills.textContent = self.skills
+          .map((skill) => {
+            const remain = Math.max(0, skill.cooldownUntilTick - tick);
+            return `${skill.skillId}:${remain}`;
+          })
+          .join(" ");
+      }
+
+      function setStatus(value) {
+        els.status.textContent = value;
+      }
+
+      function setStatsCard(stats) {
+        if (!stats) {
+          els.statHp.textContent = "-";
+          els.statMp.textContent = "-";
+          els.statAttack.textContent = "-";
+          els.statPhysicalDefense.textContent = "-";
+          els.statMagicDefense.textContent = "-";
+          els.statMoveSpeed.textContent = "-";
+          els.statAttackRange.textContent = "-";
+          els.statAttackSpeed.textContent = "-";
+          return;
+        }
+        els.statHp.textContent = `${stats.hp}/${stats.maxHp}`;
+        els.statMp.textContent = `${stats.mp}/${stats.maxMp}`;
+        els.statAttack.textContent = stats.attack;
+        els.statPhysicalDefense.textContent = stats.physicalDefense;
+        els.statMagicDefense.textContent = stats.magicDefense;
+        els.statMoveSpeed.textContent = stats.moveSpeed;
+        els.statAttackRange.textContent = stats.attackRange;
+        els.statAttackSpeed.textContent = stats.attackSpeed;
+      }
+
+      function setTargetCard(target) {
+        if (!target?.stats) {
+          els.target.parentElement.style.display = "none";
+          els.target.innerHTML = "-";
+          return;
+        }
+        const stats = target.stats;
+        els.target.parentElement.style.display = "block";
+        els.target.innerHTML = `
+          <div>${target.id}</div>
+          <div>HP ${stats.hp}/${stats.maxHp}</div>
+          <div>MP ${stats.mp}/${stats.maxMp}</div>
+          <div>ATK ${stats.attack}</div>
+          <div>Phys DEF ${stats.physicalDefense}</div>
+          <div>Magic DEF ${stats.magicDefense}</div>
+        `;
+      }
+
+      function websocketURL() {
+        const scheme = location.protocol === "https:" ? "wss" : "ws";
+        return `${scheme}://${location.host || "localhost:6969"}/ws`;
+      }
+
+      function handlePointerDown(event) {
+        if (event.button === 0) {
+          clearPendingTargetClear();
+          state.attackTargetId = pickDummy(event);
+          if (state.attackTargetId) {
+            state.attackPausedUntil = 0;
+            state.moveTarget = null;
+          }
+          return;
+        }
+        if (event.button !== 2) {
+          return;
+        }
+        state.attackPausedUntil = performance.now() + 3000;
+        scheduleTargetClear();
+        const point = screenToWorld(event);
+        state.moveTarget = {
+          x: clamp(point.x, 0, state.map.width),
+          y: clamp(point.y, 0, state.map.height),
+        };
+      }
+
+      function pickDummy(event) {
+        const point = screenToWorld(event);
+        for (const dummy of state.dummies.values()) {
+          if (
+            Math.hypot(point.x - dummy.x, point.y - dummy.y) <=
+            dummy.radius + 12
+          ) {
+            return dummy.id;
+          }
+        }
+        return "";
+      }
+
+      function scheduleTargetClear() {
+        clearPendingTargetClear();
+        state.clearTargetTimer = window.setTimeout(() => {
+          state.attackTargetId = "";
+          state.clearTargetTimer = 0;
+          setTargetCard(null);
+        }, 3000);
+      }
+
+      function clearPendingTargetClear() {
+        if (!state.clearTargetTimer) {
+          return;
+        }
+        window.clearTimeout(state.clearTargetTimer);
+        state.clearTargetTimer = 0;
+      }
+
+      function screenToWorld(event) {
+        const rect = app.canvas.getBoundingClientRect();
+        const canvasX = event.clientX - rect.left;
+        const canvasY = event.clientY - rect.top;
+        return {
+          x: (canvasX - state.frame.offsetX) / state.frame.scale,
+          y: (canvasY - state.frame.offsetY) / state.frame.scale,
+        };
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function ratio(value, max) {
+        if (!max || max <= 0) {
+          return 0;
+        }
+        return clamp(value / max, 0, 1);
+      }
+
+      function distanceTo(a, b) {
+        return Math.hypot(a.x - b.x, a.y - b.y);
+      }
+
+      window.addEventListener("keydown", (event) => {
+        const slot = event.key.toLowerCase();
+        if (!["q", "w", "e", "r"].includes(slot)) {
+          return;
+        }
+        event.preventDefault();
+        castSkill(slot);
+      });
+
+      els.connectBtn.addEventListener("click", connect);
+      els.leaveBtn.addEventListener("click", leave);
+      window.setInterval(sendInput, 33);
+
+      bootPixi();
+    </script>
+  </body>
+</html>

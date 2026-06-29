@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package battle.protocol;
+
+option go_package = "l-battle/internal/protocol;protocol";
+
+message Packet {
+  string type = 1;
+  string room_id = 2;
+  string player_id = 3;
+  uint64 seq = 4;
+  bytes payload = 5;
+}
+
+message JoinRoom {
+  string room_id = 1;
+  string player_id = 2;
+  string hero_id = 3;
+}
+
+message PlayerInput {
+  double move_x = 1;
+  double move_y = 2;
+  uint64 client_seq = 3;
+  CastInput cast = 4;
+  AttackInput attack = 5;
+}
+
+message AttackInput {
+  string target_id = 1;
+}
+
+message CastInput {
+  string skill_id = 1;
+  double target_x = 2;
+  double target_y = 3;
+}
+
+message Snapshot {
+  string room_id = 1;
+  uint64 tick = 2;
+  MapSnapshot map = 3;
+  repeated PlayerSnapshot players = 4;
+  repeated DummySnapshot dummies = 5;
+}
+
+message MapSnapshot {
+  double width = 1;
+  double height = 2;
+}
+
+message PlayerSnapshot {
+  string player_id = 1;
+  string hero_id = 2;
+  double x = 3;
+  double y = 4;
+  StatsSnapshot stats = 5;
+  repeated SkillSnapshot skills = 6;
+}
+
+message StatsSnapshot {
+  int32 hp = 1;
+  int32 max_hp = 2;
+  int32 mp = 3;
+  int32 max_mp = 4;
+  int32 attack = 5;
+  int32 physical_defense = 6;
+  int32 magic_defense = 7;
+  double move_speed = 8;
+  double attack_range = 9;
+  double attack_speed = 10;
+}
+
+message DummySnapshot {
+  string id = 1;
+  double x = 2;
+  double y = 3;
+  double radius = 4;
+  StatsSnapshot stats = 5;
+  uint64 last_hit_tick = 6;
+  int32 last_damage = 7;
+}
+
+message SkillSnapshot {
+  string skill_id = 1;
+  uint64 cooldown_until_tick = 2;
+}
+
+message Error {
+  string message = 1;
+}

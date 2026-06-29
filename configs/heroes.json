@@ -1,0 +1,68 @@
+[
+  {
+    "heroId": "warrior",
+    "name": "Warrior",
+    "base": {
+      "hp": 1200,
+      "mp": 280,
+      "attack": 85,
+      "physicalDefense": 30,
+      "magicDefense": 18,
+      "moveSpeed": 7,
+      "attackRange": 120,
+      "attackSpeed": 1
+    },
+    "radius": 18,
+    "skills": {
+      "passive": "warrior_toughness",
+      "q": "slash",
+      "w": "dash",
+      "e": "battle_cry",
+      "r": "whirlwind"
+    }
+  },
+  {
+    "heroId": "archer",
+    "name": "Archer",
+    "base": {
+      "hp": 850,
+      "mp": 360,
+      "attack": 95,
+      "physicalDefense": 14,
+      "magicDefense": 20,
+      "moveSpeed": 8,
+      "attackRange": 520,
+      "attackSpeed": 1.25
+    },
+    "radius": 16,
+    "skills": {
+      "passive": "archer_focus",
+      "q": "shot",
+      "w": "roll",
+      "e": "trap",
+      "r": "arrow_rain"
+    }
+  },
+  {
+    "heroId": "tank",
+    "name": "Tank",
+    "base": {
+      "hp": 1650,
+      "mp": 220,
+      "attack": 65,
+      "physicalDefense": 46,
+      "magicDefense": 28,
+      "moveSpeed": 5,
+      "attackRange": 100,
+      "attackSpeed": 0.85
+    },
+    "radius": 22,
+    "skills": {
+      "passive": "tank_armor",
+      "q": "slam",
+      "w": "guard",
+      "e": "taunt",
+      "r": "earthquake"
+    }
+  }
+]

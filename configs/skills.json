@@ -1,0 +1,107 @@
+[
+  {
+    "skillId": "slash",
+    "name": "Slash",
+    "cooldownMs": 1200,
+    "range": 90,
+    "type": "damage"
+  },
+  {
+    "skillId": "dash",
+    "name": "Dash",
+    "cooldownMs": 3000,
+    "range": 260,
+    "type": "dash"
+  },
+  {
+    "skillId": "battle_cry",
+    "name": "Battle Cry",
+    "cooldownMs": 6000,
+    "range": 0,
+    "type": "buff"
+  },
+  {
+    "skillId": "whirlwind",
+    "name": "Whirlwind",
+    "cooldownMs": 12000,
+    "range": 180,
+    "type": "damage"
+  },
+  {
+    "skillId": "warrior_toughness",
+    "name": "Toughness",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive"
+  },
+  {
+    "skillId": "shot",
+    "name": "Shot",
+    "cooldownMs": 900,
+    "range": 520,
+    "type": "damage"
+  },
+  {
+    "skillId": "roll",
+    "name": "Roll",
+    "cooldownMs": 2600,
+    "range": 220,
+    "type": "dash"
+  },
+  {
+    "skillId": "trap",
+    "name": "Trap",
+    "cooldownMs": 7000,
+    "range": 420,
+    "type": "damage"
+  },
+  {
+    "skillId": "arrow_rain",
+    "name": "Arrow Rain",
+    "cooldownMs": 14000,
+    "range": 650,
+    "type": "damage"
+  },
+  {
+    "skillId": "archer_focus",
+    "name": "Focus",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive"
+  },
+  {
+    "skillId": "slam",
+    "name": "Slam",
+    "cooldownMs": 1800,
+    "range": 120,
+    "type": "damage"
+  },
+  {
+    "skillId": "guard",
+    "name": "Guard",
+    "cooldownMs": 5000,
+    "range": 0,
+    "type": "buff"
+  },
+  {
+    "skillId": "taunt",
+    "name": "Taunt",
+    "cooldownMs": 7500,
+    "range": 220,
+    "type": "buff"
+  },
+  {
+    "skillId": "earthquake",
+    "name": "Earthquake",
+    "cooldownMs": 15000,
+    "range": 260,
+    "type": "damage"
+  },
+  {
+    "skillId": "tank_armor",
+    "name": "Armor",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive"
+  }
+]
