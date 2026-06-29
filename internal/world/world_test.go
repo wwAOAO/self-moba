@@ -8,7 +8,7 @@ import (
 )
 
 func TestSpawnHeroRefreshesTeamOnRejoin(t *testing.T) {
-	w := NewWorld()
+	w := testWorld(t)
 	hero := testHeroConfig()
 
 	w.SpawnHero("p1", hero, TeamRed)
@@ -24,7 +24,7 @@ func TestSpawnHeroRefreshesTeamOnRejoin(t *testing.T) {
 }
 
 func TestSpawnHeroOverwritesExistingPlayerTeam(t *testing.T) {
-	w := NewWorld()
+	w := testWorld(t)
 	hero := testHeroConfig()
 
 	w.SpawnHero("p1", hero, TeamRed)
@@ -35,7 +35,7 @@ func TestSpawnHeroOverwritesExistingPlayerTeam(t *testing.T) {
 }
 
 func TestMoveTargetAdvancesOnServerTick(t *testing.T) {
-	w := NewWorld()
+	w := testWorld(t)
 	hero := testHeroConfig()
 	w.SpawnHero("p1", hero, TeamBlue)
 
@@ -50,7 +50,7 @@ func TestMoveTargetAdvancesOnServerTick(t *testing.T) {
 }
 
 func TestAttackTargetAutoAttacksOnServerTick(t *testing.T) {
-	w := NewWorld()
+	w := testWorld(t)
 	hero := testHeroConfig()
 	hero.Base.AttackRange = 1000
 	w.SpawnHero("p1", hero, TeamBlue)
@@ -116,6 +116,46 @@ func TestHeroStatsLevelIsClamped(t *testing.T) {
 	}
 }
 
+func TestMinionKillGrantsExperience(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.Base.Attack = 1000
+	hero.Base.AttackRange = 1000
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	target := w.entities["minion:red-melee-1"]
+
+	w.ApplyInput("p1", protocolPlayerInputAttack(target.ID), 1, nil, 20)
+	w.Tick(2, 20)
+
+	if player.TotalExp != 62 {
+		t.Fatalf("total exp = %f, want 62", player.TotalExp)
+	}
+}
+
+func TestExperienceLevelsUpAndRecalculatesStats(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	startMaxHP := player.Stats.MaxHP
+
+	w.addExperience(player, 280)
+
+	if player.Level != 2 {
+		t.Fatalf("level = %d, want 2", player.Level)
+	}
+	if player.Exp != 0 {
+		t.Fatalf("exp = %f, want 0", player.Exp)
+	}
+	if player.NextLevelExp != 340 {
+		t.Fatalf("next level exp = %f, want 340", player.NextLevelExp)
+	}
+	if player.Stats.MaxHP <= startMaxHP {
+		t.Fatalf("max hp did not grow: got %d start %d", player.Stats.MaxHP, startMaxHP)
+	}
+}
+
 func assertPlayerTeam(t *testing.T, w *World, playerID string, want Team) {
 	t.Helper()
 	entity := w.entities[playerEntityID(playerID)]
@@ -125,6 +165,24 @@ func assertPlayerTeam(t *testing.T, w *World, playerID string, want Team) {
 	if entity.Team != want {
 		t.Fatalf("player %s team = %s, want %s", playerID, entity.Team, want)
 	}
+}
+
+func testWorld(t *testing.T) *World {
+	t.Helper()
+	hero := testHeroConfig()
+	heroes, err := config.NewHeroStore([]config.HeroConfig{hero})
+	if err != nil {
+		t.Fatal(err)
+	}
+	levels, err := config.LoadLevels("../../configs/levels.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rewards, err := config.LoadRewards("../../configs/rewards.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return NewWorld(heroes, levels, rewards)
 }
 
 func testHeroConfig() config.HeroConfig {

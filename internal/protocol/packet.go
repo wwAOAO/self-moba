@@ -67,15 +67,18 @@ type MapSnapshot struct {
 }
 
 type PlayerSnapshot struct {
-	PlayerID string          `json:"playerId"`
-	HeroID   string          `json:"heroId"`
-	Team     string          `json:"team"`
-	Level    int             `json:"level"`
-	MaxLevel int             `json:"maxLevel"`
-	X        float64         `json:"x"`
-	Y        float64         `json:"y"`
-	Stats    StatsSnapshot   `json:"stats"`
-	Skills   []SkillSnapshot `json:"skills"`
+	PlayerID     string          `json:"playerId"`
+	HeroID       string          `json:"heroId"`
+	Team         string          `json:"team"`
+	Level        int             `json:"level"`
+	MaxLevel     int             `json:"maxLevel"`
+	Exp          float64         `json:"exp"`
+	TotalExp     float64         `json:"totalExp"`
+	NextLevelExp float64         `json:"nextLevelExp"`
+	X            float64         `json:"x"`
+	Y            float64         `json:"y"`
+	Stats        StatsSnapshot   `json:"stats"`
+	Skills       []SkillSnapshot `json:"skills"`
 }
 
 type DummySnapshot struct {

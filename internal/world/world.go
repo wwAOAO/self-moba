@@ -18,13 +18,19 @@ type World struct {
 	width    float64
 	height   float64
 	entities map[string]*Entity
+	heroes   *config.HeroStore
+	levels   *config.LevelConfig
+	rewards  *config.RewardConfig
 }
 
-func NewWorld() *World {
+func NewWorld(heroes *config.HeroStore, levels *config.LevelConfig, rewards *config.RewardConfig) *World {
 	w := &World{
 		width:    DefaultMapWidth,
 		height:   DefaultMapHeight,
 		entities: make(map[string]*Entity),
+		heroes:   heroes,
+		levels:   levels,
+		rewards:  rewards,
 	}
 	w.SpawnBattleUnits()
 	w.SpawnTrainingDummy()
@@ -44,10 +50,14 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 	position := w.spawnPosition(team)
 	level := MinHeroLevel
 	stats := heroStatsAtLevel(hero, level)
+	nextLevelExp := w.nextLevelExp(level)
 	if entity := w.entities[entityID]; entity != nil {
 		entity.Team = team
 		entity.HeroID = hero.HeroID
 		entity.Level = level
+		entity.Exp = 0
+		entity.TotalExp = 0
+		entity.NextLevelExp = nextLevelExp
 		entity.Stats = stats
 		entity.Radius = hero.Radius
 		entity.Skills = skills
@@ -56,16 +66,19 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 		return
 	}
 	w.entities[entityID] = &Entity{
-		ID:       entityID,
-		Kind:     EntityKindPlayer,
-		Team:     team,
-		PlayerID: playerID,
-		HeroID:   hero.HeroID,
-		Level:    level,
-		Stats:    stats,
-		Radius:   hero.Radius,
-		Skills:   skills,
-		Position: position,
+		ID:           entityID,
+		Kind:         EntityKindPlayer,
+		Team:         team,
+		PlayerID:     playerID,
+		HeroID:       hero.HeroID,
+		Level:        level,
+		Exp:          0,
+		TotalExp:     0,
+		NextLevelExp: nextLevelExp,
+		Stats:        stats,
+		Radius:       hero.Radius,
+		Skills:       skills,
+		Position:     position,
 	}
 }
 
@@ -465,12 +478,95 @@ func (w *World) applyAttack(attacker *Entity, target *Entity, tick uint64, tickR
 	target.Combat.LastHitTick = tick
 	target.Combat.LastDamage = damage
 	if target.Kind != EntityKindDummy {
+		wasAlive := target.Stats.HP > 0
 		target.Stats.HP -= damage
 		if target.Stats.HP < 0 {
 			target.Stats.HP = 0
 		}
+		if wasAlive && target.Stats.HP == 0 {
+			w.applyKillReward(attacker, target)
+		}
 	}
 	attacker.Combat.NextAttackTick = tick + attackCooldownTicks(attacker.Stats.AttackSpeed, tickRate)
+}
+
+func (w *World) applyKillReward(killer *Entity, target *Entity) {
+	if killer == nil || target == nil || w.rewards == nil {
+		return
+	}
+	switch target.Kind {
+	case EntityKindMeleeMinion, EntityKindRangedMinion, EntityKindSiegeMinion:
+		if exp, ok := w.rewards.MinionExp(string(target.Kind), 1); ok {
+			w.addExperience(killer, exp)
+		}
+	case EntityKindTower:
+		if exp, ok := w.rewards.StructureTeamExp(string(target.Kind)); ok {
+			w.addTeamExperience(killer.Team, float64(exp))
+		}
+	case EntityKindEnemyHero, EntityKindPlayer:
+		targetNextExp := w.nextLevelExp(target.Level)
+		if targetNextExp > 0 {
+			w.addExperience(killer, w.rewards.HeroKillExp(int(targetNextExp), killer.Level, target.Level))
+		}
+	}
+}
+
+func (w *World) addTeamExperience(team Team, exp float64) {
+	for _, entity := range w.entities {
+		if entity.Kind == EntityKindPlayer && entity.Team == team && entity.Stats.HP > 0 {
+			w.addExperience(entity, exp)
+		}
+	}
+}
+
+func (w *World) addExperience(entity *Entity, exp float64) {
+	if entity == nil || entity.Kind != EntityKindPlayer || exp <= 0 || entity.Level >= MaxHeroLevel {
+		return
+	}
+	entity.Exp += exp
+	entity.TotalExp += exp
+	for entity.Level < MaxHeroLevel {
+		nextExp := w.nextLevelExp(entity.Level)
+		if nextExp <= 0 || entity.Exp < nextExp {
+			break
+		}
+		entity.Exp -= nextExp
+		w.levelUp(entity)
+	}
+	entity.NextLevelExp = w.nextLevelExp(entity.Level)
+}
+
+func (w *World) levelUp(entity *Entity) {
+	hero, ok := w.heroes.Get(entity.HeroID)
+	if !ok {
+		return
+	}
+	oldMaxHP := entity.Stats.MaxHP
+	oldMaxMP := entity.Stats.MaxMP
+	entity.Level = clampInt(entity.Level+1, MinHeroLevel, MaxHeroLevel)
+	nextStats := heroStatsAtLevel(hero, entity.Level)
+	hpGain := nextStats.MaxHP - oldMaxHP
+	mpGain := nextStats.MaxMP - oldMaxMP
+	nextStats.HP = entity.Stats.HP + hpGain
+	nextStats.MP = entity.Stats.MP + mpGain
+	if nextStats.HP > nextStats.MaxHP {
+		nextStats.HP = nextStats.MaxHP
+	}
+	if nextStats.MP > nextStats.MaxMP {
+		nextStats.MP = nextStats.MaxMP
+	}
+	entity.Stats = nextStats
+}
+
+func (w *World) nextLevelExp(level int) float64 {
+	if w.levels == nil {
+		return 0
+	}
+	nextExp, ok := w.levels.NextExp(level)
+	if !ok {
+		return 0
+	}
+	return float64(nextExp)
 }
 
 func canAttackTarget(attacker *Entity, target *Entity) bool {

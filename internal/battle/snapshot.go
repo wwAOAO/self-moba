@@ -23,15 +23,18 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 	}
 	for _, entity := range players {
 		snapshot.Players = append(snapshot.Players, protocol.PlayerSnapshot{
-			PlayerID: entity.PlayerID,
-			HeroID:   entity.HeroID,
-			Team:     string(entity.Team),
-			Level:    entity.Level,
-			MaxLevel: world.MaxHeroLevel,
-			X:        entity.Position.X,
-			Y:        entity.Position.Y,
-			Stats:    buildStatsSnapshot(entity.Stats),
-			Skills:   buildSkillSnapshots(entity.Skills),
+			PlayerID:     entity.PlayerID,
+			HeroID:       entity.HeroID,
+			Team:         string(entity.Team),
+			Level:        entity.Level,
+			MaxLevel:     world.MaxHeroLevel,
+			Exp:          entity.Exp,
+			TotalExp:     entity.TotalExp,
+			NextLevelExp: entity.NextLevelExp,
+			X:            entity.Position.X,
+			Y:            entity.Position.Y,
+			Stats:        buildStatsSnapshot(entity.Stats),
+			Skills:       buildSkillSnapshots(entity.Skills),
 		})
 	}
 	for _, entity := range dummies {

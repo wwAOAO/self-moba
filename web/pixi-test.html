@@ -105,6 +105,33 @@
         min-width: 78px;
       }
 
+      .status-card {
+        margin-top: 10px;
+        padding: 10px;
+        border: 1px solid #cbd5cf;
+        border-radius: 4px;
+        background: #f8fbf8;
+        box-shadow: 0 4px 14px rgba(23, 32, 38, 0.08);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .status-card strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: 78px 1fr;
+        gap: 3px 8px;
+      }
+
+      .status-grid span:nth-child(even) {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
       .stats-card {
         position: absolute;
         left: 16px;
@@ -228,9 +255,15 @@
           <div><strong>Status</strong><span id="status">Disconnected</span></div>
           <div><strong>Tick</strong><span id="tick">0</span></div>
           <div><strong>Players</strong><span id="playerCount">0</span></div>
-          <div><strong>Team</strong><span id="teamLabel">-</span></div>
-          <div><strong>Position</strong><span id="position">-</span></div>
-          <div><strong>Skills</strong><span id="skills">-</span></div>
+        </div>
+
+        <div class="status-card">
+          <strong>Player</strong>
+          <div class="status-grid">
+            <span>Team</span><span id="teamLabel">-</span>
+            <span>Position</span><span id="position">-</span>
+            <span>Skills</span><span id="skills">-</span>
+          </div>
         </div>
 
         <p class="hint">Right-click the map to move. Left-click an enemy unit to auto attack. Press Q/W/E/R to cast active skills.</p>
@@ -241,6 +274,7 @@
           <strong>Stats</strong>
           <div class="stats-grid">
             <span>Level</span><span id="statLevel">-</span>
+            <span>EXP</span><span id="statExp">-</span>
             <span>HP</span><span id="statHp">-</span>
             <span>MP</span><span id="statMp">-</span>
             <span>ATK</span><span id="statAttack">-</span>
@@ -275,9 +309,10 @@
         unitSprites: new Map(),
         damageTexts: [],
         moveTarget: null,
+        selectedTargetId: "",
         attackTargetId: "",
+        attackMoveArmed: false,
         attackFlashUntil: 0,
-        clearTargetTimer: 0,
         frame: { scale: 1, offsetX: 0, offsetY: 0 },
       };
 
@@ -296,6 +331,7 @@
         teamLabel: document.querySelector("#teamLabel"),
         position: document.querySelector("#position"),
         statLevel: document.querySelector("#statLevel"),
+        statExp: document.querySelector("#statExp"),
         statHp: document.querySelector("#statHp"),
         statMp: document.querySelector("#statMp"),
         statAttack: document.querySelector("#statAttack"),
@@ -415,6 +451,12 @@
         state.units = new Map(
           units.map((unit) => [unit.id, normalizeUnit(unit)]),
         );
+        if (state.selectedTargetId && !state.units.has(state.selectedTargetId)) {
+          state.selectedTargetId = "";
+        }
+        if (state.attackTargetId && !state.units.has(state.attackTargetId)) {
+          state.attackTargetId = "";
+        }
         updateAttackEffects(previousUnits);
         els.tick.textContent = snapshot.tick;
         els.playerCount.textContent = snapshot.players.length;
@@ -519,6 +561,18 @@
           gridLayer.fill(0x22c55e);
         }
 
+        const selectedTarget = state.selectedTargetId
+          ? state.units.get(state.selectedTargetId)
+          : null;
+        if (selectedTarget) {
+          gridLayer.circle(
+            frame.offsetX + selectedTarget.x * frame.scale,
+            frame.offsetY + selectedTarget.y * frame.scale,
+            Math.max(14, selectedTarget.radius * frame.scale + 6),
+          );
+          gridLayer.stroke({ color: 0xf6d365, width: 3 });
+        }
+
         if (state.attackTargetId) {
           const self = state.players.get(state.playerId);
           const target = state.units.get(state.attackTargetId);
@@ -534,7 +588,7 @@
             );
             gridLayer.stroke({ color: 0x2f6fdd, width: 2, alpha: 0.75 });
           }
-          if (target) {
+          if (target && target.id !== state.selectedTargetId) {
             gridLayer.circle(
               frame.offsetX + target.x * frame.scale,
               frame.offsetY + target.y * frame.scale,
@@ -806,9 +860,7 @@
         els.position.textContent = `${self.x.toFixed(1)}, ${self.y.toFixed(1)}`;
         els.teamLabel.textContent = self.team || state.team;
         setStatsCard(self);
-        setTargetCard(
-          state.attackTargetId ? state.units.get(state.attackTargetId) : null,
-        );
+        setTargetCard(currentTarget());
         if (!self.skills || self.skills.length === 0) {
           els.skills.textContent = "-";
           return;
@@ -829,6 +881,7 @@
       function setStatsCard(player) {
         if (!player?.stats) {
           els.statLevel.textContent = "-";
+          els.statExp.textContent = "-";
           els.statHp.textContent = "-";
           els.statMp.textContent = "-";
           els.statAttack.textContent = "-";
@@ -841,6 +894,10 @@
         }
         const stats = player.stats;
         els.statLevel.textContent = `${player.level || 1}/${player.maxLevel || 18}`;
+        els.statExp.textContent =
+          player.nextLevelExp > 0
+            ? `${Math.floor(player.exp || 0)}/${Math.floor(player.nextLevelExp)}`
+            : "MAX";
         els.statHp.textContent = `${stats.hp}/${stats.maxHp}`;
         els.statMp.textContent = `${stats.mp}/${stats.maxMp}`;
         els.statAttack.textContent = stats.attack;
@@ -881,24 +938,49 @@
 
       function handlePointerDown(event) {
         if (event.button === 0) {
-          clearPendingTargetClear();
-          state.attackTargetId = pickTargetUnit(event);
-          if (state.attackTargetId) {
-            state.moveTarget = null;
-            sendPacket("input", {
-              attack: {
-                targetId: state.attackTargetId,
-              },
-              clientSeq: state.seq,
-            });
+          const targetId = pickTargetUnit(event);
+          if (targetId) {
+            state.selectedTargetId = targetId;
+            setTargetCard(currentTarget());
+            if (state.attackMoveArmed) {
+              attackTarget(targetId);
+              state.attackMoveArmed = false;
+            }
+            return;
           }
+          state.selectedTargetId = "";
+          state.attackMoveArmed = false;
+          setTargetCard(null);
           return;
         }
         if (event.button !== 2) {
           return;
         }
-        scheduleTargetClear();
         const point = screenToWorld(event);
+        const targetId = pickTargetUnit(event);
+        if (targetId) {
+          state.selectedTargetId = targetId;
+          setTargetCard(currentTarget());
+          attackTarget(targetId);
+          return;
+        }
+        moveToPoint(point);
+      }
+
+      function attackTarget(targetId) {
+        state.attackTargetId = targetId;
+        state.moveTarget = null;
+        sendPacket("input", {
+          attack: {
+            targetId,
+          },
+          clientSeq: state.seq,
+        });
+      }
+
+      function moveToPoint(point) {
+        state.attackMoveArmed = false;
+        state.attackTargetId = "";
         state.moveTarget = {
           x: clamp(point.x, 0, state.map.width),
           y: clamp(point.y, 0, state.map.height),
@@ -910,6 +992,26 @@
           },
           clientSeq: state.seq,
         });
+        clearAttackTarget();
+      }
+
+      function clearAttackTarget() {
+        sendPacket("input", {
+          attack: {
+            clear: true,
+          },
+          clientSeq: state.seq,
+        });
+      }
+
+      function currentTarget() {
+        if (state.selectedTargetId) {
+          return state.units.get(state.selectedTargetId) || null;
+        }
+        if (state.attackTargetId) {
+          return state.units.get(state.attackTargetId) || null;
+        }
+        return null;
       }
 
       function pickTargetUnit(event) {
@@ -941,29 +1043,6 @@
         return dx <= size + padding && dy <= size + padding;
       }
 
-      function scheduleTargetClear() {
-        clearPendingTargetClear();
-        state.clearTargetTimer = window.setTimeout(() => {
-          state.attackTargetId = "";
-          state.clearTargetTimer = 0;
-          setTargetCard(null);
-          sendPacket("input", {
-            attack: {
-              clear: true,
-            },
-            clientSeq: state.seq,
-          });
-        }, 3000);
-      }
-
-      function clearPendingTargetClear() {
-        if (!state.clearTargetTimer) {
-          return;
-        }
-        window.clearTimeout(state.clearTargetTimer);
-        state.clearTargetTimer = 0;
-      }
-
       function screenToWorld(event) {
         const rect = app.canvas.getBoundingClientRect();
         const canvasX = event.clientX - rect.left;
@@ -987,6 +1066,11 @@
 
       window.addEventListener("keydown", (event) => {
         const slot = event.key.toLowerCase();
+        if (slot === "a") {
+          event.preventDefault();
+          state.attackMoveArmed = true;
+          return;
+        }
         if (!["q", "w", "e", "r"].includes(slot)) {
           return;
         }

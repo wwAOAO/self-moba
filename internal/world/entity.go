@@ -6,18 +6,21 @@ type Vector2 struct {
 }
 
 type Entity struct {
-	ID       string
-	Kind     EntityKind
-	Team     Team
-	PlayerID string
-	HeroID   string
-	Level    int
-	Position Vector2
-	Stats    Stats
-	Radius   float64
-	Skills   map[string]SkillState
-	Combat   CombatState
-	Intent   IntentState
+	ID           string
+	Kind         EntityKind
+	Team         Team
+	PlayerID     string
+	HeroID       string
+	Level        int
+	Exp          float64
+	TotalExp     float64
+	NextLevelExp float64
+	Position     Vector2
+	Stats        Stats
+	Radius       float64
+	Skills       map[string]SkillState
+	Combat       CombatState
+	Intent       IntentState
 }
 
 type EntityKind string

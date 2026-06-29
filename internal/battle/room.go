@@ -15,7 +15,10 @@ type Room struct {
 	id        string
 	world     *world.World
 	publisher *jetstream.Publisher
+	heroes    *config.HeroStore
 	skills    *config.SkillStore
+	levels    *config.LevelConfig
+	rewards   *config.RewardConfig
 	loop      *Loop
 
 	mu       sync.RWMutex
@@ -23,12 +26,15 @@ type Room struct {
 	closed   bool
 }
 
-func NewRoom(id string, publisher *jetstream.Publisher, skills *config.SkillStore) *Room {
+func NewRoom(id string, publisher *jetstream.Publisher, heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig) *Room {
 	room := &Room{
 		id:        id,
-		world:     world.NewWorld(),
+		world:     world.NewWorld(heroes, levels, rewards),
 		publisher: publisher,
+		heroes:    heroes,
 		skills:    skills,
+		levels:    levels,
+		rewards:   rewards,
 		sessions:  make(map[string]SnapshotSender),
 	}
 	room.loop = NewLoop(room)

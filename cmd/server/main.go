@@ -77,7 +77,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	manager := battle.NewManager(js, heroes, skills)
+	manager := battle.NewManager(js, heroes, skills, levels, rewards)
 	if err := messagingnats.RegisterHandlers(natsClient.Conn(), manager, logger); err != nil {
 		logger.Error("register nats handlers", "error", err)
 		os.Exit(1)

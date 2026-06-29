@@ -64,10 +64,13 @@ message PlayerSnapshot {
   string team = 3;
   int32 level = 4;
   int32 max_level = 5;
-  double x = 6;
-  double y = 7;
-  StatsSnapshot stats = 8;
-  repeated SkillSnapshot skills = 9;
+  double exp = 6;
+  double total_exp = 7;
+  double next_level_exp = 8;
+  double x = 9;
+  double y = 10;
+  StatsSnapshot stats = 11;
+  repeated SkillSnapshot skills = 12;
 }
 
 message StatsSnapshot {

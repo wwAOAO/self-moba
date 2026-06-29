@@ -22,14 +22,18 @@ type Manager struct {
 	publisher *jetstream.Publisher
 	heroes    *config.HeroStore
 	skills    *config.SkillStore
+	levels    *config.LevelConfig
+	rewards   *config.RewardConfig
 }
 
-func NewManager(publisher *jetstream.Publisher, heroes *config.HeroStore, skills *config.SkillStore) *Manager {
+func NewManager(publisher *jetstream.Publisher, heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig) *Manager {
 	return &Manager{
 		rooms:     make(map[string]*Room),
 		publisher: publisher,
 		heroes:    heroes,
 		skills:    skills,
+		levels:    levels,
+		rewards:   rewards,
 	}
 }
 
@@ -45,7 +49,7 @@ func (m *Manager) CreateRoom(roomID string) (*Room, error) {
 		return room, nil
 	}
 
-	room := NewRoom(roomID, m.publisher, m.skills)
+	room := NewRoom(roomID, m.publisher, m.heroes, m.skills, m.levels, m.rewards)
 	m.rooms[roomID] = room
 	room.Start()
 	return room, nil
