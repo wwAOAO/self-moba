@@ -215,8 +215,8 @@
         </select>
 
         <label class="checkbox-row">
-          <input id="showUnits" type="checkbox" />
-          Show Units
+          <input id="showDummies" type="checkbox" />
+          Show Dummies
         </label>
 
         <div class="actions">
@@ -266,7 +266,7 @@
         roomId: "demo-room",
         playerId: `p-${Math.floor(Math.random() * 10000)}`,
         team: "blue",
-        showUnits: false,
+        showDummies: false,
         seq: 0,
         map: { width: 2000, height: 2000 },
         players: new Map(),
@@ -287,7 +287,7 @@
         playerId: document.querySelector("#playerId"),
         heroId: document.querySelector("#heroId"),
         team: document.querySelector("#team"),
-        showUnits: document.querySelector("#showUnits"),
+        showDummies: document.querySelector("#showDummies"),
         connectBtn: document.querySelector("#connectBtn"),
         leaveBtn: document.querySelector("#leaveBtn"),
         status: document.querySelector("#status"),
@@ -410,7 +410,7 @@
             normalizePlayer(player),
           ]),
         );
-        state.showUnits = els.showUnits.checked;
+        state.showDummies = els.showDummies.checked;
         const units = visibleUnits(snapshot);
         state.units = new Map(
           units.map((unit) => [unit.id, normalizeUnit(unit)]),
@@ -674,8 +674,8 @@
 
       function visibleUnits(snapshot) {
         const units = snapshot.units || snapshot.dummies || [];
-        if (state.showUnits) {
-          return units;
+        if (!state.showDummies) {
+          return [];
         }
         return units.filter((unit) => (unit.kind || "dummy") === "dummy");
       }

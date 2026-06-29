@@ -29,6 +29,7 @@ func main() {
 	heroConfigPath := env("HERO_CONFIG", "configs/heroes.json")
 	skillConfigPath := env("SKILL_CONFIG", "configs/skills.json")
 	levelConfigPath := env("LEVEL_CONFIG", "configs/levels.json")
+	rewardConfigPath := env("REWARD_CONFIG", "configs/rewards.json")
 
 	heroes, err := config.LoadHeroes(heroConfigPath)
 	if err != nil {
@@ -52,6 +53,12 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("level config loaded", "path", levelConfigPath, "maxLevel", levels.MaxLevel, "totalExp", levels.TotalExp)
+	rewards, err := config.LoadRewards(rewardConfigPath)
+	if err != nil {
+		logger.Error("load reward config", "path", rewardConfigPath, "error", err)
+		os.Exit(1)
+	}
+	logger.Info("reward config loaded", "path", rewardConfigPath, "minionKinds", len(rewards.Minion.KillExp), "jungleKinds", len(rewards.Jungle.KillExp), "epicKinds", len(rewards.Epic), "structureKinds", len(rewards.Structure.TeamExp), "jungleScalingMax", rewards.JungleScaling.MaxMultiplier)
 
 	natsClient, err := messagingnats.Connect(natsURL, "battle-server")
 	if err != nil {

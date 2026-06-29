@@ -1,0 +1,65 @@
+{
+  "minion": {
+    "shareMultiplier": 1.24,
+    "shareMinPlayers": 2,
+    "shareRadius": 1500,
+    "killExp": {
+      "melee_minion": 62,
+      "ranged_minion": 31,
+      "siege_minion": 75,
+      "super_minion": 75
+    }
+  },
+  "jungle": {
+    "killExp": {
+      "blue_buff": 100,
+      "red_buff": 100,
+      "gromp": 130,
+      "murk_wolf": 100,
+      "raptor": 105,
+      "krug_camp": 160,
+      "rift_scuttler": 70
+    }
+  },
+  "jungleScaling": {
+    "startAverageLevel": 3,
+    "capAverageLevel": 9,
+    "maxMultiplier": 1.5
+  },
+  "epic": {
+    "rift_herald": {
+      "participantExp": 600,
+      "nonParticipantTeamPoolExp": 800,
+      "nonParticipantSplit": "equal"
+    },
+    "elemental_dragon": {
+      "minExp": 150,
+      "maxExp": 510,
+      "split": "nearby_allies",
+      "catchUpBonus": true
+    },
+    "baron_nashor": {
+      "split": "team_equal",
+      "scalesWithGameTime": true
+    }
+  },
+  "heroKill": {
+    "baseNextLevelExpMultiplier": 0.75,
+    "levelDiffStepMultiplier": 0.2,
+    "higherLevelMinMultiplier": 0.4,
+    "lowerLevelMaxBonusMultiplier": 0.6,
+    "nearbyRadius": 1600,
+    "deadGraceSeconds": 10,
+    "nearbyAliveHeroShare": true,
+    "assistExpTiers": [
+      { "minLevel": 1, "maxLevel": 6, "multiplier": 0.66 },
+      { "minLevel": 7, "maxLevel": 8, "multiplier": 0.82 },
+      { "minLevel": 9, "maxLevel": 18, "multiplier": 0.9 }
+    ]
+  },
+  "structure": {
+    "teamExp": {
+      "tower": 300
+    }
+  }
+}

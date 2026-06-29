@@ -43,3 +43,16 @@ func LoadLevels(path string) (*LevelConfig, error) {
 	}
 	return NewLevelConfig(levels)
 }
+
+func LoadRewards(path string) (*RewardConfig, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var rewards RewardConfig
+	if err := json.Unmarshal(data, &rewards); err != nil {
+		return nil, err
+	}
+	return NewRewardConfig(rewards)
+}
