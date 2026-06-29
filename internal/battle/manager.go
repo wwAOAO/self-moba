@@ -82,6 +82,19 @@ func (m *Manager) SubmitInput(roomID string, playerID string, input protocol.Pla
 	return nil
 }
 
+func (m *Manager) SpawnObject(roomID string, kind world.EntityKind, team world.Team, x float64, y float64) error {
+	m.mu.RLock()
+	room := m.rooms[roomID]
+	m.mu.RUnlock()
+	if room == nil {
+		return fmt.Errorf("room %s not found", roomID)
+	}
+	if !room.SpawnObject(kind, team, x, y) {
+		return fmt.Errorf("unsupported object kind %s", kind)
+	}
+	return nil
+}
+
 func (m *Manager) LeaveRoom(roomID string, playerID string) {
 	m.mu.RLock()
 	room := m.rooms[roomID]

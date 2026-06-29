@@ -20,6 +20,7 @@ type BaseStats struct {
 	MoveSpeed       float64 `json:"moveSpeed"`
 	AttackRange     float64 `json:"attackRange"`
 	AttackSpeed     float64 `json:"attackSpeed"`
+	CritChance      float64 `json:"critChance"`
 }
 
 type HeroSkills struct {
@@ -75,6 +76,9 @@ func NewHeroStore(heroes []HeroConfig) (*HeroStore, error) {
 		if hero.Base.AttackSpeed <= 0 {
 			return nil, fmt.Errorf("hero %s attack speed must be positive", hero.HeroID)
 		}
+		if hero.Base.CritChance < 0 || hero.Base.CritChance > 1 {
+			return nil, fmt.Errorf("hero %s crit chance must be in [0, 1]", hero.HeroID)
+		}
 		if hero.Growth.HP < 0 {
 			return nil, fmt.Errorf("hero %s hp growth must not be negative", hero.HeroID)
 		}
@@ -98,6 +102,9 @@ func NewHeroStore(heroes []HeroConfig) (*HeroStore, error) {
 		}
 		if hero.Growth.AttackSpeed < 0 {
 			return nil, fmt.Errorf("hero %s attack speed growth must not be negative", hero.HeroID)
+		}
+		if hero.Growth.CritChance < 0 {
+			return nil, fmt.Errorf("hero %s crit chance growth must not be negative", hero.HeroID)
 		}
 		if hero.Radius <= 0 {
 			return nil, fmt.Errorf("hero %s radius must be positive", hero.HeroID)

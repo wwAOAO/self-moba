@@ -81,6 +81,12 @@ func (s *Session) handlePacket(ctx context.Context, packet protocol.Packet) erro
 			return err
 		}
 		return s.manager.SubmitInput(packet.RoomID, packet.PlayerID, input)
+	case protocol.PacketSpawnObject:
+		var spawn protocol.SpawnObject
+		if err := decodePayload(packet, &spawn); err != nil {
+			return err
+		}
+		return s.manager.SpawnObject(packet.RoomID, world.EntityKind(spawn.Kind), parseTeam(spawn.Team), spawn.X, spawn.Y)
 	case protocol.PacketLeave:
 		if packet.RoomID != "" && packet.PlayerID != "" {
 			s.manager.LeaveRoom(packet.RoomID, packet.PlayerID)

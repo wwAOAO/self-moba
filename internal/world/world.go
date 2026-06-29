@@ -2,6 +2,7 @@ package world
 
 import (
 	"math"
+	"strconv"
 
 	"l-battle/internal/config"
 	"l-battle/internal/protocol"
@@ -12,15 +13,20 @@ const (
 	DefaultMapHeight = 2000.0
 	MinHeroLevel     = 1
 	MaxHeroLevel     = 18
+	swordHeroID      = "sword"
+	swordIntentMax   = 100.0
+	swordIntentPerMu = 1.6
+	critRollModulo   = 10000
 )
 
 type World struct {
-	width    float64
-	height   float64
-	entities map[string]*Entity
-	heroes   *config.HeroStore
-	levels   *config.LevelConfig
-	rewards  *config.RewardConfig
+	width        float64
+	height       float64
+	entities     map[string]*Entity
+	heroes       *config.HeroStore
+	levels       *config.LevelConfig
+	rewards      *config.RewardConfig
+	nextObjectID int
 }
 
 func NewWorld(heroes *config.HeroStore, levels *config.LevelConfig, rewards *config.RewardConfig) *World {
@@ -63,6 +69,7 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 		entity.Skills = skills
 		entity.Position = position
 		entity.Combat = CombatState{}
+		entity.Passive = passiveStateForHero(hero.HeroID)
 		return
 	}
 	w.entities[entityID] = &Entity{
@@ -79,6 +86,7 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 		Radius:       hero.Radius,
 		Skills:       skills,
 		Position:     position,
+		Passive:      passiveStateForHero(hero.HeroID),
 	}
 }
 
@@ -225,11 +233,28 @@ func (w *World) spawnDummy(id string, x float64, y float64) {
 	})
 }
 
+func (w *World) SpawnObject(kind EntityKind, team Team, x float64, y float64) (string, bool) {
+	if team != TeamBlue && team != TeamRed && team != TeamNeutral {
+		team = TeamNeutral
+	}
+	stats, radius, ok := unitTemplate(kind)
+	if !ok {
+		return "", false
+	}
+	if kind == EntityKindDummy {
+		team = TeamNeutral
+	}
+	w.nextObjectID++
+	id := "spawn:" + string(kind) + ":" + strconv.Itoa(w.nextObjectID)
+	w.spawnUnit(id, kind, team, clamp(x, 0, w.width), clamp(y, 0, w.height), radius, stats)
+	return id, true
+}
+
 func (w *World) spawnUnit(id string, kind EntityKind, team Team, x float64, y float64, radius float64, stats Stats) {
 	if _, ok := w.entities[id]; ok {
 		return
 	}
-	w.entities[id] = &Entity{
+	entity := &Entity{
 		ID:     id,
 		Kind:   kind,
 		Team:   team,
@@ -239,6 +264,34 @@ func (w *World) spawnUnit(id string, kind EntityKind, team Team, x float64, y fl
 			X: x,
 			Y: y,
 		},
+	}
+	if kind == EntityKindEnemyHero {
+		entity.Level = MinHeroLevel
+		entity.NextLevelExp = w.nextLevelExp(entity.Level)
+	}
+	w.entities[id] = entity
+}
+
+func unitTemplate(kind EntityKind) (Stats, float64, bool) {
+	switch kind {
+	case EntityKindDummy:
+		return Stats{HP: 3000, MaxHP: 3000, PhysicalDefense: 10, MagicDefense: 10}, 28, true
+	case EntityKindEnemyHero:
+		return Stats{HP: 1200, MaxHP: 1200, MP: 500, MaxMP: 500, Attack: 82, PhysicalDefense: 26, MagicDefense: 18, MoveSpeed: 4.2, AttackRange: 150, AttackSpeed: 1}, 18, true
+	case EntityKindMeleeMinion:
+		return Stats{HP: 420, MaxHP: 420, Attack: 32, PhysicalDefense: 8, MagicDefense: 4, MoveSpeed: 3, AttackRange: 70, AttackSpeed: 0.8}, 14, true
+	case EntityKindRangedMinion:
+		return Stats{HP: 300, MaxHP: 300, Attack: 38, PhysicalDefense: 5, MagicDefense: 5, MoveSpeed: 3, AttackRange: 360, AttackSpeed: 0.7}, 13, true
+	case EntityKindSiegeMinion:
+		return Stats{HP: 680, MaxHP: 680, Attack: 62, PhysicalDefense: 14, MagicDefense: 8, MoveSpeed: 2.4, AttackRange: 430, AttackSpeed: 0.55}, 18, true
+	case EntityKindTower:
+		return Stats{HP: 2600, MaxHP: 2600, Attack: 180, PhysicalDefense: 80, MagicDefense: 60, AttackRange: 620, AttackSpeed: 0.75}, 34, true
+	case EntityKindBarracks:
+		return Stats{HP: 3200, MaxHP: 3200, PhysicalDefense: 55, MagicDefense: 45}, 40, true
+	case EntityKindCrystal:
+		return Stats{HP: 4500, MaxHP: 4500, PhysicalDefense: 70, MagicDefense: 70}, 48, true
+	default:
+		return Stats{}, 0, false
 	}
 }
 
@@ -265,10 +318,12 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	}
 	if input.Move == nil && (input.MoveX != 0 || input.MoveY != 0) {
 		dx, dy := normalize(input.MoveX, input.MoveY)
+		before := entity.Position
 		entity.Position.X += dx * entity.Stats.MoveSpeed
 		entity.Position.Y += dy * entity.Stats.MoveSpeed
 		entity.Position.X = clamp(entity.Position.X, 0, w.width)
 		entity.Position.Y = clamp(entity.Position.Y, 0, w.height)
+		w.chargeSwordIntent(entity, distance(before, entity.Position))
 	}
 	if input.Attack != nil {
 		if input.Attack.Clear {
@@ -321,14 +376,18 @@ func (w *World) moveToward(entity *Entity, destination Vector2, stopDistance flo
 	step := entity.Stats.MoveSpeed
 	if dist <= step+stopDistance {
 		ratio := math.Max(0, dist-stopDistance) / dist
+		before := entity.Position
 		entity.Position.X += dx * ratio
 		entity.Position.Y += dy * ratio
+		w.chargeSwordIntent(entity, distance(before, entity.Position))
 		return true
 	}
+	before := entity.Position
 	entity.Position.X += dx / dist * step
 	entity.Position.Y += dy / dist * step
 	entity.Position.X = clamp(entity.Position.X, 0, w.width)
 	entity.Position.Y = clamp(entity.Position.Y, 0, w.height)
+	w.chargeSwordIntent(entity, distance(before, entity.Position))
 	return false
 }
 
@@ -410,6 +469,32 @@ func heroStatsAtLevel(hero config.HeroConfig, level int) Stats {
 		MoveSpeed:       hero.Base.MoveSpeed + hero.Growth.MoveSpeed*float64(growthSteps),
 		AttackRange:     hero.Base.AttackRange + hero.Growth.AttackRange*float64(growthSteps),
 		AttackSpeed:     hero.Base.AttackSpeed + hero.Growth.AttackSpeed*float64(growthSteps),
+		CritChance:      hero.Base.CritChance + hero.Growth.CritChance*float64(growthSteps),
+	}
+}
+
+func passiveStateForHero(heroID string) PassiveState {
+	if heroID != swordHeroID {
+		return PassiveState{}
+	}
+	return PassiveState{
+		MaxSwordIntent: swordIntentMax,
+	}
+}
+
+func (w *World) chargeSwordIntent(entity *Entity, moved float64) {
+	if entity == nil || entity.HeroID != swordHeroID || moved <= 0 {
+		return
+	}
+	if entity.Passive.MaxSwordIntent <= 0 {
+		entity.Passive.MaxSwordIntent = swordIntentMax
+	}
+	if entity.Passive.SwordIntent >= entity.Passive.MaxSwordIntent {
+		return
+	}
+	entity.Passive.SwordIntent += moved * swordIntentPerMu
+	if entity.Passive.SwordIntent > entity.Passive.MaxSwordIntent {
+		entity.Passive.SwordIntent = entity.Passive.MaxSwordIntent
 	}
 }
 
@@ -471,23 +556,138 @@ func (w *World) applyAttack(attacker *Entity, target *Entity, tick uint64, tickR
 		return
 	}
 
-	damage := attacker.Stats.Attack - target.Stats.PhysicalDefense
-	if damage < 1 {
-		damage = 1
-	}
+	damage := attackDamage(attacker, target, tick)
 	target.Combat.LastHitTick = tick
-	target.Combat.LastDamage = damage
 	if target.Kind != EntityKindDummy {
 		wasAlive := target.Stats.HP > 0
-		target.Stats.HP -= damage
-		if target.Stats.HP < 0 {
-			target.Stats.HP = 0
-		}
+		w.applyDamage(attacker, target, damage)
 		if wasAlive && target.Stats.HP == 0 {
 			w.applyKillReward(attacker, target)
+			w.removeDeadUnit(target)
 		}
+	} else {
+		target.Combat.LastDamage = damage
 	}
 	attacker.Combat.NextAttackTick = tick + attackCooldownTicks(attacker.Stats.AttackSpeed, tickRate)
+}
+
+func attackDamage(attacker *Entity, target *Entity, tick uint64) int {
+	attack := float64(attacker.Stats.Attack)
+	if attackCrits(attacker, target, tick) {
+		attack *= critDamageMultiplier(attacker)
+	}
+	damage := int(math.Round(attack)) - target.Stats.PhysicalDefense
+	if damage < 1 {
+		return 1
+	}
+	return damage
+}
+
+func attackCrits(attacker *Entity, target *Entity, tick uint64) bool {
+	chance := critChance(attacker)
+	if chance <= 0 {
+		return false
+	}
+	if chance >= 1 {
+		return true
+	}
+	roll := deterministicCritRoll(attacker.ID, target.ID, tick)
+	return roll < chance
+}
+
+func critChance(attacker *Entity) float64 {
+	chance := attacker.Stats.CritChance
+	if attacker.HeroID == swordHeroID {
+		chance *= 2
+	}
+	if chance > 1 {
+		return 1
+	}
+	if chance < 0 {
+		return 0
+	}
+	return chance
+}
+
+func critDamageMultiplier(attacker *Entity) float64 {
+	if attacker.HeroID == swordHeroID {
+		return 1.9
+	}
+	return 2
+}
+
+func deterministicCritRoll(attackerID string, targetID string, tick uint64) float64 {
+	hash := uint64(1469598103934665603)
+	for _, value := range []string{attackerID, targetID, strconv.FormatUint(tick, 10)} {
+		for i := 0; i < len(value); i++ {
+			hash ^= uint64(value[i])
+			hash *= 1099511628211
+		}
+	}
+	return float64(hash%critRollModulo) / critRollModulo
+}
+
+func (w *World) applyDamage(source *Entity, target *Entity, damage int) {
+	if damage <= 0 {
+		target.Combat.LastDamage = 0
+		return
+	}
+	damage = w.applySwordShield(source, target, damage)
+	target.Combat.LastDamage = damage
+	if damage <= 0 {
+		return
+	}
+	target.Stats.HP -= damage
+	if target.Stats.HP < 0 {
+		target.Stats.HP = 0
+	}
+}
+
+func (w *World) applySwordShield(source *Entity, target *Entity, damage int) int {
+	if target == nil || target.HeroID != swordHeroID {
+		return damage
+	}
+	if target.Passive.Shield <= 0 && target.Passive.SwordIntent >= target.Passive.MaxSwordIntent && swordShieldTriggers(source) {
+		target.Passive.MaxShield = swordShieldValue(target.Level)
+		target.Passive.Shield = target.Passive.MaxShield
+		target.Passive.SwordIntent = 0
+	}
+	if target.Passive.Shield <= 0 {
+		return damage
+	}
+	absorbed := damage
+	if absorbed > target.Passive.Shield {
+		absorbed = target.Passive.Shield
+	}
+	target.Passive.Shield -= absorbed
+	return damage - absorbed
+}
+
+func swordShieldTriggers(source *Entity) bool {
+	if source == nil {
+		return false
+	}
+	return source.Kind == EntityKindPlayer || source.Kind == EntityKindEnemyHero
+}
+
+func swordShieldValue(level int) int {
+	level = clampInt(level, MinHeroLevel, MaxHeroLevel)
+	if level == MinHeroLevel {
+		return 100
+	}
+	return 100 + int(math.Round(float64(level-MinHeroLevel)*(510-100)/float64(MaxHeroLevel-MinHeroLevel)))
+}
+
+func (w *World) removeDeadUnit(target *Entity) {
+	if target.Kind == EntityKindPlayer || target.Kind == EntityKindDummy {
+		return
+	}
+	delete(w.entities, target.ID)
+	for _, entity := range w.entities {
+		if entity.Intent.AttackTargetID == target.ID {
+			entity.Intent.AttackTargetID = ""
+		}
+	}
 }
 
 func (w *World) applyKillReward(killer *Entity, target *Entity) {

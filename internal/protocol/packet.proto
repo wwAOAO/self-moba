@@ -44,6 +44,13 @@ message CastInput {
   double target_y = 3;
 }
 
+message SpawnObject {
+  string kind = 1;
+  string team = 2;
+  double x = 3;
+  double y = 4;
+}
+
 message Snapshot {
   string room_id = 1;
   uint64 tick = 2;
@@ -71,6 +78,9 @@ message PlayerSnapshot {
   double y = 10;
   StatsSnapshot stats = 11;
   repeated SkillSnapshot skills = 12;
+  PassiveSnapshot passive = 13;
+  uint64 last_hit_tick = 14;
+  int32 last_damage = 15;
 }
 
 message StatsSnapshot {
@@ -84,6 +94,7 @@ message StatsSnapshot {
   double move_speed = 8;
   double attack_range = 9;
   double attack_speed = 10;
+  double crit_chance = 11;
 }
 
 message DummySnapshot {
@@ -111,6 +122,13 @@ message UnitSnapshot {
 message SkillSnapshot {
   string skill_id = 1;
   uint64 cooldown_until_tick = 2;
+}
+
+message PassiveSnapshot {
+  double sword_intent = 1;
+  double max_sword_intent = 2;
+  int32 shield = 3;
+  int32 max_shield = 4;
 }
 
 message Error {

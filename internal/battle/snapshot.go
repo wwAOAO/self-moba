@@ -35,6 +35,9 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Y:            entity.Position.Y,
 			Stats:        buildStatsSnapshot(entity.Stats),
 			Skills:       buildSkillSnapshots(entity.Skills),
+			Passive:      buildPassiveSnapshot(entity.Passive),
+			LastHitTick:  entity.Combat.LastHitTick,
+			LastDamage:   entity.Combat.LastDamage,
 		})
 	}
 	for _, entity := range dummies {
@@ -76,6 +79,7 @@ func buildStatsSnapshot(stats world.Stats) protocol.StatsSnapshot {
 		MoveSpeed:       stats.MoveSpeed,
 		AttackRange:     stats.AttackRange,
 		AttackSpeed:     stats.AttackSpeed,
+		CritChance:      stats.CritChance,
 	}
 }
 
@@ -88,4 +92,13 @@ func buildSkillSnapshots(states map[string]world.SkillState) []protocol.SkillSna
 		})
 	}
 	return skills
+}
+
+func buildPassiveSnapshot(state world.PassiveState) protocol.PassiveSnapshot {
+	return protocol.PassiveSnapshot{
+		SwordIntent:    state.SwordIntent,
+		MaxSwordIntent: state.MaxSwordIntent,
+		Shield:         state.Shield,
+		MaxShield:      state.MaxShield,
+	}
 }

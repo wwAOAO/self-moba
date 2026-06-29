@@ -105,12 +105,17 @@
         min-width: 78px;
       }
 
-      .stats-card {
+      .left-cards {
         position: absolute;
         left: 16px;
         top: 16px;
         z-index: 2;
         width: 260px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .stats-card {
         padding: 10px;
         border: 2px solid #1f6f5b;
         border-radius: 4px;
@@ -136,12 +141,23 @@
         line-height: 1.45;
       }
 
+      .player-card {
+        padding: 10px;
+        border: 2px solid #1f6f5b;
+        border-radius: 4px;
+        background: #f8fbf8;
+        box-shadow: 0 8px 22px rgba(23, 32, 38, 0.14);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
       .target-card strong {
         display: block;
         margin-bottom: 4px;
       }
 
-      .stats-card strong {
+      .stats-card strong,
+      .player-card strong {
         display: block;
         margin-bottom: 4px;
       }
@@ -155,6 +171,10 @@
       .stats-grid span:nth-child(even) {
         min-width: 0;
         overflow-wrap: anywhere;
+      }
+
+      .stats-grid .wide {
+        grid-column: 1 / -1;
       }
 
       .hint {
@@ -211,6 +231,7 @@
           <option value="warrior">Warrior</option>
           <option value="archer">Archer</option>
           <option value="tank">Tank</option>
+          <option value="sword">Sword</option>
         </select>
 
         <label for="team">Team</label>
@@ -223,6 +244,29 @@
           <input id="showDummies" type="checkbox" />
           Show Dummies
         </label>
+
+        <label for="spawnKind">Spawn Object</label>
+        <select id="spawnKind">
+          <option value="dummy">Dummy</option>
+          <option value="enemy_hero">Enemy Hero</option>
+          <option value="melee_minion">Melee Minion</option>
+          <option value="ranged_minion">Ranged Minion</option>
+          <option value="siege_minion">Cannon Minion</option>
+          <option value="tower">Tower</option>
+          <option value="barracks">Barracks</option>
+          <option value="crystal">Crystal</option>
+        </select>
+
+        <label for="spawnTeam">Spawn Team</label>
+        <select id="spawnTeam">
+          <option value="red">Red</option>
+          <option value="blue">Blue</option>
+          <option value="neutral">Neutral</option>
+        </select>
+
+        <div class="actions">
+          <button id="spawnBtn">Spawn</button>
+        </div>
 
         <div class="actions">
           <button id="connectBtn">Connect</button>
@@ -239,22 +283,32 @@
       </aside>
 
       <main class="viewport">
-        <div class="stats-card">
-          <strong>Stats</strong>
-          <div class="stats-grid">
-            <span>Team</span><span id="teamLabel">-</span>
-            <span>Position</span><span id="position">-</span>
-            <span>Skills</span><span id="skills">-</span>
-            <span>Level</span><span id="statLevel">-</span>
-            <span>EXP</span><span id="statExp">-</span>
-            <span>HP</span><span id="statHp">-</span>
-            <span>MP</span><span id="statMp">-</span>
-            <span>ATK</span><span id="statAttack">-</span>
-            <span>Phys DEF</span><span id="statPhysicalDefense">-</span>
-            <span>Magic DEF</span><span id="statMagicDefense">-</span>
-            <span>Move SPD</span><span id="statMoveSpeed">-</span>
-            <span>ATK Range</span><span id="statAttackRange">-</span>
-            <span>ATK SPD</span><span id="statAttackSpeed">-</span>
+        <div class="left-cards">
+          <div class="stats-card">
+            <strong>Stats</strong>
+            <div class="stats-grid">
+              <span>Level</span><span id="statLevel">-</span>
+              <span>EXP</span><span id="statExp">-</span>
+              <span>HP</span><span id="statHp">-</span>
+              <span>MP</span><span id="statMp">-</span>
+              <span>ATK</span><span id="statAttack">-</span>
+              <span>Phys DEF</span><span id="statPhysicalDefense">-</span>
+              <span>Magic DEF</span><span id="statMagicDefense">-</span>
+              <span>Move SPD</span><span id="statMoveSpeed">-</span>
+              <span>ATK Range</span><span id="statAttackRange">-</span>
+              <span>ATK SPD</span><span id="statAttackSpeed">-</span>
+              <span>Crit</span><span id="statCritChance">-</span>
+              <span>Sword Intent</span><span id="statSwordIntent">-</span>
+              <span>Shield</span><span id="statShield">-</span>
+            </div>
+          </div>
+          <div class="player-card">
+            <strong>Player</strong>
+            <div class="stats-grid">
+              <span>Team</span><span id="teamLabel">-</span>
+              <span>Position</span><span id="position">-</span>
+              <span class="wide">Skills <span id="skills">-</span></span>
+            </div>
           </div>
         </div>
         <div class="target-card">
@@ -295,6 +349,9 @@
         heroId: document.querySelector("#heroId"),
         team: document.querySelector("#team"),
         showDummies: document.querySelector("#showDummies"),
+        spawnKind: document.querySelector("#spawnKind"),
+        spawnTeam: document.querySelector("#spawnTeam"),
+        spawnBtn: document.querySelector("#spawnBtn"),
         connectBtn: document.querySelector("#connectBtn"),
         leaveBtn: document.querySelector("#leaveBtn"),
         status: document.querySelector("#status"),
@@ -312,6 +369,9 @@
         statMoveSpeed: document.querySelector("#statMoveSpeed"),
         statAttackRange: document.querySelector("#statAttackRange"),
         statAttackSpeed: document.querySelector("#statAttackSpeed"),
+        statCritChance: document.querySelector("#statCritChance"),
+        statSwordIntent: document.querySelector("#statSwordIntent"),
+        statShield: document.querySelector("#statShield"),
         target: document.querySelector("#target"),
         skills: document.querySelector("#skills"),
         stage: document.querySelector("#stage"),
@@ -338,6 +398,13 @@
           w: "guard",
           e: "taunt",
           r: "earthquake",
+        },
+        sword: {
+          passive: "sword_edge",
+          q: "sword_cut",
+          w: "sword_step",
+          e: "sword_guard",
+          r: "sword_storm",
         },
       };
 
@@ -410,7 +477,7 @@
       }
 
       function applySnapshot(snapshot) {
-        const previousUnits = state.units;
+        const previousTargets = targetMap();
         state.map = snapshot.map;
         state.players = new Map(
           snapshot.players.map((player) => [
@@ -423,24 +490,24 @@
         state.units = new Map(
           units.map((unit) => [unit.id, normalizeUnit(unit)]),
         );
-        if (state.selectedTargetId && !state.units.has(state.selectedTargetId)) {
+        if (state.selectedTargetId && !targetMap().has(state.selectedTargetId)) {
           state.selectedTargetId = "";
         }
-        if (state.attackTargetId && !state.units.has(state.attackTargetId)) {
+        if (state.attackTargetId && !targetMap().has(state.attackTargetId)) {
           state.attackTargetId = "";
         }
-        updateAttackEffects(previousUnits);
+        updateAttackEffects(previousTargets);
         els.tick.textContent = snapshot.tick;
         els.playerCount.textContent = snapshot.players.length;
         updatePositionLabel();
       }
 
-      function updateAttackEffects(previousUnits) {
+      function updateAttackEffects(previousTargets) {
         if (!state.attackTargetId) {
           return;
         }
-        const previous = previousUnits.get(state.attackTargetId);
-        const current = state.units.get(state.attackTargetId);
+        const previous = previousTargets.get(state.attackTargetId);
+        const current = targetMap().get(state.attackTargetId);
         if (!previous || !current) {
           return;
         }
@@ -491,6 +558,23 @@
         );
       }
 
+      function spawnObject() {
+        const self = state.players.get(state.playerId);
+        const x = clamp((self?.x ?? state.map.width / 2) + 120, 0, state.map.width);
+        const y = clamp(self?.y ?? state.map.height / 2, 0, state.map.height);
+        const kind = els.spawnKind.value;
+        if (kind === "dummy") {
+          els.showDummies.checked = true;
+          state.showDummies = true;
+        }
+        sendPacket("spawn_object", {
+          kind,
+          team: els.spawnTeam.value,
+          x,
+          y,
+        });
+      }
+
       function draw(ticker) {
         const frame = calculateFrame();
         drawMap(frame);
@@ -534,20 +618,20 @@
         }
 
         const selectedTarget = state.selectedTargetId
-          ? state.units.get(state.selectedTargetId)
+          ? targetMap().get(state.selectedTargetId)
           : null;
         if (selectedTarget) {
           gridLayer.circle(
             frame.offsetX + selectedTarget.x * frame.scale,
             frame.offsetY + selectedTarget.y * frame.scale,
-            Math.max(14, selectedTarget.radius * frame.scale + 6),
+            targetSelectRadius(selectedTarget, frame),
           );
           gridLayer.stroke({ color: 0xf6d365, width: 3 });
         }
 
         if (state.attackTargetId) {
           const self = state.players.get(state.playerId);
-          const target = state.units.get(state.attackTargetId);
+          const target = targetMap().get(state.attackTargetId);
           const showAttackFlash =
             self?.stats &&
             target &&
@@ -564,7 +648,7 @@
             gridLayer.circle(
               frame.offsetX + target.x * frame.scale,
               frame.offsetY + target.y * frame.scale,
-              Math.max(14, target.radius * frame.scale + 6),
+              targetSelectRadius(target, frame),
             );
             gridLayer.stroke({ color: 0xf6d365, width: 3 });
           }
@@ -700,16 +784,22 @@
 
       function visibleUnits(snapshot) {
         const units = snapshot.units || snapshot.dummies || [];
-        if (!state.showDummies) {
-          return [];
-        }
-        return units.filter((unit) => (unit.kind || "dummy") === "dummy");
+        return units.filter((unit) => {
+          const kind = unit.kind || "dummy";
+          if (kind === "dummy") {
+            return state.showDummies || String(unit.id || "").startsWith("spawn:");
+          }
+          return String(unit.id || "").startsWith("spawn:");
+        });
       }
 
       function normalizePlayer(player) {
         const isSelf = player.playerId === state.playerId;
         return {
           ...player,
+          id: `player:${player.playerId}`,
+          kind: "player",
+          radius: 18,
           team: isSelf ? player.team || state.team : player.team || "unknown",
         };
       }
@@ -838,12 +928,23 @@
           return;
         }
         const tick = Number(els.tick.textContent || 0);
-        els.skills.textContent = self.skills
-          .map((skill) => {
-            const remain = Math.max(0, skill.cooldownUntilTick - tick);
-            return `${skill.skillId}:${remain}`;
+        els.skills.textContent = formatSkillCooldowns(self, tick);
+      }
+
+      function formatSkillCooldowns(player, tick) {
+        const skillById = new Map(player.skills.map((skill) => [skill.skillId, skill]));
+        const slots = heroSkillSlots[player.heroId || els.heroId.value] || heroSkillSlots[els.heroId.value];
+        if (!slots) {
+          return "-";
+        }
+        return ["q", "w", "e", "r"]
+          .map((slot) => {
+            const skill = skillById.get(slots[slot]);
+            const remainTicks = Math.max(0, (skill?.cooldownUntilTick || 0) - tick);
+            const remainSeconds = (remainTicks / 20).toFixed(1);
+            return `${slot.toUpperCase()} ${remainSeconds}`;
           })
-          .join(" ");
+          .join("  ");
       }
 
       function setStatus(value) {
@@ -862,9 +963,13 @@
           els.statMoveSpeed.textContent = "-";
           els.statAttackRange.textContent = "-";
           els.statAttackSpeed.textContent = "-";
+          els.statCritChance.textContent = "-";
+          els.statSwordIntent.textContent = "-";
+          els.statShield.textContent = "-";
           return;
         }
         const stats = player.stats;
+        const passive = player.passive || {};
         els.statLevel.textContent = `${player.level || 1}/${player.maxLevel || 18}`;
         els.statExp.textContent =
           player.nextLevelExp > 0
@@ -878,6 +983,15 @@
         els.statMoveSpeed.textContent = stats.moveSpeed;
         els.statAttackRange.textContent = stats.attackRange;
         els.statAttackSpeed.textContent = stats.attackSpeed;
+        els.statCritChance.textContent = `${Math.round((stats.critChance || 0) * 1000) / 10}%`;
+        els.statSwordIntent.textContent =
+          passive.maxSwordIntent > 0
+            ? `${Math.floor(passive.swordIntent || 0)}/${Math.floor(passive.maxSwordIntent)}`
+            : "-";
+        els.statShield.textContent =
+          passive.maxShield > 0 || passive.shield > 0
+            ? `${passive.shield || 0}/${passive.maxShield || 0}`
+            : "-";
       }
 
       function setTargetCard(target) {
@@ -889,8 +1003,8 @@
         const stats = target.stats;
         els.target.parentElement.style.display = "block";
         els.target.innerHTML = `
-          <div>${unitVisual(target.kind).label}</div>
-          <div>${target.id}</div>
+          <div>${targetLabel(target)}</div>
+          <div>${target.id || target.playerId}</div>
           <div>Team ${target.team || "-"}</div>
           <div>HP ${stats.hp}/${stats.maxHp}</div>
           <div>MP ${stats.mp}/${stats.maxMp}</div>
@@ -900,6 +1014,7 @@
           <div>Move SPD ${stats.moveSpeed}</div>
           <div>ATK Range ${stats.attackRange}</div>
           <div>ATK SPD ${stats.attackSpeed}</div>
+          <div>Crit ${Math.round((stats.critChance || 0) * 1000) / 10}%</div>
         `;
       }
 
@@ -978,10 +1093,10 @@
 
       function currentTarget() {
         if (state.selectedTargetId) {
-          return state.units.get(state.selectedTargetId) || null;
+          return targetMap().get(state.selectedTargetId) || null;
         }
         if (state.attackTargetId) {
-          return state.units.get(state.attackTargetId) || null;
+          return targetMap().get(state.attackTargetId) || null;
         }
         return null;
       }
@@ -989,12 +1104,13 @@
       function pickTargetUnit(event) {
         const point = screenToWorld(event);
         const self = state.players.get(state.playerId);
-        const units = [...state.units.values()]
-          .filter((unit) => !self || unit.team !== self.team || unit.team === "neutral")
-          .sort((a, b) => a.radius - b.radius);
-        for (const unit of units) {
-          if (hitTestUnit(point, unit)) {
-            return unit.id;
+        const targets = [...targetMap().values()]
+          .filter((target) => target.id !== self?.id)
+          .filter((target) => !self || target.team !== self.team || target.team === "neutral")
+          .sort((a, b) => (a.radius || 18) - (b.radius || 18));
+        for (const target of targets) {
+          if (hitTestUnit(point, target)) {
+            return target.id;
           }
         }
         return "";
@@ -1013,6 +1129,25 @@
           return dx <= size + padding && dy <= size * 1.3 + padding;
         }
         return dx <= size + padding && dy <= size + padding;
+      }
+
+      function targetMap() {
+        const targets = new Map(state.units);
+        for (const player of state.players.values()) {
+          targets.set(player.id, player);
+        }
+        return targets;
+      }
+
+      function targetLabel(target) {
+        if (target.kind === "player") {
+          return `Player ${target.playerId || ""}`.trim();
+        }
+        return unitVisual(target.kind).label;
+      }
+
+      function targetSelectRadius(target, frame) {
+        return Math.max(14, (target.radius || 18) * frame.scale + 6);
       }
 
       function screenToWorld(event) {
@@ -1052,6 +1187,7 @@
 
       els.connectBtn.addEventListener("click", connect);
       els.leaveBtn.addEventListener("click", leave);
+      els.spawnBtn.addEventListener("click", spawnObject);
 
       bootPixi();
     </script>

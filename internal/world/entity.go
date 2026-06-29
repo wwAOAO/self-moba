@@ -20,6 +20,7 @@ type Entity struct {
 	Radius       float64
 	Skills       map[string]SkillState
 	Combat       CombatState
+	Passive      PassiveState
 	Intent       IntentState
 }
 
@@ -56,6 +57,7 @@ type Stats struct {
 	MoveSpeed       float64
 	AttackRange     float64
 	AttackSpeed     float64
+	CritChance      float64
 }
 
 type SkillState struct {
@@ -67,6 +69,13 @@ type CombatState struct {
 	NextAttackTick uint64
 	LastHitTick    uint64
 	LastDamage     int
+}
+
+type PassiveState struct {
+	SwordIntent    float64
+	MaxSwordIntent float64
+	Shield         int
+	MaxShield      int
 }
 
 type IntentState struct {

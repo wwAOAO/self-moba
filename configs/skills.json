@@ -103,5 +103,40 @@
     "cooldownMs": 0,
     "range": 0,
     "type": "passive"
+  },
+  {
+    "skillId": "sword_cut",
+    "name": "Sword Cut",
+    "cooldownMs": 1000,
+    "range": 140,
+    "type": "damage"
+  },
+  {
+    "skillId": "sword_step",
+    "name": "Sword Step",
+    "cooldownMs": 2800,
+    "range": 240,
+    "type": "dash"
+  },
+  {
+    "skillId": "sword_guard",
+    "name": "Sword Guard",
+    "cooldownMs": 5200,
+    "range": 0,
+    "type": "buff"
+  },
+  {
+    "skillId": "sword_storm",
+    "name": "Sword Storm",
+    "cooldownMs": 13000,
+    "range": 220,
+    "type": "damage"
+  },
+  {
+    "skillId": "sword_edge",
+    "name": "Sword Edge",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive"
   }
 ]

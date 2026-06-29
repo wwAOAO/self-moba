@@ -5,11 +5,12 @@ import "encoding/json"
 type PacketType string
 
 const (
-	PacketJoinRoom PacketType = "join_room"
-	PacketLeave    PacketType = "leave"
-	PacketInput    PacketType = "input"
-	PacketSnapshot PacketType = "snapshot"
-	PacketError    PacketType = "error"
+	PacketJoinRoom    PacketType = "join_room"
+	PacketLeave       PacketType = "leave"
+	PacketInput       PacketType = "input"
+	PacketSpawnObject PacketType = "spawn_object"
+	PacketSnapshot    PacketType = "snapshot"
+	PacketError       PacketType = "error"
 )
 
 type Packet struct {
@@ -52,6 +53,13 @@ type CastInput struct {
 	TargetY float64 `json:"targetY"`
 }
 
+type SpawnObject struct {
+	Kind string  `json:"kind"`
+	Team string  `json:"team"`
+	X    float64 `json:"x"`
+	Y    float64 `json:"y"`
+}
+
 type Snapshot struct {
 	RoomID  string           `json:"roomId"`
 	Tick    uint64           `json:"tick"`
@@ -79,6 +87,9 @@ type PlayerSnapshot struct {
 	Y            float64         `json:"y"`
 	Stats        StatsSnapshot   `json:"stats"`
 	Skills       []SkillSnapshot `json:"skills"`
+	Passive      PassiveSnapshot `json:"passive"`
+	LastHitTick  uint64          `json:"lastHitTick"`
+	LastDamage   int             `json:"lastDamage"`
 }
 
 type DummySnapshot struct {
@@ -114,11 +125,19 @@ type StatsSnapshot struct {
 	MoveSpeed       float64 `json:"moveSpeed"`
 	AttackRange     float64 `json:"attackRange"`
 	AttackSpeed     float64 `json:"attackSpeed"`
+	CritChance      float64 `json:"critChance"`
 }
 
 type SkillSnapshot struct {
 	SkillID           string `json:"skillId"`
 	CooldownUntilTick uint64 `json:"cooldownUntilTick"`
+}
+
+type PassiveSnapshot struct {
+	SwordIntent    float64 `json:"swordIntent"`
+	MaxSwordIntent float64 `json:"maxSwordIntent"`
+	Shield         int     `json:"shield"`
+	MaxShield      int     `json:"maxShield"`
 }
 
 type Error struct {

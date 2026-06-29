@@ -68,6 +68,13 @@ func (r *Room) SubmitInput(playerID string, input protocol.PlayerInput) {
 	r.loop.Submit(Input{PlayerID: playerID, Value: input})
 }
 
+func (r *Room) SpawnObject(kind world.EntityKind, team world.Team, x float64, y float64) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	_, ok := r.world.SpawnObject(kind, team, x, y)
+	return ok
+}
+
 func (r *Room) apply(inputs []Input, tick uint64) protocol.Snapshot {
 	r.mu.Lock()
 	defer r.mu.Unlock()

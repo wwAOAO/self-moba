@@ -10,7 +10,8 @@
       "magicDefense": 18,
       "moveSpeed": 7,
       "attackRange": 120,
-      "attackSpeed": 1
+      "attackSpeed": 1,
+      "critChance": 0.08
     },
     "growth": {
       "hp": 120,
@@ -20,7 +21,8 @@
       "magicDefense": 2,
       "moveSpeed": 0,
       "attackRange": 0,
-      "attackSpeed": 0.025
+      "attackSpeed": 0.025,
+      "critChance": 0.002
     },
     "radius": 18,
     "skills": {
@@ -42,7 +44,8 @@
       "magicDefense": 20,
       "moveSpeed": 8,
       "attackRange": 520,
-      "attackSpeed": 1.25
+      "attackSpeed": 1.25,
+      "critChance": 0.12
     },
     "growth": {
       "hp": 85,
@@ -52,7 +55,8 @@
       "magicDefense": 2,
       "moveSpeed": 0,
       "attackRange": 0,
-      "attackSpeed": 0.03
+      "attackSpeed": 0.03,
+      "critChance": 0.003
     },
     "radius": 16,
     "skills": {
@@ -74,7 +78,8 @@
       "magicDefense": 28,
       "moveSpeed": 5,
       "attackRange": 100,
-      "attackSpeed": 0.85
+      "attackSpeed": 0.85,
+      "critChance": 0.04
     },
     "growth": {
       "hp": 165,
@@ -84,7 +89,8 @@
       "magicDefense": 3,
       "moveSpeed": 0,
       "attackRange": 0,
-      "attackSpeed": 0.02
+      "attackSpeed": 0.02,
+      "critChance": 0.001
     },
     "radius": 22,
     "skills": {
@@ -93,6 +99,40 @@
       "w": "guard",
       "e": "taunt",
       "r": "earthquake"
+    }
+  },
+  {
+    "heroId": "sword",
+    "name": "Sword",
+    "base": {
+      "hp": 1050,
+      "mp": 320,
+      "attack": 92,
+      "physicalDefense": 24,
+      "magicDefense": 18,
+      "moveSpeed": 8,
+      "attackRange": 130,
+      "attackSpeed": 1.18,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 105,
+      "mp": 30,
+      "attack": 6,
+      "physicalDefense": 3,
+      "magicDefense": 2,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.028,
+      "critChance": 0
+    },
+    "radius": 17,
+    "skills": {
+      "passive": "sword_edge",
+      "q": "sword_cut",
+      "w": "sword_step",
+      "e": "sword_guard",
+      "r": "sword_storm"
     }
   }
 ]

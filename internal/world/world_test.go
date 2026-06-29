@@ -64,6 +64,25 @@ func TestAttackTargetAutoAttacksOnServerTick(t *testing.T) {
 	}
 }
 
+func TestOpposingTeamPlayersCanAttackEachOther(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.Base.AttackRange = 1000
+	w.SpawnHero("blue", hero, TeamBlue)
+	w.SpawnHero("red", hero, TeamRed)
+	attacker := w.entities[playerEntityID("blue")]
+	target := w.entities[playerEntityID("red")]
+	target.Position = attacker.Position
+	startHP := target.Stats.HP
+
+	w.ApplyInput("blue", protocolPlayerInputAttack(target.ID), 1, nil, 20)
+	w.Tick(2, 20)
+
+	if target.Stats.HP >= startHP {
+		t.Fatalf("target hp = %d, start hp = %d; opposing player was not damaged", target.Stats.HP, startHP)
+	}
+}
+
 func TestHeroStatsAtMaxLevelUseGrowth(t *testing.T) {
 	hero := testHeroConfig()
 	hero.Growth.HP = 10
@@ -98,6 +117,9 @@ func TestHeroStatsAtMaxLevelUseGrowth(t *testing.T) {
 	}
 	if stats.AttackSpeed != hero.Base.AttackSpeed+hero.Growth.AttackSpeed*float64(steps) {
 		t.Fatalf("attack speed = %f", stats.AttackSpeed)
+	}
+	if stats.CritChance != hero.Base.CritChance+hero.Growth.CritChance*float64(steps) {
+		t.Fatalf("crit chance = %f", stats.CritChance)
 	}
 }
 
@@ -156,6 +178,184 @@ func TestExperienceLevelsUpAndRecalculatesStats(t *testing.T) {
 	}
 }
 
+func TestSpawnObjectCreatesUnit(t *testing.T) {
+	w := testWorld(t)
+	id, ok := w.SpawnObject(EntityKindMeleeMinion, TeamRed, 500, 600)
+	if !ok {
+		t.Fatal("spawn object failed")
+	}
+	entity := w.entities[id]
+	if entity == nil {
+		t.Fatalf("spawned entity %s not found", id)
+	}
+	if entity.Kind != EntityKindMeleeMinion || entity.Team != TeamRed {
+		t.Fatalf("spawned entity kind/team = %s/%s", entity.Kind, entity.Team)
+	}
+}
+
+func TestSpawnObjectEnemyHeroHasLevelRewardData(t *testing.T) {
+	w := testWorld(t)
+	id, ok := w.SpawnObject(EntityKindEnemyHero, TeamRed, 500, 600)
+	if !ok {
+		t.Fatal("spawn enemy hero failed")
+	}
+
+	entity := w.entities[id]
+	if entity == nil {
+		t.Fatalf("spawned enemy hero %s not found", id)
+	}
+	if entity.Level != MinHeroLevel {
+		t.Fatalf("enemy hero level = %d, want %d", entity.Level, MinHeroLevel)
+	}
+	if entity.NextLevelExp != 280 {
+		t.Fatalf("enemy hero next level exp = %f, want 280", entity.NextLevelExp)
+	}
+}
+
+func TestEnemyHeroKillGrantsExperienceAndRemovesTarget(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.Base.Attack = 2000
+	hero.Base.AttackRange = 1000
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	id, ok := w.SpawnObject(EntityKindEnemyHero, TeamRed, player.Position.X+100, player.Position.Y)
+	if !ok {
+		t.Fatal("spawn enemy hero failed")
+	}
+
+	w.ApplyInput("p1", protocolPlayerInputAttack(id), 1, nil, 20)
+	w.Tick(2, 20)
+
+	if player.TotalExp != 210 {
+		t.Fatalf("total exp = %f, want 210", player.TotalExp)
+	}
+	if _, ok := w.entities[id]; ok {
+		t.Fatalf("dead enemy hero %s should be removed", id)
+	}
+	if player.Intent.AttackTargetID != "" {
+		t.Fatalf("attack target id = %q, want empty", player.Intent.AttackTargetID)
+	}
+}
+
+func TestSwordPassiveChargesWhileMoving(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.HeroID = swordHeroID
+	hero.Skills.Passive = "sword_edge"
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+
+	w.ApplyInput("p1", protocolPlayerInputMove(player.Position.X+100, player.Position.Y), 1, nil, 20)
+	w.Tick(2, 20)
+
+	if player.Passive.SwordIntent <= 0 {
+		t.Fatalf("sword intent did not charge while moving")
+	}
+	if player.Passive.MaxSwordIntent != swordIntentMax {
+		t.Fatalf("max sword intent = %f, want %f", player.Passive.MaxSwordIntent, swordIntentMax)
+	}
+}
+
+func TestSwordPassiveHeroDamageTriggersShield(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.HeroID = swordHeroID
+	hero.Skills.Passive = "sword_edge"
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Passive.SwordIntent = player.Passive.MaxSwordIntent
+	source := w.entities["enemy:hero-1"]
+
+	w.applyDamage(source, player, 150)
+
+	if player.Passive.SwordIntent != 0 {
+		t.Fatalf("sword intent = %f, want 0 after shield trigger", player.Passive.SwordIntent)
+	}
+	if player.Passive.MaxShield != 100 {
+		t.Fatalf("max shield = %d, want 100", player.Passive.MaxShield)
+	}
+	if player.Passive.Shield != 0 {
+		t.Fatalf("shield = %d, want 0 after absorbing 150 damage", player.Passive.Shield)
+	}
+	if player.Stats.HP != player.Stats.MaxHP-50 {
+		t.Fatalf("hp = %d, want %d", player.Stats.HP, player.Stats.MaxHP-50)
+	}
+}
+
+func TestSwordPassiveMinionDamageDoesNotTriggerShield(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.HeroID = swordHeroID
+	hero.Skills.Passive = "sword_edge"
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Passive.SwordIntent = player.Passive.MaxSwordIntent
+	source := w.entities["minion:red-melee-1"]
+
+	w.applyDamage(source, player, 50)
+
+	if player.Passive.SwordIntent != player.Passive.MaxSwordIntent {
+		t.Fatalf("sword intent = %f, want unchanged full intent", player.Passive.SwordIntent)
+	}
+	if player.Passive.Shield != 0 {
+		t.Fatalf("shield = %d, want 0", player.Passive.Shield)
+	}
+	if player.Stats.HP != player.Stats.MaxHP-50 {
+		t.Fatalf("hp = %d, want %d", player.Stats.HP, player.Stats.MaxHP-50)
+	}
+}
+
+func TestSwordPassiveDoublesCritChance(t *testing.T) {
+	attacker := &Entity{
+		HeroID: swordHeroID,
+		Stats:  Stats{CritChance: 0.4},
+	}
+
+	if got := critChance(attacker); got != 0.8 {
+		t.Fatalf("crit chance = %f, want 0.8", got)
+	}
+}
+
+func TestSwordPassiveZeroCritChanceStaysZero(t *testing.T) {
+	attacker := &Entity{
+		HeroID: swordHeroID,
+		Stats:  Stats{CritChance: 0},
+	}
+
+	if got := critChance(attacker); got != 0 {
+		t.Fatalf("crit chance = %f, want 0", got)
+	}
+}
+
+func TestSwordPassiveCritDamageIsReducedTo190Percent(t *testing.T) {
+	attacker := &Entity{
+		ID:     "player:p1",
+		HeroID: swordHeroID,
+		Stats: Stats{
+			Attack:     100,
+			CritChance: 1,
+		},
+	}
+	target := &Entity{
+		ID:    "dummy:target",
+		Stats: Stats{PhysicalDefense: 10},
+	}
+
+	damage := attackDamage(attacker, target, 1)
+
+	if damage != 180 {
+		t.Fatalf("damage = %d, want 180", damage)
+	}
+}
+
+func TestSpawnObjectRejectsUnsupportedKind(t *testing.T) {
+	w := testWorld(t)
+	if _, ok := w.SpawnObject(EntityKind("bad_kind"), TeamRed, 500, 600); ok {
+		t.Fatal("unsupported kind should be rejected")
+	}
+}
+
 func assertPlayerTeam(t *testing.T, w *World, playerID string, want Team) {
 	t.Helper()
 	entity := w.entities[playerEntityID(playerID)]
@@ -197,6 +397,7 @@ func testHeroConfig() config.HeroConfig {
 			MoveSpeed:       5,
 			AttackRange:     120,
 			AttackSpeed:     1,
+			CritChance:      0.1,
 		},
 		Growth: config.BaseStats{
 			HP:              10,
@@ -207,6 +408,7 @@ func testHeroConfig() config.HeroConfig {
 			MoveSpeed:       0,
 			AttackRange:     0,
 			AttackSpeed:     0.01,
+			CritChance:      0.001,
 		},
 		Radius: 12,
 		Skills: config.HeroSkills{
