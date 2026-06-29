@@ -105,39 +105,12 @@
         min-width: 78px;
       }
 
-      .status-card {
-        margin-top: 10px;
-        padding: 10px;
-        border: 1px solid #cbd5cf;
-        border-radius: 4px;
-        background: #f8fbf8;
-        box-shadow: 0 4px 14px rgba(23, 32, 38, 0.08);
-        font-size: 13px;
-        line-height: 1.5;
-      }
-
-      .status-card strong {
-        display: block;
-        margin-bottom: 4px;
-      }
-
-      .status-grid {
-        display: grid;
-        grid-template-columns: 78px 1fr;
-        gap: 3px 8px;
-      }
-
-      .status-grid span:nth-child(even) {
-        min-width: 0;
-        overflow-wrap: anywhere;
-      }
-
       .stats-card {
         position: absolute;
         left: 16px;
         top: 16px;
         z-index: 2;
-        width: 220px;
+        width: 260px;
         padding: 10px;
         border: 2px solid #1f6f5b;
         border-radius: 4px;
@@ -177,6 +150,11 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 4px 8px;
+      }
+
+      .stats-grid span:nth-child(even) {
+        min-width: 0;
+        overflow-wrap: anywhere;
       }
 
       .hint {
@@ -257,15 +235,6 @@
           <div><strong>Players</strong><span id="playerCount">0</span></div>
         </div>
 
-        <div class="status-card">
-          <strong>Player</strong>
-          <div class="status-grid">
-            <span>Team</span><span id="teamLabel">-</span>
-            <span>Position</span><span id="position">-</span>
-            <span>Skills</span><span id="skills">-</span>
-          </div>
-        </div>
-
         <p class="hint">Right-click the map to move. Left-click an enemy unit to auto attack. Press Q/W/E/R to cast active skills.</p>
       </aside>
 
@@ -273,6 +242,9 @@
         <div class="stats-card">
           <strong>Stats</strong>
           <div class="stats-grid">
+            <span>Team</span><span id="teamLabel">-</span>
+            <span>Position</span><span id="position">-</span>
+            <span>Skills</span><span id="skills">-</span>
             <span>Level</span><span id="statLevel">-</span>
             <span>EXP</span><span id="statExp">-</span>
             <span>HP</span><span id="statHp">-</span>
