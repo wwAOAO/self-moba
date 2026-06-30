@@ -23,7 +23,7 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	if input.UpgradeSkill != nil {
 		w.upgradeSkill(entity, input.UpgradeSkill.Slot)
 	}
-	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick {
+	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick || tick < entity.Control.StunnedUntilTick {
 		return
 	}
 	if input.Move != nil {
@@ -64,7 +64,7 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 }
 
 func (w *World) tickPlayer(entity *Entity, tick uint64, tickRate int) {
-	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick {
+	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick || tick < entity.Control.StunnedUntilTick {
 		return
 	}
 	if tick < entity.Control.DashUntilTick {
@@ -124,6 +124,9 @@ func EffectiveAttackSpeedAtTick(entity *Entity, tick uint64) float64 {
 		return 0
 	}
 	attackSpeed := entity.Stats.AttackSpeed
+	if entity.HeroID == archerHeroID && entity.Archer.FocusActiveUntil > 0 && (tick == 0 || tick < entity.Archer.FocusActiveUntil) {
+		attackSpeed *= 1 + entity.Archer.FocusAttackSpeed
+	}
 	if entity.Control.AttackSpeedSlowUntil > 0 && (tick == 0 || tick < entity.Control.AttackSpeedSlowUntil) {
 		attackSpeed *= 1 - clamp(entity.Control.AttackSpeedSlow, 0, 1)
 	}

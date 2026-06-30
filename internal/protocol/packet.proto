@@ -98,6 +98,7 @@ message PlayerSnapshot {
   WarriorSnapshot warrior = 22;
   SwordSnapshot sword = 23;
   TankSnapshot tank = 24;
+  ArcherSnapshot archer = 25;
 }
 
 message StatsSnapshot {
@@ -163,14 +164,17 @@ message EffectSnapshot {
   string team = 3;
   double x = 4;
   double y = 5;
-  double dir_x = 6;
-  double dir_y = 7;
-  double width = 8;
-  double radius = 9;
-  double range = 10;
-  double speed = 11;
-  uint64 created_at = 12;
-  uint64 expires_at = 13;
+  double end_x = 6;
+  double end_y = 7;
+  double dir_x = 8;
+  double dir_y = 9;
+  double width = 10;
+  double height = 11;
+  double radius = 12;
+  double range = 13;
+  double speed = 14;
+  uint64 created_at = 15;
+  uint64 expires_at = 16;
 }
 
 message SkillSnapshot {
@@ -194,6 +198,9 @@ message ControlSnapshot {
   uint64 action_locked_until_tick = 3;
   uint64 silenced_until_tick = 4;
   uint64 tenacity_until_tick = 5;
+  double move_speed_slow = 6;
+  uint64 move_speed_slow_until = 7;
+  uint64 stunned_until_tick = 8;
 }
 
 message WarriorSnapshot {
@@ -202,6 +209,13 @@ message WarriorSnapshot {
 
 message TankSnapshot {
   uint64 thunderclap_aftershock_until = 1;
+}
+
+message ArcherSnapshot {
+  int32 focus_stacks = 1;
+  uint64 focus_expire_tick = 2;
+  uint64 focus_active_until = 3;
+  double focus_attack_speed = 4;
 }
 
 message SwordSnapshot {

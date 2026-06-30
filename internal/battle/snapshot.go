@@ -53,6 +53,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Sword:          buildSwordSnapshot(entity.Sword),
 			Warrior:        buildWarriorSnapshot(entity.Warrior),
 			Tank:           buildTankSnapshot(entity.Tank),
+			Archer:         buildArcherSnapshot(entity.Archer),
 		})
 	}
 	for _, entity := range dummies {
@@ -105,8 +106,12 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Team:      string(effect.Team),
 			X:         effect.Start.X,
 			Y:         effect.Start.Y,
+			EndX:      effect.End.X,
+			EndY:      effect.End.Y,
 			DirX:      effect.Dir.X,
 			DirY:      effect.Dir.Y,
+			Width:     effect.Width,
+			Height:    effect.Height,
 			Radius:    effect.Radius,
 			Range:     effect.Range,
 			Speed:     effect.Speed,
@@ -179,8 +184,11 @@ func buildControlSnapshot(state world.ControlState) protocol.ControlSnapshot {
 		AirborneUntilTick:     state.AirborneUntilTick,
 		DashUntilTick:         state.DashUntilTick,
 		ActionLockedUntilTick: state.ActionLockedUntilTick,
+		StunnedUntilTick:      state.StunnedUntilTick,
 		SilencedUntilTick:     state.SilencedUntilTick,
 		TenacityUntilTick:     state.TenacityUntilTick,
+		MoveSpeedSlow:         state.MoveSpeedSlow,
+		MoveSpeedSlowUntil:    state.MoveSpeedSlowUntil,
 	}
 }
 
@@ -193,6 +201,15 @@ func buildWarriorSnapshot(state world.WarriorState) protocol.WarriorSnapshot {
 func buildTankSnapshot(state world.TankState) protocol.TankSnapshot {
 	return protocol.TankSnapshot{
 		ThunderclapAftershockUntil: state.ThunderclapAftershockUntil,
+	}
+}
+
+func buildArcherSnapshot(state world.ArcherState) protocol.ArcherSnapshot {
+	return protocol.ArcherSnapshot{
+		FocusStacks:      state.FocusStacks,
+		FocusExpireTick:  state.FocusExpireTick,
+		FocusActiveUntil: state.FocusActiveUntil,
+		FocusAttackSpeed: state.FocusAttackSpeed,
 	}
 }
 

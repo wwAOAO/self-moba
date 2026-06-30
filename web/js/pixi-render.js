@@ -57,19 +57,10 @@ function drawMap(frame) {
     gridLayer.stroke({ color: 0xf6d365, width: 3 });
   }
 
+  drawAttackFlash(frame);
+
   if (state.attackTargetId) {
-    const self = state.players.get(state.playerId);
     const target = targetMap().get(state.attackTargetId);
-    const showAttackFlash =
-      self?.stats && target && performance.now() < state.attackFlashUntil;
-    if (showAttackFlash) {
-      gridLayer.circle(
-        frame.offsetX + self.x * frame.scale,
-        frame.offsetY + self.y * frame.scale,
-        self.stats.attackRange * frame.scale,
-      );
-      gridLayer.stroke({ color: 0x2f6fdd, width: 2, alpha: 0.75 });
-    }
     if (target && target.id !== state.selectedTargetId) {
       gridLayer.circle(
         frame.offsetX + target.x * frame.scale,
@@ -79,6 +70,23 @@ function drawMap(frame) {
       gridLayer.stroke({ color: 0xf6d365, width: 3 });
     }
   }
+}
+
+function drawAttackFlash(frame) {
+  const flash = state.attackFlash;
+  if (!flash) {
+    return;
+  }
+  if (performance.now() >= flash.until) {
+    state.attackFlash = null;
+    return;
+  }
+  gridLayer.circle(
+    frame.offsetX + flash.x * frame.scale,
+    frame.offsetY + flash.y * frame.scale,
+    (flash.radius || 0) * frame.scale,
+  );
+  gridLayer.stroke({ color: 0x2f6fdd, width: 2, alpha: 0.75 });
 }
 
 function drawEffects(frame) {
@@ -97,6 +105,22 @@ function drawEffects(frame) {
     }
     if (effect.kind === "tank_r_impact") {
       drawTankImpactEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "basic_arrow") {
+      drawBasicArrowEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "archer_volley_arrow") {
+      drawVolleyArrowEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "archer_hawk") {
+      drawArcherHawkEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "archer_crystal_arrow") {
+      drawCrystalArrowEffect(effect, frame);
       continue;
     }
     if (effect.kind !== "wind_wall") {
@@ -179,6 +203,113 @@ function drawTankImpactEffect(effect, frame) {
   gridLayer.stroke({ color: 0x475569, width: 3, alpha: 0.85 * alpha });
   gridLayer.circle(x, y, Math.max(8, radius * 0.12));
   gridLayer.fill({ color: 0xe2e8f0, alpha: 0.22 * alpha });
+}
+
+function drawBasicArrowEffect(effect, frame) {
+  drawArrowProjectile(effect, frame, 0xf8d36a, 0xf59e0b);
+}
+
+function drawVolleyArrowEffect(effect, frame) {
+  drawArrowProjectile(effect, frame, 0xbae6fd, 0x38bdf8);
+}
+
+function drawCrystalArrowEffect(effect, frame) {
+  drawArrowProjectile(effect, frame, 0xc4b5fd, 0x7c3aed);
+  const tick = interpolatedTick();
+  const traveled =
+    Math.max(0, tick - (effect.createdAt || tick)) * (effect.speed || 0);
+  const x =
+    frame.offsetX + (effect.x + (effect.dirX || 1) * traveled) * frame.scale;
+  const y =
+    frame.offsetY + (effect.y + (effect.dirY || 0) * traveled) * frame.scale;
+  gridLayer.circle(x, y, Math.max(8, (effect.radius || 28) * frame.scale));
+  gridLayer.stroke({ color: 0xa78bfa, width: 2, alpha: 0.65 });
+}
+
+function drawArcherHawkEffect(effect, frame) {
+  const tick = interpolatedTick();
+  const arriveTick = effect.height || effect.createdAt || tick;
+  const arrived = tick >= arriveTick;
+  const progress = arrived
+    ? 1
+    : clamp(
+        (tick - (effect.createdAt || tick)) /
+          Math.max(1, arriveTick - (effect.createdAt || tick)),
+        0,
+        1,
+      );
+  const worldX =
+    (effect.x || 0) +
+    ((effect.endX || effect.x || 0) - (effect.x || 0)) * progress;
+  const worldY =
+    (effect.y || 0) +
+    ((effect.endY || effect.y || 0) - (effect.y || 0)) * progress;
+  const x = frame.offsetX + worldX * frame.scale;
+  const y = frame.offsetY + worldY * frame.scale;
+  const radius = Math.max(14, (effect.radius || 80) * frame.scale);
+  if (arrived) {
+    const alpha = effectAlpha(effect);
+    gridLayer.circle(x, y, radius);
+    gridLayer.fill({ color: 0x38bdf8, alpha: 0.08 * alpha });
+    gridLayer.circle(x, y, radius);
+    gridLayer.stroke({ color: 0x0284c7, width: 2, alpha: 0.7 * alpha });
+  }
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const size = arrived ? 10 : 14;
+  gridLayer
+    .moveTo(x + Math.cos(angle) * size, y + Math.sin(angle) * size)
+    .lineTo(
+      x + Math.cos(angle + 2.45) * size,
+      y + Math.sin(angle + 2.45) * size,
+    )
+    .lineTo(
+      x + Math.cos(angle + Math.PI) * size * 0.35,
+      y + Math.sin(angle + Math.PI) * size * 0.35,
+    )
+    .lineTo(
+      x + Math.cos(angle - 2.45) * size,
+      y + Math.sin(angle - 2.45) * size,
+    )
+    .closePath();
+  gridLayer.fill({ color: 0x0ea5e9, alpha: arrived ? 0.8 : 0.95 });
+}
+
+function drawArrowProjectile(effect, frame, shaftColor, headColor) {
+  const tick = interpolatedTick();
+  const traveled =
+    Math.max(0, tick - (effect.createdAt || tick)) * (effect.speed || 0);
+  const x =
+    frame.offsetX + (effect.x + (effect.dirX || 1) * traveled) * frame.scale;
+  const y =
+    frame.offsetY + (effect.y + (effect.dirY || 0) * traveled) * frame.scale;
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const length = 26;
+  const width = 5;
+  gridLayer
+    .moveTo(
+      x + Math.cos(angle) * length * 0.5,
+      y + Math.sin(angle) * length * 0.5,
+    )
+    .lineTo(
+      x - Math.cos(angle) * length * 0.5,
+      y - Math.sin(angle) * length * 0.5,
+    );
+  gridLayer.stroke({ color: shaftColor, width: 3, alpha: 0.95 });
+  gridLayer
+    .moveTo(
+      x + Math.cos(angle) * length * 0.5,
+      y + Math.sin(angle) * length * 0.5,
+    )
+    .lineTo(
+      x + Math.cos(angle + Math.PI * 0.82) * width,
+      y + Math.sin(angle + Math.PI * 0.82) * width,
+    )
+    .lineTo(
+      x + Math.cos(angle - Math.PI * 0.82) * width,
+      y + Math.sin(angle - Math.PI * 0.82) * width,
+    )
+    .closePath();
+  gridLayer.fill({ color: headColor, alpha: 0.95 });
 }
 
 function effectAlpha(effect) {
@@ -594,11 +725,17 @@ function abnormalStatuses(target) {
   if ((target.control?.actionLockedUntilTick || 0) > tick) {
     statuses.push("Locked");
   }
+  if ((target.control?.stunnedUntilTick || 0) > tick) {
+    statuses.push("Stun");
+  }
   if ((target.control?.silencedUntilTick || 0) > tick) {
     statuses.push("Silence");
   }
   if ((target.control?.tenacityUntilTick || 0) > tick) {
     statuses.push("Tenacity");
+  }
+  if ((target.control?.moveSpeedSlowUntil || 0) > tick) {
+    statuses.push("Slow");
   }
   return statuses;
 }

@@ -14,7 +14,8 @@ function updatePositionLabel() {
     return;
   }
   const tick = Number(els.tick.textContent || 0);
-  els.skills.innerHTML = formatSkillCooldowns(self, tick);
+  els.skills.innerHTML =
+    formatSkillCooldowns(self, tick) + formatHeroSkillState(self, tick);
 }
 
 function formatSkillCooldowns(player, tick) {
@@ -33,10 +34,14 @@ function formatSkillCooldowns(player, tick) {
       const level = skill?.level || 0;
       const maxLevel = maxSkillLevel(slot);
       const disabled = !canSpend || level >= maxLevel ? "disabled" : "";
+      const chargeText =
+        (player.heroId || els.heroId.value) === "archer" && slot === "e"
+          ? `${skill?.stacks || 0}/2`
+          : `${remainSeconds}s`;
       return `<div class="skill-row">
                       <strong>${slot.toUpperCase()}</strong>
                       <span>${level}/${maxLevel}</span>
-                      <span>${remainSeconds}s</span>
+                      <span>${chargeText}</span>
                       <button type="button" class="icon-button" data-skill-upgrade="${slot}" ${disabled}>+</button>
                   </div>`;
     })
@@ -45,6 +50,25 @@ function formatSkillCooldowns(player, tick) {
 
 function maxSkillLevel(slot) {
   return slot === "r" ? 3 : 5;
+}
+
+function formatHeroSkillState(player, tick) {
+  if ((player.heroId || els.heroId.value) !== "archer") {
+    return "";
+  }
+  const archer = player.archer || {};
+  if ((archer.focusActiveUntil || 0) > tick) {
+    const remain = ((archer.focusActiveUntil - tick) / state.tickRate).toFixed(
+      1,
+    );
+    return `<div class="skill-list"><div class="skill-row"><strong>Focus</strong><span>Active</span><span>+${Math.round((archer.focusAttackSpeed || 0) * 100)}%</span><span>${remain}s</span></div></div>`;
+  }
+  const stacks = archer.focusStacks || 0;
+  if (stacks <= 0) {
+    return "";
+  }
+  const remain = Math.max(0, (archer.focusExpireTick || 0) - tick);
+  return `<div class="skill-list"><div class="skill-row"><strong>Focus</strong><span>${stacks}/4</span><span>${(remain / state.tickRate).toFixed(1)}s</span><span></span></div></div>`;
 }
 
 function skillIdForSlot(heroId, slot) {

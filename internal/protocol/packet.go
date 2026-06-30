@@ -107,6 +107,7 @@ type PlayerSnapshot struct {
 	Sword          SwordSnapshot   `json:"sword"`
 	Warrior        WarriorSnapshot `json:"warrior"`
 	Tank           TankSnapshot    `json:"tank"`
+	Archer         ArcherSnapshot  `json:"archer"`
 }
 
 type DummySnapshot struct {
@@ -140,9 +141,12 @@ type EffectSnapshot struct {
 	Team      string  `json:"team"`
 	X         float64 `json:"x"`
 	Y         float64 `json:"y"`
+	EndX      float64 `json:"endX"`
+	EndY      float64 `json:"endY"`
 	DirX      float64 `json:"dirX"`
 	DirY      float64 `json:"dirY"`
 	Width     float64 `json:"width"`
+	Height    float64 `json:"height"`
 	Radius    float64 `json:"radius"`
 	Range     float64 `json:"range"`
 	Speed     float64 `json:"speed"`
@@ -198,11 +202,14 @@ type PassiveSnapshot struct {
 }
 
 type ControlSnapshot struct {
-	AirborneUntilTick     uint64 `json:"airborneUntilTick"`
-	DashUntilTick         uint64 `json:"dashUntilTick"`
-	ActionLockedUntilTick uint64 `json:"actionLockedUntilTick"`
-	SilencedUntilTick     uint64 `json:"silencedUntilTick"`
-	TenacityUntilTick     uint64 `json:"tenacityUntilTick"`
+	AirborneUntilTick     uint64  `json:"airborneUntilTick"`
+	DashUntilTick         uint64  `json:"dashUntilTick"`
+	ActionLockedUntilTick uint64  `json:"actionLockedUntilTick"`
+	StunnedUntilTick      uint64  `json:"stunnedUntilTick"`
+	SilencedUntilTick     uint64  `json:"silencedUntilTick"`
+	TenacityUntilTick     uint64  `json:"tenacityUntilTick"`
+	MoveSpeedSlow         float64 `json:"moveSpeedSlow"`
+	MoveSpeedSlowUntil    uint64  `json:"moveSpeedSlowUntil"`
 }
 
 type WarriorSnapshot struct {
@@ -211,6 +218,13 @@ type WarriorSnapshot struct {
 
 type TankSnapshot struct {
 	ThunderclapAftershockUntil uint64 `json:"thunderclapAftershockUntil"`
+}
+
+type ArcherSnapshot struct {
+	FocusStacks      int     `json:"focusStacks"`
+	FocusExpireTick  uint64  `json:"focusExpireTick"`
+	FocusActiveUntil uint64  `json:"focusActiveUntil"`
+	FocusAttackSpeed float64 `json:"focusAttackSpeed"`
 }
 
 type SwordSnapshot struct {

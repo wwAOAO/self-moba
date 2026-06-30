@@ -36,6 +36,7 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 		entity.Passive = w.passiveStateForHero(hero)
 		entity.Sword = swordStateForHero(hero.HeroID)
 		entity.Warrior = WarriorState{}
+		entity.Archer = ArcherState{}
 		entity.Tank = TankState{}
 		entity.Death = DeathState{}
 		return

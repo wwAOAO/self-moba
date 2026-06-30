@@ -11,6 +11,9 @@ func (w *World) applyTankQ(entity *Entity, cast protocol.CastInput, state SkillS
 	if entity == nil || state.Level <= 0 {
 		return
 	}
+	if entity.Tank.SeismicShardPending {
+		return
+	}
 	target := w.entities[cast.TargetID]
 	if target == nil {
 		target = w.tankQTarget(entity, Vector2{X: cast.TargetX, Y: cast.TargetY}, skill)
@@ -25,11 +28,38 @@ func (w *World) applyTankQ(entity *Entity, cast protocol.CastInput, state SkillS
 	if entity.Stats.MP < manaCost {
 		return
 	}
+	entity.Stats.MP -= manaCost
+	windupTicks := secondsToTicks(skillMetaRange(skill, "castWindupSeconds", 0.25), tickRate)
+	if windupTicks < 1 {
+		windupTicks = 1
+	}
+	entity.Tank.SeismicShardPending = true
+	entity.Tank.SeismicShardReleaseTick = tick + windupTicks
+	entity.Tank.SeismicShardTargetID = target.ID
+	entity.Tank.SeismicShardLevel = state.Level
+	entity.Control.ActionLockedUntilTick = entity.Tank.SeismicShardReleaseTick
+	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{8000, 8000, 8000, 8000, 8000}), tickRate)
+	entity.Skills[tankQSkillID] = state
+}
+
+func (w *World) releaseTankQ(entity *Entity, tick uint64, tickRate int) {
+	if entity == nil || entity.HeroID != tankHeroID || !entity.Tank.SeismicShardPending || tick < entity.Tank.SeismicShardReleaseTick {
+		return
+	}
+	target := w.entities[entity.Tank.SeismicShardTargetID]
+	level := entity.Tank.SeismicShardLevel
+	entity.Tank.SeismicShardPending = false
+	entity.Tank.SeismicShardReleaseTick = 0
+	entity.Tank.SeismicShardTargetID = ""
+	entity.Tank.SeismicShardLevel = 0
+	if !canAttackTarget(entity, target) {
+		return
+	}
+	skill := w.skillConfig(tankQSkillID)
 	dx, dy := normalize(target.Position.X-entity.Position.X, target.Position.Y-entity.Position.Y)
 	if dx == 0 && dy == 0 {
 		dx = 1
 	}
-	entity.Stats.MP -= manaCost
 	qRange := skillRange(skill, 625)
 	speedPerSecond := skillMetaRange(skill, "projectileSpeed", 1200)
 	speedPerTick := speedPerSecond / float64(tickRate)
@@ -55,16 +85,14 @@ func (w *World) applyTankQ(entity *Entity, cast protocol.CastInput, state SkillS
 		SpeedPerTick: speedPerTick,
 		Range:        qRange,
 		Radius:       skillMetaRange(skill, "projectileRadius", 45),
-		Damage:       state.Level,
-		EffectRatio:  skillMetaListByLevel(skill, "moveSpeedSteal", state.Level, []float64{0.2, 0.25, 0.3, 0.35, 0.4}),
+		Damage:       level,
+		EffectRatio:  skillMetaListByLevel(skill, "moveSpeedSteal", level, []float64{0.2, 0.25, 0.3, 0.35, 0.4}),
 		EffectTicks:  secondsToTicks(skillMetaRange(skill, "moveSpeedStealSeconds", 3), tickRate),
 		CreatedAt:    tick,
 		ExpiresAt:    tick + lifeTicks + 1,
 		HitIDs:       make(map[string]bool),
 	}
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{8000, 8000, 8000, 8000, 8000}), tickRate)
 	w.lockAttackAfterCast(entity, tick, tickRate)
-	entity.Skills[tankQSkillID] = state
 }
 
 func (w *World) tankQTarget(entity *Entity, targetPoint Vector2, skill config.SkillConfig) *Entity {

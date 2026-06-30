@@ -19,9 +19,12 @@ type SkillEffect struct {
 	Kind      string
 	Team      Team
 	Start     Vector2
+	End       Vector2
 	Dir       Vector2
 	Range     float64
 	Radius    float64
+	Width     float64
+	Height    float64
 	Speed     float64
 	CreatedAt uint64
 	ExpiresAt uint64
@@ -34,12 +37,16 @@ type Projectile struct {
 	SourceID     string
 	TargetID     string
 	SkillID      string
+	GroupID      string
 	Position     Vector2
 	Start        Vector2
 	Dir          Vector2
 	SpeedPerTick float64
+	SpeedMin     float64
+	SpeedMax     float64
 	Range        float64
 	Radius       float64
+	DisplayRange float64
 	Traveled     float64
 	Damage       int
 	KnockupTicks uint64
@@ -70,6 +77,7 @@ type Entity struct {
 	Passive      PassiveState
 	Sword        SwordState
 	Warrior      WarriorState
+	Archer       ArcherState
 	Tank         TankState
 	Death        DeathState
 	Intent       IntentState
@@ -153,6 +161,7 @@ type ControlState struct {
 	DashStart             Vector2
 	DashEnd               Vector2
 	ActionLockedUntilTick uint64
+	StunnedUntilTick      uint64
 	SilencedUntilTick     uint64
 	TenacityUntilTick     uint64
 	MoveSpeedBonusFlat    float64
@@ -167,6 +176,11 @@ type SwordState struct {
 	SweepingBladeStacks      int
 	SweepingBladeTargetUntil map[string]uint64
 	LastBreathUntilTick      uint64
+	QPending                 bool
+	QReleaseTick             uint64
+	QTarget                  Vector2
+	QForm                    string
+	QRange                   float64
 }
 
 type WarriorState struct {
@@ -186,6 +200,23 @@ type WarriorState struct {
 	JudgmentSpinsRemaining       int
 	JudgmentLevel                int
 	JudgmentHits                 map[string]int
+	JusticePending               bool
+	JusticeReleaseTick           uint64
+	JusticeTargetID              string
+	JusticeLevel                 int
+}
+
+type ArcherState struct {
+	FocusStacks             int
+	FocusExpireTick         uint64
+	FocusActiveUntil        uint64
+	FocusActiveLevel        int
+	FocusAttackSpeed        float64
+	FocusBonusADRatio       float64
+	CrystalArrowPending     bool
+	CrystalArrowReleaseTick uint64
+	CrystalArrowTarget      Vector2
+	CrystalArrowLevel       int
 }
 
 type TankState struct {
@@ -193,6 +224,10 @@ type TankState struct {
 	ThunderclapEmpowerUntil    uint64
 	ThunderclapAftershockUntil uint64
 	ThunderclapLevel           int
+	SeismicShardPending        bool
+	SeismicShardReleaseTick    uint64
+	SeismicShardTargetID       string
+	SeismicShardLevel          int
 	UnstoppableCastPending     bool
 	UnstoppableCastTarget      Vector2
 	UnstoppableCastLevel       int

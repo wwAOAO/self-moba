@@ -176,6 +176,7 @@ func (w *World) upgradeSkill(entity *Entity, slot string) {
 	state.Level++
 	entity.SkillPoints--
 	entity.Skills[skillID] = state
+	w.refreshArcherSkillOnUpgrade(entity, skillID)
 	w.refreshTankWPassive(entity)
 }
 

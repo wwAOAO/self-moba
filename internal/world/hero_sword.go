@@ -15,6 +15,9 @@ func (w *World) lockAttackAfterCast(entity *Entity, tick uint64, tickRate int) {
 }
 
 func (w *World) applySwordQ(entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	if entity.Sword.QPending {
+		return
+	}
 	if tick > state.StacksExpireTick {
 		state.Stacks = 0
 	}
@@ -28,16 +31,41 @@ func (w *World) applySwordQ(entity *Entity, cast protocol.CastInput, state Skill
 		form = "whirlwind"
 		qRange = skillMetaRange(skill, "whirlwindRange", 900)
 	}
+	windupTicks := w.swordQWindupTicks(entity, skill, tickRate)
+	entity.Sword.QPending = true
+	entity.Sword.QReleaseTick = tick + windupTicks
+	entity.Sword.QTarget = Vector2{X: cast.TargetX, Y: cast.TargetY}
+	entity.Sword.QForm = form
+	entity.Sword.QRange = qRange
+	entity.Control.ActionLockedUntilTick = tick + windupTicks
+	state.CooldownUntilTick = tick + w.swordQCooldownTicks(entity, skill, state.Level, tickRate)
+	entity.Skills[swordQSkillID] = state
+}
+
+func (w *World) releaseSwordQ(entity *Entity, tick uint64, tickRate int) {
+	if entity == nil || entity.HeroID != swordHeroID || !entity.Sword.QPending || tick < entity.Sword.QReleaseTick {
+		return
+	}
+	skill := w.skillConfig(swordQSkillID)
+	state := entity.Skills[swordQSkillID]
+	form := entity.Sword.QForm
+	qRange := entity.Sword.QRange
+	targetPoint := entity.Sword.QTarget
+	entity.Sword.QPending = false
+	entity.Sword.QReleaseTick = 0
+	entity.Sword.QTarget = Vector2{}
+	entity.Sword.QForm = ""
+	entity.Sword.QRange = 0
+	hasWhirlwindStack := state.Stacks >= 2
 	if form == "whirlwind" {
-		w.spawnSwordWhirlwind(entity, Vector2{X: cast.TargetX, Y: cast.TargetY}, qRange, skill, tick, tickRate)
+		w.spawnSwordWhirlwind(entity, targetPoint, qRange, skill, tick, tickRate)
 		w.lockAttackAfterCast(entity, tick, tickRate)
 		state.Stacks = 0
 		state.StacksExpireTick = 0
-		state.CooldownUntilTick = tick + w.swordQCooldownTicks(entity, skill, state.Level, tickRate)
 		entity.Skills[swordQSkillID] = state
 		return
 	}
-	targets := w.swordQTargets(entity, Vector2{X: cast.TargetX, Y: cast.TargetY}, qRange, form, skill)
+	targets := w.swordQTargets(entity, targetPoint, qRange, form, skill)
 	for _, target := range targets {
 		damage := w.swordQDamage(entity, target, skill, tick)
 		target.Combat.LastHitTick = tick
@@ -69,9 +97,40 @@ func (w *World) applySwordQ(entity *Entity, cast protocol.CastInput, state Skill
 			state.StacksExpireTick = tick + secondsToTicks(skillMetaRange(skill, "stackDurationSeconds", swordQStackTicks), tickRate)
 		}
 	}
-	state.CooldownUntilTick = tick + w.swordQCooldownTicks(entity, skill, state.Level, tickRate)
 	w.lockAttackAfterCast(entity, tick, tickRate)
 	entity.Skills[swordQSkillID] = state
+}
+
+func (w *World) swordQWindupTicks(entity *Entity, skill config.SkillConfig, tickRate int) uint64 {
+	seconds := swordQWindupSeconds(entity, skill)
+	ticks := secondsToTicks(seconds, tickRate)
+	if ticks < 1 {
+		return 1
+	}
+	return ticks
+}
+
+func swordQWindupSeconds(entity *Entity, skill config.SkillConfig) float64 {
+	base := skillMetaRange(skill, "castWindupSeconds", 0.54)
+	minimum := skillMetaRange(skill, "minCastWindupSeconds", 0.18)
+	divisor := skillMetaRange(skill, "castWindupAttackSpeedDivisor", 1.667)
+	capBonus := skillMetaRange(skill, "castWindupAttackSpeedCap", 1.111)
+	bonus := 0.0
+	if entity != nil {
+		bonus = entity.Stats.AttackSpeedBonus
+	}
+	if bonus >= capBonus {
+		return minimum
+	}
+	bonus = clamp(bonus, 0, capBonus)
+	seconds := base
+	if divisor > 0 {
+		seconds = base * (1 - bonus/divisor)
+	}
+	if seconds < minimum {
+		return minimum
+	}
+	return seconds
 }
 
 func swordEQWindowActive(entity *Entity, skill config.SkillConfig, tick uint64, tickRate int) bool {

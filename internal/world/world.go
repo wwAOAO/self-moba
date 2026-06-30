@@ -13,6 +13,7 @@ const (
 	MaxUltSkillLevel   = 3
 	swordHeroID        = "sword"
 	warriorHeroID      = "warrior"
+	archerHeroID       = "archer"
 	tankHeroID         = "tank"
 	critRollModulo     = 10000
 	respawnSeconds     = 20
@@ -29,6 +30,10 @@ const (
 	tankWSkillID       = "guard"
 	tankESkillID       = "taunt"
 	tankRSkillID       = "earthquake"
+	archerQSkillID     = "shot"
+	archerWSkillID     = "roll"
+	archerESkillID     = "trap"
+	archerRSkillID     = "arrow_rain"
 	windWallDuration   = 4
 )
 
@@ -46,21 +51,23 @@ type World struct {
 	nextEffectID     int
 	windWalls        map[string]WindWall
 	projectiles      map[string]*Projectile
+	projectileHits   map[string]map[string]bool
 	skillEffects     map[string]SkillEffect
 }
 
 func NewWorld(heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig) *World {
 	w := &World{
-		width:        DefaultMapWidth,
-		height:       DefaultMapHeight,
-		entities:     make(map[string]*Entity),
-		heroes:       heroes,
-		skills:       skills,
-		levels:       levels,
-		rewards:      rewards,
-		windWalls:    make(map[string]WindWall),
-		projectiles:  make(map[string]*Projectile),
-		skillEffects: make(map[string]SkillEffect),
+		width:          DefaultMapWidth,
+		height:         DefaultMapHeight,
+		entities:       make(map[string]*Entity),
+		heroes:         heroes,
+		skills:         skills,
+		levels:         levels,
+		rewards:        rewards,
+		windWalls:      make(map[string]WindWall),
+		projectiles:    make(map[string]*Projectile),
+		projectileHits: make(map[string]map[string]bool),
+		skillEffects:   make(map[string]SkillEffect),
 	}
 	w.SpawnBattleUnits()
 	w.SpawnTrainingDummy()
@@ -79,6 +86,12 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		if entity.Kind != EntityKindPlayer {
 			continue
 		}
+		w.expireArcherFocus(entity, tick)
+		w.tickArcherHawkCharges(entity, tick, tickRate)
+		w.releaseArcherCrystalArrow(entity, tick, tickRate)
+		w.releaseSwordQ(entity, tick, tickRate)
+		w.releaseWarriorR(entity, tick, tickRate)
+		w.releaseTankQ(entity, tick, tickRate)
 		w.tickDashMovement(entity, tick, tickRate)
 		w.tickRespawn(entity, tick)
 		if entity.Death.Dead || entity.Stats.HP <= 0 {
@@ -133,7 +146,9 @@ func (w *World) tickRespawn(entity *Entity, tick uint64) {
 	entity.Stats.MP = entity.Stats.MaxMP
 	entity.Intent = IntentState{}
 	entity.Control = ControlState{}
+	entity.Sword = swordStateForHero(entity.HeroID)
 	entity.Warrior = WarriorState{}
+	entity.Archer = ArcherState{}
 	entity.Tank = TankState{}
 	entity.Passive.Shield = 0
 	entity.Passive.MaxShield = 0

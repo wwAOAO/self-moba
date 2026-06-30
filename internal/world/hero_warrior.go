@@ -235,11 +235,41 @@ func (w *World) applyWarriorR(entity *Entity, cast protocol.CastInput, state Ski
 	if entity == nil || state.Level <= 0 {
 		return
 	}
+	if entity.Warrior.JusticePending {
+		return
+	}
 	target := w.warriorRTarget(entity, Vector2{X: cast.TargetX, Y: cast.TargetY}, skill)
 	if target == nil {
 		return
 	}
-	damage := warriorRDamage(target, skill, state.Level)
+	windupTicks := secondsToTicks(skillMetaRange(skill, "castWindupSeconds", 0.435), tickRate)
+	if windupTicks < 1 {
+		windupTicks = 1
+	}
+	entity.Warrior.JusticePending = true
+	entity.Warrior.JusticeReleaseTick = tick + windupTicks
+	entity.Warrior.JusticeTargetID = target.ID
+	entity.Warrior.JusticeLevel = state.Level
+	entity.Control.ActionLockedUntilTick = entity.Warrior.JusticeReleaseTick
+	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{120000, 100000, 80000}), tickRate)
+	entity.Skills[warriorRSkillID] = state
+}
+
+func (w *World) releaseWarriorR(entity *Entity, tick uint64, tickRate int) {
+	if entity == nil || entity.HeroID != warriorHeroID || !entity.Warrior.JusticePending || tick < entity.Warrior.JusticeReleaseTick {
+		return
+	}
+	target := w.entities[entity.Warrior.JusticeTargetID]
+	level := entity.Warrior.JusticeLevel
+	entity.Warrior.JusticePending = false
+	entity.Warrior.JusticeReleaseTick = 0
+	entity.Warrior.JusticeTargetID = ""
+	entity.Warrior.JusticeLevel = 0
+	if !canAttackTarget(entity, target) {
+		return
+	}
+	skill := w.skillConfig(warriorRSkillID)
+	damage := warriorRDamage(target, skill, level)
 	target.Combat.LastHitTick = tick
 	if target.Kind != EntityKindDummy {
 		wasAlive := target.Stats.HP > 0
@@ -253,9 +283,7 @@ func (w *World) applyWarriorR(entity *Entity, cast protocol.CastInput, state Ski
 		target.Combat.LastDamage = trueDamageAfterReduction(target, damage, tick)
 		target.Combat.LastDamageType = "true"
 	}
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{120000, 100000, 80000}), tickRate)
 	w.lockAttackAfterCast(entity, tick, tickRate)
-	entity.Skills[warriorRSkillID] = state
 }
 
 func (w *World) warriorRTarget(entity *Entity, targetPoint Vector2, skill config.SkillConfig) *Entity {

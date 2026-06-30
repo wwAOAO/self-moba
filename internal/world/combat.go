@@ -51,6 +51,12 @@ func (w *World) applyAttack(attacker *Entity, target *Entity, tick uint64, tickR
 		return
 	}
 
+	if isRangedBasicAttacker(attacker) {
+		w.fireBasicAttackProjectile(attacker, target, tick, tickRate)
+		attacker.Combat.NextAttackTick = tick + attackCooldownTicks(EffectiveAttackSpeedAtTick(attacker, tick), tickRate)
+		return
+	}
+
 	damage := w.attackDamage(attacker, target, tick)
 	target.Combat.LastHitTick = tick
 	if target.Kind != EntityKindDummy {
@@ -70,12 +76,70 @@ func (w *World) applyAttack(attacker *Entity, target *Entity, tick uint64, tickR
 	w.consumeWarriorQ(attacker, target, tick, tickRate)
 }
 
+func isRangedBasicAttacker(attacker *Entity) bool {
+	return attacker != nil && attacker.HeroID == archerHeroID
+}
+
+func (w *World) fireBasicAttackProjectile(attacker *Entity, target *Entity, tick uint64, tickRate int) {
+	if attacker == nil || target == nil {
+		return
+	}
+	dx, dy := normalize(target.Position.X-attacker.Position.X, target.Position.Y-attacker.Position.Y)
+	if dx == 0 && dy == 0 {
+		dx = 1
+	}
+	speedPerSecond := 1400.0
+	if tickRate > 0 {
+		speedPerSecond /= float64(tickRate)
+	}
+	w.nextProjectileID++
+	id := "projectile:basic_arrow:" + strconv.Itoa(w.nextProjectileID)
+	w.projectiles[id] = &Projectile{
+		ID:           id,
+		Kind:         "basic_arrow",
+		Team:         attacker.Team,
+		SourceID:     attacker.ID,
+		TargetID:     target.ID,
+		Position:     attacker.Position,
+		Start:        attacker.Position,
+		Dir:          Vector2{X: dx, Y: dy},
+		SpeedPerTick: speedPerSecond,
+		Range:        w.attackReachAtTick(attacker, target, tick) + 220,
+		Radius:       10,
+		DisplayRange: attacker.Stats.AttackRange,
+		CreatedAt:    tick,
+		ExpiresAt:    tick + secondsToTicks(2, tickRate),
+		HitIDs:       make(map[string]bool),
+	}
+}
+
 func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64) int {
 	attack := attacker.Stats.Attack
-	if w.attackCrits(attacker, target, tick) {
+	if attacker.HeroID == archerHeroID {
+		attack *= w.archerBasicAttackMultiplier(attacker, target, tick)
+	} else if w.attackCrits(attacker, target, tick) {
 		attack *= w.critDamageMultiplier(attacker)
 	}
 	return physicalDamageAfterResistance(attacker, target, attack+w.warriorQBonusDamage(attacker, tick)+w.tankWBonusDamage(attacker, tick), tick)
+}
+
+func (w *World) archerBasicAttackMultiplier(attacker *Entity, target *Entity, tick uint64) float64 {
+	if attacker == nil || target == nil || attacker.HeroID != archerHeroID {
+		return 1
+	}
+	if target.Control.MoveSpeedSlow <= 0 || target.Control.MoveSpeedSlowUntil == 0 || tick >= target.Control.MoveSpeedSlowUntil {
+		return 1
+	}
+	skill := w.heroPassiveSkill(attacker)
+	multiplier := skillMetaRange(skill, "slowedTargetDamageMultiplier", 1.1)
+	critRatio := skillMetaRange(skill, "critChanceDamageRatio", 1)
+	if critRatio > 0 {
+		multiplier += w.critChance(attacker) * critRatio
+	}
+	if multiplier < 1 {
+		return 1
+	}
+	return multiplier
 }
 
 func (w *World) warriorQBonusDamage(attacker *Entity, tick uint64) float64 {
@@ -401,6 +465,7 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 	damage = w.applyShield(source, target, damage, tickRate)
 	target.Combat.LastDamage = damage
 	target.Combat.LastDamageType = damageType
+	w.applyArcherFrostShot(source, target, target.Combat.LastHitTick, tickRate)
 	w.breakTankGraniteShield(target, target.Combat.LastHitTick)
 	if damage <= 0 {
 		return
@@ -410,6 +475,42 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 		target.Stats.HP = 0
 	}
 	w.breakWarriorToughness(source, target, target.Combat.LastHitTick)
+}
+
+func (w *World) applyArcherFrostShot(source *Entity, target *Entity, tick uint64, tickRate int) {
+	if source == nil || target == nil || source.HeroID != archerHeroID {
+		return
+	}
+	skill := w.heroPassiveSkill(source)
+	slow := archerFrostSlowRatio(source.Level, skill)
+	if w.attackCrits(source, target, tick) {
+		slow *= skillMetaRange(skill, "critSlowMultiplier", 2)
+	}
+	duration := secondsToTicks(skillMetaRange(skill, "slowSeconds", 2), tickRate)
+	applyMoveSpeedSlow(target, slow, tick+duration)
+}
+
+func archerFrostSlowRatio(level int, skill config.SkillConfig) float64 {
+	minSlow := skillMetaRange(skill, "slowMin", 0.2)
+	maxSlow := skillMetaRange(skill, "slowMax", 0.3)
+	level = clampInt(level, MinHeroLevel, MaxHeroLevel)
+	if MaxHeroLevel <= MinHeroLevel {
+		return maxSlow
+	}
+	progress := float64(level-MinHeroLevel) / float64(MaxHeroLevel-MinHeroLevel)
+	return minSlow + (maxSlow-minSlow)*progress
+}
+
+func applyMoveSpeedSlow(target *Entity, slow float64, until uint64) {
+	if target == nil || slow <= 0 || until == 0 {
+		return
+	}
+	slow = clamp(slow, 0, 1)
+	if until < target.Control.MoveSpeedSlowUntil && slow <= target.Control.MoveSpeedSlow {
+		return
+	}
+	target.Control.MoveSpeedSlow = slow
+	target.Control.MoveSpeedSlowUntil = until
 }
 
 func (w *World) skillConfig(skillID string) config.SkillConfig {

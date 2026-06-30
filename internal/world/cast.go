@@ -30,6 +30,50 @@ func (w *World) applyCast(entity *Entity, cast protocol.CastInput, tick uint64, 
 	if tick < state.CooldownUntilTick {
 		return
 	}
+	if entity.HeroID == archerHeroID && cast.SkillID == archerQSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyArcherQ(entity, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == archerHeroID && cast.SkillID == archerWSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyArcherW(entity, cast, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == archerHeroID && cast.SkillID == archerESkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyArcherE(entity, cast, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == archerHeroID && cast.SkillID == archerRSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyArcherR(entity, cast, state, skill, tick, tickRate)
+		return
+	}
 	if entity.HeroID == swordHeroID && cast.SkillID == swordQSkillID {
 		var skill config.SkillConfig
 		if skills != nil {

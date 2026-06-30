@@ -52,6 +52,7 @@ function applySnapshot(snapshot) {
   state.showDummies = els.showDummies.checked;
   const units = visibleUnits(snapshot);
   state.units = new Map(units.map((unit) => [unit.id, normalizeUnit(unit)]));
+  updateEffectFlashes(snapshot.effects || []);
   state.effects = snapshot.effects || [];
   const currentTargets = targetMap();
   if (
@@ -76,14 +77,48 @@ function applySnapshot(snapshot) {
   updatePositionLabel();
 }
 
+function updateEffectFlashes(effects) {
+  const visibleEffectIds = new Set();
+  for (const effect of effects) {
+    if (!effect.id) {
+      continue;
+    }
+    visibleEffectIds.add(effect.id);
+    if (state.seenEffectIds.has(effect.id)) {
+      continue;
+    }
+    state.seenEffectIds.add(effect.id);
+    if (effect.kind === "basic_arrow") {
+      const self = state.players.get(state.playerId);
+      state.attackFlash = {
+        x: effect.x,
+        y: effect.y,
+        radius: effect.width || self?.stats?.attackRange || 600,
+        until: performance.now() + 220,
+      };
+    }
+  }
+  for (const id of state.seenEffectIds) {
+    if (!visibleEffectIds.has(id)) {
+      state.seenEffectIds.delete(id);
+    }
+  }
+}
+
 function updateDamageEffects(previousTargets, currentTargets) {
   for (const [id, current] of currentTargets) {
     const previous = previousTargets.get(id);
     if (!previous || current.lastHitTick <= previous.lastHitTick) {
       continue;
     }
-    if (id === state.attackTargetId) {
-      state.attackFlashUntil = performance.now() + 180;
+    const self = state.players.get(state.playerId);
+    if (id === state.attackTargetId && self?.heroId !== "archer") {
+      state.attackFlash = {
+        x: self.x,
+        y: self.y,
+        radius: self.stats?.attackRange || 0,
+        until: performance.now() + 180,
+      };
     }
     spawnDamageText(
       current,
@@ -103,11 +138,12 @@ function resetClientState() {
   state.players = new Map();
   state.units = new Map();
   state.effects = [];
+  state.seenEffectIds.clear();
   state.moveTarget = null;
   state.selectedTargetId = "";
   state.attackTargetId = "";
   state.attackMoveArmed = false;
-  state.attackFlashUntil = 0;
+  state.attackFlash = null;
   state.skillPreview = null;
   state.snapshotTick = 0;
   state.snapshotAtMs = 0;
