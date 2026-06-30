@@ -25,6 +25,8 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 		Effects: make([]protocol.EffectSnapshot, 0, len(walls)+len(effects)),
 	}
 	for _, entity := range players {
+		stats := buildStatsSnapshot(entity.Stats)
+		stats.MoveSpeed = world.EffectiveMoveSpeedAtTick(&entity, tick)
 		snapshot.Players = append(snapshot.Players, protocol.PlayerSnapshot{
 			PlayerID:     entity.PlayerID,
 			HeroID:       entity.HeroID,
@@ -37,7 +39,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			NextLevelExp: entity.NextLevelExp,
 			X:            entity.Position.X,
 			Y:            entity.Position.Y,
-			Stats:        buildStatsSnapshot(entity.Stats),
+			Stats:        stats,
 			Skills:       buildSkillSnapshots(entity.Skills),
 			Passive:      buildPassiveSnapshot(entity.Passive),
 			LastHitTick:  entity.Combat.LastHitTick,
@@ -46,6 +48,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			RespawnTick:  entity.Death.RespawnTick,
 			RespawnIn:    respawnInSeconds(tick, entity.Death),
 			Control:      buildControlSnapshot(entity.Control),
+			Sword:        buildSwordSnapshot(entity.Sword),
 			Warrior:      buildWarriorSnapshot(entity.Warrior),
 		})
 	}
@@ -114,6 +117,7 @@ func buildStatsSnapshot(stats world.Stats) protocol.StatsSnapshot {
 		MP:                   stats.MP,
 		MaxMP:                stats.MaxMP,
 		HPRegen5:             stats.HPRegen5,
+		MPRegen5:             stats.MPRegen5,
 		Attack:               stats.Attack,
 		BonusAttack:          stats.BonusAttack,
 		AbilityPower:         stats.AbilityPower,
@@ -175,6 +179,16 @@ func buildControlSnapshot(state world.ControlState) protocol.ControlSnapshot {
 func buildWarriorSnapshot(state world.WarriorState) protocol.WarriorSnapshot {
 	return protocol.WarriorSnapshot{
 		JudgmentUntilTick: state.JudgmentUntilTick,
+	}
+}
+
+func buildSwordSnapshot(state world.SwordState) protocol.SwordSnapshot {
+	targetUntil := make(map[string]uint64, len(state.SweepingBladeTargetUntil))
+	for id, until := range state.SweepingBladeTargetUntil {
+		targetUntil[id] = until
+	}
+	return protocol.SwordSnapshot{
+		SweepingBladeTargetUntil: targetUntil,
 	}
 }
 

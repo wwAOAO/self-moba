@@ -15,8 +15,9 @@ type HeroConfig struct {
 type BaseStats struct {
 	HP                   int     `json:"hp"`
 	BonusHP              int     `json:"bonusHp"`
-	MP                   int     `json:"mp"`
+	MP                   float64 `json:"mp"`
 	HPRegen5             float64 `json:"hpRegen5"`
+	MPRegen5             float64 `json:"mpRegen5"`
 	Attack               float64 `json:"attack"`
 	BonusAttack          float64 `json:"bonusAttack"`
 	AbilityPower         int     `json:"abilityPower"`
@@ -96,6 +97,9 @@ func NewHeroStore(heroes []HeroConfig) (*HeroStore, error) {
 		if hero.Base.HPRegen5 < 0 {
 			return nil, fmt.Errorf("hero %s hp regen must not be negative", hero.HeroID)
 		}
+		if hero.Base.MPRegen5 < 0 {
+			return nil, fmt.Errorf("hero %s mp regen must not be negative", hero.HeroID)
+		}
 		if hero.Base.Attack < 0 {
 			return nil, fmt.Errorf("hero %s attack must not be negative", hero.HeroID)
 		}
@@ -170,6 +174,9 @@ func NewHeroStore(heroes []HeroConfig) (*HeroStore, error) {
 		}
 		if hero.Growth.HPRegen5 < 0 {
 			return nil, fmt.Errorf("hero %s hp regen growth must not be negative", hero.HeroID)
+		}
+		if hero.Growth.MPRegen5 < 0 {
+			return nil, fmt.Errorf("hero %s mp regen growth must not be negative", hero.HeroID)
 		}
 		if hero.Growth.Attack < 0 {
 			return nil, fmt.Errorf("hero %s attack growth must not be negative", hero.HeroID)

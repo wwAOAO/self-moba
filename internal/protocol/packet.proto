@@ -94,37 +94,39 @@ message PlayerSnapshot {
   double respawn_in = 19;
   ControlSnapshot control = 20;
   WarriorSnapshot warrior = 21;
+  SwordSnapshot sword = 22;
 }
 
 message StatsSnapshot {
   int32 hp = 1;
   int32 max_hp = 2;
   int32 bonus_hp = 3;
-  int32 mp = 4;
-  int32 max_mp = 5;
+  double mp = 4;
+  double max_mp = 5;
   double hp_regen5 = 6;
-  double attack = 7;
-  double bonus_attack = 8;
-  int32 ability_power = 9;
-  double damage_reduce = 10;
-  double physical_defense = 11;
-  double bonus_physical_defense = 12;
-  double physical_pen_percent = 13;
-  double physical_pen_flat = 14;
-  double physical_damage_reduce = 15;
-  double magic_defense = 16;
-  double bonus_magic_defense = 17;
-  double magic_pen_percent = 18;
-  double magic_pen_flat = 19;
-  double magic_damage_reduce = 20;
-  double move_speed = 21;
-  double attack_range = 22;
-  double attack_speed = 23;
-  double base_attack_speed = 24;
-  double attack_speed_bonus = 25;
-  double attack_speed_ratio = 26;
-  double attack_speed_slow = 27;
-  double crit_chance = 28;
+  double mp_regen5 = 7;
+  double attack = 8;
+  double bonus_attack = 9;
+  int32 ability_power = 10;
+  double damage_reduce = 11;
+  double physical_defense = 12;
+  double bonus_physical_defense = 13;
+  double physical_pen_percent = 14;
+  double physical_pen_flat = 15;
+  double physical_damage_reduce = 16;
+  double magic_defense = 17;
+  double bonus_magic_defense = 18;
+  double magic_pen_percent = 19;
+  double magic_pen_flat = 20;
+  double magic_damage_reduce = 21;
+  double move_speed = 22;
+  double attack_range = 23;
+  double attack_speed = 24;
+  double base_attack_speed = 25;
+  double attack_speed_bonus = 26;
+  double attack_speed_ratio = 27;
+  double attack_speed_slow = 28;
+  double crit_chance = 29;
 }
 
 message DummySnapshot {
@@ -191,6 +193,10 @@ message ControlSnapshot {
 
 message WarriorSnapshot {
   uint64 judgment_until_tick = 1;
+}
+
+message SwordSnapshot {
+  map<string, uint64> sweeping_blade_target_until = 1;
 }
 
 message Error {

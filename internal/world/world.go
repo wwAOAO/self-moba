@@ -367,7 +367,7 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	if input.Attack != nil {
 		if input.Attack.Clear {
 			entity.Intent.AttackTargetID = ""
-		} else if input.Attack.TargetID != "" {
+		} else if input.Attack.TargetID != "" && tick >= entity.Control.DashUntilTick {
 			entity.Intent.AttackTargetID = input.Attack.TargetID
 			entity.Intent.AttackPausedTill = 0
 			entity.Intent.MoveTarget = nil
@@ -390,14 +390,38 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		if entity.Kind != EntityKindPlayer {
 			continue
 		}
+		w.tickDashMovement(entity, tick)
 		w.tickRespawn(entity, tick)
 		if entity.Death.Dead || entity.Stats.HP <= 0 {
 			continue
 		}
-		w.tickWarriorJudgment(entity, tick, tickRate)
 		w.tickWarriorToughness(entity, tick, tickRate)
 		w.tickPlayer(entity, tick, tickRate)
+		w.tickWarriorJudgment(entity, tick, tickRate)
 	}
+}
+
+func (w *World) tickDashMovement(entity *Entity, tick uint64) {
+	if entity == nil || entity.Control.DashUntilTick == 0 || tick < entity.Control.DashStartTick {
+		return
+	}
+	if entity.Control.DashUntilTick <= entity.Control.DashStartTick {
+		entity.Control.DashUntilTick = 0
+		return
+	}
+	before := entity.Position
+	if tick >= entity.Control.DashUntilTick {
+		entity.Position = entity.Control.DashEnd
+		entity.Control.DashUntilTick = 0
+		entity.Control.DashStartTick = 0
+	} else {
+		progress := float64(tick-entity.Control.DashStartTick) / float64(entity.Control.DashUntilTick-entity.Control.DashStartTick)
+		entity.Position = Vector2{
+			X: entity.Control.DashStart.X + (entity.Control.DashEnd.X-entity.Control.DashStart.X)*progress,
+			Y: entity.Control.DashStart.Y + (entity.Control.DashEnd.Y-entity.Control.DashStart.Y)*progress,
+		}
+	}
+	w.chargeSwordIntent(entity, distance(before, entity.Position))
 }
 
 func (w *World) tickPhysicalDefenseShred(entity *Entity, tick uint64) {
@@ -488,6 +512,9 @@ func (w *World) tickPlayer(entity *Entity, tick uint64, tickRate int) {
 	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick {
 		return
 	}
+	if tick < entity.Control.DashUntilTick {
+		return
+	}
 	target := w.entities[entity.Intent.AttackTargetID]
 	attackPaused := tick < entity.Intent.AttackPausedTill
 	if !attackPaused && canAttackTarget(entity, target) {
@@ -510,14 +537,22 @@ func movementStep(entity *Entity, tickRate int) float64 {
 }
 
 func movementStepAtTick(entity *Entity, tickRate int, tick uint64) float64 {
-	moveSpeed := entity.Stats.MoveSpeed
-	if entity.HeroID == warriorHeroID && tick > 0 && tick < entity.Warrior.DecisiveStrikeSpeedUntilTick {
-		moveSpeed *= 1 + entity.Warrior.DecisiveStrikeMoveSpeedBonus
-	}
+	moveSpeed := EffectiveMoveSpeedAtTick(entity, tick)
 	if tickRate <= 0 {
 		return moveSpeed
 	}
 	return moveSpeed / float64(tickRate)
+}
+
+func EffectiveMoveSpeedAtTick(entity *Entity, tick uint64) float64 {
+	if entity == nil {
+		return 0
+	}
+	moveSpeed := entity.Stats.MoveSpeed
+	if entity.HeroID == warriorHeroID && tick > 0 && tick < entity.Warrior.DecisiveStrikeSpeedUntilTick {
+		moveSpeed *= 1 + entity.Warrior.DecisiveStrikeMoveSpeedBonus
+	}
+	return moveSpeed
 }
 
 func (w *World) moveToward(entity *Entity, destination Vector2, step float64, stopDistance float64) bool {
@@ -651,7 +686,7 @@ func heroStatsAtLevel(hero config.HeroConfig, level int) Stats {
 	growthStepValue := float64(growthSteps)
 	bonusHP := hero.Base.BonusHP + hero.Growth.BonusHP*growthSteps
 	hp := hero.Base.HP + hero.Growth.HP*growthSteps + bonusHP
-	mp := hero.Base.MP + hero.Growth.MP*growthSteps
+	mp := hero.Base.MP + hero.Growth.MP*growthStepValue
 	baseAttackSpeed := hero.Base.AttackSpeed * (1 + hero.Growth.AttackSpeed*growthStepValue)
 	attackSpeedRatio := hero.Base.AttackSpeedRatio
 	attackSpeedBonus := hero.Base.BonusAttackSpeed
@@ -664,6 +699,7 @@ func heroStatsAtLevel(hero config.HeroConfig, level int) Stats {
 		MP:                   mp,
 		MaxMP:                mp,
 		HPRegen5:             hero.Base.HPRegen5 + hero.Growth.HPRegen5*growthStepValue,
+		MPRegen5:             hero.Base.MPRegen5 + hero.Growth.MPRegen5*growthStepValue,
 		Attack:               hero.Base.Attack + hero.Growth.Attack*growthStepValue,
 		BonusAttack:          hero.Base.BonusAttack + hero.Growth.BonusAttack*growthStepValue,
 		AbilityPower:         hero.Base.AbilityPower + hero.Growth.AbilityPower*growthSteps,
@@ -1237,7 +1273,7 @@ func (w *World) applySwordQ(entity *Entity, cast protocol.CastInput, state Skill
 	hasWhirlwindStack := state.Stacks >= 2
 	form := "line"
 	qRange := skillRange(skill, 475)
-	if tick < entity.Control.DashUntilTick {
+	if swordEQWindowActive(entity, skill, tick, tickRate) {
 		form = "circle"
 		qRange = skillMetaRange(skill, "eqRadius", 375)
 	} else if hasWhirlwindStack {
@@ -1287,6 +1323,17 @@ func (w *World) applySwordQ(entity *Entity, cast protocol.CastInput, state Skill
 	state.CooldownUntilTick = tick + w.swordQCooldownTicks(entity, skill, state.Level, tickRate)
 	w.lockAttackAfterCast(entity, tick, tickRate)
 	entity.Skills[swordQSkillID] = state
+}
+
+func swordEQWindowActive(entity *Entity, skill config.SkillConfig, tick uint64, tickRate int) bool {
+	if entity == nil || tick >= entity.Control.DashUntilTick {
+		return false
+	}
+	windowTicks := secondsToTicks(skillMetaRange(skill, "eqWindowSeconds", 0.15), tickRate)
+	if windowTicks == 0 {
+		return false
+	}
+	return entity.Control.DashUntilTick-tick <= windowTicks
 }
 
 func (w *World) applySwordW(entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
@@ -1387,11 +1434,14 @@ func (w *World) applySwordE(entity *Entity, cast protocol.CastInput, state Skill
 	if dx == 0 && dy == 0 {
 		dx = 1
 	}
-	entity.Position = Vector2{
+	dashEnd := Vector2{
 		X: clamp(target.Position.X+dx*(target.Radius+entity.Radius+skillMetaRange(skill, "dashThroughDistance", 34)), 0, w.width),
 		Y: clamp(target.Position.Y+dy*(target.Radius+entity.Radius+skillMetaRange(skill, "dashThroughDistance", 34)), 0, w.height),
 	}
 	entity.Intent = IntentState{}
+	entity.Control.DashStartTick = tick
+	entity.Control.DashStart = entity.Position
+	entity.Control.DashEnd = dashEnd
 	entity.Control.DashUntilTick = tick + secondsToTicks(skillMetaRange(skill, "dashDurationSeconds", 0.35), tickRate)
 	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{500, 400, 300, 200, 100}), tickRate)
 	w.lockAttackAfterCast(entity, tick, tickRate)

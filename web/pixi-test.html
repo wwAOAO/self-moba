@@ -387,7 +387,9 @@
               ><span id="statResource">-</span> <span>HP</span
               ><span id="statHp">-</span> <span id="statMpLabel">MP</span
               ><span id="statMp">-</span> <span>HP/5s</span
-              ><span id="statHpRegen5">-</span> <span>ATK</span
+              ><span id="statHpRegen5">-</span>
+              <span id="statMpRegen5Label">MP/5s</span
+              ><span id="statMpRegen5">-</span> <span>ATK</span
               ><span id="statAttack">-</span> <span>AP</span
               ><span id="statAbilityPower">-</span>
               <span>Phys DEF<span id="statPhysicalDefenseTip"></span></span
@@ -476,6 +478,8 @@
         statHp: document.querySelector("#statHp"),
         statMp: document.querySelector("#statMp"),
         statHpRegen5: document.querySelector("#statHpRegen5"),
+        statMpRegen5Label: document.querySelector("#statMpRegen5Label"),
+        statMpRegen5: document.querySelector("#statMpRegen5"),
         statAttack: document.querySelector("#statAttack"),
         statAbilityPower: document.querySelector("#statAbilityPower"),
         statPhysicalDefenseTip: document.querySelector(
@@ -787,18 +791,19 @@
         if (!skillId) {
           return;
         }
+        if (!isSkillLearned(self, skillId)) {
+          return;
+        }
         if (isSkillOnCooldown(self, skillId)) {
           return;
         }
         const selected = currentTarget();
-        const target =
-          slot === "q"
-            ? state.aimPoint ||
-              selected ||
-              state.moveTarget || { x: self.x + 1, y: self.y }
-            : selected ||
-              state.aimPoint ||
-              state.moveTarget || { x: self.x + 1, y: self.y };
+        const useAimPointFirst =
+          skillId === "sword_cut" || skillId === "sword_sweeping_blade";
+        const fallbackTarget = state.moveTarget || { x: self.x + 1, y: self.y };
+        const target = useAimPointFirst
+          ? state.aimPoint || selected || fallbackTarget
+          : selected || state.aimPoint || fallbackTarget;
         if (slot === "q" && skillId === "sword_cut") {
           showSwordQPreview(self, target);
         }
@@ -873,9 +878,14 @@
         );
         const y = clamp(self?.y ?? state.map.height / 2, 0, state.map.height);
         const kind = els.spawnKind.value;
+        let team = els.spawnTeam.value;
+        if (kind === "enemy_hero" && self?.team && team === self.team) {
+          team = self.team === "blue" ? "red" : "blue";
+          els.spawnTeam.value = team;
+        }
         sendPacket("spawn_object", {
           kind,
-          team: els.spawnTeam.value,
+          team,
           x,
           y,
         });
@@ -925,6 +935,7 @@
         }
 
         drawActiveSkillRanges(frame);
+        drawSwordETargetCooldowns(frame);
         drawSkillPreview(frame);
 
         const selectedTarget = state.selectedTargetId
@@ -1001,12 +1012,49 @@
           }
           const config = skillClientConfig.judgment || {};
           const radius = config.range || 180;
+          const hitRadius = radius + unitCollisionRadius({ radius: 18 });
           const x = frame.offsetX + player.x * frame.scale;
           const y = frame.offsetY + player.y * frame.scale;
           gridLayer.circle(x, y, radius * frame.scale);
           gridLayer.fill({ color: 0xf59e0b, alpha: 0.08 });
           gridLayer.circle(x, y, radius * frame.scale);
           gridLayer.stroke({ color: 0xf97316, width: 3, alpha: 0.75 });
+          gridLayer.circle(x, y, hitRadius * frame.scale);
+          gridLayer.stroke({ color: 0xf97316, width: 1, alpha: 0.35 });
+        }
+      }
+
+      function drawSwordETargetCooldowns(frame) {
+        const self = state.players.get(state.playerId);
+        if (!self || self.heroId !== "sword") {
+          return;
+        }
+        const targetUntil = self.sword?.sweepingBladeTargetUntil || {};
+        const tick = interpolatedTick();
+        const targets = targetMap();
+        const cooldownTicks = swordETargetCooldownTicks(self);
+        for (const [targetId, untilTick] of Object.entries(targetUntil)) {
+          const remainingTicks = (untilTick || 0) - tick;
+          if (remainingTicks <= 0) {
+            continue;
+          }
+          const target = targets.get(targetId);
+          if (!target || target.dead) {
+            continue;
+          }
+          const x = frame.offsetX + target.x * frame.scale;
+          const y = frame.offsetY + target.y * frame.scale;
+          const radius = targetSelectRadius(target, frame) + 5;
+          const progress = ratio(remainingTicks, cooldownTicks);
+          const startAngle = -Math.PI / 2;
+          const endAngle = startAngle + Math.PI * 2 * progress;
+          const startX = x + Math.cos(startAngle) * radius;
+          const startY = y + Math.sin(startAngle) * radius;
+          gridLayer.circle(x, y, radius);
+          gridLayer.stroke({ color: 0x7dd3fc, width: 4, alpha: 0.25 });
+          gridLayer.moveTo(startX, startY);
+          gridLayer.arc(x, y, radius, startAngle, endAngle);
+          gridLayer.stroke({ color: 0x38bdf8, width: 4, alpha: 0.9 });
         }
       }
 
@@ -1045,10 +1093,13 @@
       function showSwordQPreview(self, target) {
         const tick = Number(els.tick.textContent || 0);
         const qState = skillState(self, "sword_cut");
+        if ((qState?.level || 0) <= 0) {
+          return;
+        }
         const config = skillClientConfig.sword_cut || {};
         let form = "line";
         let range = config.range || 475;
-        if ((self.control?.dashUntilTick || 0) > tick) {
+        if (swordEQWindowActive(self, config, tick)) {
           form = "circle";
           range = config.eqRadius || 375;
         } else if ((qState?.stacks || 0) >= 2) {
@@ -1070,6 +1121,15 @@
           previewMs: config.previewMs || 450,
           expiresAt: performance.now() + (config.previewMs || 450),
         };
+      }
+
+      function swordEQWindowActive(player, config, tick) {
+        const dashUntilTick = player.control?.dashUntilTick || 0;
+        if (dashUntilTick <= tick) {
+          return false;
+        }
+        const windowTicks = (config.eqWindowSeconds || 0.15) * state.tickRate;
+        return dashUntilTick - tick <= windowTicks;
       }
 
       function drawSkillPreview(frame) {
@@ -1169,8 +1229,8 @@
             state.unitSprites.set(unit.id, sprite);
             unitLayer.addChild(sprite.node);
           }
-          updateBars(sprite, unit.stats);
-          updateStatusLabel(sprite, unit, -48);
+          updateUnitBars(sprite, unit);
+          updateStatusLabel(sprite, unit, -(unitModelDisplayRadius(unit) + 30));
           sprite.node.x = frame.offsetX + unit.x * frame.scale;
           sprite.node.y = frame.offsetY + unit.y * frame.scale;
         }
@@ -1275,11 +1335,12 @@
           },
         });
 
-        drawUnitBody(body, visual, unit.radius);
+        const modelRadius = unitModelDisplayRadius(unit);
+        drawUnitBody(body, visual, modelRadius);
         body.stroke({ color: 0xf2f7f3, width: 2 });
-        drawBar(hpFill, 0xd94948, 1, -34);
+        drawBar(hpFill, 0xd94948, 1, -(modelRadius + 16));
         label.anchor.set(0.5, 0);
-        label.y = unit.radius + 6;
+        label.y = modelRadius + 6;
         node.addChild(statusLabel, hpFill, body, label);
         return { node, hpFill, statusLabel };
       }
@@ -1385,7 +1446,7 @@
       }
 
       function drawUnitBody(body, visual, radius) {
-        const size = Math.max(18, radius);
+        const size = Math.max(1, radius);
         if (visual.shape === "diamond") {
           body.moveTo(0, -size);
           body.lineTo(size, 0);
@@ -1467,6 +1528,15 @@
             -23,
           );
         }
+      }
+
+      function updateUnitBars(sprite, unit) {
+        drawBar(
+          sprite.hpFill,
+          0xd94948,
+          hpShieldRatio(unit),
+          -(unitModelDisplayRadius(unit) + 16),
+        );
       }
 
       function playerResourceRatio(player) {
@@ -1567,10 +1637,31 @@
         );
       }
 
+      function skillMetaListValue(skillId, key, level, fallback) {
+        const values = skillClientConfig[skillId]?.metaLists?.[key] || fallback;
+        const index = clamp(Math.max(1, level || 1), 1, values.length) - 1;
+        return values[index] || 0;
+      }
+
+      function swordETargetCooldownTicks(player) {
+        const level = skillState(player, "sword_sweeping_blade")?.level || 1;
+        const cooldownMs = skillMetaListValue(
+          "sword_sweeping_blade",
+          "targetCooldownMs",
+          level,
+          [10000, 9000, 8000, 7000, 6000],
+        );
+        return (cooldownMs / 1000) * state.tickRate;
+      }
+
       function isSkillOnCooldown(player, skillId) {
         const tick = Number(els.tick.textContent || 0);
         const skill = skillState(player, skillId);
         return (skill?.cooldownUntilTick || 0) > tick;
+      }
+
+      function isSkillLearned(player, skillId) {
+        return (skillState(player, skillId)?.level || 0) > 0;
       }
 
       function setStatus(value) {
@@ -1588,6 +1679,8 @@
           els.statHp.textContent = "-";
           els.statMp.textContent = "-";
           els.statHpRegen5.textContent = "-";
+          setStatPairVisible(els.statMpRegen5Label, els.statMpRegen5, false);
+          els.statMpRegen5.textContent = "-";
           els.statAttack.textContent = "-";
           els.statAbilityPower.textContent = "-";
           els.statPhysicalDefense.textContent = "-";
@@ -1622,9 +1715,18 @@
         els.statMp.textContent = isSword
           ? formatSwordIntent(passive)
           : stats.maxMp > 0
-            ? `${stats.mp}/${stats.maxMp}`
+            ? `${formatNumber(stats.mp)}/${formatNumber(stats.maxMp)}`
             : "-";
         els.statHpRegen5.textContent = formatNumber(stats.hpRegen5 || 0);
+        const showMpRegen = !isSword && stats.maxMp > 0;
+        setStatPairVisible(
+          els.statMpRegen5Label,
+          els.statMpRegen5,
+          showMpRegen,
+        );
+        els.statMpRegen5.textContent = showMpRegen
+          ? formatNumber(stats.mpRegen5 || 0)
+          : "-";
         els.statAttack.textContent = formatAttack(stats);
         els.statAbilityPower.textContent = stats.abilityPower || 0;
         els.statPhysicalDefense.textContent = formatPhysicalDefense(stats);
@@ -1669,6 +1771,7 @@
           <div>HP ${formatHpWithShield(target)}</div>
           ${formatTargetResource(target)}
           <div>HP/5s ${formatNumber(stats.hpRegen5 || 0)}</div>
+          ${formatTargetMpRegen(stats)}
           <div>ATK ${formatAttack(stats)}</div>
           <div>AP ${stats.abilityPower || 0}</div>
           <div>Phys DEF ${formatDefenseTip(stats.physicalDefense || 0, "物理")} ${formatPhysicalDefense(stats)}</div>
@@ -1811,7 +1914,7 @@
         if (isEnemyHeroModel) {
           return (
             Math.hypot(screenPoint.x - sx, screenPoint.y - sy) <=
-            unitModelRadius(unit) * state.frame.scale + 4
+            unitHitRadius(unit)
           );
         }
         const size = Math.max(18, unit.radius);
@@ -1853,7 +1956,7 @@
           return playerModelRadius(target) + 4;
         }
         if (target.kind === "enemy_hero") {
-          return unitModelRadius(target) * frame.scale + 4;
+          return unitModelDisplayRadius(target) + 4;
         }
         return Math.max(14, (target.radius || 18) * frame.scale + 6);
       }
@@ -1876,6 +1979,18 @@
 
       function unitModelRadius(unit) {
         return Math.max(18, unit.radius || 0);
+      }
+
+      function unitModelDisplayRadius(unit) {
+        return Math.max(18, unit.radius || 0);
+      }
+
+      function unitCollisionRadius(unit) {
+        return unitModelRadius(unit);
+      }
+
+      function unitHitRadius(unit) {
+        return unitModelDisplayRadius(unit) + 8;
       }
 
       function screenPointFromEvent(event) {
@@ -1978,7 +2093,14 @@
         if (!stats.maxMp || stats.maxMp <= 0) {
           return "";
         }
-        return `<div>MP ${stats.mp}/${stats.maxMp}</div>`;
+        return `<div>MP ${formatNumber(stats.mp)}/${formatNumber(stats.maxMp)}</div>`;
+      }
+
+      function formatTargetMpRegen(stats) {
+        if (!stats?.maxMp || stats.maxMp <= 0) {
+          return "";
+        }
+        return `<div>MP/5s ${formatNumber(stats.mpRegen5 || 0)}</div>`;
       }
 
       function formatResource(resource) {

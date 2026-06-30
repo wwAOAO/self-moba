@@ -204,6 +204,49 @@ func TestSwordConfiguredStatsAtLevel18(t *testing.T) {
 	}
 }
 
+func TestTankConfiguredStatsAtLevel18(t *testing.T) {
+	heroes, err := config.LoadHeroes("../../configs/heroes.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hero, ok := heroes.Get("tank")
+	if !ok {
+		t.Fatal("tank hero not found")
+	}
+	stats := heroStatsAtLevel(hero, MaxHeroLevel)
+
+	if stats.MaxHP != 2569 {
+		t.Fatalf("tank level 18 hp = %d, want 2569", stats.MaxHP)
+	}
+	if math.Abs(stats.MaxMP-1302.2) > 0.000001 {
+		t.Fatalf("tank level 18 mp = %f, want 1302.2", stats.MaxMP)
+	}
+	if math.Abs(stats.Attack-129.97) > 0.000001 {
+		t.Fatalf("tank level 18 attack = %f, want 129.97", stats.Attack)
+	}
+	if math.Abs(stats.PhysicalDefense-103.75) > 0.000001 {
+		t.Fatalf("tank level 18 armor = %f, want 103.75", stats.PhysicalDefense)
+	}
+	if math.Abs(stats.MagicDefense-53.35) > 0.000001 {
+		t.Fatalf("tank level 18 magic resist = %f, want 53.35", stats.MagicDefense)
+	}
+	if math.Abs(stats.AttackSpeed-1.006764) > 0.000001 {
+		t.Fatalf("tank level 18 attack speed = %f, want 1.006764", stats.AttackSpeed)
+	}
+	if stats.MoveSpeed != 335 {
+		t.Fatalf("tank move speed = %f, want 335", stats.MoveSpeed)
+	}
+	if stats.AttackRange != 125 {
+		t.Fatalf("tank attack range = %f, want 125", stats.AttackRange)
+	}
+	if math.Abs(stats.HPRegen5-16.35) > 0.000001 {
+		t.Fatalf("tank level 18 hp regen = %f, want 16.35", stats.HPRegen5)
+	}
+	if math.Abs(stats.MPRegen5-16.67) > 0.000001 {
+		t.Fatalf("tank level 18 mp regen = %f, want 16.67", stats.MPRegen5)
+	}
+}
+
 func TestHeroStatsLevelIsClamped(t *testing.T) {
 	hero := testHeroConfig()
 	hero.Growth.HP = 10
@@ -382,6 +425,29 @@ func TestSpawnObjectEnemyHeroHasLevelRewardData(t *testing.T) {
 	}
 	if entity.NextLevelExp != 280 {
 		t.Fatalf("enemy hero next level exp = %f, want 280", entity.NextLevelExp)
+	}
+}
+
+func TestEnemyHeroCanBeBasicAttacked(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.Base.Attack = 100
+	hero.Base.AttackRange = 300
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	id, ok := w.SpawnObject(EntityKindEnemyHero, TeamRed, player.Position.X+100, player.Position.Y)
+	if !ok {
+		t.Fatal("spawn enemy hero failed")
+	}
+	target := w.entities[id]
+	target.Stats.PhysicalDefense = 0
+	startHP := target.Stats.HP
+
+	w.ApplyInput("p1", protocolPlayerInputAttack(id), 1, nil, 20)
+	w.Tick(2, 20)
+
+	if target.Stats.HP >= startHP {
+		t.Fatalf("enemy hero hp = %d, want below %d after basic attack", target.Stats.HP, startHP)
 	}
 }
 
@@ -1118,6 +1184,12 @@ func TestWarriorQEmpowersNextAttack(t *testing.T) {
 	if player.Warrior.DecisiveStrikeSpeedUntilTick != 40 {
 		t.Fatalf("warrior q speed until = %d, want 40", player.Warrior.DecisiveStrikeSpeedUntilTick)
 	}
+	if got := EffectiveMoveSpeedAtTick(player, 11); math.Abs(got-442) > 0.000001 {
+		t.Fatalf("warrior q effective move speed = %f, want 442", got)
+	}
+	if got := EffectiveMoveSpeedAtTick(player, 40); got != 340 {
+		t.Fatalf("expired warrior q move speed = %f, want 340", got)
+	}
 	if player.Combat.NextAttackTick != 10 {
 		t.Fatalf("next attack tick = %d, want 10 reset", player.Combat.NextAttackTick)
 	}
@@ -1554,6 +1626,7 @@ func TestSwordEDashesThroughTargetAndAppliesPerTargetCooldown(t *testing.T) {
 	learnSkill(player, swordESkillID, 1)
 	target := w.entities["enemy:hero-1"]
 	target.Position = Vector2{X: player.Position.X + 200, Y: player.Position.Y}
+	startPosition := player.Position
 	startHP := target.Stats.HP
 
 	w.ApplyInput("p1", protocolPlayerInputCast(swordESkillID, target.Position.X, target.Position.Y), 10, nil, 20)
@@ -1561,8 +1634,19 @@ func TestSwordEDashesThroughTargetAndAppliesPerTargetCooldown(t *testing.T) {
 	if target.Stats.HP >= startHP {
 		t.Fatal("sword e should damage target")
 	}
+	if player.Position != startPosition {
+		t.Fatalf("player position = %+v, want unchanged at cast tick %+v", player.Position, startPosition)
+	}
+	w.Tick(13, 20)
+	if player.Position.X <= startPosition.X || player.Position.X >= target.Position.X {
+		t.Fatalf("player x = %f, want moving toward target from %f", player.Position.X, startPosition.X)
+	}
+	w.Tick(17, 20)
 	if player.Position.X <= target.Position.X {
-		t.Fatalf("player x = %f, should dash through target x=%f", player.Position.X, target.Position.X)
+		t.Fatalf("player x = %f, should finish dash through target x=%f", player.Position.X, target.Position.X)
+	}
+	if player.Passive.SwordIntent <= 0 {
+		t.Fatal("sword e movement should charge sword intent")
 	}
 	if player.Sword.SweepingBladeStacks != 1 {
 		t.Fatalf("e stacks = %d, want 1", player.Sword.SweepingBladeStacks)
@@ -1574,6 +1658,69 @@ func TestSwordEDashesThroughTargetAndAppliesPerTargetCooldown(t *testing.T) {
 
 	if target.Stats.HP != afterFirstHP {
 		t.Fatalf("target hp = %d, want unchanged %d while per-target cooldown active", target.Stats.HP, afterFirstHP)
+	}
+}
+
+func TestSwordEPicksUnitNearestToCursorPoint(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.HeroID = swordHeroID
+	hero.Skills.E = swordESkillID
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	learnSkill(player, swordESkillID, 1)
+	nearPlayer := w.entities["enemy:hero-1"]
+	nearCursor := w.entities["enemy:blue-hero-1"]
+	nearPlayer.Team = TeamRed
+	nearCursor.Team = TeamRed
+	nearPlayer.Position = Vector2{X: player.Position.X + 160, Y: player.Position.Y}
+	nearCursor.Position = Vector2{X: player.Position.X + 260, Y: player.Position.Y}
+
+	w.ApplyInput("p1", protocolPlayerInputCast(swordESkillID, nearCursor.Position.X, nearCursor.Position.Y), 10, nil, 20)
+
+	if nearCursor.Combat.LastDamage <= 0 {
+		t.Fatal("sword e should hit unit nearest to cursor point")
+	}
+	if nearPlayer.Combat.LastDamage != 0 {
+		t.Fatalf("nearer-to-player unit damage = %d, want 0", nearPlayer.Combat.LastDamage)
+	}
+}
+
+func TestSwordEStoresPerTargetCooldown(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.HeroID = swordHeroID
+	hero.Skills.E = swordESkillID
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	learnSkill(player, swordESkillID, 1)
+	target := w.entities["enemy:hero-1"]
+	target.Position = Vector2{X: player.Position.X + 200, Y: player.Position.Y}
+
+	w.ApplyInput("p1", protocolPlayerInputCast(swordESkillID, target.Position.X, target.Position.Y), 10, nil, 20)
+
+	if player.Sword.SweepingBladeTargetUntil[target.ID] != 210 {
+		t.Fatalf("target cooldown until = %d, want 210", player.Sword.SweepingBladeTargetUntil[target.ID])
+	}
+}
+
+func TestSwordEIgnoresAttackInputDuringDash(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.HeroID = swordHeroID
+	hero.Skills.E = swordESkillID
+	hero.Base.AttackRange = 1000
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	learnSkill(player, swordESkillID, 1)
+	target := w.entities["enemy:hero-1"]
+	target.Position = Vector2{X: player.Position.X + 200, Y: player.Position.Y}
+
+	w.ApplyInput("p1", protocolPlayerInputCast(swordESkillID, target.Position.X, target.Position.Y), 10, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputAttack(target.ID), 11, nil, 20)
+
+	if player.Intent.AttackTargetID != "" {
+		t.Fatalf("attack target during e dash = %q, want empty", player.Intent.AttackTargetID)
 	}
 }
 
@@ -1595,11 +1742,38 @@ func TestSwordEQMakesCircularQ(t *testing.T) {
 	sideTarget.Position = Vector2{X: target.Position.X, Y: target.Position.Y + 120}
 
 	w.ApplyInput("p1", protocolPlayerInputCast(swordESkillID, target.Position.X, target.Position.Y), 10, nil, 20)
+	w.Tick(14, 20)
 	player.Skills[swordQSkillID] = SkillState{SkillID: swordQSkillID, Level: 1}
-	w.ApplyInput("p1", protocolPlayerInputCast(swordQSkillID, player.Position.X+1, player.Position.Y), 11, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputCast(swordQSkillID, player.Position.X+1, player.Position.Y), 14, nil, 20)
 
 	if sideTarget.Combat.LastDamage <= 0 {
 		t.Fatal("q during e dash should become circular aoe and hit nearby target")
+	}
+}
+
+func TestSwordQBeforeEQWindowDoesNotBecomeCircular(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.HeroID = swordHeroID
+	hero.Skills.Q = swordQSkillID
+	hero.Skills.E = swordESkillID
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	learnSkill(player, swordQSkillID, 1)
+	learnSkill(player, swordESkillID, 1)
+	target := w.entities["enemy:hero-1"]
+	sideTarget := w.entities["enemy:blue-hero-1"]
+	target.Team = TeamRed
+	sideTarget.Team = TeamRed
+	target.Position = Vector2{X: player.Position.X + 150, Y: player.Position.Y}
+	sideTarget.Position = Vector2{X: target.Position.X, Y: target.Position.Y + 120}
+
+	w.ApplyInput("p1", protocolPlayerInputCast(swordESkillID, target.Position.X, target.Position.Y), 10, nil, 20)
+	player.Skills[swordQSkillID] = SkillState{SkillID: swordQSkillID, Level: 1}
+	w.ApplyInput("p1", protocolPlayerInputCast(swordQSkillID, player.Position.X+1, player.Position.Y), 11, nil, 20)
+
+	if sideTarget.Combat.LastDamage != 0 {
+		t.Fatalf("side target damage = %d, want 0 before eq window", sideTarget.Combat.LastDamage)
 	}
 }
 
@@ -1625,11 +1799,12 @@ func TestSwordEQWithWhirlwindStacksKnocksUpAndClearsStacks(t *testing.T) {
 	sideTarget.Position = Vector2{X: target.Position.X, Y: target.Position.Y + 120}
 
 	w.ApplyInput("p1", protocolPlayerInputCast(swordESkillID, target.Position.X, target.Position.Y), 10, nil, 20)
+	w.Tick(14, 20)
 	player.Skills[swordQSkillID] = SkillState{SkillID: swordQSkillID, Level: 1, Stacks: 2, StacksExpireTick: 200}
-	w.ApplyInput("p1", protocolPlayerInputCast(swordQSkillID, player.Position.X+1, player.Position.Y), 11, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputCast(swordQSkillID, player.Position.X+1, player.Position.Y), 14, nil, 20)
 
-	if sideTarget.Control.AirborneUntilTick != 31 {
-		t.Fatalf("side target airborne until = %d, want 31", sideTarget.Control.AirborneUntilTick)
+	if sideTarget.Control.AirborneUntilTick != 34 {
+		t.Fatalf("side target airborne until = %d, want 34", sideTarget.Control.AirborneUntilTick)
 	}
 	qState := player.Skills[swordQSkillID]
 	if qState.Stacks != 0 {

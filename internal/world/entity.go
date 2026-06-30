@@ -97,9 +97,10 @@ type Stats struct {
 	HP                   int
 	MaxHP                int
 	BonusHP              int
-	MP                   int
-	MaxMP                int
+	MP                   float64
+	MaxMP                float64
 	HPRegen5             float64
+	MPRegen5             float64
 	Attack               float64
 	BonusAttack          float64
 	AbilityPower         int
@@ -143,6 +144,9 @@ type CombatState struct {
 type ControlState struct {
 	AirborneUntilTick     uint64
 	DashUntilTick         uint64
+	DashStartTick         uint64
+	DashStart             Vector2
+	DashEnd               Vector2
 	ActionLockedUntilTick uint64
 	SilencedUntilTick     uint64
 	TenacityUntilTick     uint64

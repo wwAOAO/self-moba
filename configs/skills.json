@@ -188,6 +188,7 @@
     "meta": {
       "whirlwindRange": 900,
       "eqRadius": 375,
+      "eqWindowSeconds": 0.15,
       "adRatio": 1,
       "stackDurationSeconds": 6,
       "knockupSeconds": 1,

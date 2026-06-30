@@ -102,6 +102,7 @@ type PlayerSnapshot struct {
 	RespawnTick  uint64          `json:"respawnTick"`
 	RespawnIn    float64         `json:"respawnIn"`
 	Control      ControlSnapshot `json:"control"`
+	Sword        SwordSnapshot   `json:"sword"`
 	Warrior      WarriorSnapshot `json:"warrior"`
 }
 
@@ -148,9 +149,10 @@ type StatsSnapshot struct {
 	HP                   int     `json:"hp"`
 	MaxHP                int     `json:"maxHp"`
 	BonusHP              int     `json:"bonusHp"`
-	MP                   int     `json:"mp"`
-	MaxMP                int     `json:"maxMp"`
+	MP                   float64 `json:"mp"`
+	MaxMP                float64 `json:"maxMp"`
 	HPRegen5             float64 `json:"hpRegen5"`
+	MPRegen5             float64 `json:"mpRegen5"`
 	Attack               float64 `json:"attack"`
 	BonusAttack          float64 `json:"bonusAttack"`
 	AbilityPower         int     `json:"abilityPower"`
@@ -200,6 +202,10 @@ type ControlSnapshot struct {
 
 type WarriorSnapshot struct {
 	JudgmentUntilTick uint64 `json:"judgmentUntilTick"`
+}
+
+type SwordSnapshot struct {
+	SweepingBladeTargetUntil map[string]uint64 `json:"sweepingBladeTargetUntil"`
 }
 
 type Error struct {
