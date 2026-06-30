@@ -67,7 +67,7 @@ func TestSkillConfigLoadsWarriorJudgment(t *testing.T) {
 	if !ok {
 		t.Fatal("judgment skill not found")
 	}
-	if judgment.Range != 180 || judgment.Meta["baseSpins"] != 7 {
+	if judgment.Range != 220 || judgment.Meta["baseSpins"] != 7 {
 		t.Fatalf("judgment config = meta:%#v lists:%#v", judgment.Meta, judgment.MetaLists)
 	}
 	if judgment.MetaLists["cooldownMs"][0] != 9000 || judgment.MetaLists["cooldownMs"][4] != 6000 {

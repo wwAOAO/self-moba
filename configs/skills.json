@@ -42,7 +42,7 @@
     "skillId": "judgment",
     "name": "Judgment",
     "cooldownMs": 9000,
-    "range": 180,
+    "range": 220,
     "type": "spin",
     "meta": {
       "durationSeconds": 3,
