@@ -745,7 +745,11 @@
           if (id === state.attackTargetId) {
             state.attackFlashUntil = performance.now() + 180;
           }
-          spawnDamageText(current, current.lastDamage || 0);
+          spawnDamageText(
+            current,
+            current.lastDamage || 0,
+            current.lastDamageType || "physical",
+          );
         }
       }
 
@@ -799,7 +803,9 @@
         }
         const selected = currentTarget();
         const useAimPointFirst =
-          skillId === "sword_cut" || skillId === "sword_sweeping_blade";
+          skillId === "sword_cut" ||
+          skillId === "sword_sweeping_blade" ||
+          skillId === "earthquake";
         const fallbackTarget = state.moveTarget || { x: self.x + 1, y: self.y };
         const target = useAimPointFirst
           ? state.aimPoint || selected || fallbackTarget
@@ -807,9 +813,13 @@
         if (slot === "q" && skillId === "sword_cut") {
           showSwordQPreview(self, target);
         }
+        if (slot === "e" && skillId === "taunt") {
+          showTankEPreview(self);
+        }
         sendPacket("input", {
           cast: {
             skillId,
+            targetId: skillId === "slam" ? "" : selected?.id || "",
             targetX: target.x,
             targetY: target.y,
           },
@@ -980,6 +990,18 @@
             drawSwordWhirlwindEffect(effect, frame);
             continue;
           }
+          if (effect.kind === "tank_q") {
+            drawTankShardEffect(effect, frame);
+            continue;
+          }
+          if (effect.kind === "tank_w_aftershock") {
+            drawTankAftershockEffect(effect, frame);
+            continue;
+          }
+          if (effect.kind === "tank_r_impact") {
+            drawTankImpactEffect(effect, frame);
+            continue;
+          }
           if (effect.kind !== "wind_wall") {
             continue;
           }
@@ -1004,24 +1026,71 @@
       function drawActiveSkillRanges(frame) {
         const tick = interpolatedTick();
         for (const player of state.players.values()) {
-          if (player.dead || player.heroId !== "warrior") {
+          if (player.dead) {
             continue;
           }
-          if ((player.warrior?.judgmentUntilTick || 0) <= tick) {
+          if (player.heroId !== "warrior") {
             continue;
           }
-          const config = skillClientConfig.judgment || {};
-          const radius = config.range || 180;
-          const hitRadius = radius + unitCollisionRadius({ radius: 18 });
-          const x = frame.offsetX + player.x * frame.scale;
-          const y = frame.offsetY + player.y * frame.scale;
-          gridLayer.circle(x, y, radius * frame.scale);
-          gridLayer.fill({ color: 0xf59e0b, alpha: 0.08 });
-          gridLayer.circle(x, y, radius * frame.scale);
-          gridLayer.stroke({ color: 0xf97316, width: 3, alpha: 0.75 });
-          gridLayer.circle(x, y, hitRadius * frame.scale);
-          gridLayer.stroke({ color: 0xf97316, width: 1, alpha: 0.35 });
+          drawWarriorJudgmentRange(player, frame, tick);
         }
+      }
+
+      function drawWarriorJudgmentRange(player, frame, tick) {
+        if ((player.warrior?.judgmentUntilTick || 0) <= tick) {
+          return;
+        }
+        const config = skillClientConfig.judgment || {};
+        const radius = config.range || 180;
+        const hitRadius = radius + unitCollisionRadius({ radius: 18 });
+        const x = frame.offsetX + player.x * frame.scale;
+        const y = frame.offsetY + player.y * frame.scale;
+        gridLayer.circle(x, y, radius * frame.scale);
+        gridLayer.fill({ color: 0xf59e0b, alpha: 0.08 });
+        gridLayer.circle(x, y, radius * frame.scale);
+        gridLayer.stroke({ color: 0xf97316, width: 3, alpha: 0.75 });
+        gridLayer.circle(x, y, hitRadius * frame.scale);
+        gridLayer.stroke({ color: 0xf97316, width: 1, alpha: 0.35 });
+      }
+
+      function drawTankAftershockEffect(effect, frame) {
+        const range = effect.range || 300;
+        const angle = ((effect.radius || 70) * Math.PI) / 180;
+        const center = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+        const startAngle = center - angle / 2;
+        const endAngle = center + angle / 2;
+        const x = frame.offsetX + effect.x * frame.scale;
+        const y = frame.offsetY + effect.y * frame.scale;
+        const radius = range * frame.scale;
+        const alpha = effectAlpha(effect);
+        gridLayer.moveTo(x, y);
+        gridLayer.arc(x, y, radius, startAngle, endAngle);
+        gridLayer.closePath();
+        gridLayer.fill({ color: 0xfacc15, alpha: 0.14 * alpha });
+        gridLayer.moveTo(x, y);
+        gridLayer.arc(x, y, radius, startAngle, endAngle);
+        gridLayer.closePath();
+        gridLayer.stroke({ color: 0xd97706, width: 2, alpha: 0.8 * alpha });
+      }
+
+      function drawTankImpactEffect(effect, frame) {
+        const x = frame.offsetX + effect.x * frame.scale;
+        const y = frame.offsetY + effect.y * frame.scale;
+        const radius = (effect.radius || 250) * frame.scale;
+        const alpha = effectAlpha(effect);
+        gridLayer.circle(x, y, radius);
+        gridLayer.fill({ color: 0x94a3b8, alpha: 0.14 * alpha });
+        gridLayer.circle(x, y, radius);
+        gridLayer.stroke({ color: 0x475569, width: 3, alpha: 0.85 * alpha });
+        gridLayer.circle(x, y, Math.max(8, radius * 0.12));
+        gridLayer.fill({ color: 0xe2e8f0, alpha: 0.22 * alpha });
+      }
+
+      function effectAlpha(effect) {
+        const createdAt = effect.createdAt || 0;
+        const expiresAt = effect.expiresAt || 0;
+        const duration = Math.max(1, expiresAt - createdAt);
+        return clamp((expiresAt - interpolatedTick()) / duration, 0, 1);
       }
 
       function drawSwordETargetCooldowns(frame) {
@@ -1080,6 +1149,25 @@
         gridLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.45 });
       }
 
+      function drawTankShardEffect(effect, frame) {
+        const tickDelta = clamp(
+          interpolatedTick() - Number(els.tick.textContent || 0),
+          0,
+          1,
+        );
+        const smoothX =
+          effect.x + (effect.dirX || 0) * (effect.speed || 0) * tickDelta;
+        const smoothY =
+          effect.y + (effect.dirY || 0) * (effect.speed || 0) * tickDelta;
+        const sx = frame.offsetX + smoothX * frame.scale;
+        const sy = frame.offsetY + smoothY * frame.scale;
+        const radius = Math.max(5, (effect.radius || 45) * frame.scale);
+        gridLayer.circle(sx, sy, radius * 0.65);
+        gridLayer.fill({ color: 0x8b5e34, alpha: 0.85 });
+        gridLayer.circle(sx, sy, radius);
+        gridLayer.stroke({ color: 0x5c4033, width: 2, alpha: 0.75 });
+      }
+
       function interpolatedTick() {
         if (!state.snapshotAtMs) {
           return Number(els.tick.textContent || 0);
@@ -1120,6 +1208,20 @@
           radius: form === "whirlwind" ? config.whirlwindRadius || 70 : 0,
           previewMs: config.previewMs || 450,
           expiresAt: performance.now() + (config.previewMs || 450),
+        };
+      }
+
+      function showTankEPreview(self) {
+        const config = skillClientConfig.taunt || {};
+        const previewMs = config.previewMs || 450;
+        state.skillPreview = {
+          kind: "tank_e",
+          form: "circle",
+          x: self.x,
+          y: self.y,
+          range: config.range || 400,
+          previewMs,
+          expiresAt: performance.now() + previewMs,
         };
       }
 
@@ -1303,20 +1405,35 @@
         const isSelf = player.playerId === state.playerId;
         const radius = playerModelRadius(player);
         sprite.body.clear();
-        if (playerModelShape(player) === "triangle") {
+        const shape = playerModelShape(player);
+        if (shape === "triangle") {
           sprite.body.moveTo(0, -radius);
           sprite.body.lineTo(radius * 0.92, radius * 0.7);
           sprite.body.lineTo(-radius * 0.92, radius * 0.7);
           sprite.body.closePath();
+        } else if (shape === "archer") {
+          drawBowArrowIcon(sprite.body, radius);
+        } else if (shape === "square") {
+          sprite.body.rect(-radius, -radius, radius * 2, radius * 2);
+        } else if (shape === "octagon") {
+          drawChamferedOctagon(sprite.body, radius);
+        } else if (shape === "katana") {
+          drawKatanaIcon(sprite.body, radius);
+        } else if (shape === "warrior") {
+          drawWarriorIcon(sprite.body, radius);
+        } else if (shape === "sword") {
+          drawSwordIcon(sprite.body, radius);
         } else {
           sprite.body.circle(0, 0, radius);
         }
         sprite.body.fill(player.dead ? 0x6b7280 : colorForTeam(player.team));
-        sprite.body.stroke({
-          color: player.dead ? 0x111827 : isSelf ? 0xffffff : 0x172026,
-          width: isSelf ? 2 : 1,
-          alpha: player.dead ? 0.45 : 1,
-        });
+        if (shape !== "archer") {
+          sprite.body.stroke({
+            color: player.dead ? 0x111827 : isSelf ? 0xffffff : 0x172026,
+            width: isSelf ? 2 : 1,
+            alpha: player.dead ? 0.45 : 1,
+          });
+        }
       }
 
       function createUnit(unit) {
@@ -1472,14 +1589,14 @@
         body.fill(visual.color);
       }
 
-      function spawnDamageText(target, damage) {
+      function spawnDamageText(target, damage, damageType) {
         if (!damage) {
           return;
         }
         const text = new PIXI.Text({
           text: `-${damage}`,
           style: {
-            fill: 0xff3333,
+            fill: damageTextColor(damageType),
             fontFamily: "Arial",
             fontSize: 15,
             fontWeight: "900",
@@ -1495,6 +1612,16 @@
           age: 0,
           lifetime: 720,
         });
+      }
+
+      function damageTextColor(damageType) {
+        if (damageType === "magic") {
+          return 0x8b5cf6;
+        }
+        if (damageType === "true") {
+          return 0xffffff;
+        }
+        return 0xff3333;
       }
 
       function syncDamageTexts(frame, deltaMS) {
@@ -1962,19 +2089,213 @@
       }
 
       function playerModelRadius(player) {
+        if (player.heroId === "sword") {
+          return player.playerId === state.playerId ? 13 : 11;
+        }
+        if (player.heroId === "warrior") {
+          return player.playerId === state.playerId ? 12 : 10;
+        }
+        if (player.heroId === "archer") {
+          return player.playerId === state.playerId ? 13 : 11;
+        }
+        if (player.heroId === "tank") {
+          return player.playerId === state.playerId ? 13 : 11;
+        }
         return player.playerId === state.playerId ? 10 : 8;
       }
 
       function playerModelShape(player) {
-        return player.heroId === "warrior" ? "triangle" : "circle";
+        if (player.heroId === "sword") {
+          return "katana";
+        }
+        if (player.heroId === "warrior") {
+          return "warrior";
+        }
+        if (player.heroId === "archer") {
+          return "archer";
+        }
+        if (player.heroId === "tank") {
+          return "octagon";
+        }
+        return "circle";
       }
 
       function hitTestPlayerModel(dx, dy, player) {
         const radius = playerModelRadius(player) + 4;
-        if (playerModelShape(player) !== "triangle") {
-          return Math.hypot(dx, dy) <= radius;
+        if (playerModelShape(player) === "square") {
+          return Math.abs(dx) <= radius && Math.abs(dy) <= radius;
         }
         return Math.hypot(dx, dy) <= radius;
+      }
+
+      function drawSwordIcon(graphics, radius) {
+        const bladeHalf = radius * 0.26;
+        const guardHalf = radius * 0.78;
+        const guardY = radius * 0.34;
+        const gripHalf = radius * 0.18;
+        graphics.moveTo(0, -radius * 1.25);
+        graphics.lineTo(bladeHalf, -radius * 0.75);
+        graphics.lineTo(bladeHalf, guardY);
+        graphics.lineTo(guardHalf, guardY);
+        graphics.lineTo(guardHalf, radius * 0.58);
+        graphics.lineTo(gripHalf, radius * 0.58);
+        graphics.lineTo(gripHalf, radius * 1.08);
+        graphics.lineTo(-gripHalf, radius * 1.08);
+        graphics.lineTo(-gripHalf, radius * 0.58);
+        graphics.lineTo(-guardHalf, radius * 0.58);
+        graphics.lineTo(-guardHalf, guardY);
+        graphics.lineTo(-bladeHalf, guardY);
+        graphics.lineTo(-bladeHalf, -radius * 0.75);
+        graphics.closePath();
+      }
+
+      function drawWarriorIcon(graphics, radius) {
+        const bladeLeft = -radius * 1.08;
+        const bladeRight = -radius * 0.62;
+        const bladeTop = -radius * 1.24;
+        const bladeBottom = radius * 0.48;
+        graphics.moveTo(bladeLeft, bladeTop);
+        graphics.lineTo(bladeRight, bladeTop);
+        graphics.lineTo(bladeRight, bladeBottom);
+        graphics.lineTo(bladeLeft, bladeBottom);
+        graphics.closePath();
+        graphics.moveTo(-radius * 1.38, radius * 0.2);
+        graphics.lineTo(-radius * 0.34, radius * 0.2);
+        graphics.lineTo(-radius * 0.34, radius * 0.48);
+        graphics.lineTo(-radius * 1.38, radius * 0.48);
+        graphics.closePath();
+        graphics.moveTo(-radius * 1.02, radius * 0.48);
+        graphics.lineTo(-radius * 0.68, radius * 0.48);
+        graphics.lineTo(-radius * 0.68, radius * 1.14);
+        graphics.lineTo(-radius * 1.02, radius * 1.14);
+        graphics.closePath();
+        graphics.circle(radius * 0.52, radius * 0.06, radius * 0.72);
+        graphics.moveTo(radius * 0.18, -radius * 0.28);
+        graphics.lineTo(radius * 0.86, -radius * 0.28);
+        graphics.lineTo(radius * 0.86, radius * 0.4);
+        graphics.lineTo(radius * 0.18, radius * 0.4);
+        graphics.closePath();
+      }
+
+      function drawKatanaIcon(graphics, radius) {
+        graphics.moveTo(radius * 0.1, -radius * 0.05);
+        graphics.quadraticCurveTo(
+          -radius * 0.32,
+          radius * 0.48,
+          -radius * 0.86,
+          radius * 0.82,
+        );
+        graphics.quadraticCurveTo(
+          -radius * 1.12,
+          radius * 0.98,
+          -radius * 1.24,
+          radius * 0.86,
+        );
+        graphics.quadraticCurveTo(
+          -radius * 1.12,
+          radius * 1.18,
+          -radius * 0.74,
+          radius * 1.12,
+        );
+        graphics.quadraticCurveTo(
+          -radius * 0.08,
+          radius * 0.86,
+          radius * 0.55,
+          radius * 0.08,
+        );
+        graphics.lineTo(radius * 0.36, -radius * 0.08);
+        graphics.closePath();
+        graphics.moveTo(-radius * 0.1, -radius * 0.34);
+        graphics.lineTo(radius * 0.78, radius * 0.14);
+        graphics.lineTo(radius * 0.64, radius * 0.42);
+        graphics.lineTo(-radius * 0.24, -radius * 0.06);
+        graphics.closePath();
+        graphics.moveTo(radius * 0.45, -radius * 1.04);
+        graphics.lineTo(radius * 1.12, -radius * 0.66);
+        graphics.lineTo(radius * 0.76, radius * 0.03);
+        graphics.lineTo(radius * 0.1, -radius * 0.34);
+        graphics.closePath();
+        graphics.moveTo(-radius * 0.96, -radius * 0.5);
+        graphics.lineTo(-radius * 0.46, -radius * 0.5);
+        graphics.lineTo(-radius * 0.28, -radius * 0.24);
+        graphics.lineTo(-radius * 0.94, -radius * 0.24);
+        graphics.closePath();
+      }
+
+      function drawBowArrowIcon(graphics, radius) {
+        graphics.moveTo(-radius * 1.22, -radius * 0.14);
+        graphics.lineTo(radius * 1.05, -radius * 0.14);
+        graphics.lineTo(radius * 1.05, radius * 0.14);
+        graphics.lineTo(-radius * 1.22, radius * 0.14);
+        graphics.closePath();
+        graphics.moveTo(radius * 1.05, -radius * 0.42);
+        graphics.lineTo(radius * 1.42, 0);
+        graphics.lineTo(radius * 1.05, radius * 0.42);
+        graphics.closePath();
+        graphics.moveTo(-radius * 1.22, -radius * 0.14);
+        graphics.lineTo(-radius * 1.58, -radius * 0.44);
+        graphics.lineTo(-radius * 1.38, 0);
+        graphics.lineTo(-radius * 1.58, radius * 0.44);
+        graphics.lineTo(-radius * 1.22, radius * 0.14);
+        graphics.closePath();
+        graphics.moveTo(-radius * 0.32, -radius * 1.25);
+        graphics.lineTo(-radius * 0.2, -radius * 1.25);
+        graphics.lineTo(-radius * 0.2, -radius * 0.24);
+        graphics.lineTo(-radius * 0.32, -radius * 0.24);
+        graphics.closePath();
+        graphics.moveTo(-radius * 0.32, radius * 0.24);
+        graphics.lineTo(-radius * 0.2, radius * 0.24);
+        graphics.lineTo(-radius * 0.2, radius * 1.25);
+        graphics.lineTo(-radius * 0.32, radius * 1.25);
+        graphics.closePath();
+        graphics.moveTo(-radius * 0.18, -radius * 1.25);
+        graphics.quadraticCurveTo(
+          radius * 0.76,
+          -radius * 1.05,
+          radius * 0.78,
+          -radius * 0.14,
+        );
+        graphics.lineTo(radius * 0.5, -radius * 0.14);
+        graphics.quadraticCurveTo(
+          radius * 0.42,
+          -radius * 0.82,
+          -radius * 0.18,
+          -radius * 1.25,
+        );
+        graphics.closePath();
+        graphics.moveTo(radius * 0.5, radius * 0.14);
+        graphics.lineTo(radius * 0.78, radius * 0.14);
+        graphics.quadraticCurveTo(
+          radius * 0.76,
+          radius * 1.05,
+          -radius * 0.18,
+          radius * 1.25,
+        );
+        graphics.quadraticCurveTo(
+          radius * 0.42,
+          radius * 0.82,
+          radius * 0.5,
+          radius * 0.14,
+        );
+        graphics.closePath();
+      }
+
+      function drawChamferedOctagon(graphics, radius) {
+        const width = radius * 1.9;
+        const height = radius * 1.65;
+        const halfW = width / 2;
+        const halfH = height / 2;
+        const cornerX = radius * 0.36;
+        const sideInsetY = radius * 0.52;
+        graphics.moveTo(-halfW + cornerX, -halfH);
+        graphics.lineTo(halfW - cornerX, -halfH);
+        graphics.lineTo(halfW, -halfH + sideInsetY);
+        graphics.lineTo(halfW, halfH - sideInsetY);
+        graphics.lineTo(halfW - cornerX, halfH);
+        graphics.lineTo(-halfW + cornerX, halfH);
+        graphics.lineTo(-halfW, halfH - sideInsetY);
+        graphics.lineTo(-halfW, -halfH + sideInsetY);
+        graphics.closePath();
       }
 
       function unitModelRadius(unit) {

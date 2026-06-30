@@ -27,54 +27,62 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 	for _, entity := range players {
 		stats := buildStatsSnapshot(entity.Stats)
 		stats.MoveSpeed = world.EffectiveMoveSpeedAtTick(&entity, tick)
+		stats.AttackSpeed = world.EffectiveAttackSpeedAtTick(&entity, tick)
 		snapshot.Players = append(snapshot.Players, protocol.PlayerSnapshot{
-			PlayerID:     entity.PlayerID,
-			HeroID:       entity.HeroID,
-			Team:         string(entity.Team),
-			Level:        entity.Level,
-			MaxLevel:     world.MaxHeroLevel,
-			SkillPoints:  entity.SkillPoints,
-			Exp:          entity.Exp,
-			TotalExp:     entity.TotalExp,
-			NextLevelExp: entity.NextLevelExp,
-			X:            entity.Position.X,
-			Y:            entity.Position.Y,
-			Stats:        stats,
-			Skills:       buildSkillSnapshots(entity.Skills),
-			Passive:      buildPassiveSnapshot(entity.Passive),
-			LastHitTick:  entity.Combat.LastHitTick,
-			LastDamage:   entity.Combat.LastDamage,
-			Dead:         entity.Death.Dead,
-			RespawnTick:  entity.Death.RespawnTick,
-			RespawnIn:    respawnInSeconds(tick, entity.Death),
-			Control:      buildControlSnapshot(entity.Control),
-			Sword:        buildSwordSnapshot(entity.Sword),
-			Warrior:      buildWarriorSnapshot(entity.Warrior),
+			PlayerID:       entity.PlayerID,
+			HeroID:         entity.HeroID,
+			Team:           string(entity.Team),
+			Level:          entity.Level,
+			MaxLevel:       world.MaxHeroLevel,
+			SkillPoints:    entity.SkillPoints,
+			Exp:            entity.Exp,
+			TotalExp:       entity.TotalExp,
+			NextLevelExp:   entity.NextLevelExp,
+			X:              entity.Position.X,
+			Y:              entity.Position.Y,
+			Stats:          stats,
+			Skills:         buildSkillSnapshots(entity.Skills),
+			Passive:        buildPassiveSnapshot(entity.Passive),
+			LastHitTick:    entity.Combat.LastHitTick,
+			LastDamage:     entity.Combat.LastDamage,
+			LastDamageType: entity.Combat.LastDamageType,
+			Dead:           entity.Death.Dead,
+			RespawnTick:    entity.Death.RespawnTick,
+			RespawnIn:      respawnInSeconds(tick, entity.Death),
+			Control:        buildControlSnapshot(entity.Control),
+			Sword:          buildSwordSnapshot(entity.Sword),
+			Warrior:        buildWarriorSnapshot(entity.Warrior),
+			Tank:           buildTankSnapshot(entity.Tank),
 		})
 	}
 	for _, entity := range dummies {
 		snapshot.Dummies = append(snapshot.Dummies, protocol.DummySnapshot{
-			ID:          entity.ID,
-			X:           entity.Position.X,
-			Y:           entity.Position.Y,
-			Radius:      entity.Radius,
-			Stats:       buildStatsSnapshot(entity.Stats),
-			LastHitTick: entity.Combat.LastHitTick,
-			LastDamage:  entity.Combat.LastDamage,
+			ID:             entity.ID,
+			X:              entity.Position.X,
+			Y:              entity.Position.Y,
+			Radius:         entity.Radius,
+			Stats:          buildStatsSnapshot(entity.Stats),
+			LastHitTick:    entity.Combat.LastHitTick,
+			LastDamage:     entity.Combat.LastDamage,
+			LastDamageType: entity.Combat.LastDamageType,
 		})
 	}
 	for _, entity := range units {
+		stats := buildStatsSnapshot(entity.Stats)
+		stats.MoveSpeed = world.EffectiveMoveSpeedAtTick(&entity, tick)
+		stats.AttackSpeed = world.EffectiveAttackSpeedAtTick(&entity, tick)
 		snapshot.Units = append(snapshot.Units, protocol.UnitSnapshot{
-			ID:          entity.ID,
-			Kind:        string(entity.Kind),
-			Team:        string(entity.Team),
-			X:           entity.Position.X,
-			Y:           entity.Position.Y,
-			Radius:      entity.Radius,
-			Stats:       buildStatsSnapshot(entity.Stats),
-			LastHitTick: entity.Combat.LastHitTick,
-			LastDamage:  entity.Combat.LastDamage,
-			Control:     buildControlSnapshot(entity.Control),
+			ID:             entity.ID,
+			Kind:           string(entity.Kind),
+			Team:           string(entity.Team),
+			X:              entity.Position.X,
+			Y:              entity.Position.Y,
+			Radius:         entity.Radius,
+			Stats:          stats,
+			LastHitTick:    entity.Combat.LastHitTick,
+			LastDamage:     entity.Combat.LastDamage,
+			LastDamageType: entity.Combat.LastDamageType,
+			Control:        buildControlSnapshot(entity.Control),
 		})
 	}
 	for _, effect := range walls {
@@ -179,6 +187,12 @@ func buildControlSnapshot(state world.ControlState) protocol.ControlSnapshot {
 func buildWarriorSnapshot(state world.WarriorState) protocol.WarriorSnapshot {
 	return protocol.WarriorSnapshot{
 		JudgmentUntilTick: state.JudgmentUntilTick,
+	}
+}
+
+func buildTankSnapshot(state world.TankState) protocol.TankSnapshot {
+	return protocol.TankSnapshot{
+		ThunderclapAftershockUntil: state.ThunderclapAftershockUntil,
 	}
 }
 

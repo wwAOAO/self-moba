@@ -17,6 +17,7 @@ const (
 	MaxUltSkillLevel   = 3
 	swordHeroID        = "sword"
 	warriorHeroID      = "warrior"
+	tankHeroID         = "tank"
 	critRollModulo     = 10000
 	respawnSeconds     = 20
 	swordQSkillID      = "sword_cut"
@@ -28,6 +29,10 @@ const (
 	warriorWSkillID    = "dash"
 	warriorESkillID    = "judgment"
 	warriorRSkillID    = "justice"
+	tankQSkillID       = "slam"
+	tankWSkillID       = "guard"
+	tankESkillID       = "taunt"
+	tankRSkillID       = "earthquake"
 	windWallDuration   = 4
 )
 
@@ -42,21 +47,24 @@ type World struct {
 	nextObjectID     int
 	nextWallID       int
 	nextProjectileID int
+	nextEffectID     int
 	windWalls        map[string]WindWall
 	projectiles      map[string]*Projectile
+	skillEffects     map[string]SkillEffect
 }
 
 func NewWorld(heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig) *World {
 	w := &World{
-		width:       DefaultMapWidth,
-		height:      DefaultMapHeight,
-		entities:    make(map[string]*Entity),
-		heroes:      heroes,
-		skills:      skills,
-		levels:      levels,
-		rewards:     rewards,
-		windWalls:   make(map[string]WindWall),
-		projectiles: make(map[string]*Projectile),
+		width:        DefaultMapWidth,
+		height:       DefaultMapHeight,
+		entities:     make(map[string]*Entity),
+		heroes:       heroes,
+		skills:       skills,
+		levels:       levels,
+		rewards:      rewards,
+		windWalls:    make(map[string]WindWall),
+		projectiles:  make(map[string]*Projectile),
+		skillEffects: make(map[string]SkillEffect),
 	}
 	w.SpawnBattleUnits()
 	w.SpawnTrainingDummy()
@@ -93,6 +101,8 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 		entity.Combat = CombatState{}
 		entity.Passive = w.passiveStateForHero(hero)
 		entity.Sword = swordStateForHero(hero.HeroID)
+		entity.Warrior = WarriorState{}
+		entity.Tank = TankState{}
 		entity.Death = DeathState{}
 		return
 	}
@@ -347,6 +357,7 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 		return
 	}
 	if input.Move != nil {
+		w.cancelTankRPreparedCast(entity)
 		target := Vector2{
 			X: clamp(input.Move.TargetX, 0, w.width),
 			Y: clamp(input.Move.TargetY, 0, w.height),
@@ -355,6 +366,7 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 		entity.Intent.AttackPausedTill = tick + uint64(tickRate*3)
 	}
 	if input.Move == nil && (input.MoveX != 0 || input.MoveY != 0) {
+		w.cancelTankRPreparedCast(entity)
 		dx, dy := normalize(input.MoveX, input.MoveY)
 		before := entity.Position
 		step := movementStepAtTick(entity, tickRate, tick)
@@ -383,14 +395,17 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 
 func (w *World) Tick(tick uint64, tickRate int) {
 	w.expireWindWalls(tick)
+	w.expireSkillEffects(tick)
 	w.tickProjectiles(tick, tickRate)
 	for _, entity := range w.entities {
 		w.tickPhysicalDefenseShred(entity, tick)
 		w.tickSwordShield(entity, tick)
+		w.tickTankGraniteShield(entity, tick, tickRate)
+		w.refreshTankWPassive(entity)
 		if entity.Kind != EntityKindPlayer {
 			continue
 		}
-		w.tickDashMovement(entity, tick)
+		w.tickDashMovement(entity, tick, tickRate)
 		w.tickRespawn(entity, tick)
 		if entity.Death.Dead || entity.Stats.HP <= 0 {
 			continue
@@ -401,7 +416,7 @@ func (w *World) Tick(tick uint64, tickRate int) {
 	}
 }
 
-func (w *World) tickDashMovement(entity *Entity, tick uint64) {
+func (w *World) tickDashMovement(entity *Entity, tick uint64, tickRate int) {
 	if entity == nil || entity.Control.DashUntilTick == 0 || tick < entity.Control.DashStartTick {
 		return
 	}
@@ -414,6 +429,7 @@ func (w *World) tickDashMovement(entity *Entity, tick uint64) {
 		entity.Position = entity.Control.DashEnd
 		entity.Control.DashUntilTick = 0
 		entity.Control.DashStartTick = 0
+		w.resolveTankRImpact(entity, tick, tickRate)
 	} else {
 		progress := float64(tick-entity.Control.DashStartTick) / float64(entity.Control.DashUntilTick-entity.Control.DashStartTick)
 		entity.Position = Vector2{
@@ -441,6 +457,14 @@ func (w *World) expireWindWalls(tick uint64) {
 	}
 }
 
+func (w *World) expireSkillEffects(tick uint64) {
+	for id, effect := range w.skillEffects {
+		if tick >= effect.ExpiresAt {
+			delete(w.skillEffects, id)
+		}
+	}
+}
+
 func (w *World) tickProjectiles(tick uint64, tickRate int) {
 	for id, projectile := range w.projectiles {
 		if tick >= projectile.ExpiresAt || projectile.Traveled >= projectile.Range {
@@ -452,11 +476,17 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 		if step > remaining {
 			step = remaining
 		}
+		if projectile.SkillID == tankQSkillID {
+			updateTrackingProjectileDir(projectile, w.entities[projectile.TargetID])
+		}
 		projectile.Position.X = clamp(projectile.Position.X+projectile.Dir.X*step, 0, w.width)
 		projectile.Position.Y = clamp(projectile.Position.Y+projectile.Dir.Y*step, 0, w.height)
 		projectile.Traveled += step
 		source := w.entities[projectile.SourceID]
 		for _, target := range w.entities {
+			if projectile.SkillID == tankQSkillID && target.ID != projectile.TargetID {
+				continue
+			}
 			if projectile.HitIDs[target.ID] || !canAttackTarget(source, target) {
 				continue
 			}
@@ -467,11 +497,19 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 			damage := projectile.Damage
 			if projectile.SkillID == swordQSkillID && source != nil {
 				damage = w.swordQDamage(source, target, w.skillConfig(projectile.SkillID), tick)
+			} else if projectile.SkillID == tankQSkillID && source != nil {
+				damage = tankQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
 			}
 			target.Combat.LastHitTick = tick
 			if target.Kind != EntityKindDummy {
 				wasAlive := target.Stats.HP > 0
-				w.applyDamage(source, target, damage, tickRate)
+				if projectile.SkillID == tankQSkillID {
+					w.applyMagicDamage(source, target, damage, tickRate)
+					applyTankQMoveSpeedSteal(source, target, projectile.EffectRatio, tick+projectile.EffectTicks)
+					delete(w.projectiles, id)
+				} else {
+					w.applyDamage(source, target, damage, tickRate)
+				}
 				if projectile.KnockupTicks > 0 {
 					target.Control.AirborneUntilTick = tick + projectile.KnockupTicks
 				}
@@ -482,6 +520,11 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 				}
 			} else {
 				target.Combat.LastDamage = damage
+				target.Combat.LastDamageType = projectileDamageType(projectile.SkillID)
+				if projectile.SkillID == tankQSkillID {
+					applyTankQMoveSpeedSteal(source, target, projectile.EffectRatio, tick+projectile.EffectTicks)
+					delete(w.projectiles, id)
+				}
 			}
 		}
 		if projectile.Traveled >= projectile.Range {
@@ -501,10 +544,13 @@ func (w *World) tickRespawn(entity *Entity, tick uint64) {
 	entity.Intent = IntentState{}
 	entity.Control = ControlState{}
 	entity.Warrior = WarriorState{}
+	entity.Tank = TankState{}
 	entity.Passive.Shield = 0
 	entity.Passive.MaxShield = 0
 	entity.Passive.LastRegenBreakTick = tick
 	entity.Passive.NextRegenTick = 0
+	w.refreshTankGraniteShield(entity)
+	w.refreshTankWPassive(entity)
 	entity.Combat.NextAttackTick = tick
 }
 
@@ -528,6 +574,9 @@ func (w *World) tickPlayer(entity *Entity, tick uint64, tickRate int) {
 	if entity.Intent.MoveTarget != nil {
 		if w.moveToward(entity, *entity.Intent.MoveTarget, movementStepAtTick(entity, tickRate, tick), 8) {
 			entity.Intent.MoveTarget = nil
+			if entity.HeroID == tankHeroID && entity.Tank.UnstoppableCastPending {
+				w.releasePreparedTankR(entity, tick, tickRate)
+			}
 		}
 	}
 }
@@ -552,7 +601,24 @@ func EffectiveMoveSpeedAtTick(entity *Entity, tick uint64) float64 {
 	if entity.HeroID == warriorHeroID && tick > 0 && tick < entity.Warrior.DecisiveStrikeSpeedUntilTick {
 		moveSpeed *= 1 + entity.Warrior.DecisiveStrikeMoveSpeedBonus
 	}
+	if entity.Control.MoveSpeedBonusUntil > 0 && (tick == 0 || tick < entity.Control.MoveSpeedBonusUntil) {
+		moveSpeed += entity.Control.MoveSpeedBonusFlat
+	}
+	if entity.Control.MoveSpeedSlowUntil > 0 && (tick == 0 || tick < entity.Control.MoveSpeedSlowUntil) {
+		moveSpeed *= 1 - clamp(entity.Control.MoveSpeedSlow, 0, 1)
+	}
 	return moveSpeed
+}
+
+func EffectiveAttackSpeedAtTick(entity *Entity, tick uint64) float64 {
+	if entity == nil {
+		return 0
+	}
+	attackSpeed := entity.Stats.AttackSpeed
+	if entity.Control.AttackSpeedSlowUntil > 0 && (tick == 0 || tick < entity.Control.AttackSpeedSlowUntil) {
+		attackSpeed *= 1 - clamp(entity.Control.AttackSpeedSlow, 0, 1)
+	}
+	return clamp(attackSpeed, 0, 2.5)
 }
 
 func (w *World) moveToward(entity *Entity, destination Vector2, step float64, stopDistance float64) bool {
@@ -614,22 +680,49 @@ func (w *World) WindWalls() []WindWall {
 }
 
 func (w *World) SkillEffects() []SkillEffect {
-	effects := make([]SkillEffect, 0, len(w.projectiles))
+	effects := make([]SkillEffect, 0, len(w.projectiles)+len(w.skillEffects))
+	for _, effect := range w.skillEffects {
+		effects = append(effects, effect)
+	}
 	for _, projectile := range w.projectiles {
+		start := projectile.Start
+		createdAt := projectile.CreatedAt
+		if projectile.SkillID == tankQSkillID {
+			start = projectile.Position
+			createdAt = 0
+		}
 		effects = append(effects, SkillEffect{
 			ID:        projectile.ID,
 			Kind:      projectile.Kind,
 			Team:      projectile.Team,
-			Start:     projectile.Start,
+			Start:     start,
 			Dir:       projectile.Dir,
 			Range:     projectile.Range,
 			Radius:    projectile.Radius,
 			Speed:     projectile.SpeedPerTick,
-			CreatedAt: projectile.CreatedAt,
+			CreatedAt: createdAt,
 			ExpiresAt: projectile.ExpiresAt,
 		})
 	}
 	return effects
+}
+
+func updateTrackingProjectileDir(projectile *Projectile, target *Entity) {
+	if projectile == nil || target == nil || target.Stats.HP <= 0 {
+		return
+	}
+	dx, dy := normalize(target.Position.X-projectile.Position.X, target.Position.Y-projectile.Position.Y)
+	if dx == 0 && dy == 0 {
+		return
+	}
+	projectile.Dir = Vector2{X: dx, Y: dy}
+}
+
+func projectileDamageType(skillID string) string {
+	if skillID == tankQSkillID {
+		return "magic"
+	}
+	return "physical"
 }
 
 func (w *World) BlocksProjectile(team Team, from Vector2, to Vector2) bool {
@@ -746,13 +839,21 @@ func finalAttackSpeed(baseAttackSpeed float64, attackSpeedBonus float64, attackS
 }
 
 func (w *World) passiveStateForHero(hero config.HeroConfig) PassiveState {
-	if hero.HeroID != swordHeroID {
-		return PassiveState{}
+	if hero.HeroID == swordHeroID {
+		skill := w.skillConfig(hero.Skills.Passive)
+		return PassiveState{
+			MaxSwordIntent: skillMetaRange(skill, "intentMax", 100),
+		}
 	}
-	skill := w.skillConfig(hero.Skills.Passive)
-	return PassiveState{
-		MaxSwordIntent: skillMetaRange(skill, "intentMax", 100),
+	if hero.HeroID == tankHeroID {
+		stats := heroStatsAtLevel(hero, MinHeroLevel)
+		shield := tankGraniteShieldValue(stats.MaxHP, w.skillConfig(hero.Skills.Passive))
+		return PassiveState{
+			Shield:    shield,
+			MaxShield: shield,
+		}
 	}
+	return PassiveState{}
 }
 
 func swordStateForHero(heroID string) SwordState {
@@ -795,6 +896,28 @@ func (w *World) tickSwordShield(entity *Entity, tick uint64) {
 	entity.Passive.Shield = 0
 	entity.Passive.MaxShield = 0
 	entity.Passive.ShieldExpireTick = 0
+}
+
+func (w *World) tickTankGraniteShield(entity *Entity, tick uint64, tickRate int) {
+	if entity == nil || entity.HeroID != tankHeroID || entity.Stats.HP <= 0 {
+		return
+	}
+	skill := w.heroPassiveSkill(entity)
+	maxShield := tankGraniteShieldValue(entity.Stats.MaxHP, skill)
+	if maxShield <= 0 || entity.Passive.Shield >= maxShield {
+		entity.Passive.MaxShield = maxShield
+		return
+	}
+	resetTicks := secondsToTicks(skillMetaRange(skill, "resetSeconds", 10), tickRate)
+	if tick < entity.Passive.LastRegenBreakTick+resetTicks {
+		return
+	}
+	entity.Passive.MaxShield = maxShield
+	entity.Passive.Shield = maxShield
+}
+
+func tankGraniteShieldValue(maxHP int, skill config.SkillConfig) int {
+	return int(math.Round(float64(maxHP) * skillMetaRange(skill, "shieldMaxHPRatio", 0.1)))
 }
 
 func (w *World) tickWarriorToughness(entity *Entity, tick uint64, tickRate int) {
@@ -960,6 +1083,50 @@ func (w *World) applyCast(entity *Entity, cast protocol.CastInput, tick uint64, 
 		w.applyWarriorR(entity, cast, state, skill, tick, tickRate)
 		return
 	}
+	if entity.HeroID == tankHeroID && cast.SkillID == tankQSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyTankQ(entity, cast, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == tankHeroID && cast.SkillID == tankWSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyTankW(entity, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == tankHeroID && cast.SkillID == tankESkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyTankE(entity, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == tankHeroID && cast.SkillID == tankRSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyTankR(entity, cast, state, skill, tick, tickRate)
+		return
+	}
 	if skills == nil {
 		return
 	}
@@ -983,6 +1150,359 @@ func (w *World) applyWarriorQ(entity *Entity, state SkillState, skill config.Ski
 	entity.Combat.NextAttackTick = tick
 	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{8000, 8000, 8000, 8000, 8000}), tickRate)
 	entity.Skills[warriorQSkillID] = state
+}
+
+func (w *World) applyTankQ(entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	if entity == nil || state.Level <= 0 {
+		return
+	}
+	target := w.entities[cast.TargetID]
+	if target == nil {
+		target = w.tankQTarget(entity, Vector2{X: cast.TargetX, Y: cast.TargetY}, skill)
+	}
+	if !canAttackTarget(entity, target) {
+		return
+	}
+	if distance(entity.Position, target.Position) > skillRange(skill, 625)+target.Radius {
+		return
+	}
+	manaCost := skillMetaListByLevel(skill, "manaCost", state.Level, []float64{70, 75, 80, 85, 90})
+	if entity.Stats.MP < manaCost {
+		return
+	}
+	dx, dy := normalize(target.Position.X-entity.Position.X, target.Position.Y-entity.Position.Y)
+	if dx == 0 && dy == 0 {
+		dx = 1
+	}
+	entity.Stats.MP -= manaCost
+	qRange := skillRange(skill, 625)
+	speedPerSecond := skillMetaRange(skill, "projectileSpeed", 1200)
+	speedPerTick := speedPerSecond / float64(tickRate)
+	if speedPerTick <= 0 {
+		speedPerTick = qRange
+	}
+	lifeTicks := uint64(math.Ceil(qRange / speedPerTick))
+	if lifeTicks == 0 {
+		lifeTicks = 1
+	}
+	w.nextProjectileID++
+	id := "projectile:tank_q:" + strconv.Itoa(w.nextProjectileID)
+	w.projectiles[id] = &Projectile{
+		ID:           id,
+		Kind:         "tank_q",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		TargetID:     target.ID,
+		SkillID:      tankQSkillID,
+		Position:     entity.Position,
+		Start:        entity.Position,
+		Dir:          Vector2{X: dx, Y: dy},
+		SpeedPerTick: speedPerTick,
+		Range:        qRange,
+		Radius:       skillMetaRange(skill, "projectileRadius", 45),
+		Damage:       state.Level,
+		EffectRatio:  skillMetaListByLevel(skill, "moveSpeedSteal", state.Level, []float64{0.2, 0.25, 0.3, 0.35, 0.4}),
+		EffectTicks:  secondsToTicks(skillMetaRange(skill, "moveSpeedStealSeconds", 3), tickRate),
+		CreatedAt:    tick,
+		ExpiresAt:    tick + lifeTicks + 1,
+		HitIDs:       make(map[string]bool),
+	}
+	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{8000, 8000, 8000, 8000, 8000}), tickRate)
+	w.lockAttackAfterCast(entity, tick, tickRate)
+	entity.Skills[tankQSkillID] = state
+}
+
+func (w *World) tankQTarget(entity *Entity, targetPoint Vector2, skill config.SkillConfig) *Entity {
+	var best *Entity
+	bestDistance := math.MaxFloat64
+	castRange := skillRange(skill, 625)
+	pickPadding := skillMetaRange(skill, "targetPickPadding", 90)
+	for _, target := range w.entities {
+		if !canAttackTarget(entity, target) {
+			continue
+		}
+		if distance(entity.Position, target.Position) > castRange+target.Radius {
+			continue
+		}
+		distToPoint := distance(targetPoint, target.Position)
+		if distToPoint > target.Radius+pickPadding {
+			continue
+		}
+		if distToPoint < bestDistance {
+			bestDistance = distToPoint
+			best = target
+		}
+	}
+	return best
+}
+
+func (w *World) applyTankW(entity *Entity, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	if entity == nil || state.Level <= 0 {
+		return
+	}
+	manaCost := skillMetaListByLevel(skill, "manaCost", state.Level, []float64{30, 35, 40, 45, 50})
+	if entity.Stats.MP < manaCost {
+		return
+	}
+	entity.Stats.MP -= manaCost
+	entity.Tank.ThunderclapEmpowerUntil = tick + secondsToTicks(skillMetaRange(skill, "aftershockDurationSeconds", 5), tickRate)
+	entity.Tank.ThunderclapAftershockUntil = entity.Tank.ThunderclapEmpowerUntil
+	entity.Tank.ThunderclapLevel = state.Level
+	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{10000, 9500, 9000, 8500, 8000}), tickRate)
+	entity.Skills[tankWSkillID] = state
+}
+
+func (w *World) refreshTankWPassive(entity *Entity) {
+	if entity == nil || entity.HeroID != tankHeroID {
+		return
+	}
+	if entity.Tank.ThunderclapArmorBonus != 0 {
+		entity.Stats.PhysicalDefense -= entity.Tank.ThunderclapArmorBonus
+		entity.Stats.BonusPhysicalDefense -= entity.Tank.ThunderclapArmorBonus
+		entity.Tank.ThunderclapArmorBonus = 0
+	}
+	state, ok := entity.Skills[tankWSkillID]
+	if !ok || state.Level <= 0 {
+		return
+	}
+	skill := w.skillConfig(tankWSkillID)
+	ratio := skillMetaListByLevel(skill, "passiveArmorRatio", state.Level, []float64{0.1, 0.15, 0.2, 0.25, 0.3})
+	if entity.Passive.Shield > 0 {
+		ratio = skillMetaRange(skill, "shieldArmorRatio", 0.3)
+	}
+	baseArmor := entity.Stats.PhysicalDefense - entity.Stats.BonusPhysicalDefense
+	bonus := baseArmor * ratio
+	entity.Tank.ThunderclapArmorBonus = bonus
+	entity.Stats.PhysicalDefense += bonus
+	entity.Stats.BonusPhysicalDefense += bonus
+}
+
+func (w *World) applyTankE(entity *Entity, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	if entity == nil || state.Level <= 0 {
+		return
+	}
+	manaCost := skillMetaListByLevel(skill, "manaCost", state.Level, []float64{50, 55, 60, 65, 70})
+	if entity.Stats.MP < manaCost {
+		return
+	}
+	entity.Stats.MP -= manaCost
+	damage := tankEDamage(entity, skill, state.Level)
+	slow := skillMetaListByLevel(skill, "attackSpeedSlow", state.Level, []float64{0.3, 0.35, 0.4, 0.45, 0.5})
+	slowUntil := tick + secondsToTicks(skillMetaRange(skill, "attackSpeedSlowSeconds", 3), tickRate)
+	for _, target := range w.targetsInRadius(entity, entity.Position, skillRange(skill, 400)) {
+		target.Combat.LastHitTick = tick
+		if target.Kind != EntityKindDummy {
+			wasAlive := target.Stats.HP > 0
+			w.applyMagicDamage(entity, target, magicDamageAfterResistance(entity, target, damage, tick), tickRate)
+			applyAttackSpeedSlow(target, slow, slowUntil)
+			if wasAlive && target.Stats.HP == 0 {
+				w.applyKillReward(entity, target)
+				w.killPlayer(target, tick, tickRate)
+				w.removeDeadUnit(target)
+			}
+		} else {
+			target.Combat.LastDamage = magicDamageAfterResistance(entity, target, damage, tick)
+			target.Combat.LastDamageType = "magic"
+			applyAttackSpeedSlow(target, slow, slowUntil)
+		}
+	}
+	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{7000, 7000, 7000, 7000, 7000}), tickRate)
+	w.lockAttackAfterCast(entity, tick, tickRate)
+	entity.Skills[tankESkillID] = state
+}
+
+func tankEDamage(entity *Entity, skill config.SkillConfig, level int) float64 {
+	return skillMetaListByLevel(skill, "baseDamage", level, []float64{60, 95, 130, 165, 200}) +
+		entity.Stats.PhysicalDefense*skillMetaRange(skill, "armorRatio", 0.4) +
+		float64(entity.Stats.AbilityPower)*skillMetaRange(skill, "apRatio", 0.6)
+}
+
+func applyAttackSpeedSlow(target *Entity, slow float64, until uint64) {
+	if target == nil || slow <= 0 || until == 0 {
+		return
+	}
+	target.Control.AttackSpeedSlow = clamp(slow, 0, 1)
+	target.Control.AttackSpeedSlowUntil = until
+}
+
+func (w *World) applyTankR(entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	if entity == nil || state.Level <= 0 {
+		return
+	}
+	manaCost := skillMetaRange(skill, "manaCost", 100)
+	if entity.Stats.MP < manaCost {
+		return
+	}
+	start := entity.Position
+	rRange := skillRange(skill, 1000)
+	targetPoint := Vector2{
+		X: clamp(cast.TargetX, 0, w.width),
+		Y: clamp(cast.TargetY, 0, w.height),
+	}
+	if distance(start, targetPoint) > rRange {
+		dx, dy := normalize(targetPoint.X-start.X, targetPoint.Y-start.Y)
+		if dx == 0 && dy == 0 {
+			return
+		}
+		castPosition := Vector2{
+			X: clamp(targetPoint.X-dx*rRange, 0, w.width),
+			Y: clamp(targetPoint.Y-dy*rRange, 0, w.height),
+		}
+		entity.Tank.UnstoppableCastPending = true
+		entity.Tank.UnstoppableCastTarget = targetPoint
+		entity.Tank.UnstoppableCastLevel = state.Level
+		entity.Intent.MoveTarget = &castPosition
+		entity.Intent.AttackTargetID = ""
+		entity.Intent.AttackPausedTill = 0
+		return
+	}
+	w.startTankRDash(entity, targetPoint, state, skill, tick, tickRate)
+}
+
+func (w *World) startTankRDash(entity *Entity, targetPoint Vector2, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	start := entity.Position
+	dx, dy := normalize(targetPoint.X-start.X, targetPoint.Y-start.Y)
+	if dx == 0 && dy == 0 {
+		return
+	}
+	manaCost := skillMetaRange(skill, "manaCost", 100)
+	if entity.Stats.MP < manaCost {
+		return
+	}
+	rRange := skillRange(skill, 1000)
+	if distance(start, targetPoint) > rRange {
+		targetPoint = Vector2{
+			X: clamp(start.X+dx*rRange, 0, w.width),
+			Y: clamp(start.Y+dy*rRange, 0, w.height),
+		}
+	}
+	entity.Stats.MP -= manaCost
+	entity.Intent = IntentState{}
+	entity.Tank.UnstoppableCastPending = false
+	entity.Tank.UnstoppableCastTarget = Vector2{}
+	entity.Tank.UnstoppableCastLevel = 0
+	landingRadius := skillMetaRange(skill, "landingRadius", 250)
+	dashSpeed := skillMetaRange(skill, "dashSpeed", 1600)
+	if dashSpeed <= 0 {
+		dashSpeed = rRange
+	}
+	travelTicks := uint64(math.Ceil(distance(start, targetPoint) / dashSpeed * float64(tickRate)))
+	if travelTicks < 1 {
+		travelTicks = 1
+	}
+	entity.Control.DashStartTick = tick
+	entity.Control.DashStart = start
+	entity.Control.DashEnd = targetPoint
+	entity.Control.DashUntilTick = tick + travelTicks
+	entity.Control.ActionLockedUntilTick = entity.Control.DashUntilTick
+	entity.Tank.UnstoppableImpactPending = true
+	entity.Tank.UnstoppableImpactTick = entity.Control.DashUntilTick
+	entity.Tank.UnstoppableImpactLevel = state.Level
+	entity.Tank.UnstoppableImpactRadius = landingRadius
+	entity.Tank.UnstoppableKnockupTicks = secondsToTicks(skillMetaRange(skill, "knockupSeconds", 1.5), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{130000, 105000, 80000}), tickRate)
+	entity.Skills[tankRSkillID] = state
+}
+
+func (w *World) releasePreparedTankR(entity *Entity, tick uint64, tickRate int) {
+	if entity == nil || entity.HeroID != tankHeroID || !entity.Tank.UnstoppableCastPending {
+		return
+	}
+	state := entity.Skills[tankRSkillID]
+	if state.Level <= 0 {
+		w.cancelTankRPreparedCast(entity)
+		return
+	}
+	if state.CooldownUntilTick > tick {
+		w.cancelTankRPreparedCast(entity)
+		return
+	}
+	state.Level = entity.Tank.UnstoppableCastLevel
+	if state.Level <= 0 {
+		state.Level = 1
+	}
+	w.startTankRDash(entity, entity.Tank.UnstoppableCastTarget, state, w.skillConfig(tankRSkillID), tick, tickRate)
+}
+
+func (w *World) cancelTankRPreparedCast(entity *Entity) {
+	if entity == nil || entity.HeroID != tankHeroID || !entity.Tank.UnstoppableCastPending {
+		return
+	}
+	entity.Tank.UnstoppableCastPending = false
+	entity.Tank.UnstoppableCastTarget = Vector2{}
+	entity.Tank.UnstoppableCastLevel = 0
+}
+
+func (w *World) resolveTankRImpact(entity *Entity, tick uint64, tickRate int) {
+	if entity == nil || entity.HeroID != tankHeroID || !entity.Tank.UnstoppableImpactPending {
+		return
+	}
+	if tick < entity.Tank.UnstoppableImpactTick {
+		return
+	}
+	skill := w.skillConfig(tankRSkillID)
+	level := entity.Tank.UnstoppableImpactLevel
+	if level <= 0 {
+		level = 1
+	}
+	radius := entity.Tank.UnstoppableImpactRadius
+	if radius <= 0 {
+		radius = skillMetaRange(skill, "landingRadius", 250)
+	}
+	knockupTicks := entity.Tank.UnstoppableKnockupTicks
+	if knockupTicks == 0 {
+		knockupTicks = secondsToTicks(skillMetaRange(skill, "knockupSeconds", 1.5), tickRate)
+	}
+	damage := tankRDamage(entity, skill, level)
+	w.addTankRImpactEffect(entity, entity.Position, radius, tick, tickRate)
+	for _, target := range w.targetsInRadius(entity, entity.Position, radius) {
+		target.Combat.LastHitTick = tick
+		if target.Kind != EntityKindDummy {
+			wasAlive := target.Stats.HP > 0
+			w.applyMagicDamage(entity, target, magicDamageAfterResistance(entity, target, damage, tick), tickRate)
+			target.Control.AirborneUntilTick = tick + controlTicksAfterTenacity(target, knockupTicks, tick)
+			if wasAlive && target.Stats.HP == 0 {
+				w.applyKillReward(entity, target)
+				w.killPlayer(target, tick, tickRate)
+				w.removeDeadUnit(target)
+			}
+		} else {
+			target.Combat.LastDamage = magicDamageAfterResistance(entity, target, damage, tick)
+			target.Combat.LastDamageType = "magic"
+			target.Control.AirborneUntilTick = tick + knockupTicks
+		}
+	}
+	entity.Tank.UnstoppableImpactPending = false
+	entity.Tank.UnstoppableImpactTick = 0
+	entity.Tank.UnstoppableImpactLevel = 0
+	entity.Tank.UnstoppableImpactRadius = 0
+	entity.Tank.UnstoppableKnockupTicks = 0
+}
+
+func tankRDamage(entity *Entity, skill config.SkillConfig, level int) float64 {
+	return skillMetaListByLevel(skill, "baseDamage", level, []float64{200, 300, 400}) +
+		float64(entity.Stats.AbilityPower)*skillMetaRange(skill, "apRatio", 0.8)
+}
+
+func (w *World) addTankRImpactEffect(entity *Entity, center Vector2, radius float64, tick uint64, tickRate int) {
+	if entity == nil {
+		return
+	}
+	lifeTicks := uint64(math.Ceil(float64(tickRate) * 0.35))
+	if lifeTicks < 1 {
+		lifeTicks = 1
+	}
+	w.nextEffectID++
+	id := "effect:tank_r_impact:" + strconv.Itoa(w.nextEffectID)
+	w.skillEffects[id] = SkillEffect{
+		ID:        id,
+		Kind:      "tank_r_impact",
+		Team:      entity.Team,
+		Start:     center,
+		Radius:    radius,
+		CreatedAt: tick,
+		ExpiresAt: tick + lifeTicks,
+	}
 }
 
 func (w *World) applyWarriorW(entity *Entity, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
@@ -1105,6 +1625,7 @@ func (w *World) applyWarriorESpin(entity *Entity, skill config.SkillConfig, tick
 			}
 		} else {
 			target.Combat.LastDamage = damage
+			target.Combat.LastDamageType = "physical"
 			w.recordWarriorEHit(entity, target, skill, tick, tickRate)
 		}
 	}
@@ -1216,6 +1737,7 @@ func (w *World) applyWarriorR(entity *Entity, cast protocol.CastInput, state Ski
 		}
 	} else {
 		target.Combat.LastDamage = trueDamageAfterReduction(target, damage, tick)
+		target.Combat.LastDamageType = "true"
 	}
 	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{120000, 100000, 80000}), tickRate)
 	w.lockAttackAfterCast(entity, tick, tickRate)
@@ -1260,7 +1782,7 @@ func warriorRDamage(target *Entity, skill config.SkillConfig, level int) float64
 }
 
 func (w *World) lockAttackAfterCast(entity *Entity, tick uint64, tickRate int) {
-	nextAttackTick := tick + attackCooldownTicks(entity.Stats.AttackSpeed, tickRate)
+	nextAttackTick := tick + attackCooldownTicks(EffectiveAttackSpeedAtTick(entity, tick), tickRate)
 	if entity.Combat.NextAttackTick < nextAttackTick {
 		entity.Combat.NextAttackTick = nextAttackTick
 	}
@@ -1306,6 +1828,7 @@ func (w *World) applySwordQ(entity *Entity, cast protocol.CastInput, state Skill
 			}
 		} else {
 			target.Combat.LastDamage = damage
+			target.Combat.LastDamageType = "physical"
 		}
 	}
 	if len(targets) > 0 {
@@ -1422,6 +1945,7 @@ func (w *World) applySwordE(entity *Entity, cast protocol.CastInput, state Skill
 		}
 	} else {
 		target.Combat.LastDamage = damage
+		target.Combat.LastDamageType = "magic"
 	}
 	entity.Sword.SweepingBladeStacks++
 	maxStacks := int(skillMetaRange(skill, "maxStacks", 4))
@@ -1473,6 +1997,7 @@ func (w *World) applySwordR(entity *Entity, cast protocol.CastInput, state Skill
 			}
 		} else {
 			hit.Combat.LastDamage = damage
+			hit.Combat.LastDamageType = "physical"
 		}
 	}
 	entity.Passive.SwordIntent = entity.Passive.MaxSwordIntent
@@ -1646,6 +2171,41 @@ func (w *World) targetsInRadius(entity *Entity, center Vector2, radius float64) 
 	return hits
 }
 
+func (w *World) targetsInCone(entity *Entity, direction Vector2, coneRange float64, angleDegrees float64) []*Entity {
+	hits := make([]*Entity, 0)
+	if direction.X == 0 && direction.Y == 0 {
+		direction = Vector2{X: 1, Y: 0}
+	}
+	cosLimit := math.Cos((angleDegrees / 2) * math.Pi / 180)
+	for _, target := range w.entities {
+		if !canAttackTarget(entity, target) {
+			continue
+		}
+		toTarget := Vector2{X: target.Position.X - entity.Position.X, Y: target.Position.Y - entity.Position.Y}
+		dist := math.Hypot(toTarget.X, toTarget.Y)
+		if dist > coneRange+target.Radius || dist == 0 {
+			continue
+		}
+		dot := (toTarget.X*direction.X + toTarget.Y*direction.Y) / dist
+		if dot >= cosLimit {
+			hits = append(hits, target)
+		}
+	}
+	return hits
+}
+
+func isMonster(entity *Entity) bool {
+	if entity == nil {
+		return false
+	}
+	switch entity.Kind {
+	case EntityKindPlayer, EntityKindEnemyHero, EntityKindTower, EntityKindBarracks, EntityKindCrystal, EntityKindDummy:
+		return false
+	default:
+		return entity.Team == TeamNeutral
+	}
+}
+
 func cooldownTicks(cooldownMS int, tickRate int) uint64 {
 	if cooldownMS <= 0 {
 		return 0
@@ -1785,8 +2345,10 @@ func (w *World) applyAttack(attacker *Entity, target *Entity, tick uint64, tickR
 		}
 	} else {
 		target.Combat.LastDamage = damage
+		target.Combat.LastDamageType = "physical"
 	}
-	attacker.Combat.NextAttackTick = tick + attackCooldownTicks(attacker.Stats.AttackSpeed, tickRate)
+	attacker.Combat.NextAttackTick = tick + attackCooldownTicks(EffectiveAttackSpeedAtTick(attacker, tick), tickRate)
+	w.applyTankWAftershock(attacker, target, tick, tickRate)
 	w.consumeWarriorQ(attacker, target, tick, tickRate)
 }
 
@@ -1795,7 +2357,7 @@ func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64) int 
 	if w.attackCrits(attacker, target, tick) {
 		attack *= w.critDamageMultiplier(attacker)
 	}
-	return physicalDamageAfterResistance(attacker, target, attack+w.warriorQBonusDamage(attacker, tick), tick)
+	return physicalDamageAfterResistance(attacker, target, attack+w.warriorQBonusDamage(attacker, tick)+w.tankWBonusDamage(attacker, tick), tick)
 }
 
 func (w *World) warriorQBonusDamage(attacker *Entity, tick uint64) float64 {
@@ -1824,6 +2386,96 @@ func (w *World) consumeWarriorQ(attacker *Entity, target *Entity, tick uint64, t
 	attacker.Warrior.DecisiveStrikeLevel = 0
 }
 
+func (w *World) tankWBonusDamage(attacker *Entity, tick uint64) float64 {
+	if attacker == nil || attacker.HeroID != tankHeroID || tick >= attacker.Tank.ThunderclapEmpowerUntil {
+		return 0
+	}
+	skill := w.skillConfig(tankWSkillID)
+	level := attacker.Tank.ThunderclapLevel
+	if level <= 0 {
+		level = 1
+	}
+	return skillMetaListByLevel(skill, "bonusDamage", level, []float64{30, 40, 50, 60, 70}) +
+		float64(attacker.Stats.AbilityPower)*skillMetaRange(skill, "apRatio", 0.2) +
+		attacker.Stats.PhysicalDefense*skillMetaRange(skill, "armorRatio", 0.15)
+}
+
+func (w *World) applyTankWAftershock(attacker *Entity, primary *Entity, tick uint64, tickRate int) {
+	if attacker == nil || attacker.HeroID != tankHeroID || tick >= attacker.Tank.ThunderclapAftershockUntil {
+		return
+	}
+	skill := w.skillConfig(tankWSkillID)
+	level := attacker.Tank.ThunderclapLevel
+	if level <= 0 {
+		level = 1
+	}
+	damage := skillMetaListByLevel(skill, "aftershockDamage", level, []float64{15, 25, 35, 45, 55}) +
+		float64(attacker.Stats.AbilityPower)*skillMetaRange(skill, "aftershockAPRatio", 0.3) +
+		attacker.Stats.PhysicalDefense*skillMetaRange(skill, "aftershockArmorRatio", 0.15)
+	direction := Vector2{X: 1, Y: 0}
+	if primary != nil {
+		dx, dy := normalize(primary.Position.X-attacker.Position.X, primary.Position.Y-attacker.Position.Y)
+		if dx != 0 || dy != 0 {
+			direction = Vector2{X: dx, Y: dy}
+		}
+	}
+	coneRange := skillMetaRange(skill, "aftershockConeRange", 300)
+	coneAngle := skillMetaRange(skill, "aftershockConeAngleDegrees", 70)
+	w.addTankWAftershockEffect(attacker, direction, coneRange, coneAngle, tick, tickRate)
+	for _, target := range w.targetsInCone(attacker, direction, coneRange, coneAngle) {
+		target.Combat.LastHitTick = tick
+		previousDamage := 0
+		if primary != nil && target.ID == primary.ID {
+			previousDamage = target.Combat.LastDamage
+		}
+		aftershockDamage := damage
+		if isMonster(target) {
+			aftershockDamage *= skillMetaRange(skill, "monsterDamageMultiplier", 1.8)
+		}
+		if target.Kind != EntityKindDummy {
+			wasAlive := target.Stats.HP > 0
+			w.applyDamage(attacker, target, physicalDamageAfterResistance(attacker, target, aftershockDamage, tick), tickRate)
+			if wasAlive && target.Stats.HP == 0 {
+				w.applyKillReward(attacker, target)
+				w.killPlayer(target, tick, tickRate)
+				w.removeDeadUnit(target)
+			}
+		} else {
+			target.Combat.LastDamage = physicalDamageAfterResistance(attacker, target, aftershockDamage, tick)
+			target.Combat.LastDamageType = "physical"
+		}
+		if previousDamage > 0 {
+			target.Combat.LastDamage += previousDamage
+		}
+	}
+	if tick < attacker.Tank.ThunderclapEmpowerUntil {
+		attacker.Tank.ThunderclapEmpowerUntil = 0
+	}
+}
+
+func (w *World) addTankWAftershockEffect(attacker *Entity, direction Vector2, coneRange float64, coneAngle float64, tick uint64, tickRate int) {
+	if attacker == nil {
+		return
+	}
+	lifeTicks := uint64(math.Ceil(float64(tickRate) * 0.25))
+	if lifeTicks < 1 {
+		lifeTicks = 1
+	}
+	w.nextEffectID++
+	id := "effect:tank_w_aftershock:" + strconv.Itoa(w.nextEffectID)
+	w.skillEffects[id] = SkillEffect{
+		ID:        id,
+		Kind:      "tank_w_aftershock",
+		Team:      attacker.Team,
+		Start:     attacker.Position,
+		Dir:       direction,
+		Range:     coneRange,
+		Radius:    coneAngle,
+		CreatedAt: tick,
+		ExpiresAt: tick + lifeTicks,
+	}
+}
+
 func physicalDamageAfterResistance(attacker *Entity, target *Entity, rawDamage float64, tick uint64) int {
 	damageReduce := target.damageReductionForType("physical", tick)
 	return damageAfterResistance(rawDamage, effectiveResistance(target.Stats.PhysicalDefense, attacker.Stats.PhysicalPenPercent, attacker.Stats.PhysicalPenFlat), damageReduce)
@@ -1832,6 +2484,24 @@ func physicalDamageAfterResistance(attacker *Entity, target *Entity, rawDamage f
 func magicDamageAfterResistance(attacker *Entity, target *Entity, rawDamage float64, tick uint64) int {
 	damageReduce := target.damageReductionForType("magic", tick)
 	return damageAfterResistance(rawDamage, effectiveResistance(target.Stats.MagicDefense, attacker.Stats.MagicPenPercent, attacker.Stats.MagicPenFlat), damageReduce)
+}
+
+func tankQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	baseDamage := skillMetaListByLevel(skill, "baseDamage", skillLevel, []float64{70, 120, 170, 220, 270})
+	rawDamage := baseDamage + float64(attacker.Stats.AbilityPower)*skillMetaRange(skill, "apRatio", 0.6)
+	return magicDamageAfterResistance(attacker, target, rawDamage, tick)
+}
+
+func applyTankQMoveSpeedSteal(source *Entity, target *Entity, ratio float64, until uint64) {
+	if source == nil || target == nil || ratio <= 0 || until == 0 {
+		return
+	}
+	ratio = clamp(ratio, 0, 1)
+	stolen := EffectiveMoveSpeedAtTick(target, 0) * ratio
+	source.Control.MoveSpeedBonusFlat = stolen
+	source.Control.MoveSpeedBonusUntil = until
+	target.Control.MoveSpeedSlow = ratio
+	target.Control.MoveSpeedSlowUntil = until
 }
 
 func trueDamageAfterReduction(target *Entity, rawDamage float64, tick uint64) int {
@@ -1993,24 +2663,27 @@ func deterministicCritRoll(attackerID string, targetID string, tick uint64) floa
 }
 
 func (w *World) applyDamage(source *Entity, target *Entity, damage int, tickRate int) {
-	w.applyResolvedDamage(source, target, damage, tickRate)
+	w.applyResolvedDamage(source, target, damage, "physical", tickRate)
 }
 
 func (w *World) applyMagicDamage(source *Entity, target *Entity, damage int, tickRate int) {
-	w.applyResolvedDamage(source, target, damage, tickRate)
+	w.applyResolvedDamage(source, target, damage, "magic", tickRate)
 }
 
 func (w *World) applyTrueDamage(source *Entity, target *Entity, rawDamage float64, tickRate int) {
-	w.applyResolvedDamage(source, target, trueDamageAfterReduction(target, rawDamage, target.Combat.LastHitTick), tickRate)
+	w.applyResolvedDamage(source, target, trueDamageAfterReduction(target, rawDamage, target.Combat.LastHitTick), "true", tickRate)
 }
 
-func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, tickRate int) {
+func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, damageType string, tickRate int) {
 	if damage <= 0 {
 		target.Combat.LastDamage = 0
+		target.Combat.LastDamageType = ""
 		return
 	}
 	damage = w.applyShield(source, target, damage, tickRate)
 	target.Combat.LastDamage = damage
+	target.Combat.LastDamageType = damageType
+	w.breakTankGraniteShield(target, target.Combat.LastHitTick)
 	if damage <= 0 {
 		return
 	}
@@ -2042,6 +2715,14 @@ func (w *World) heroPassiveSkill(entity *Entity) config.SkillConfig {
 
 func (w *World) breakWarriorToughness(source *Entity, target *Entity, tick uint64) {
 	if target == nil || target.HeroID != warriorHeroID || !warriorToughnessBreaksRegen(source) {
+		return
+	}
+	target.Passive.LastRegenBreakTick = tick
+	target.Passive.NextRegenTick = 0
+}
+
+func (w *World) breakTankGraniteShield(target *Entity, tick uint64) {
+	if target == nil || target.HeroID != tankHeroID {
 		return
 	}
 	target.Passive.LastRegenBreakTick = tick
@@ -2227,8 +2908,38 @@ func (w *World) levelUp(entity *Entity) {
 	if nextStats.MP > nextStats.MaxMP {
 		nextStats.MP = nextStats.MaxMP
 	}
+	entity.Tank.ThunderclapArmorBonus = 0
 	entity.Stats = nextStats
+	w.refreshTankGraniteShieldMax(entity)
+	w.refreshTankWPassive(entity)
 	entity.SkillPoints++
+}
+
+func (w *World) refreshTankGraniteShield(entity *Entity) {
+	if entity == nil || entity.HeroID != tankHeroID {
+		return
+	}
+	skill := w.heroPassiveSkill(entity)
+	shield := tankGraniteShieldValue(entity.Stats.MaxHP, skill)
+	entity.Passive.MaxShield = shield
+	entity.Passive.Shield = shield
+	entity.Passive.ShieldExpireTick = 0
+}
+
+func (w *World) refreshTankGraniteShieldMax(entity *Entity) {
+	if entity == nil || entity.HeroID != tankHeroID {
+		return
+	}
+	oldMax := entity.Passive.MaxShield
+	skill := w.heroPassiveSkill(entity)
+	nextMax := tankGraniteShieldValue(entity.Stats.MaxHP, skill)
+	entity.Passive.MaxShield = nextMax
+	if entity.Passive.Shield >= oldMax {
+		entity.Passive.Shield = nextMax
+	}
+	if entity.Passive.Shield > nextMax {
+		entity.Passive.Shield = nextMax
+	}
 }
 
 func (w *World) debugLevelUp(entity *Entity) {
@@ -2276,6 +2987,7 @@ func (w *World) upgradeSkill(entity *Entity, slot string) {
 	state.Level++
 	entity.SkillPoints--
 	entity.Skills[skillID] = state
+	w.refreshTankWPassive(entity)
 }
 
 func maxSkillLevel(slot string) int {

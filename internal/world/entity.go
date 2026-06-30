@@ -32,6 +32,7 @@ type Projectile struct {
 	Kind         string
 	Team         Team
 	SourceID     string
+	TargetID     string
 	SkillID      string
 	Position     Vector2
 	Start        Vector2
@@ -42,6 +43,8 @@ type Projectile struct {
 	Traveled     float64
 	Damage       int
 	KnockupTicks uint64
+	EffectRatio  float64
+	EffectTicks  uint64
 	CreatedAt    uint64
 	ExpiresAt    uint64
 	HitIDs       map[string]bool
@@ -67,6 +70,7 @@ type Entity struct {
 	Passive      PassiveState
 	Sword        SwordState
 	Warrior      WarriorState
+	Tank         TankState
 	Death        DeathState
 	Intent       IntentState
 }
@@ -137,6 +141,7 @@ type CombatState struct {
 	NextAttackTick             uint64
 	LastHitTick                uint64
 	LastDamage                 int
+	LastDamageType             string
 	PhysicalDefenseShredUntil  uint64
 	PhysicalDefenseShredAmount float64
 }
@@ -150,6 +155,12 @@ type ControlState struct {
 	ActionLockedUntilTick uint64
 	SilencedUntilTick     uint64
 	TenacityUntilTick     uint64
+	MoveSpeedBonusFlat    float64
+	MoveSpeedBonusUntil   uint64
+	MoveSpeedSlow         float64
+	MoveSpeedSlowUntil    uint64
+	AttackSpeedSlow       float64
+	AttackSpeedSlowUntil  uint64
 }
 
 type SwordState struct {
@@ -175,6 +186,21 @@ type WarriorState struct {
 	JudgmentSpinsRemaining       int
 	JudgmentLevel                int
 	JudgmentHits                 map[string]int
+}
+
+type TankState struct {
+	ThunderclapArmorBonus      float64
+	ThunderclapEmpowerUntil    uint64
+	ThunderclapAftershockUntil uint64
+	ThunderclapLevel           int
+	UnstoppableCastPending     bool
+	UnstoppableCastTarget      Vector2
+	UnstoppableCastLevel       int
+	UnstoppableImpactPending   bool
+	UnstoppableImpactTick      uint64
+	UnstoppableImpactLevel     int
+	UnstoppableImpactRadius    float64
+	UnstoppableKnockupTicks    uint64
 }
 
 type PassiveState struct {

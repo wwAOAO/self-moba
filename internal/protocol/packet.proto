@@ -42,8 +42,9 @@ message AttackInput {
 
 message CastInput {
   string skill_id = 1;
-  double target_x = 2;
-  double target_y = 3;
+  string target_id = 2;
+  double target_x = 3;
+  double target_y = 4;
 }
 
 message UpgradeSkillInput {
@@ -89,12 +90,14 @@ message PlayerSnapshot {
   PassiveSnapshot passive = 14;
   uint64 last_hit_tick = 15;
   int32 last_damage = 16;
-  bool dead = 17;
-  uint64 respawn_tick = 18;
-  double respawn_in = 19;
-  ControlSnapshot control = 20;
-  WarriorSnapshot warrior = 21;
-  SwordSnapshot sword = 22;
+  string last_damage_type = 17;
+  bool dead = 18;
+  uint64 respawn_tick = 19;
+  double respawn_in = 20;
+  ControlSnapshot control = 21;
+  WarriorSnapshot warrior = 22;
+  SwordSnapshot sword = 23;
+  TankSnapshot tank = 24;
 }
 
 message StatsSnapshot {
@@ -137,6 +140,7 @@ message DummySnapshot {
   StatsSnapshot stats = 5;
   uint64 last_hit_tick = 6;
   int32 last_damage = 7;
+  string last_damage_type = 8;
 }
 
 message UnitSnapshot {
@@ -149,7 +153,8 @@ message UnitSnapshot {
   StatsSnapshot stats = 7;
   uint64 last_hit_tick = 8;
   int32 last_damage = 9;
-  ControlSnapshot control = 10;
+  string last_damage_type = 10;
+  ControlSnapshot control = 11;
 }
 
 message EffectSnapshot {
@@ -193,6 +198,10 @@ message ControlSnapshot {
 
 message WarriorSnapshot {
   uint64 judgment_until_tick = 1;
+}
+
+message TankSnapshot {
+  uint64 thunderclap_aftershock_until = 1;
 }
 
 message SwordSnapshot {

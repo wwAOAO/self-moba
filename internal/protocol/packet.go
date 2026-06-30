@@ -50,9 +50,10 @@ type AttackInput struct {
 }
 
 type CastInput struct {
-	SkillID string  `json:"skillId"`
-	TargetX float64 `json:"targetX"`
-	TargetY float64 `json:"targetY"`
+	SkillID  string  `json:"skillId"`
+	TargetID string  `json:"targetId,omitempty"`
+	TargetX  float64 `json:"targetX"`
+	TargetY  float64 `json:"targetY"`
 }
 
 type UpgradeSkillInput struct {
@@ -82,51 +83,55 @@ type MapSnapshot struct {
 }
 
 type PlayerSnapshot struct {
-	PlayerID     string          `json:"playerId"`
-	HeroID       string          `json:"heroId"`
-	Team         string          `json:"team"`
-	Level        int             `json:"level"`
-	MaxLevel     int             `json:"maxLevel"`
-	SkillPoints  int             `json:"skillPoints"`
-	Exp          float64         `json:"exp"`
-	TotalExp     float64         `json:"totalExp"`
-	NextLevelExp float64         `json:"nextLevelExp"`
-	X            float64         `json:"x"`
-	Y            float64         `json:"y"`
-	Stats        StatsSnapshot   `json:"stats"`
-	Skills       []SkillSnapshot `json:"skills"`
-	Passive      PassiveSnapshot `json:"passive"`
-	LastHitTick  uint64          `json:"lastHitTick"`
-	LastDamage   int             `json:"lastDamage"`
-	Dead         bool            `json:"dead"`
-	RespawnTick  uint64          `json:"respawnTick"`
-	RespawnIn    float64         `json:"respawnIn"`
-	Control      ControlSnapshot `json:"control"`
-	Sword        SwordSnapshot   `json:"sword"`
-	Warrior      WarriorSnapshot `json:"warrior"`
+	PlayerID       string          `json:"playerId"`
+	HeroID         string          `json:"heroId"`
+	Team           string          `json:"team"`
+	Level          int             `json:"level"`
+	MaxLevel       int             `json:"maxLevel"`
+	SkillPoints    int             `json:"skillPoints"`
+	Exp            float64         `json:"exp"`
+	TotalExp       float64         `json:"totalExp"`
+	NextLevelExp   float64         `json:"nextLevelExp"`
+	X              float64         `json:"x"`
+	Y              float64         `json:"y"`
+	Stats          StatsSnapshot   `json:"stats"`
+	Skills         []SkillSnapshot `json:"skills"`
+	Passive        PassiveSnapshot `json:"passive"`
+	LastHitTick    uint64          `json:"lastHitTick"`
+	LastDamage     int             `json:"lastDamage"`
+	LastDamageType string          `json:"lastDamageType"`
+	Dead           bool            `json:"dead"`
+	RespawnTick    uint64          `json:"respawnTick"`
+	RespawnIn      float64         `json:"respawnIn"`
+	Control        ControlSnapshot `json:"control"`
+	Sword          SwordSnapshot   `json:"sword"`
+	Warrior        WarriorSnapshot `json:"warrior"`
+	Tank           TankSnapshot    `json:"tank"`
 }
 
 type DummySnapshot struct {
-	ID          string        `json:"id"`
-	X           float64       `json:"x"`
-	Y           float64       `json:"y"`
-	Radius      float64       `json:"radius"`
-	Stats       StatsSnapshot `json:"stats"`
-	LastHitTick uint64        `json:"lastHitTick"`
-	LastDamage  int           `json:"lastDamage"`
+	ID             string        `json:"id"`
+	X              float64       `json:"x"`
+	Y              float64       `json:"y"`
+	Radius         float64       `json:"radius"`
+	Stats          StatsSnapshot `json:"stats"`
+	LastHitTick    uint64        `json:"lastHitTick"`
+	LastDamage     int           `json:"lastDamage"`
+	LastDamageType string        `json:"lastDamageType"`
 }
 
 type UnitSnapshot struct {
-	ID          string          `json:"id"`
-	Kind        string          `json:"kind"`
-	Team        string          `json:"team"`
-	X           float64         `json:"x"`
-	Y           float64         `json:"y"`
-	Radius      float64         `json:"radius"`
-	Stats       StatsSnapshot   `json:"stats"`
-	LastHitTick uint64          `json:"lastHitTick"`
-	LastDamage  int             `json:"lastDamage"`
-	Control     ControlSnapshot `json:"control"`
+	ID             string          `json:"id"`
+	Kind           string          `json:"kind"`
+	Team           string          `json:"team"`
+	X              float64         `json:"x"`
+	Y              float64         `json:"y"`
+	Radius         float64         `json:"radius"`
+	Stats          StatsSnapshot   `json:"stats"`
+	LastHitTick    uint64          `json:"lastHitTick"`
+	LastDamage     int             `json:"lastDamage"`
+	LastDamageType string          `json:"lastDamageType"`
+	Control        ControlSnapshot `json:"control"`
 }
 
 type EffectSnapshot struct {
@@ -202,6 +207,10 @@ type ControlSnapshot struct {
 
 type WarriorSnapshot struct {
 	JudgmentUntilTick uint64 `json:"judgmentUntilTick"`
+}
+
+type TankSnapshot struct {
+	ThunderclapAftershockUntil uint64 `json:"thunderclapAftershockUntil"`
 }
 
 type SwordSnapshot struct {
