@@ -1,36 +1,78 @@
 [
   {
-    "heroId": "warrior",
-    "name": "Warrior",
+    "heroId": "sword",
+    "name": "Sword",
+    "resource": "sword_intent",
     "base": {
-      "hp": 1200,
-      "mp": 280,
-      "attack": 85,
+      "hp": 490,
+      "mp": 0,
+      "hpRegen5": 6.5,
+      "attack": 60,
       "physicalDefense": 30,
-      "magicDefense": 18,
-      "moveSpeed": 7,
-      "attackRange": 120,
-      "attackSpeed": 1,
-      "critChance": 0.08
+      "magicDefense": 32,
+      "moveSpeed": 345,
+      "attackRange": 175,
+      "attackSpeed": 0.697,
+      "attackSpeedRatio": 0.67,
+      "critChance": 0
     },
     "growth": {
-      "hp": 120,
-      "mp": 28,
-      "attack": 5,
-      "physicalDefense": 3,
-      "magicDefense": 2,
+      "hp": 87,
+      "mp": 0,
+      "hpRegen5": 0.9,
+      "attack": 3,
+      "physicalDefense": 3.4,
+      "magicDefense": 1.25,
       "moveSpeed": 0,
       "attackRange": 0,
-      "attackSpeed": 0.025,
-      "critChance": 0.002
+      "attackSpeed": 0.035,
+      "critChance": 0
+    },
+    "radius": 17,
+    "skills": {
+      "passive": "sword_edge",
+      "q": "sword_cut",
+      "w": "sword_wind_wall",
+      "e": "sword_sweeping_blade",
+      "r": "sword_storm"
+    }
+  },
+  {
+    "heroId": "warrior",
+    "name": "Warrior",
+    "resource": "none",
+    "base": {
+      "hp": 620,
+      "mp": 0,
+      "hpRegen5": 8,
+      "attack": 64,
+      "physicalDefense": 36,
+      "magicDefense": 32.1,
+      "moveSpeed": 340,
+      "attackRange": 175,
+      "attackSpeed": 0.625,
+      "attackSpeedRatio": 0.625,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 84,
+      "mp": 0,
+      "hpRegen5": 0.5,
+      "attack": 4.5,
+      "physicalDefense": 5,
+      "magicDefense": 1.25,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.0365,
+      "critChance": 0
     },
     "radius": 18,
     "skills": {
       "passive": "warrior_toughness",
       "q": "slash",
       "w": "dash",
-      "e": "battle_cry",
-      "r": "whirlwind"
+      "e": "judgment",
+      "r": "justice"
     }
   },
   {
@@ -45,6 +87,7 @@
       "moveSpeed": 8,
       "attackRange": 520,
       "attackSpeed": 1.25,
+      "attackSpeedRatio": 0.658,
       "critChance": 0.12
     },
     "growth": {
@@ -79,6 +122,7 @@
       "moveSpeed": 5,
       "attackRange": 100,
       "attackSpeed": 0.85,
+      "attackSpeedRatio": 0.638,
       "critChance": 0.04
     },
     "growth": {
@@ -99,40 +143,6 @@
       "w": "guard",
       "e": "taunt",
       "r": "earthquake"
-    }
-  },
-  {
-    "heroId": "sword",
-    "name": "Sword",
-    "base": {
-      "hp": 1050,
-      "mp": 320,
-      "attack": 92,
-      "physicalDefense": 24,
-      "magicDefense": 18,
-      "moveSpeed": 8,
-      "attackRange": 130,
-      "attackSpeed": 1.18,
-      "critChance": 0
-    },
-    "growth": {
-      "hp": 105,
-      "mp": 30,
-      "attack": 6,
-      "physicalDefense": 3,
-      "magicDefense": 2,
-      "moveSpeed": 0,
-      "attackRange": 0,
-      "attackSpeed": 0.028,
-      "critChance": 0
-    },
-    "radius": 17,
-    "skills": {
-      "passive": "sword_edge",
-      "q": "sword_cut",
-      "w": "sword_step",
-      "e": "sword_guard",
-      "r": "sword_storm"
     }
   }
 ]

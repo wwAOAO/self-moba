@@ -9,34 +9,54 @@ import (
 )
 
 const (
-	DefaultMapWidth  = 2000.0
-	DefaultMapHeight = 2000.0
-	MinHeroLevel     = 1
-	MaxHeroLevel     = 18
-	swordHeroID      = "sword"
-	swordIntentMax   = 100.0
-	swordIntentPerMu = 1.6
-	critRollModulo   = 10000
+	DefaultMapWidth    = 6000.0
+	DefaultMapHeight   = 6000.0
+	MinHeroLevel       = 1
+	MaxHeroLevel       = 18
+	MaxBasicSkillLevel = 5
+	MaxUltSkillLevel   = 3
+	swordHeroID        = "sword"
+	warriorHeroID      = "warrior"
+	critRollModulo     = 10000
+	respawnSeconds     = 20
+	swordQSkillID      = "sword_cut"
+	swordQStackTicks   = 6
+	swordWSkillID      = "sword_wind_wall"
+	swordESkillID      = "sword_sweeping_blade"
+	swordRSkillID      = "sword_storm"
+	warriorQSkillID    = "slash"
+	warriorWSkillID    = "dash"
+	warriorESkillID    = "judgment"
+	warriorRSkillID    = "justice"
+	windWallDuration   = 4
 )
 
 type World struct {
-	width        float64
-	height       float64
-	entities     map[string]*Entity
-	heroes       *config.HeroStore
-	levels       *config.LevelConfig
-	rewards      *config.RewardConfig
-	nextObjectID int
+	width            float64
+	height           float64
+	entities         map[string]*Entity
+	heroes           *config.HeroStore
+	skills           *config.SkillStore
+	levels           *config.LevelConfig
+	rewards          *config.RewardConfig
+	nextObjectID     int
+	nextWallID       int
+	nextProjectileID int
+	windWalls        map[string]WindWall
+	projectiles      map[string]*Projectile
 }
 
-func NewWorld(heroes *config.HeroStore, levels *config.LevelConfig, rewards *config.RewardConfig) *World {
+func NewWorld(heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig) *World {
 	w := &World{
-		width:    DefaultMapWidth,
-		height:   DefaultMapHeight,
-		entities: make(map[string]*Entity),
-		heroes:   heroes,
-		levels:   levels,
-		rewards:  rewards,
+		width:       DefaultMapWidth,
+		height:      DefaultMapHeight,
+		entities:    make(map[string]*Entity),
+		heroes:      heroes,
+		skills:      skills,
+		levels:      levels,
+		rewards:     rewards,
+		windWalls:   make(map[string]WindWall),
+		projectiles: make(map[string]*Projectile),
 	}
 	w.SpawnBattleUnits()
 	w.SpawnTrainingDummy()
@@ -57,10 +77,12 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 	level := MinHeroLevel
 	stats := heroStatsAtLevel(hero, level)
 	nextLevelExp := w.nextLevelExp(level)
+	startingSkillPoints := 1
 	if entity := w.entities[entityID]; entity != nil {
 		entity.Team = team
 		entity.HeroID = hero.HeroID
 		entity.Level = level
+		entity.SkillPoints = startingSkillPoints
 		entity.Exp = 0
 		entity.TotalExp = 0
 		entity.NextLevelExp = nextLevelExp
@@ -69,7 +91,9 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 		entity.Skills = skills
 		entity.Position = position
 		entity.Combat = CombatState{}
-		entity.Passive = passiveStateForHero(hero.HeroID)
+		entity.Passive = w.passiveStateForHero(hero)
+		entity.Sword = swordStateForHero(hero.HeroID)
+		entity.Death = DeathState{}
 		return
 	}
 	w.entities[entityID] = &Entity{
@@ -79,6 +103,7 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 		PlayerID:     playerID,
 		HeroID:       hero.HeroID,
 		Level:        level,
+		SkillPoints:  startingSkillPoints,
 		Exp:          0,
 		TotalExp:     0,
 		NextLevelExp: nextLevelExp,
@@ -86,7 +111,8 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 		Radius:       hero.Radius,
 		Skills:       skills,
 		Position:     position,
-		Passive:      passiveStateForHero(hero.HeroID),
+		Passive:      w.passiveStateForHero(hero),
+		Sword:        swordStateForHero(hero.HeroID),
 	}
 }
 
@@ -308,6 +334,18 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	if entity == nil {
 		return
 	}
+	if entity.Death.Dead {
+		return
+	}
+	if input.DebugLevelUp {
+		w.debugLevelUp(entity)
+	}
+	if input.UpgradeSkill != nil {
+		w.upgradeSkill(entity, input.UpgradeSkill.Slot)
+	}
+	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick {
+		return
+	}
 	if input.Move != nil {
 		target := Vector2{
 			X: clamp(input.Move.TargetX, 0, w.width),
@@ -319,8 +357,9 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	if input.Move == nil && (input.MoveX != 0 || input.MoveY != 0) {
 		dx, dy := normalize(input.MoveX, input.MoveY)
 		before := entity.Position
-		entity.Position.X += dx * entity.Stats.MoveSpeed
-		entity.Position.Y += dy * entity.Stats.MoveSpeed
+		step := movementStepAtTick(entity, tickRate, tick)
+		entity.Position.X += dx * step
+		entity.Position.Y += dy * step
 		entity.Position.X = clamp(entity.Position.X, 0, w.width)
 		entity.Position.Y = clamp(entity.Position.Y, 0, w.height)
 		w.chargeSwordIntent(entity, distance(before, entity.Position))
@@ -335,45 +374,159 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 		}
 	}
 	if input.Cast != nil {
+		if skills == nil {
+			skills = w.skills
+		}
 		w.applyCast(entity, *input.Cast, tick, skills, tickRate)
 	}
 }
 
 func (w *World) Tick(tick uint64, tickRate int) {
+	w.expireWindWalls(tick)
+	w.tickProjectiles(tick, tickRate)
 	for _, entity := range w.entities {
-		if entity.Kind != EntityKindPlayer || entity.Stats.HP <= 0 {
+		w.tickPhysicalDefenseShred(entity, tick)
+		w.tickSwordShield(entity, tick)
+		if entity.Kind != EntityKindPlayer {
 			continue
 		}
+		w.tickRespawn(entity, tick)
+		if entity.Death.Dead || entity.Stats.HP <= 0 {
+			continue
+		}
+		w.tickWarriorJudgment(entity, tick, tickRate)
+		w.tickWarriorToughness(entity, tick, tickRate)
 		w.tickPlayer(entity, tick, tickRate)
 	}
 }
 
+func (w *World) tickPhysicalDefenseShred(entity *Entity, tick uint64) {
+	if entity == nil || entity.Combat.PhysicalDefenseShredAmount <= 0 || tick < entity.Combat.PhysicalDefenseShredUntil {
+		return
+	}
+	entity.Stats.PhysicalDefense += entity.Combat.PhysicalDefenseShredAmount
+	entity.Combat.PhysicalDefenseShredAmount = 0
+	entity.Combat.PhysicalDefenseShredUntil = 0
+}
+
+func (w *World) expireWindWalls(tick uint64) {
+	for id, wall := range w.windWalls {
+		if tick >= wall.ExpiresAt {
+			delete(w.windWalls, id)
+		}
+	}
+}
+
+func (w *World) tickProjectiles(tick uint64, tickRate int) {
+	for id, projectile := range w.projectiles {
+		if tick >= projectile.ExpiresAt || projectile.Traveled >= projectile.Range {
+			delete(w.projectiles, id)
+			continue
+		}
+		step := projectile.SpeedPerTick
+		remaining := projectile.Range - projectile.Traveled
+		if step > remaining {
+			step = remaining
+		}
+		projectile.Position.X = clamp(projectile.Position.X+projectile.Dir.X*step, 0, w.width)
+		projectile.Position.Y = clamp(projectile.Position.Y+projectile.Dir.Y*step, 0, w.height)
+		projectile.Traveled += step
+		source := w.entities[projectile.SourceID]
+		for _, target := range w.entities {
+			if projectile.HitIDs[target.ID] || !canAttackTarget(source, target) {
+				continue
+			}
+			if distance(projectile.Position, target.Position) > projectile.Radius+target.Radius {
+				continue
+			}
+			projectile.HitIDs[target.ID] = true
+			damage := projectile.Damage
+			if projectile.SkillID == swordQSkillID && source != nil {
+				damage = w.swordQDamage(source, target, w.skillConfig(projectile.SkillID), tick)
+			}
+			target.Combat.LastHitTick = tick
+			if target.Kind != EntityKindDummy {
+				wasAlive := target.Stats.HP > 0
+				w.applyDamage(source, target, damage, tickRate)
+				if projectile.KnockupTicks > 0 {
+					target.Control.AirborneUntilTick = tick + projectile.KnockupTicks
+				}
+				if wasAlive && target.Stats.HP == 0 {
+					w.applyKillReward(source, target)
+					w.killPlayer(target, tick, tickRate)
+					w.removeDeadUnit(target)
+				}
+			} else {
+				target.Combat.LastDamage = damage
+			}
+		}
+		if projectile.Traveled >= projectile.Range {
+			delete(w.projectiles, id)
+		}
+	}
+}
+
+func (w *World) tickRespawn(entity *Entity, tick uint64) {
+	if !entity.Death.Dead || tick < entity.Death.RespawnTick {
+		return
+	}
+	entity.Death = DeathState{}
+	entity.Position = w.spawnPosition(entity.Team)
+	entity.Stats.HP = entity.Stats.MaxHP
+	entity.Stats.MP = entity.Stats.MaxMP
+	entity.Intent = IntentState{}
+	entity.Control = ControlState{}
+	entity.Warrior = WarriorState{}
+	entity.Passive.Shield = 0
+	entity.Passive.MaxShield = 0
+	entity.Passive.LastRegenBreakTick = tick
+	entity.Passive.NextRegenTick = 0
+	entity.Combat.NextAttackTick = tick
+}
+
 func (w *World) tickPlayer(entity *Entity, tick uint64, tickRate int) {
+	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick {
+		return
+	}
 	target := w.entities[entity.Intent.AttackTargetID]
 	attackPaused := tick < entity.Intent.AttackPausedTill
 	if !attackPaused && canAttackTarget(entity, target) {
-		if distance(entity.Position, target.Position) <= attackReach(entity, target) {
+		if distance(entity.Position, target.Position) <= w.attackReachAtTick(entity, target, tick) {
 			w.applyAttack(entity, target, tick, tickRate)
 			return
 		}
-		w.moveToward(entity, target.Position, 0)
+		w.moveToward(entity, target.Position, movementStepAtTick(entity, tickRate, tick), 0)
 		return
 	}
 	if entity.Intent.MoveTarget != nil {
-		if w.moveToward(entity, *entity.Intent.MoveTarget, 8) {
+		if w.moveToward(entity, *entity.Intent.MoveTarget, movementStepAtTick(entity, tickRate, tick), 8) {
 			entity.Intent.MoveTarget = nil
 		}
 	}
 }
 
-func (w *World) moveToward(entity *Entity, destination Vector2, stopDistance float64) bool {
+func movementStep(entity *Entity, tickRate int) float64 {
+	return movementStepAtTick(entity, tickRate, 0)
+}
+
+func movementStepAtTick(entity *Entity, tickRate int, tick uint64) float64 {
+	moveSpeed := entity.Stats.MoveSpeed
+	if entity.HeroID == warriorHeroID && tick > 0 && tick < entity.Warrior.DecisiveStrikeSpeedUntilTick {
+		moveSpeed *= 1 + entity.Warrior.DecisiveStrikeMoveSpeedBonus
+	}
+	if tickRate <= 0 {
+		return moveSpeed
+	}
+	return moveSpeed / float64(tickRate)
+}
+
+func (w *World) moveToward(entity *Entity, destination Vector2, step float64, stopDistance float64) bool {
 	dx := destination.X - entity.Position.X
 	dy := destination.Y - entity.Position.Y
 	dist := math.Hypot(dx, dy)
 	if dist <= stopDistance {
 		return true
 	}
-	step := entity.Stats.MoveSpeed
 	if dist <= step+stopDistance {
 		ratio := math.Max(0, dist-stopDistance) / dist
 		before := entity.Position
@@ -417,6 +570,45 @@ func (w *World) Units() []Entity {
 	return units
 }
 
+func (w *World) WindWalls() []WindWall {
+	walls := make([]WindWall, 0, len(w.windWalls))
+	for _, wall := range w.windWalls {
+		walls = append(walls, wall)
+	}
+	return walls
+}
+
+func (w *World) SkillEffects() []SkillEffect {
+	effects := make([]SkillEffect, 0, len(w.projectiles))
+	for _, projectile := range w.projectiles {
+		effects = append(effects, SkillEffect{
+			ID:        projectile.ID,
+			Kind:      projectile.Kind,
+			Team:      projectile.Team,
+			Start:     projectile.Start,
+			Dir:       projectile.Dir,
+			Range:     projectile.Range,
+			Radius:    projectile.Radius,
+			Speed:     projectile.SpeedPerTick,
+			CreatedAt: projectile.CreatedAt,
+			ExpiresAt: projectile.ExpiresAt,
+		})
+	}
+	return effects
+}
+
+func (w *World) BlocksProjectile(team Team, from Vector2, to Vector2) bool {
+	for _, wall := range w.windWalls {
+		if wall.Team == team {
+			continue
+		}
+		if segmentsIntersect(from, to, windWallStart(wall), windWallEnd(wall)) {
+			return true
+		}
+	}
+	return false
+}
+
 func (w *World) Size() (float64, float64) {
 	return w.width, w.height
 }
@@ -456,29 +648,83 @@ func playerEntityID(playerID string) string {
 func heroStatsAtLevel(hero config.HeroConfig, level int) Stats {
 	level = clampInt(level, MinHeroLevel, MaxHeroLevel)
 	growthSteps := level - MinHeroLevel
-	hp := hero.Base.HP + hero.Growth.HP*growthSteps
+	growthStepValue := float64(growthSteps)
+	bonusHP := hero.Base.BonusHP + hero.Growth.BonusHP*growthSteps
+	hp := hero.Base.HP + hero.Growth.HP*growthSteps + bonusHP
 	mp := hero.Base.MP + hero.Growth.MP*growthSteps
+	baseAttackSpeed := hero.Base.AttackSpeed * (1 + hero.Growth.AttackSpeed*growthStepValue)
+	attackSpeedRatio := hero.Base.AttackSpeedRatio
+	attackSpeedBonus := hero.Base.BonusAttackSpeed
+	attackSpeedSlow := hero.Base.AttackSpeedSlow
+	attackSpeed := finalAttackSpeed(baseAttackSpeed, attackSpeedBonus, attackSpeedRatio, attackSpeedSlow)
 	return Stats{
-		HP:              hp,
-		MaxHP:           hp,
-		MP:              mp,
-		MaxMP:           mp,
-		Attack:          hero.Base.Attack + hero.Growth.Attack*growthSteps,
-		PhysicalDefense: hero.Base.PhysicalDefense + hero.Growth.PhysicalDefense*growthSteps,
-		MagicDefense:    hero.Base.MagicDefense + hero.Growth.MagicDefense*growthSteps,
-		MoveSpeed:       hero.Base.MoveSpeed + hero.Growth.MoveSpeed*float64(growthSteps),
-		AttackRange:     hero.Base.AttackRange + hero.Growth.AttackRange*float64(growthSteps),
-		AttackSpeed:     hero.Base.AttackSpeed + hero.Growth.AttackSpeed*float64(growthSteps),
-		CritChance:      hero.Base.CritChance + hero.Growth.CritChance*float64(growthSteps),
+		HP:                   hp,
+		MaxHP:                hp,
+		BonusHP:              bonusHP,
+		MP:                   mp,
+		MaxMP:                mp,
+		HPRegen5:             hero.Base.HPRegen5 + hero.Growth.HPRegen5*growthStepValue,
+		Attack:               hero.Base.Attack + hero.Growth.Attack*growthStepValue,
+		BonusAttack:          hero.Base.BonusAttack + hero.Growth.BonusAttack*growthStepValue,
+		AbilityPower:         hero.Base.AbilityPower + hero.Growth.AbilityPower*growthSteps,
+		DamageReduce:         hero.Base.DamageReduce + hero.Growth.DamageReduce*growthStepValue,
+		PhysicalDefense:      hero.Base.PhysicalDefense + hero.Growth.PhysicalDefense*growthStepValue,
+		BonusPhysicalDefense: hero.Base.BonusPhysicalDefense + hero.Growth.BonusPhysicalDefense*growthStepValue,
+		PhysicalPenPercent:   hero.Base.PhysicalPenPercent + hero.Growth.PhysicalPenPercent*growthStepValue,
+		PhysicalPenFlat:      hero.Base.PhysicalPenFlat + hero.Growth.PhysicalPenFlat*growthStepValue,
+		PhysicalDamageReduce: hero.Base.PhysicalDamageReduce + hero.Growth.PhysicalDamageReduce*growthStepValue,
+		MagicDefense:         hero.Base.MagicDefense + hero.Growth.MagicDefense*growthStepValue,
+		BonusMagicDefense:    hero.Base.BonusMagicDefense + hero.Growth.BonusMagicDefense*growthStepValue,
+		MagicPenPercent:      hero.Base.MagicPenPercent + hero.Growth.MagicPenPercent*growthStepValue,
+		MagicPenFlat:         hero.Base.MagicPenFlat + hero.Growth.MagicPenFlat*growthStepValue,
+		MagicDamageReduce:    hero.Base.MagicDamageReduce + hero.Growth.MagicDamageReduce*growthStepValue,
+		MoveSpeed:            hero.Base.MoveSpeed + hero.Growth.MoveSpeed*growthStepValue,
+		AttackRange:          hero.Base.AttackRange + hero.Growth.AttackRange*growthStepValue,
+		AttackSpeed:          attackSpeed,
+		BaseAttackSpeed:      baseAttackSpeed,
+		AttackSpeedBonus:     attackSpeedBonus,
+		AttackSpeedRatio:     attackSpeedRatio,
+		AttackSpeedSlow:      attackSpeedSlow,
+		CritChance:           hero.Base.CritChance + hero.Growth.CritChance*growthStepValue,
 	}
 }
 
-func passiveStateForHero(heroID string) PassiveState {
-	if heroID != swordHeroID {
+func finalAttackSpeed(baseAttackSpeed float64, attackSpeedBonus float64, attackSpeedRatio float64, attackSpeedSlow float64) float64 {
+	if baseAttackSpeed < 0 {
+		baseAttackSpeed = 0
+	}
+	if attackSpeedBonus < 0 {
+		attackSpeedBonus = 0
+	}
+	if attackSpeedRatio < 0 {
+		attackSpeedRatio = 0
+	}
+	if attackSpeedSlow < 0 {
+		attackSpeedSlow = 0
+	}
+	if attackSpeedSlow > 1 {
+		attackSpeedSlow = 1
+	}
+	attackSpeed := baseAttackSpeed * (1 + attackSpeedBonus*attackSpeedRatio) * (1 - attackSpeedSlow)
+	return clamp(attackSpeed, 0, 2.5)
+}
+
+func (w *World) passiveStateForHero(hero config.HeroConfig) PassiveState {
+	if hero.HeroID != swordHeroID {
 		return PassiveState{}
 	}
+	skill := w.skillConfig(hero.Skills.Passive)
 	return PassiveState{
-		MaxSwordIntent: swordIntentMax,
+		MaxSwordIntent: skillMetaRange(skill, "intentMax", 100),
+	}
+}
+
+func swordStateForHero(heroID string) SwordState {
+	if heroID != swordHeroID {
+		return SwordState{}
+	}
+	return SwordState{
+		SweepingBladeTargetUntil: make(map[string]uint64),
 	}
 }
 
@@ -486,16 +732,72 @@ func (w *World) chargeSwordIntent(entity *Entity, moved float64) {
 	if entity == nil || entity.HeroID != swordHeroID || moved <= 0 {
 		return
 	}
+	skill := w.heroPassiveSkill(entity)
 	if entity.Passive.MaxSwordIntent <= 0 {
-		entity.Passive.MaxSwordIntent = swordIntentMax
+		entity.Passive.MaxSwordIntent = skillMetaRange(skill, "intentMax", 100)
 	}
 	if entity.Passive.SwordIntent >= entity.Passive.MaxSwordIntent {
 		return
 	}
-	entity.Passive.SwordIntent += moved * swordIntentPerMu
+	moveUnitsPerPercent := skillMetaCurveByLevel(skill, "intentMoveUnitsPerPercent", "intentMoveUnitLevels", entity.Level, 59)
+	if moveUnitsPerPercent <= 0 {
+		moveUnitsPerPercent = 59
+	}
+	entity.Passive.SwordIntent += moved / moveUnitsPerPercent
 	if entity.Passive.SwordIntent > entity.Passive.MaxSwordIntent {
 		entity.Passive.SwordIntent = entity.Passive.MaxSwordIntent
 	}
+}
+
+func (w *World) tickSwordShield(entity *Entity, tick uint64) {
+	if entity == nil || entity.Passive.Shield <= 0 || entity.Passive.ShieldExpireTick == 0 {
+		return
+	}
+	if tick < entity.Passive.ShieldExpireTick {
+		return
+	}
+	entity.Passive.Shield = 0
+	entity.Passive.MaxShield = 0
+	entity.Passive.ShieldExpireTick = 0
+}
+
+func (w *World) tickWarriorToughness(entity *Entity, tick uint64, tickRate int) {
+	if entity == nil || entity.HeroID != warriorHeroID || entity.Stats.HP <= 0 || entity.Stats.HP >= entity.Stats.MaxHP {
+		return
+	}
+	skill := w.heroPassiveSkill(entity)
+	outOfCombatTicks := secondsToTicks(skillMetaRange(skill, "outOfCombatSeconds", 8), tickRate)
+	if tick < entity.Passive.LastRegenBreakTick+outOfCombatTicks {
+		return
+	}
+	intervalTicks := secondsToTicks(skillMetaRange(skill, "regenIntervalSeconds", 5), tickRate)
+	if intervalTicks == 0 {
+		intervalTicks = uint64(tickRate * 5)
+	}
+	if entity.Passive.NextRegenTick == 0 {
+		entity.Passive.NextRegenTick = tick
+	}
+	if tick < entity.Passive.NextRegenTick {
+		return
+	}
+	ratio := warriorToughnessRegenRatio(entity.Level, skill)
+	heal := int(math.Round(float64(entity.Stats.MaxHP) * ratio))
+	if heal < 1 {
+		heal = 1
+	}
+	entity.Stats.HP += heal
+	if entity.Stats.HP > entity.Stats.MaxHP {
+		entity.Stats.HP = entity.Stats.MaxHP
+	}
+	entity.Passive.NextRegenTick = tick + intervalTicks
+}
+
+func warriorToughnessRegenRatio(level int, skill config.SkillConfig) float64 {
+	return skillMetaListByLevel(skill, "regenMaxHPRatio", level, []float64{
+		0.015, 0.0198, 0.0246, 0.0294, 0.0342, 0.039,
+		0.0438, 0.0486, 0.0534, 0.0582, 0.063, 0.0678,
+		0.0726, 0.0774, 0.0822, 0.087, 0.0918, 0.101,
+	})
 }
 
 func clampInt(value int, min int, max int) int {
@@ -522,19 +824,776 @@ func (w *World) spawnPosition(team Team) Vector2 {
 }
 
 func (w *World) applyCast(entity *Entity, cast protocol.CastInput, tick uint64, skills *config.SkillStore, tickRate int) {
+	if tick < entity.Control.SilencedUntilTick {
+		return
+	}
 	state, ok := entity.Skills[cast.SkillID]
 	if !ok {
 		return
 	}
+	if state.Level <= 0 {
+		return
+	}
+	if entity.HeroID == warriorHeroID && cast.SkillID == warriorESkillID && tick < entity.Warrior.JudgmentUntilTick {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.stopWarriorE(entity, state, skill, tick, tickRate)
+		return
+	}
 	if tick < state.CooldownUntilTick {
+		return
+	}
+	if entity.HeroID == swordHeroID && cast.SkillID == swordQSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		w.applySwordQ(entity, cast, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == swordHeroID && cast.SkillID == swordWSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		w.applySwordW(entity, cast, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == swordHeroID && cast.SkillID == swordESkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		w.applySwordE(entity, cast, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == swordHeroID && cast.SkillID == swordRSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		w.applySwordR(entity, cast, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == warriorHeroID && cast.SkillID == warriorQSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyWarriorQ(entity, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == warriorHeroID && cast.SkillID == warriorWSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyWarriorW(entity, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == warriorHeroID && cast.SkillID == warriorESkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyWarriorE(entity, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == warriorHeroID && cast.SkillID == warriorRSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyWarriorR(entity, cast, state, skill, tick, tickRate)
+		return
+	}
+	if skills == nil {
 		return
 	}
 	skill, ok := skills.Get(cast.SkillID)
 	if !ok {
 		return
 	}
+	w.lockAttackAfterCast(entity, tick, tickRate)
 	state.CooldownUntilTick = tick + cooldownTicks(skill.CooldownMS, tickRate)
 	entity.Skills[cast.SkillID] = state
+}
+
+func (w *World) applyWarriorQ(entity *Entity, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	if entity == nil || state.Level <= 0 {
+		return
+	}
+	entity.Warrior.DecisiveStrikeUntilTick = tick + secondsToTicks(skillMetaRange(skill, "empowerDurationSeconds", 4.5), tickRate)
+	entity.Warrior.DecisiveStrikeSpeedUntilTick = tick + secondsToTicks(skillMetaListByLevel(skill, "moveSpeedDurationSeconds", state.Level, []float64{1.5, 2, 2.5, 3, 3.5}), tickRate)
+	entity.Warrior.DecisiveStrikeLevel = state.Level
+	entity.Warrior.DecisiveStrikeMoveSpeedBonus = skillMetaRange(skill, "moveSpeedBonus", 0.3)
+	entity.Combat.NextAttackTick = tick
+	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{8000, 8000, 8000, 8000, 8000}), tickRate)
+	entity.Skills[warriorQSkillID] = state
+}
+
+func (w *World) applyWarriorW(entity *Entity, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	if entity == nil || state.Level <= 0 {
+		return
+	}
+	entity.Warrior.CourageUntilTick = tick + secondsToTicks(skillMetaRange(skill, "durationSeconds", 4), tickRate)
+	entity.Warrior.CourageFrontUntilTick = tick + secondsToTicks(skillMetaRange(skill, "frontDurationSeconds", 0.75), tickRate)
+	entity.Warrior.CourageFrontDamageReduce = skillMetaRange(skill, "frontDamageReduce", 0.6)
+	entity.Warrior.CourageFrontTenacity = skillMetaRange(skill, "frontTenacity", 0.6)
+	entity.Warrior.CourageBackDamageReduce = skillMetaRange(skill, "backDamageReduce", 0.3)
+	entity.Control.TenacityUntilTick = entity.Warrior.CourageFrontUntilTick
+	entity.Passive.MaxShield = warriorWShieldValue(entity, skill, state.Level)
+	entity.Passive.Shield = entity.Passive.MaxShield
+	entity.Passive.ShieldExpireTick = entity.Warrior.CourageUntilTick
+	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{24000, 22000, 20000, 18000, 16000}), tickRate)
+	entity.Skills[warriorWSkillID] = state
+}
+
+func (w *World) applyWarriorE(entity *Entity, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	if entity == nil || state.Level <= 0 {
+		return
+	}
+	durationTicks := secondsToTicks(skillMetaRange(skill, "durationSeconds", 3), tickRate)
+	spins := warriorESpinCount(entity, skill)
+	if durationTicks == 0 || spins <= 0 {
+		return
+	}
+	intervalTicks := durationTicks / uint64(spins)
+	if intervalTicks < 1 {
+		intervalTicks = 1
+	}
+	entity.Warrior.JudgmentUntilTick = tick + durationTicks
+	entity.Warrior.JudgmentNextSpinTick = tick
+	entity.Warrior.JudgmentSpinIntervalTicks = intervalTicks
+	entity.Warrior.JudgmentSpinsRemaining = spins
+	entity.Warrior.JudgmentLevel = state.Level
+	entity.Warrior.JudgmentHits = make(map[string]int)
+	state.CooldownUntilTick = 0
+	entity.Skills[warriorESkillID] = state
+}
+
+func (w *World) stopWarriorE(entity *Entity, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	if entity == nil || tick >= entity.Warrior.JudgmentUntilTick {
+		return
+	}
+	remainingTicks := entity.Warrior.JudgmentUntilTick - tick
+	cooldownTicks := cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{9000, 8250, 7500, 6750, 6000}), tickRate)
+	if cooldownTicks > remainingTicks {
+		state.CooldownUntilTick = tick + cooldownTicks - remainingTicks
+	} else {
+		state.CooldownUntilTick = tick
+	}
+	clearWarriorE(entity)
+	entity.Skills[warriorESkillID] = state
+}
+
+func (w *World) tickWarriorJudgment(entity *Entity, tick uint64, tickRate int) {
+	if entity == nil || entity.HeroID != warriorHeroID || entity.Warrior.JudgmentUntilTick == 0 {
+		return
+	}
+	skill := w.skillConfig(warriorESkillID)
+	if tick >= entity.Warrior.JudgmentUntilTick {
+		w.finishWarriorE(entity, skill, tick, tickRate)
+		return
+	}
+	if entity.Warrior.JudgmentSpinsRemaining <= 0 {
+		return
+	}
+	if tick < entity.Warrior.JudgmentNextSpinTick {
+		return
+	}
+	if skill.SkillID == "" {
+		return
+	}
+	w.applyWarriorESpin(entity, skill, tick, tickRate)
+	entity.Warrior.JudgmentSpinsRemaining--
+	if entity.Warrior.JudgmentSpinsRemaining <= 0 {
+		entity.Warrior.JudgmentNextSpinTick = 0
+		return
+	}
+	entity.Warrior.JudgmentNextSpinTick += entity.Warrior.JudgmentSpinIntervalTicks
+}
+
+func (w *World) finishWarriorE(entity *Entity, skill config.SkillConfig, tick uint64, tickRate int) {
+	state := entity.Skills[warriorESkillID]
+	if skill.SkillID != "" {
+		state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{9000, 8250, 7500, 6750, 6000}), tickRate)
+		entity.Skills[warriorESkillID] = state
+	}
+	clearWarriorE(entity)
+}
+
+func clearWarriorE(entity *Entity) {
+	entity.Warrior.JudgmentUntilTick = 0
+	entity.Warrior.JudgmentNextSpinTick = 0
+	entity.Warrior.JudgmentSpinIntervalTicks = 0
+	entity.Warrior.JudgmentSpinsRemaining = 0
+	entity.Warrior.JudgmentLevel = 0
+	entity.Warrior.JudgmentHits = nil
+}
+
+func (w *World) applyWarriorESpin(entity *Entity, skill config.SkillConfig, tick uint64, tickRate int) {
+	targets := w.warriorETargets(entity, skill)
+	if len(targets) == 0 {
+		return
+	}
+	nearest := nearestEntity(entity, targets)
+	for _, target := range targets {
+		damage := w.warriorEDamage(entity, target, skill, entity.Warrior.JudgmentLevel, target == nearest, tick)
+		target.Combat.LastHitTick = tick
+		if target.Kind != EntityKindDummy {
+			wasAlive := target.Stats.HP > 0
+			w.applyDamage(entity, target, damage, tickRate)
+			w.recordWarriorEHit(entity, target, skill, tick, tickRate)
+			if wasAlive && target.Stats.HP == 0 {
+				w.applyKillReward(entity, target)
+				w.killPlayer(target, tick, tickRate)
+				w.removeDeadUnit(target)
+			}
+		} else {
+			target.Combat.LastDamage = damage
+			w.recordWarriorEHit(entity, target, skill, tick, tickRate)
+		}
+	}
+}
+
+func (w *World) warriorETargets(entity *Entity, skill config.SkillConfig) []*Entity {
+	targets := []*Entity{}
+	for _, target := range w.entities {
+		if !canAttackTarget(entity, target) {
+			continue
+		}
+		if distance(entity.Position, target.Position) <= skillRange(skill, 180)+target.Radius {
+			targets = append(targets, target)
+		}
+	}
+	return targets
+}
+
+func nearestEntity(source *Entity, targets []*Entity) *Entity {
+	var nearest *Entity
+	nearestDistance := math.MaxFloat64
+	for _, target := range targets {
+		dist := distance(source.Position, target.Position)
+		if dist < nearestDistance {
+			nearestDistance = dist
+			nearest = target
+		}
+	}
+	return nearest
+}
+
+func (w *World) warriorEDamage(attacker *Entity, target *Entity, skill config.SkillConfig, level int, nearest bool, tick uint64) int {
+	if level <= 0 {
+		level = 1
+	}
+	rawDamage := skillMetaListByLevel(skill, "baseDamage", level, []float64{4, 7, 10, 13, 16}) + attacker.Stats.Attack*skillMetaListByLevel(skill, "adRatio", level, []float64{0.4, 0.43, 0.46, 0.49, 0.52})
+	if w.attackCrits(attacker, target, tick) {
+		rawDamage = skillMetaListByLevel(skill, "critBaseDamage", level, []float64{5.2, 9.1, 13, 16.9, 20.8}) + attacker.Stats.Attack*skillMetaListByLevel(skill, "critAdRatio", level, []float64{0.52, 0.559, 0.598, 0.637, 0.676})
+	}
+	if nearest {
+		rawDamage *= 1 + skillMetaRange(skill, "nearestDamageBonus", 0.25)
+	}
+	return physicalDamageAfterResistance(attacker, target, rawDamage, tick)
+}
+
+func warriorESpinCount(entity *Entity, skill config.SkillConfig) int {
+	baseSpins := int(skillMetaRange(skill, "baseSpins", 7))
+	if entity == nil {
+		return baseSpins
+	}
+	bonusPerSpin := skillMetaRange(skill, "attackSpeedBonusPerExtraSpin", 0.25)
+	if bonusPerSpin <= 0 {
+		return baseSpins
+	}
+	attackSpeedBonus := entity.Stats.AttackSpeedBonus
+	if attackSpeedBonus < 0 {
+		attackSpeedBonus = 0
+	}
+	return baseSpins + int(math.Floor(attackSpeedBonus/bonusPerSpin))
+}
+
+func (w *World) recordWarriorEHit(attacker *Entity, target *Entity, skill config.SkillConfig, tick uint64, tickRate int) {
+	if target == nil || target.Kind != EntityKindPlayer && target.Kind != EntityKindEnemyHero {
+		return
+	}
+	if attacker.Warrior.JudgmentHits == nil {
+		attacker.Warrior.JudgmentHits = make(map[string]int)
+	}
+	attacker.Warrior.JudgmentHits[target.ID]++
+	if attacker.Warrior.JudgmentHits[target.ID] != int(skillMetaRange(skill, "armorShredHitCount", 6)) {
+		return
+	}
+	w.applyPhysicalDefenseShred(target, skillMetaRange(skill, "armorShredPercent", 0.25), tick+secondsToTicks(skillMetaRange(skill, "armorShredSeconds", 6), tickRate))
+}
+
+func (w *World) applyPhysicalDefenseShred(target *Entity, percent float64, untilTick uint64) {
+	if target == nil || percent <= 0 {
+		return
+	}
+	if target.Combat.PhysicalDefenseShredAmount > 0 {
+		target.Stats.PhysicalDefense += target.Combat.PhysicalDefenseShredAmount
+	}
+	shred := target.Stats.PhysicalDefense * clamp(percent, 0, 1)
+	target.Stats.PhysicalDefense -= shred
+	if target.Stats.PhysicalDefense < 0 {
+		target.Stats.PhysicalDefense = 0
+	}
+	target.Combat.PhysicalDefenseShredAmount = shred
+	target.Combat.PhysicalDefenseShredUntil = untilTick
+}
+
+func (w *World) applyWarriorR(entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	if entity == nil || state.Level <= 0 {
+		return
+	}
+	target := w.warriorRTarget(entity, Vector2{X: cast.TargetX, Y: cast.TargetY}, skill)
+	if target == nil {
+		return
+	}
+	damage := warriorRDamage(target, skill, state.Level)
+	target.Combat.LastHitTick = tick
+	if target.Kind != EntityKindDummy {
+		wasAlive := target.Stats.HP > 0
+		w.applyTrueDamage(entity, target, damage, tickRate)
+		if wasAlive && target.Stats.HP == 0 {
+			w.applyKillReward(entity, target)
+			w.killPlayer(target, tick, tickRate)
+			w.removeDeadUnit(target)
+		}
+	} else {
+		target.Combat.LastDamage = trueDamageAfterReduction(target, damage, tick)
+	}
+	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{120000, 100000, 80000}), tickRate)
+	w.lockAttackAfterCast(entity, tick, tickRate)
+	entity.Skills[warriorRSkillID] = state
+}
+
+func (w *World) warriorRTarget(entity *Entity, targetPoint Vector2, skill config.SkillConfig) *Entity {
+	var best *Entity
+	bestDistance := math.MaxFloat64
+	castRange := skillRange(skill, 400)
+	pickPadding := skillMetaRange(skill, "targetPickPadding", 80)
+	for _, target := range w.entities {
+		if !canAttackTarget(entity, target) {
+			continue
+		}
+		if distance(entity.Position, target.Position) > castRange+target.Radius {
+			continue
+		}
+		distToPoint := distance(targetPoint, target.Position)
+		if distToPoint > target.Radius+pickPadding {
+			continue
+		}
+		if distToPoint < bestDistance {
+			bestDistance = distToPoint
+			best = target
+		}
+	}
+	return best
+}
+
+func warriorRDamage(target *Entity, skill config.SkillConfig, level int) float64 {
+	if target == nil {
+		return 0
+	}
+	baseDamage := skillMetaListByLevel(skill, "baseDamage", level, []float64{150, 250, 350})
+	missingHPRatio := skillMetaListByLevel(skill, "missingHPRatio", level, []float64{0.25, 0.3, 0.35})
+	missingHP := target.Stats.MaxHP - target.Stats.HP
+	if missingHP < 0 {
+		missingHP = 0
+	}
+	return baseDamage + float64(missingHP)*missingHPRatio
+}
+
+func (w *World) lockAttackAfterCast(entity *Entity, tick uint64, tickRate int) {
+	nextAttackTick := tick + attackCooldownTicks(entity.Stats.AttackSpeed, tickRate)
+	if entity.Combat.NextAttackTick < nextAttackTick {
+		entity.Combat.NextAttackTick = nextAttackTick
+	}
+}
+
+func (w *World) applySwordQ(entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	if tick > state.StacksExpireTick {
+		state.Stacks = 0
+	}
+	hasWhirlwindStack := state.Stacks >= 2
+	form := "line"
+	qRange := skillRange(skill, 475)
+	if tick < entity.Control.DashUntilTick {
+		form = "circle"
+		qRange = skillMetaRange(skill, "eqRadius", 375)
+	} else if hasWhirlwindStack {
+		form = "whirlwind"
+		qRange = skillMetaRange(skill, "whirlwindRange", 900)
+	}
+	if form == "whirlwind" {
+		w.spawnSwordWhirlwind(entity, Vector2{X: cast.TargetX, Y: cast.TargetY}, qRange, skill, tick, tickRate)
+		w.lockAttackAfterCast(entity, tick, tickRate)
+		state.Stacks = 0
+		state.StacksExpireTick = 0
+		state.CooldownUntilTick = tick + w.swordQCooldownTicks(entity, skill, state.Level, tickRate)
+		entity.Skills[swordQSkillID] = state
+		return
+	}
+	targets := w.swordQTargets(entity, Vector2{X: cast.TargetX, Y: cast.TargetY}, qRange, form, skill)
+	for _, target := range targets {
+		damage := w.swordQDamage(entity, target, skill, tick)
+		target.Combat.LastHitTick = tick
+		if target.Kind != EntityKindDummy {
+			wasAlive := target.Stats.HP > 0
+			w.applyDamage(entity, target, damage, tickRate)
+			if form == "circle" && hasWhirlwindStack {
+				target.Control.AirborneUntilTick = tick + secondsToTicks(skillMetaRange(skill, "knockupSeconds", 1), tickRate)
+			}
+			if wasAlive && target.Stats.HP == 0 {
+				w.applyKillReward(entity, target)
+				w.killPlayer(target, tick, tickRate)
+				w.removeDeadUnit(target)
+			}
+		} else {
+			target.Combat.LastDamage = damage
+		}
+	}
+	if len(targets) > 0 {
+		if form == "circle" && hasWhirlwindStack {
+			state.Stacks = 0
+			state.StacksExpireTick = 0
+		} else {
+			state.Stacks++
+			if state.Stacks > 2 {
+				state.Stacks = 2
+			}
+			state.StacksExpireTick = tick + secondsToTicks(skillMetaRange(skill, "stackDurationSeconds", swordQStackTicks), tickRate)
+		}
+	}
+	state.CooldownUntilTick = tick + w.swordQCooldownTicks(entity, skill, state.Level, tickRate)
+	w.lockAttackAfterCast(entity, tick, tickRate)
+	entity.Skills[swordQSkillID] = state
+}
+
+func (w *World) applySwordW(entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	dx, dy := normalize(cast.TargetX-entity.Position.X, cast.TargetY-entity.Position.Y)
+	if dx == 0 && dy == 0 {
+		dx = 1
+	}
+	w.nextWallID++
+	id := "wind_wall:" + strconv.Itoa(w.nextWallID)
+	width := skillMetaListByLevel(skill, "width", state.Level, []float64{300, 350, 400, 450, 500})
+	placeDistance := skillMetaRange(skill, "placeDistance", 180)
+	center := Vector2{
+		X: clamp(entity.Position.X+dx*placeDistance, 0, w.width),
+		Y: clamp(entity.Position.Y+dy*placeDistance, 0, w.height),
+	}
+	w.windWalls[id] = WindWall{
+		ID:        id,
+		Team:      entity.Team,
+		Center:    center,
+		Dir:       Vector2{X: -dy, Y: dx},
+		Width:     width,
+		ExpiresAt: tick + secondsToTicks(skillMetaRange(skill, "durationSeconds", windWallDuration), tickRate),
+	}
+	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{26000, 24000, 22000, 20000, 18000}), tickRate)
+	w.lockAttackAfterCast(entity, tick, tickRate)
+	entity.Skills[swordWSkillID] = state
+}
+
+func (w *World) spawnSwordWhirlwind(entity *Entity, targetPoint Vector2, qRange float64, skill config.SkillConfig, tick uint64, tickRate int) {
+	dx, dy := normalize(targetPoint.X-entity.Position.X, targetPoint.Y-entity.Position.Y)
+	if dx == 0 && dy == 0 {
+		dx = 1
+	}
+	radius := skillMetaRange(skill, "whirlwindRadius", 70)
+	speedPerSecond := skillMetaRange(skill, "whirlwindSpeed", 1200)
+	speedPerTick := speedPerSecond / float64(tickRate)
+	if speedPerTick <= 0 {
+		speedPerTick = qRange
+	}
+	lifeTicks := uint64(math.Ceil(qRange / speedPerTick))
+	if lifeTicks == 0 {
+		lifeTicks = 1
+	}
+	w.nextProjectileID++
+	id := "projectile:sword_whirlwind:" + strconv.Itoa(w.nextProjectileID)
+	w.projectiles[id] = &Projectile{
+		ID:           id,
+		Kind:         "sword_whirlwind",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SkillID:      swordQSkillID,
+		Position:     entity.Position,
+		Start:        entity.Position,
+		Dir:          Vector2{X: dx, Y: dy},
+		SpeedPerTick: speedPerTick,
+		Range:        qRange,
+		Radius:       radius,
+		Damage:       w.swordQDamage(entity, &Entity{ID: id}, skill, tick),
+		KnockupTicks: secondsToTicks(skillMetaRange(skill, "knockupSeconds", 1), tickRate),
+		CreatedAt:    tick,
+		ExpiresAt:    tick + lifeTicks + 1,
+		HitIDs:       make(map[string]bool),
+	}
+}
+
+func (w *World) applySwordE(entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	if entity.Sword.SweepingBladeTargetUntil == nil {
+		entity.Sword.SweepingBladeTargetUntil = make(map[string]uint64)
+	}
+	target := w.swordETarget(entity, Vector2{X: cast.TargetX, Y: cast.TargetY}, skill)
+	if target == nil {
+		return
+	}
+	if tick < entity.Sword.SweepingBladeTargetUntil[target.ID] {
+		return
+	}
+	damage := swordEDamage(entity, target, skill, state.Level, tick)
+	target.Combat.LastHitTick = tick
+	if target.Kind != EntityKindDummy {
+		wasAlive := target.Stats.HP > 0
+		w.applyMagicDamage(entity, target, damage, tickRate)
+		if wasAlive && target.Stats.HP == 0 {
+			w.applyKillReward(entity, target)
+			w.killPlayer(target, tick, tickRate)
+			w.removeDeadUnit(target)
+		}
+	} else {
+		target.Combat.LastDamage = damage
+	}
+	entity.Sword.SweepingBladeStacks++
+	maxStacks := int(skillMetaRange(skill, "maxStacks", 4))
+	if entity.Sword.SweepingBladeStacks > maxStacks {
+		entity.Sword.SweepingBladeStacks = maxStacks
+	}
+	targetCooldownMS := skillMetaListByLevelMS(skill, "targetCooldownMs", state.Level, []float64{10000, 9000, 8000, 7000, 6000})
+	entity.Sword.SweepingBladeTargetUntil[target.ID] = tick + cooldownTicks(targetCooldownMS, tickRate)
+	dx, dy := normalize(target.Position.X-entity.Position.X, target.Position.Y-entity.Position.Y)
+	if dx == 0 && dy == 0 {
+		dx = 1
+	}
+	entity.Position = Vector2{
+		X: clamp(target.Position.X+dx*(target.Radius+entity.Radius+skillMetaRange(skill, "dashThroughDistance", 34)), 0, w.width),
+		Y: clamp(target.Position.Y+dy*(target.Radius+entity.Radius+skillMetaRange(skill, "dashThroughDistance", 34)), 0, w.height),
+	}
+	entity.Intent = IntentState{}
+	entity.Control.DashUntilTick = tick + secondsToTicks(skillMetaRange(skill, "dashDurationSeconds", 0.35), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{500, 400, 300, 200, 100}), tickRate)
+	w.lockAttackAfterCast(entity, tick, tickRate)
+	entity.Skills[swordESkillID] = state
+}
+
+func (w *World) applySwordR(entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
+	target := w.swordRTarget(entity, Vector2{X: cast.TargetX, Y: cast.TargetY}, skill, tick)
+	if target == nil {
+		return
+	}
+	entity.Position = Vector2{
+		X: clamp(target.Position.X-entity.Radius-target.Radius-18, 0, w.width),
+		Y: target.Position.Y,
+	}
+	entity.Intent = IntentState{}
+	hits := w.swordRTargets(entity, target.Position, skill, tick)
+	for _, hit := range hits {
+		damage := swordRDamage(entity, hit, skill, state.Level, tick)
+		hit.Combat.LastHitTick = tick
+		if hit.Kind != EntityKindDummy {
+			wasAlive := hit.Stats.HP > 0
+			w.applyDamage(entity, hit, damage, tickRate)
+			hit.Control.AirborneUntilTick += secondsToTicks(skillMetaRange(skill, "airborneExtendSeconds", 1), tickRate)
+			if wasAlive && hit.Stats.HP == 0 {
+				w.applyKillReward(entity, hit)
+				w.killPlayer(hit, tick, tickRate)
+				w.removeDeadUnit(hit)
+			}
+		} else {
+			hit.Combat.LastDamage = damage
+		}
+	}
+	entity.Passive.SwordIntent = entity.Passive.MaxSwordIntent
+	entity.Passive.MaxShield = w.swordShieldValue(entity)
+	entity.Passive.Shield = entity.Passive.MaxShield
+	qState := entity.Skills[swordQSkillID]
+	qState.Stacks = int(skillMetaRange(skill, "qStacksAfterCast", 2))
+	if qState.Stacks > 0 {
+		qState.StacksExpireTick = tick + secondsToTicks(skillMetaRange(skill, "qStackDurationSeconds", swordQStackTicks), tickRate)
+	} else {
+		qState.StacksExpireTick = 0
+	}
+	entity.Skills[swordQSkillID] = qState
+	entity.Sword.LastBreathUntilTick = tick + secondsToTicks(skillMetaRange(skill, "lastBreathDurationSeconds", 15), tickRate)
+	entity.Control.ActionLockedUntilTick = tick + secondsToTicks(skillMetaRange(skill, "selfActionLockSeconds", 1), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{80000, 55000, 30000}), tickRate)
+	w.lockAttackAfterCast(entity, tick, tickRate)
+	entity.Skills[swordRSkillID] = state
+}
+
+func (w *World) swordRTarget(entity *Entity, targetPoint Vector2, skill config.SkillConfig, tick uint64) *Entity {
+	var best *Entity
+	bestDistance := math.MaxFloat64
+	pickPadding := skillMetaRange(skill, "targetPickPadding", 80)
+	for _, target := range w.entities {
+		if !isAirborneEnemyHero(entity, target, tick) {
+			continue
+		}
+		dist := distance(targetPoint, target.Position)
+		if dist > target.Radius+pickPadding {
+			continue
+		}
+		if dist < bestDistance {
+			best = target
+			bestDistance = dist
+		}
+	}
+	if best != nil {
+		return best
+	}
+	castRange := skillRange(skill, 1200)
+	for _, target := range w.entities {
+		if !isAirborneEnemyHero(entity, target, tick) {
+			continue
+		}
+		dist := distance(entity.Position, target.Position)
+		if dist > castRange+target.Radius {
+			continue
+		}
+		if dist < bestDistance {
+			best = target
+			bestDistance = dist
+		}
+	}
+	return best
+}
+
+func (w *World) swordRTargets(entity *Entity, center Vector2, skill config.SkillConfig, tick uint64) []*Entity {
+	hits := make([]*Entity, 0)
+	for _, target := range w.entities {
+		if !isAirborneEnemyHero(entity, target, tick) {
+			continue
+		}
+		if distance(center, target.Position) <= skillMetaRange(skill, "hitRadius", 450)+target.Radius {
+			hits = append(hits, target)
+		}
+	}
+	return hits
+}
+
+func isAirborneEnemyHero(attacker *Entity, target *Entity, tick uint64) bool {
+	if !canAttackTarget(attacker, target) {
+		return false
+	}
+	if target.Control.AirborneUntilTick <= tick {
+		return false
+	}
+	return target.Kind == EntityKindPlayer || target.Kind == EntityKindEnemyHero
+}
+
+func (w *World) swordETarget(entity *Entity, targetPoint Vector2, skill config.SkillConfig) *Entity {
+	var best *Entity
+	bestDistance := math.MaxFloat64
+	for _, target := range w.entities {
+		if !canAttackTarget(entity, target) {
+			continue
+		}
+		if distance(entity.Position, target.Position) > skillRange(skill, 475)+target.Radius {
+			continue
+		}
+		distToPoint := distance(targetPoint, target.Position)
+		if distToPoint > target.Radius+skillMetaRange(skill, "targetPickPadding", 48) {
+			continue
+		}
+		if distToPoint < bestDistance {
+			best = target
+			bestDistance = distToPoint
+		}
+	}
+	return best
+}
+
+func swordEDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	baseDamage := skillMetaListByLevel(skill, "baseDamage", skillLevel, []float64{60, 70, 80, 90, 100})
+	damageValue := baseDamage + attacker.Stats.BonusAttack*skillMetaRange(skill, "bonusAdRatio", 0.2) + float64(attacker.Stats.AbilityPower)*skillMetaRange(skill, "apRatio", 0.6)
+	damageValue *= 1 + float64(attacker.Sword.SweepingBladeStacks)*skillMetaRange(skill, "stackDamageBonus", 0.25)
+	return magicDamageAfterResistance(attacker, target, damageValue, tick)
+}
+
+func swordRDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	baseDamage := skillMetaListByLevel(skill, "baseDamage", skillLevel, []float64{200, 300, 400})
+	return physicalDamageAfterResistance(attacker, target, baseDamage+attacker.Stats.BonusAttack*skillMetaRange(skill, "bonusAdRatio", 1.5), tick)
+}
+
+func (w *World) swordQTargets(entity *Entity, targetPoint Vector2, qRange float64, form string, skill config.SkillConfig) []*Entity {
+	if form == "circle" {
+		return w.targetsInRadius(entity, entity.Position, qRange)
+	}
+	dx, dy := normalize(targetPoint.X-entity.Position.X, targetPoint.Y-entity.Position.Y)
+	if dx == 0 && dy == 0 {
+		dx = 1
+	}
+	if form == "whirlwind" {
+		return w.targetsAlongMovingCircle(entity, entity.Position, Vector2{X: dx, Y: dy}, qRange, skillMetaRange(skill, "whirlwindRadius", 70))
+	}
+	width := skillMetaRange(skill, "lineWidth", 55)
+	hits := make([]*Entity, 0)
+	for _, target := range w.entities {
+		if !canAttackTarget(entity, target) {
+			continue
+		}
+		along, perpendicular := projectPoint(entity.Position, Vector2{X: dx, Y: dy}, target.Position)
+		if along < 0 || along > qRange+target.Radius {
+			continue
+		}
+		if perpendicular > width+target.Radius {
+			continue
+		}
+		hits = append(hits, target)
+	}
+	return hits
+}
+
+func (w *World) targetsAlongMovingCircle(entity *Entity, origin Vector2, direction Vector2, travelRange float64, radius float64) []*Entity {
+	hits := make([]*Entity, 0)
+	for _, target := range w.entities {
+		if !canAttackTarget(entity, target) {
+			continue
+		}
+		along, perpendicular := projectPoint(origin, direction, target.Position)
+		if along < -target.Radius || along > travelRange+target.Radius {
+			continue
+		}
+		if perpendicular <= radius+target.Radius {
+			hits = append(hits, target)
+		}
+	}
+	return hits
+}
+
+func (w *World) targetsInRadius(entity *Entity, center Vector2, radius float64) []*Entity {
+	hits := make([]*Entity, 0)
+	for _, target := range w.entities {
+		if !canAttackTarget(entity, target) {
+			continue
+		}
+		if distance(center, target.Position) <= radius+target.Radius {
+			hits = append(hits, target)
+		}
+	}
+	return hits
 }
 
 func cooldownTicks(cooldownMS int, tickRate int) uint64 {
@@ -545,46 +1604,302 @@ func cooldownTicks(cooldownMS int, tickRate int) uint64 {
 	return uint64(ticks)
 }
 
+func secondsToTicks(seconds float64, tickRate int) uint64 {
+	if seconds <= 0 {
+		return 0
+	}
+	return uint64(math.Ceil(seconds * float64(tickRate)))
+}
+
+func skillRange(skill config.SkillConfig, fallback float64) float64 {
+	if skill.Range > 0 {
+		return skill.Range
+	}
+	return fallback
+}
+
+func skillMetaRange(skill config.SkillConfig, key string, fallback float64) float64 {
+	if skill.Meta == nil {
+		return fallback
+	}
+	value, ok := skill.Meta[key]
+	if !ok {
+		return fallback
+	}
+	return value
+}
+
+func skillMetaListByLevel(skill config.SkillConfig, key string, level int, fallback []float64) float64 {
+	values := fallback
+	if skill.MetaLists != nil && len(skill.MetaLists[key]) > 0 {
+		values = skill.MetaLists[key]
+	}
+	rank := skillRank(level, len(values))
+	return values[rank-1]
+}
+
+func skillMetaCurveByLevel(skill config.SkillConfig, valueKey string, levelKey string, level int, fallback float64) float64 {
+	if skill.MetaLists == nil {
+		return fallback
+	}
+	values := skill.MetaLists[valueKey]
+	levels := skill.MetaLists[levelKey]
+	if len(values) == 0 || len(values) != len(levels) {
+		return fallback
+	}
+	currentLevel := float64(clampInt(level, MinHeroLevel, MaxHeroLevel))
+	if currentLevel <= levels[0] {
+		return values[0]
+	}
+	last := len(values) - 1
+	if currentLevel >= levels[last] {
+		return values[last]
+	}
+	for i := 1; i < len(values); i++ {
+		if currentLevel > levels[i] {
+			continue
+		}
+		fromLevel := levels[i-1]
+		toLevel := levels[i]
+		if toLevel <= fromLevel {
+			return values[i]
+		}
+		t := (currentLevel - fromLevel) / (toLevel - fromLevel)
+		return values[i-1] + (values[i]-values[i-1])*t
+	}
+	return values[last]
+}
+
+func skillMetaListByLevelMS(skill config.SkillConfig, key string, level int, fallback []float64) int {
+	return int(math.Round(skillMetaListByLevel(skill, key, level, fallback)))
+}
+
+func skillRank(level int, count int) int {
+	return clampInt(level, 1, count)
+}
+
+func (w *World) swordQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, tick uint64) int {
+	state := attacker.Skills[swordQSkillID]
+	baseDamage := skillMetaListByLevel(skill, "baseDamage", state.Level, []float64{20, 45, 70, 95, 120})
+	attack := baseDamage + attacker.Stats.Attack*skillMetaRange(skill, "adRatio", 1)
+	if w.attackCrits(attacker, target, tick) {
+		attack *= w.critDamageMultiplier(attacker)
+	}
+	return physicalDamageAfterResistance(attacker, target, attack, tick)
+}
+
+func (w *World) swordQCooldownTicks(entity *Entity, skill config.SkillConfig, skillLevel int, tickRate int) uint64 {
+	attackSpeedBonus := 0.0
+	if entity != nil {
+		attackSpeedBonus = entity.Stats.AttackSpeedBonus
+	}
+	return swordQCooldownTicksByBonus(attackSpeedBonus, skill, skillLevel, tickRate)
+}
+
+func swordQCooldownTicksByBonus(attackSpeedBonus float64, skill config.SkillConfig, skillLevel int, tickRate int) uint64 {
+	baseCooldownMS := skillMetaListByLevelMS(skill, "cooldownMs", skillLevel, []float64{6000, 5500, 5000, 4500, 4000})
+	if attackSpeedBonus < 0 {
+		attackSpeedBonus = 0
+	}
+	seconds := float64(baseCooldownMS) / 1000 * (1 - attackSpeedBonus*0.6)
+	minSeconds := skillMetaRange(skill, "minCooldownSeconds", 1.33)
+	if seconds < minSeconds {
+		seconds = minSeconds
+	}
+	return uint64(math.Ceil(seconds*float64(tickRate) - 1e-6))
+}
+
 func (w *World) applyAttack(attacker *Entity, target *Entity, tick uint64, tickRate int) {
 	if attacker.Kind != EntityKindPlayer || tick < attacker.Combat.NextAttackTick {
+		return
+	}
+	if attacker.HeroID == warriorHeroID && tick < attacker.Warrior.JudgmentUntilTick {
 		return
 	}
 	if !canAttackTarget(attacker, target) {
 		return
 	}
-	if distance(attacker.Position, target.Position) > attackReach(attacker, target) {
+	if distance(attacker.Position, target.Position) > w.attackReachAtTick(attacker, target, tick) {
 		return
 	}
 
-	damage := attackDamage(attacker, target, tick)
+	damage := w.attackDamage(attacker, target, tick)
 	target.Combat.LastHitTick = tick
 	if target.Kind != EntityKindDummy {
 		wasAlive := target.Stats.HP > 0
-		w.applyDamage(attacker, target, damage)
+		w.applyDamage(attacker, target, damage, tickRate)
 		if wasAlive && target.Stats.HP == 0 {
 			w.applyKillReward(attacker, target)
+			w.killPlayer(target, tick, tickRate)
 			w.removeDeadUnit(target)
 		}
 	} else {
 		target.Combat.LastDamage = damage
 	}
 	attacker.Combat.NextAttackTick = tick + attackCooldownTicks(attacker.Stats.AttackSpeed, tickRate)
+	w.consumeWarriorQ(attacker, target, tick, tickRate)
 }
 
-func attackDamage(attacker *Entity, target *Entity, tick uint64) int {
-	attack := float64(attacker.Stats.Attack)
-	if attackCrits(attacker, target, tick) {
-		attack *= critDamageMultiplier(attacker)
+func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64) int {
+	attack := attacker.Stats.Attack
+	if w.attackCrits(attacker, target, tick) {
+		attack *= w.critDamageMultiplier(attacker)
 	}
-	damage := int(math.Round(attack)) - target.Stats.PhysicalDefense
+	return physicalDamageAfterResistance(attacker, target, attack+w.warriorQBonusDamage(attacker, tick), tick)
+}
+
+func (w *World) warriorQBonusDamage(attacker *Entity, tick uint64) float64 {
+	if attacker == nil || attacker.HeroID != warriorHeroID || tick >= attacker.Warrior.DecisiveStrikeUntilTick {
+		return 0
+	}
+	skill := w.skillConfig(warriorQSkillID)
+	level := attacker.Warrior.DecisiveStrikeLevel
+	if level <= 0 {
+		level = 1
+	}
+	baseDamage := skillMetaListByLevel(skill, "bonusDamage", level, []float64{30, 60, 90, 120, 150})
+	return baseDamage + attacker.Stats.Attack*skillMetaRange(skill, "totalAdRatio", 1.4)
+}
+
+func (w *World) consumeWarriorQ(attacker *Entity, target *Entity, tick uint64, tickRate int) {
+	if attacker == nil || attacker.HeroID != warriorHeroID || tick >= attacker.Warrior.DecisiveStrikeUntilTick {
+		return
+	}
+	skill := w.skillConfig(warriorQSkillID)
+	if target != nil {
+		silenceTicks := secondsToTicks(skillMetaRange(skill, "silenceSeconds", 1.5), tickRate)
+		target.Control.SilencedUntilTick = tick + controlTicksAfterTenacity(target, silenceTicks, tick)
+	}
+	attacker.Warrior.DecisiveStrikeUntilTick = 0
+	attacker.Warrior.DecisiveStrikeLevel = 0
+}
+
+func physicalDamageAfterResistance(attacker *Entity, target *Entity, rawDamage float64, tick uint64) int {
+	damageReduce := target.damageReductionForType("physical", tick)
+	return damageAfterResistance(rawDamage, effectiveResistance(target.Stats.PhysicalDefense, attacker.Stats.PhysicalPenPercent, attacker.Stats.PhysicalPenFlat), damageReduce)
+}
+
+func magicDamageAfterResistance(attacker *Entity, target *Entity, rawDamage float64, tick uint64) int {
+	damageReduce := target.damageReductionForType("magic", tick)
+	return damageAfterResistance(rawDamage, effectiveResistance(target.Stats.MagicDefense, attacker.Stats.MagicPenPercent, attacker.Stats.MagicPenFlat), damageReduce)
+}
+
+func trueDamageAfterReduction(target *Entity, rawDamage float64, tick uint64) int {
+	return damageAfterResistance(rawDamage, 0, target.damageReductionForType("true", tick))
+}
+
+func (entity *Entity) damageReductionForType(damageType string, tick uint64) float64 {
+	reductions := []float64{entity.Stats.DamageReduce}
+	switch damageType {
+	case "physical":
+		reductions = append(reductions, entity.Stats.PhysicalDamageReduce)
+	case "magic":
+		reductions = append(reductions, entity.Stats.MagicDamageReduce)
+	}
+	if entity.HeroID == warriorHeroID && entity.Warrior.CourageUntilTick > 0 {
+		reductions = append(reductions, entity.Warrior.courageDamageReductionAtTick(tick))
+	}
+	return stackDamageReduction(reductions...)
+}
+
+func (entity *Entity) tenacityAtTick(tick uint64) float64 {
+	tenacity := []float64{}
+	if entity.HeroID == warriorHeroID && entity.Warrior.CourageFrontUntilTick > 0 && (tick == 0 || tick < entity.Warrior.CourageFrontUntilTick) {
+		tenacity = append(tenacity, entity.Warrior.CourageFrontTenacity)
+	}
+	return stackTenacity(tenacity...)
+}
+
+func controlTicksAfterTenacity(target *Entity, ticks uint64, tick uint64) uint64 {
+	if target == nil || ticks == 0 {
+		return ticks
+	}
+	remainingRatio := 1 - target.tenacityAtTick(tick)
+	adjusted := uint64(math.Ceil(float64(ticks) * remainingRatio))
+	if adjusted < 1 {
+		return 1
+	}
+	return adjusted
+}
+
+func (state WarriorState) courageDamageReductionAtTick(tick uint64) float64 {
+	if state.CourageUntilTick == 0 {
+		return 0
+	}
+	if tick > 0 && tick >= state.CourageUntilTick {
+		return 0
+	}
+	if tick == 0 || tick < state.CourageFrontUntilTick {
+		return state.CourageFrontDamageReduce
+	}
+	return state.CourageBackDamageReduce
+}
+
+func warriorWShieldValue(entity *Entity, skill config.SkillConfig, skillLevel int) int {
+	baseShield := skillMetaListByLevel(skill, "shieldValue", skillLevel, []float64{70, 95, 120, 145, 170})
+	return int(math.Round(baseShield + float64(entity.Stats.BonusHP)*skillMetaRange(skill, "bonusHealthRatio", 0.2)))
+}
+
+func effectiveResistance(resistance float64, percentPen float64, flatPen float64) float64 {
+	if resistance < 0 {
+		return resistance
+	}
+	if percentPen < 0 {
+		percentPen = 0
+	}
+	if percentPen > 1 {
+		percentPen = 1
+	}
+	if flatPen < 0 {
+		flatPen = 0
+	}
+	effective := resistance*(1-percentPen) - flatPen
+	if effective < 0 {
+		return 0
+	}
+	return effective
+}
+
+func damageAfterResistance(rawDamage float64, resistance float64, damageReduce float64) int {
+	if rawDamage <= 0 {
+		return 0
+	}
+	multiplier := 100 / (resistance + 100)
+	if resistance < 0 {
+		denominator := 100 + resistance
+		if denominator < 1 {
+			denominator = 1
+		}
+		multiplier = 100 / denominator
+	}
+	damageReduce = clamp(damageReduce, 0, 1)
+	damage := int(math.Round(rawDamage * multiplier * (1 - damageReduce)))
 	if damage < 1 {
 		return 1
 	}
 	return damage
 }
 
-func attackCrits(attacker *Entity, target *Entity, tick uint64) bool {
-	chance := critChance(attacker)
+func stackDamageReduction(reductions ...float64) float64 {
+	multiplier := 1.0
+	for _, reduction := range reductions {
+		reduction = clamp(reduction, 0, 1)
+		multiplier *= 1 - reduction
+	}
+	return 1 - multiplier
+}
+
+func stackTenacity(tenacityValues ...float64) float64 {
+	multiplier := 1.0
+	for _, tenacity := range tenacityValues {
+		tenacity = clamp(tenacity, 0, 1)
+		multiplier *= 1 - tenacity
+	}
+	return 1 - multiplier
+}
+
+func (w *World) attackCrits(attacker *Entity, target *Entity, tick uint64) bool {
+	chance := w.critChance(attacker)
 	if chance <= 0 {
 		return false
 	}
@@ -595,10 +1910,10 @@ func attackCrits(attacker *Entity, target *Entity, tick uint64) bool {
 	return roll < chance
 }
 
-func critChance(attacker *Entity) float64 {
+func (w *World) critChance(attacker *Entity) float64 {
 	chance := attacker.Stats.CritChance
 	if attacker.HeroID == swordHeroID {
-		chance *= 2
+		chance *= skillMetaRange(w.heroPassiveSkill(attacker), "critChanceMultiplier", 2)
 	}
 	if chance > 1 {
 		return 1
@@ -609,9 +1924,9 @@ func critChance(attacker *Entity) float64 {
 	return chance
 }
 
-func critDamageMultiplier(attacker *Entity) float64 {
+func (w *World) critDamageMultiplier(attacker *Entity) float64 {
 	if attacker.HeroID == swordHeroID {
-		return 1.9
+		return skillMetaRange(w.heroPassiveSkill(attacker), "critDamageMultiplier", 1.9)
 	}
 	return 2
 }
@@ -627,12 +1942,24 @@ func deterministicCritRoll(attackerID string, targetID string, tick uint64) floa
 	return float64(hash%critRollModulo) / critRollModulo
 }
 
-func (w *World) applyDamage(source *Entity, target *Entity, damage int) {
+func (w *World) applyDamage(source *Entity, target *Entity, damage int, tickRate int) {
+	w.applyResolvedDamage(source, target, damage, tickRate)
+}
+
+func (w *World) applyMagicDamage(source *Entity, target *Entity, damage int, tickRate int) {
+	w.applyResolvedDamage(source, target, damage, tickRate)
+}
+
+func (w *World) applyTrueDamage(source *Entity, target *Entity, rawDamage float64, tickRate int) {
+	w.applyResolvedDamage(source, target, trueDamageAfterReduction(target, rawDamage, target.Combat.LastHitTick), tickRate)
+}
+
+func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, tickRate int) {
 	if damage <= 0 {
 		target.Combat.LastDamage = 0
 		return
 	}
-	damage = w.applySwordShield(source, target, damage)
+	damage = w.applyShield(source, target, damage, tickRate)
 	target.Combat.LastDamage = damage
 	if damage <= 0 {
 		return
@@ -641,15 +1968,80 @@ func (w *World) applyDamage(source *Entity, target *Entity, damage int) {
 	if target.Stats.HP < 0 {
 		target.Stats.HP = 0
 	}
+	w.breakWarriorToughness(source, target, target.Combat.LastHitTick)
 }
 
-func (w *World) applySwordShield(source *Entity, target *Entity, damage int) int {
-	if target == nil || target.HeroID != swordHeroID {
+func (w *World) skillConfig(skillID string) config.SkillConfig {
+	if w == nil || w.skills == nil || skillID == "" {
+		return config.SkillConfig{}
+	}
+	skill, _ := w.skills.Get(skillID)
+	return skill
+}
+
+func (w *World) heroPassiveSkill(entity *Entity) config.SkillConfig {
+	if entity == nil || w == nil || w.heroes == nil {
+		return config.SkillConfig{}
+	}
+	hero, ok := w.heroes.Get(entity.HeroID)
+	if !ok {
+		return config.SkillConfig{}
+	}
+	return w.skillConfig(hero.Skills.Passive)
+}
+
+func (w *World) breakWarriorToughness(source *Entity, target *Entity, tick uint64) {
+	if target == nil || target.HeroID != warriorHeroID || !warriorToughnessBreaksRegen(source) {
+		return
+	}
+	target.Passive.LastRegenBreakTick = tick
+	target.Passive.NextRegenTick = 0
+}
+
+func warriorToughnessBreaksRegen(source *Entity) bool {
+	if source == nil {
+		return false
+	}
+	switch source.Kind {
+	case EntityKindPlayer, EntityKindEnemyHero, EntityKindTower:
+		return true
+	default:
+		return false
+	}
+}
+
+func (w *World) killPlayer(target *Entity, tick uint64, tickRate int) {
+	if target.Kind != EntityKindPlayer || target.Death.Dead {
+		return
+	}
+	target.Death = DeathState{
+		Dead:              true,
+		RespawnTick:       tick + uint64(respawnSeconds*tickRate),
+		RespawnTickRate:   tickRate,
+		RespawnSeconds:    respawnSeconds,
+		LastDeathPosition: target.Position,
+	}
+	target.Intent = IntentState{}
+	target.Warrior = WarriorState{}
+	target.Passive.Shield = 0
+	target.Passive.MaxShield = 0
+	target.Passive.ShieldExpireTick = 0
+	for _, entity := range w.entities {
+		if entity.Intent.AttackTargetID == target.ID {
+			entity.Intent.AttackTargetID = ""
+		}
+	}
+}
+
+func (w *World) applyShield(source *Entity, target *Entity, damage int, tickRate int) int {
+	if target == nil {
 		return damage
 	}
-	if target.Passive.Shield <= 0 && target.Passive.SwordIntent >= target.Passive.MaxSwordIntent && swordShieldTriggers(source) {
-		target.Passive.MaxShield = swordShieldValue(target.Level)
+	if target.HeroID == swordHeroID && target.Passive.Shield <= 0 && target.Passive.SwordIntent >= target.Passive.MaxSwordIntent && swordShieldTriggers(source) {
+		skill := w.heroPassiveSkill(target)
+		target.Passive.MaxShield = w.swordShieldValue(target)
 		target.Passive.Shield = target.Passive.MaxShield
+		target.Passive.ShieldExpireTick = target.Combat.LastHitTick + secondsToTicks(skillMetaRange(skill, "shieldDurationSeconds", 1), tickRate)
 		target.Passive.SwordIntent = 0
 	}
 	if target.Passive.Shield <= 0 {
@@ -670,12 +2062,10 @@ func swordShieldTriggers(source *Entity) bool {
 	return source.Kind == EntityKindPlayer || source.Kind == EntityKindEnemyHero
 }
 
-func swordShieldValue(level int) int {
-	level = clampInt(level, MinHeroLevel, MaxHeroLevel)
-	if level == MinHeroLevel {
-		return 100
-	}
-	return 100 + int(math.Round(float64(level-MinHeroLevel)*(510-100)/float64(MaxHeroLevel-MinHeroLevel)))
+func (w *World) swordShieldValue(entity *Entity) int {
+	level := clampInt(entity.Level, MinHeroLevel, MaxHeroLevel)
+	skill := w.heroPassiveSkill(entity)
+	return int(math.Round(skillMetaCurveByLevel(skill, "shieldValue", "shieldValueLevels", level, 125)))
 }
 
 func (w *World) removeDeadUnit(target *Entity) {
@@ -694,6 +2084,7 @@ func (w *World) applyKillReward(killer *Entity, target *Entity) {
 	if killer == nil || target == nil || w.rewards == nil {
 		return
 	}
+	w.applyWarriorWPassiveKill(killer, target)
 	switch target.Kind {
 	case EntityKindMeleeMinion, EntityKindRangedMinion, EntityKindSiegeMinion:
 		if exp, ok := w.rewards.MinionExp(string(target.Kind), 1); ok {
@@ -709,6 +2100,37 @@ func (w *World) applyKillReward(killer *Entity, target *Entity) {
 			w.addExperience(killer, w.rewards.HeroKillExp(int(targetNextExp), killer.Level, target.Level))
 		}
 	}
+}
+
+func (w *World) applyWarriorWPassiveKill(killer *Entity, target *Entity) {
+	if killer == nil || target == nil || killer.HeroID != warriorHeroID {
+		return
+	}
+	state, ok := killer.Skills[warriorWSkillID]
+	if !ok || state.Level <= 0 {
+		return
+	}
+	skill := w.skillConfig(warriorWSkillID)
+	gain := skillMetaRange(skill, "passiveMinionResistGain", 0.2)
+	if target.Kind == EntityKindPlayer || target.Kind == EntityKindEnemyHero {
+		gain = skillMetaRange(skill, "passiveHeroResistGain", 1)
+	}
+	maxGain := skillMetaRange(skill, "passiveMaxResistGain", 40)
+	before := killer.Warrior.CouragePassiveResistGain
+	after := before + gain
+	if after > maxGain {
+		after = maxGain
+	}
+	if after <= before {
+		return
+	}
+	delta := after - before
+	killer.Warrior.CouragePassiveResistGain = after
+	killer.Stats.PhysicalDefense += delta
+	killer.Stats.BonusPhysicalDefense += delta
+	killer.Stats.MagicDefense += delta
+	killer.Stats.BonusMagicDefense += delta
+	killer.Skills[warriorWSkillID] = state
 }
 
 func (w *World) addTeamExperience(team Team, exp float64) {
@@ -756,6 +2178,18 @@ func (w *World) levelUp(entity *Entity) {
 		nextStats.MP = nextStats.MaxMP
 	}
 	entity.Stats = nextStats
+	entity.SkillPoints++
+}
+
+func (w *World) debugLevelUp(entity *Entity) {
+	if entity == nil || entity.Kind != EntityKindPlayer || entity.Level >= MaxHeroLevel {
+		return
+	}
+	w.levelUp(entity)
+	entity.NextLevelExp = w.nextLevelExp(entity.Level)
+	if entity.Level >= MaxHeroLevel {
+		entity.Exp = 0
+	}
 }
 
 func (w *World) nextLevelExp(level int) float64 {
@@ -769,11 +2203,50 @@ func (w *World) nextLevelExp(level int) float64 {
 	return float64(nextExp)
 }
 
+func (w *World) upgradeSkill(entity *Entity, slot string) {
+	if entity == nil || entity.SkillPoints <= 0 {
+		return
+	}
+	hero, ok := w.heroes.Get(entity.HeroID)
+	if !ok {
+		return
+	}
+	skillID := hero.Skills.SkillIDForSlot(slot)
+	if skillID == "" {
+		return
+	}
+	state, ok := entity.Skills[skillID]
+	if !ok {
+		return
+	}
+	maxLevel := maxSkillLevel(slot)
+	if maxLevel <= 0 || state.Level >= maxLevel {
+		return
+	}
+	state.Level++
+	entity.SkillPoints--
+	entity.Skills[skillID] = state
+}
+
+func maxSkillLevel(slot string) int {
+	switch slot {
+	case "q", "w", "e":
+		return MaxBasicSkillLevel
+	case "r":
+		return MaxUltSkillLevel
+	default:
+		return 0
+	}
+}
+
 func canAttackTarget(attacker *Entity, target *Entity) bool {
 	if attacker == nil || target == nil {
 		return false
 	}
 	if target.Stats.HP <= 0 {
+		return false
+	}
+	if target.Kind == EntityKindPlayer && target.Death.Dead {
 		return false
 	}
 	if target.ID == attacker.ID || target.Team == attacker.Team {
@@ -784,6 +2257,14 @@ func canAttackTarget(attacker *Entity, target *Entity) bool {
 
 func attackReach(attacker *Entity, target *Entity) float64 {
 	return attacker.Stats.AttackRange + attacker.Radius + target.Radius
+}
+
+func (w *World) attackReachAtTick(attacker *Entity, target *Entity, tick uint64) float64 {
+	attackRange := attacker.Stats.AttackRange
+	if attacker.HeroID == warriorHeroID && tick < attacker.Warrior.DecisiveStrikeUntilTick {
+		attackRange = math.Max(attackRange, skillRange(w.skillConfig(warriorQSkillID), 300))
+	}
+	return attackRange + attacker.Radius + target.Radius
 }
 
 func attackCooldownTicks(attackSpeed float64, tickRate int) uint64 {
@@ -799,4 +2280,41 @@ func attackCooldownTicks(attackSpeed float64, tickRate int) uint64 {
 
 func distance(a Vector2, b Vector2) float64 {
 	return math.Hypot(a.X-b.X, a.Y-b.Y)
+}
+
+func projectPoint(origin Vector2, direction Vector2, point Vector2) (float64, float64) {
+	dx := point.X - origin.X
+	dy := point.Y - origin.Y
+	along := dx*direction.X + dy*direction.Y
+	perpX := dx - along*direction.X
+	perpY := dy - along*direction.Y
+	return along, math.Hypot(perpX, perpY)
+}
+
+func windWallStart(wall WindWall) Vector2 {
+	half := wall.Width / 2
+	return Vector2{
+		X: wall.Center.X - wall.Dir.X*half,
+		Y: wall.Center.Y - wall.Dir.Y*half,
+	}
+}
+
+func windWallEnd(wall WindWall) Vector2 {
+	half := wall.Width / 2
+	return Vector2{
+		X: wall.Center.X + wall.Dir.X*half,
+		Y: wall.Center.Y + wall.Dir.Y*half,
+	}
+}
+
+func segmentsIntersect(a Vector2, b Vector2, c Vector2, d Vector2) bool {
+	ab1 := orientation(a, b, c)
+	ab2 := orientation(a, b, d)
+	cd1 := orientation(c, d, a)
+	cd2 := orientation(c, d, b)
+	return ab1*ab2 <= 0 && cd1*cd2 <= 0
+}
+
+func orientation(a Vector2, b Vector2, c Vector2) float64 {
+	return (b.X-a.X)*(c.Y-a.Y) - (b.Y-a.Y)*(c.X-a.X)
 }

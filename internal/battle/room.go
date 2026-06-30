@@ -29,7 +29,7 @@ type Room struct {
 func NewRoom(id string, publisher *jetstream.Publisher, heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig) *Room {
 	room := &Room{
 		id:        id,
-		world:     world.NewWorld(heroes, levels, rewards),
+		world:     world.NewWorld(heroes, skills, levels, rewards),
 		publisher: publisher,
 		heroes:    heroes,
 		skills:    skills,

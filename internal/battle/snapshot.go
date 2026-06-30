@@ -9,6 +9,8 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 	players := w.Players()
 	dummies := w.Dummies()
 	units := w.Units()
+	walls := w.WindWalls()
+	effects := w.SkillEffects()
 	width, height := w.Size()
 	snapshot := protocol.Snapshot{
 		RoomID: roomID,
@@ -20,6 +22,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 		Players: make([]protocol.PlayerSnapshot, 0, len(players)),
 		Units:   make([]protocol.UnitSnapshot, 0, len(units)),
 		Dummies: make([]protocol.DummySnapshot, 0, len(dummies)),
+		Effects: make([]protocol.EffectSnapshot, 0, len(walls)+len(effects)),
 	}
 	for _, entity := range players {
 		snapshot.Players = append(snapshot.Players, protocol.PlayerSnapshot{
@@ -28,6 +31,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Team:         string(entity.Team),
 			Level:        entity.Level,
 			MaxLevel:     world.MaxHeroLevel,
+			SkillPoints:  entity.SkillPoints,
 			Exp:          entity.Exp,
 			TotalExp:     entity.TotalExp,
 			NextLevelExp: entity.NextLevelExp,
@@ -38,6 +42,11 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Passive:      buildPassiveSnapshot(entity.Passive),
 			LastHitTick:  entity.Combat.LastHitTick,
 			LastDamage:   entity.Combat.LastDamage,
+			Dead:         entity.Death.Dead,
+			RespawnTick:  entity.Death.RespawnTick,
+			RespawnIn:    respawnInSeconds(tick, entity.Death),
+			Control:      buildControlSnapshot(entity.Control),
+			Warrior:      buildWarriorSnapshot(entity.Warrior),
 		})
 	}
 	for _, entity := range dummies {
@@ -62,6 +71,36 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Stats:       buildStatsSnapshot(entity.Stats),
 			LastHitTick: entity.Combat.LastHitTick,
 			LastDamage:  entity.Combat.LastDamage,
+			Control:     buildControlSnapshot(entity.Control),
+		})
+	}
+	for _, effect := range walls {
+		snapshot.Effects = append(snapshot.Effects, protocol.EffectSnapshot{
+			ID:        effect.ID,
+			Kind:      "wind_wall",
+			Team:      string(effect.Team),
+			X:         effect.Center.X,
+			Y:         effect.Center.Y,
+			DirX:      effect.Dir.X,
+			DirY:      effect.Dir.Y,
+			Width:     effect.Width,
+			ExpiresAt: effect.ExpiresAt,
+		})
+	}
+	for _, effect := range effects {
+		snapshot.Effects = append(snapshot.Effects, protocol.EffectSnapshot{
+			ID:        effect.ID,
+			Kind:      effect.Kind,
+			Team:      string(effect.Team),
+			X:         effect.Start.X,
+			Y:         effect.Start.Y,
+			DirX:      effect.Dir.X,
+			DirY:      effect.Dir.Y,
+			Radius:    effect.Radius,
+			Range:     effect.Range,
+			Speed:     effect.Speed,
+			CreatedAt: effect.CreatedAt,
+			ExpiresAt: effect.ExpiresAt,
 		})
 	}
 	return snapshot
@@ -69,17 +108,34 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 
 func buildStatsSnapshot(stats world.Stats) protocol.StatsSnapshot {
 	return protocol.StatsSnapshot{
-		HP:              stats.HP,
-		MaxHP:           stats.MaxHP,
-		MP:              stats.MP,
-		MaxMP:           stats.MaxMP,
-		Attack:          stats.Attack,
-		PhysicalDefense: stats.PhysicalDefense,
-		MagicDefense:    stats.MagicDefense,
-		MoveSpeed:       stats.MoveSpeed,
-		AttackRange:     stats.AttackRange,
-		AttackSpeed:     stats.AttackSpeed,
-		CritChance:      stats.CritChance,
+		HP:                   stats.HP,
+		MaxHP:                stats.MaxHP,
+		BonusHP:              stats.BonusHP,
+		MP:                   stats.MP,
+		MaxMP:                stats.MaxMP,
+		HPRegen5:             stats.HPRegen5,
+		Attack:               stats.Attack,
+		BonusAttack:          stats.BonusAttack,
+		AbilityPower:         stats.AbilityPower,
+		DamageReduce:         stats.DamageReduce,
+		PhysicalDefense:      stats.PhysicalDefense,
+		BonusPhysicalDefense: stats.BonusPhysicalDefense,
+		PhysicalPenPercent:   stats.PhysicalPenPercent,
+		PhysicalPenFlat:      stats.PhysicalPenFlat,
+		PhysicalDamageReduce: stats.PhysicalDamageReduce,
+		MagicDefense:         stats.MagicDefense,
+		BonusMagicDefense:    stats.BonusMagicDefense,
+		MagicPenPercent:      stats.MagicPenPercent,
+		MagicPenFlat:         stats.MagicPenFlat,
+		MagicDamageReduce:    stats.MagicDamageReduce,
+		MoveSpeed:            stats.MoveSpeed,
+		AttackRange:          stats.AttackRange,
+		AttackSpeed:          stats.AttackSpeed,
+		BaseAttackSpeed:      stats.BaseAttackSpeed,
+		AttackSpeedBonus:     stats.AttackSpeedBonus,
+		AttackSpeedRatio:     stats.AttackSpeedRatio,
+		AttackSpeedSlow:      stats.AttackSpeedSlow,
+		CritChance:           stats.CritChance,
 	}
 }
 
@@ -88,7 +144,10 @@ func buildSkillSnapshots(states map[string]world.SkillState) []protocol.SkillSna
 	for _, state := range states {
 		skills = append(skills, protocol.SkillSnapshot{
 			SkillID:           state.SkillID,
+			Level:             state.Level,
 			CooldownUntilTick: state.CooldownUntilTick,
+			Stacks:            state.Stacks,
+			StacksExpireTick:  state.StacksExpireTick,
 		})
 	}
 	return skills
@@ -101,4 +160,27 @@ func buildPassiveSnapshot(state world.PassiveState) protocol.PassiveSnapshot {
 		Shield:         state.Shield,
 		MaxShield:      state.MaxShield,
 	}
+}
+
+func buildControlSnapshot(state world.ControlState) protocol.ControlSnapshot {
+	return protocol.ControlSnapshot{
+		AirborneUntilTick:     state.AirborneUntilTick,
+		DashUntilTick:         state.DashUntilTick,
+		ActionLockedUntilTick: state.ActionLockedUntilTick,
+		SilencedUntilTick:     state.SilencedUntilTick,
+		TenacityUntilTick:     state.TenacityUntilTick,
+	}
+}
+
+func buildWarriorSnapshot(state world.WarriorState) protocol.WarriorSnapshot {
+	return protocol.WarriorSnapshot{
+		JudgmentUntilTick: state.JudgmentUntilTick,
+	}
+}
+
+func respawnInSeconds(tick uint64, death world.DeathState) float64 {
+	if !death.Dead || death.RespawnTick <= tick || death.RespawnTickRate <= 0 {
+		return 0
+	}
+	return float64(death.RespawnTick-tick) / float64(death.RespawnTickRate)
 }

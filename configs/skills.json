@@ -1,38 +1,113 @@
 [
   {
     "skillId": "slash",
-    "name": "Slash",
-    "cooldownMs": 1200,
-    "range": 90,
-    "type": "damage"
+    "name": "Decisive Strike",
+    "cooldownMs": 8000,
+    "range": 300,
+    "type": "empower",
+    "meta": {
+      "moveSpeedBonus": 0.3,
+      "empowerDurationSeconds": 4.5,
+      "silenceSeconds": 1.5,
+      "totalAdRatio": 1.4
+    },
+    "metaLists": {
+      "bonusDamage": [30, 60, 90, 120, 150],
+      "moveSpeedDurationSeconds": [1.5, 2, 2.5, 3, 3.5]
+    }
   },
   {
     "skillId": "dash",
-    "name": "Dash",
-    "cooldownMs": 3000,
-    "range": 260,
-    "type": "dash"
-  },
-  {
-    "skillId": "battle_cry",
-    "name": "Battle Cry",
-    "cooldownMs": 6000,
+    "name": "Courage",
+    "cooldownMs": 24000,
     "range": 0,
-    "type": "buff"
+    "type": "defense",
+    "meta": {
+      "durationSeconds": 4,
+      "frontDurationSeconds": 0.75,
+      "frontDamageReduce": 0.6,
+      "frontTenacity": 0.6,
+      "backDamageReduce": 0.3,
+      "bonusHealthRatio": 0.2,
+      "passiveMinionResistGain": 0.2,
+      "passiveHeroResistGain": 1,
+      "passiveMaxResistGain": 40
+    },
+    "metaLists": {
+      "shieldValue": [70, 95, 120, 145, 170],
+      "cooldownMs": [24000, 22000, 20000, 18000, 16000]
+    }
   },
   {
-    "skillId": "whirlwind",
-    "name": "Whirlwind",
-    "cooldownMs": 12000,
+    "skillId": "judgment",
+    "name": "Judgment",
+    "cooldownMs": 9000,
     "range": 180,
-    "type": "damage"
+    "type": "spin",
+    "meta": {
+      "durationSeconds": 3,
+      "baseSpins": 7,
+      "attackSpeedBonusPerExtraSpin": 0.25,
+      "nearestDamageBonus": 0.25,
+      "armorShredHitCount": 6,
+      "armorShredPercent": 0.25,
+      "armorShredSeconds": 6
+    },
+    "metaLists": {
+      "baseDamage": [4, 7, 10, 13, 16],
+      "adRatio": [0.4, 0.43, 0.46, 0.49, 0.52],
+      "critBaseDamage": [5.2, 9.1, 13, 16.9, 20.8],
+      "critAdRatio": [0.52, 0.559, 0.598, 0.637, 0.676],
+      "cooldownMs": [9000, 8250, 7500, 6750, 6000]
+    }
+  },
+  {
+    "skillId": "justice",
+    "name": "Justice",
+    "cooldownMs": 120000,
+    "range": 400,
+    "type": "execute",
+    "meta": {
+      "targetPickPadding": 80
+    },
+    "metaLists": {
+      "baseDamage": [150, 250, 350],
+      "missingHPRatio": [0.25, 0.3, 0.35],
+      "cooldownMs": [120000, 100000, 80000]
+    }
   },
   {
     "skillId": "warrior_toughness",
     "name": "Toughness",
     "cooldownMs": 0,
     "range": 0,
-    "type": "passive"
+    "type": "passive",
+    "meta": {
+      "outOfCombatSeconds": 8,
+      "regenIntervalSeconds": 5
+    },
+    "metaLists": {
+      "regenMaxHPRatio": [
+        0.015,
+        0.0198,
+        0.0246,
+        0.0294,
+        0.0342,
+        0.039,
+        0.0438,
+        0.0486,
+        0.0534,
+        0.0582,
+        0.063,
+        0.0678,
+        0.0726,
+        0.0774,
+        0.0822,
+        0.087,
+        0.0918,
+        0.101
+      ]
+    }
   },
   {
     "skillId": "shot",
@@ -107,36 +182,99 @@
   {
     "skillId": "sword_cut",
     "name": "Sword Cut",
-    "cooldownMs": 1000,
-    "range": 140,
-    "type": "damage"
+    "cooldownMs": 6000,
+    "range": 475,
+    "type": "damage",
+    "meta": {
+      "whirlwindRange": 900,
+      "eqRadius": 375,
+      "adRatio": 1,
+      "stackDurationSeconds": 6,
+      "knockupSeconds": 1,
+      "minCooldownSeconds": 1.33,
+      "lineWidth": 55,
+      "whirlwindRadius": 80,
+      "whirlwindSpeed": 1200
+    },
+    "metaLists": {
+      "baseDamage": [20, 45, 70, 95, 120],
+      "cooldownMs": [6000, 5500, 5000, 4500, 4000]
+    }
   },
   {
-    "skillId": "sword_step",
-    "name": "Sword Step",
-    "cooldownMs": 2800,
-    "range": 240,
-    "type": "dash"
+    "skillId": "sword_wind_wall",
+    "name": "Wind Wall",
+    "cooldownMs": 26000,
+    "range": 180,
+    "type": "wall",
+    "meta": {
+      "durationSeconds": 4,
+      "placeDistance": 180
+    },
+    "metaLists": {
+      "width": [300, 350, 400, 450, 500],
+      "cooldownMs": [26000, 24000, 22000, 20000, 18000]
+    }
   },
   {
-    "skillId": "sword_guard",
-    "name": "Sword Guard",
-    "cooldownMs": 5200,
-    "range": 0,
-    "type": "buff"
+    "skillId": "sword_sweeping_blade",
+    "name": "Sweeping Blade",
+    "cooldownMs": 500,
+    "range": 475,
+    "type": "dash",
+    "meta": {
+      "bonusAdRatio": 0.2,
+      "apRatio": 0.6,
+      "stackDamageBonus": 0.25,
+      "maxStacks": 4,
+      "dashDurationSeconds": 0.35,
+      "dashThroughDistance": 34,
+      "targetPickPadding": 48
+    },
+    "metaLists": {
+      "baseDamage": [60, 70, 80, 90, 100],
+      "cooldownMs": [500, 400, 300, 200, 100],
+      "targetCooldownMs": [10000, 9000, 8000, 7000, 6000]
+    }
   },
   {
     "skillId": "sword_storm",
-    "name": "Sword Storm",
-    "cooldownMs": 13000,
-    "range": 220,
-    "type": "damage"
+    "name": "Last Breath",
+    "cooldownMs": 80000,
+    "range": 1200,
+    "type": "damage",
+    "meta": {
+      "bonusAdRatio": 1.5,
+      "airborneExtendSeconds": 1,
+      "lastBreathDurationSeconds": 15,
+      "selfActionLockSeconds": 1,
+      "qStacksAfterCast": 0,
+      "qStackDurationSeconds": 6,
+      "hitRadius": 450,
+      "targetPickPadding": 80
+    },
+    "metaLists": {
+      "baseDamage": [200, 300, 400],
+      "cooldownMs": [80000, 55000, 30000]
+    }
   },
   {
     "skillId": "sword_edge",
     "name": "Sword Edge",
     "cooldownMs": 0,
     "range": 0,
-    "type": "passive"
+    "type": "passive",
+    "meta": {
+      "intentMax": 100,
+      "shieldDurationSeconds": 1,
+      "critChanceMultiplier": 2,
+      "critDamageMultiplier": 1.9
+    },
+    "metaLists": {
+      "intentMoveUnitsPerPercent": [59, 52.5, 46],
+      "intentMoveUnitLevels": [1, 7, 13],
+      "shieldValue": [125, 160, 275, 600],
+      "shieldValueLevels": [1, 6, 12, 18]
+    }
   }
 ]

@@ -29,12 +29,14 @@ type JoinRoom struct {
 }
 
 type PlayerInput struct {
-	MoveX     float64      `json:"moveX,omitempty"`
-	MoveY     float64      `json:"moveY,omitempty"`
-	Move      *MoveInput   `json:"move,omitempty"`
-	Attack    *AttackInput `json:"attack,omitempty"`
-	Cast      *CastInput   `json:"cast,omitempty"`
-	ClientSeq uint64       `json:"clientSeq"`
+	MoveX        float64            `json:"moveX,omitempty"`
+	MoveY        float64            `json:"moveY,omitempty"`
+	Move         *MoveInput         `json:"move,omitempty"`
+	Attack       *AttackInput       `json:"attack,omitempty"`
+	Cast         *CastInput         `json:"cast,omitempty"`
+	UpgradeSkill *UpgradeSkillInput `json:"upgradeSkill,omitempty"`
+	DebugLevelUp bool               `json:"debugLevelUp,omitempty"`
+	ClientSeq    uint64             `json:"clientSeq"`
 }
 
 type MoveInput struct {
@@ -53,6 +55,10 @@ type CastInput struct {
 	TargetY float64 `json:"targetY"`
 }
 
+type UpgradeSkillInput struct {
+	Slot string `json:"slot"`
+}
+
 type SpawnObject struct {
 	Kind string  `json:"kind"`
 	Team string  `json:"team"`
@@ -67,6 +73,7 @@ type Snapshot struct {
 	Players []PlayerSnapshot `json:"players"`
 	Units   []UnitSnapshot   `json:"units"`
 	Dummies []DummySnapshot  `json:"dummies"`
+	Effects []EffectSnapshot `json:"effects"`
 }
 
 type MapSnapshot struct {
@@ -80,6 +87,7 @@ type PlayerSnapshot struct {
 	Team         string          `json:"team"`
 	Level        int             `json:"level"`
 	MaxLevel     int             `json:"maxLevel"`
+	SkillPoints  int             `json:"skillPoints"`
 	Exp          float64         `json:"exp"`
 	TotalExp     float64         `json:"totalExp"`
 	NextLevelExp float64         `json:"nextLevelExp"`
@@ -90,6 +98,11 @@ type PlayerSnapshot struct {
 	Passive      PassiveSnapshot `json:"passive"`
 	LastHitTick  uint64          `json:"lastHitTick"`
 	LastDamage   int             `json:"lastDamage"`
+	Dead         bool            `json:"dead"`
+	RespawnTick  uint64          `json:"respawnTick"`
+	RespawnIn    float64         `json:"respawnIn"`
+	Control      ControlSnapshot `json:"control"`
+	Warrior      WarriorSnapshot `json:"warrior"`
 }
 
 type DummySnapshot struct {
@@ -103,34 +116,71 @@ type DummySnapshot struct {
 }
 
 type UnitSnapshot struct {
-	ID          string        `json:"id"`
-	Kind        string        `json:"kind"`
-	Team        string        `json:"team"`
-	X           float64       `json:"x"`
-	Y           float64       `json:"y"`
-	Radius      float64       `json:"radius"`
-	Stats       StatsSnapshot `json:"stats"`
-	LastHitTick uint64        `json:"lastHitTick"`
-	LastDamage  int           `json:"lastDamage"`
+	ID          string          `json:"id"`
+	Kind        string          `json:"kind"`
+	Team        string          `json:"team"`
+	X           float64         `json:"x"`
+	Y           float64         `json:"y"`
+	Radius      float64         `json:"radius"`
+	Stats       StatsSnapshot   `json:"stats"`
+	LastHitTick uint64          `json:"lastHitTick"`
+	LastDamage  int             `json:"lastDamage"`
+	Control     ControlSnapshot `json:"control"`
+}
+
+type EffectSnapshot struct {
+	ID        string  `json:"id"`
+	Kind      string  `json:"kind"`
+	Team      string  `json:"team"`
+	X         float64 `json:"x"`
+	Y         float64 `json:"y"`
+	DirX      float64 `json:"dirX"`
+	DirY      float64 `json:"dirY"`
+	Width     float64 `json:"width"`
+	Radius    float64 `json:"radius"`
+	Range     float64 `json:"range"`
+	Speed     float64 `json:"speed"`
+	CreatedAt uint64  `json:"createdAt"`
+	ExpiresAt uint64  `json:"expiresAt"`
 }
 
 type StatsSnapshot struct {
-	HP              int     `json:"hp"`
-	MaxHP           int     `json:"maxHp"`
-	MP              int     `json:"mp"`
-	MaxMP           int     `json:"maxMp"`
-	Attack          int     `json:"attack"`
-	PhysicalDefense int     `json:"physicalDefense"`
-	MagicDefense    int     `json:"magicDefense"`
-	MoveSpeed       float64 `json:"moveSpeed"`
-	AttackRange     float64 `json:"attackRange"`
-	AttackSpeed     float64 `json:"attackSpeed"`
-	CritChance      float64 `json:"critChance"`
+	HP                   int     `json:"hp"`
+	MaxHP                int     `json:"maxHp"`
+	BonusHP              int     `json:"bonusHp"`
+	MP                   int     `json:"mp"`
+	MaxMP                int     `json:"maxMp"`
+	HPRegen5             float64 `json:"hpRegen5"`
+	Attack               float64 `json:"attack"`
+	BonusAttack          float64 `json:"bonusAttack"`
+	AbilityPower         int     `json:"abilityPower"`
+	DamageReduce         float64 `json:"damageReduce"`
+	PhysicalDefense      float64 `json:"physicalDefense"`
+	BonusPhysicalDefense float64 `json:"bonusPhysicalDefense"`
+	PhysicalPenPercent   float64 `json:"physicalPenPercent"`
+	PhysicalPenFlat      float64 `json:"physicalPenFlat"`
+	PhysicalDamageReduce float64 `json:"physicalDamageReduce"`
+	MagicDefense         float64 `json:"magicDefense"`
+	BonusMagicDefense    float64 `json:"bonusMagicDefense"`
+	MagicPenPercent      float64 `json:"magicPenPercent"`
+	MagicPenFlat         float64 `json:"magicPenFlat"`
+	MagicDamageReduce    float64 `json:"magicDamageReduce"`
+	MoveSpeed            float64 `json:"moveSpeed"`
+	AttackRange          float64 `json:"attackRange"`
+	AttackSpeed          float64 `json:"attackSpeed"`
+	BaseAttackSpeed      float64 `json:"baseAttackSpeed"`
+	AttackSpeedBonus     float64 `json:"attackSpeedBonus"`
+	AttackSpeedRatio     float64 `json:"attackSpeedRatio"`
+	AttackSpeedSlow      float64 `json:"attackSpeedSlow"`
+	CritChance           float64 `json:"critChance"`
 }
 
 type SkillSnapshot struct {
 	SkillID           string `json:"skillId"`
+	Level             int    `json:"level"`
 	CooldownUntilTick uint64 `json:"cooldownUntilTick"`
+	Stacks            int    `json:"stacks"`
+	StacksExpireTick  uint64 `json:"stacksExpireTick"`
 }
 
 type PassiveSnapshot struct {
@@ -138,6 +188,18 @@ type PassiveSnapshot struct {
 	MaxSwordIntent float64 `json:"maxSwordIntent"`
 	Shield         int     `json:"shield"`
 	MaxShield      int     `json:"maxShield"`
+}
+
+type ControlSnapshot struct {
+	AirborneUntilTick     uint64 `json:"airborneUntilTick"`
+	DashUntilTick         uint64 `json:"dashUntilTick"`
+	ActionLockedUntilTick uint64 `json:"actionLockedUntilTick"`
+	SilencedUntilTick     uint64 `json:"silencedUntilTick"`
+	TenacityUntilTick     uint64 `json:"tenacityUntilTick"`
+}
+
+type WarriorSnapshot struct {
+	JudgmentUntilTick uint64 `json:"judgmentUntilTick"`
 }
 
 type Error struct {

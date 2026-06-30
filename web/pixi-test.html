@@ -13,8 +13,13 @@
         margin: 0;
         min-height: 100vh;
         font-family:
-          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-          "Segoe UI", sans-serif;
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
         color: #172026;
         background: #e7ece8;
       }
@@ -89,6 +94,24 @@
       button.secondary {
         color: #24312b;
         background: #d7dfd8;
+      }
+
+      button.icon-button {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        font-size: 16px;
+        line-height: 1;
+        display: inline-grid;
+        place-items: center;
+        padding: 0;
+      }
+
+      button.icon-button:disabled {
+        cursor: default;
+        color: #7d8a82;
+        background: #d8dfda;
+        opacity: 0.7;
       }
 
       .status {
@@ -173,8 +196,72 @@
         overflow-wrap: anywhere;
       }
 
+      .stat-tip {
+        display: inline-grid;
+        position: relative;
+        width: 14px;
+        height: 14px;
+        margin-left: 4px;
+        place-items: center;
+        border: 1px solid #9aa8a0;
+        border-radius: 50%;
+        color: #526158;
+        font-size: 10px;
+        line-height: 1;
+        cursor: help;
+      }
+
+      .stat-tip:hover::after {
+        content: attr(data-tip);
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 6px);
+        z-index: 20;
+        width: max-content;
+        max-width: 220px;
+        padding: 6px 8px;
+        border-radius: 4px;
+        color: #fff;
+        background: rgba(23, 32, 38, 0.94);
+        font-size: 12px;
+        line-height: 1.4;
+        text-align: left;
+        transform: translateX(-50%);
+        white-space: normal;
+        pointer-events: none;
+      }
+
+      .stat-tip:hover::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 2px);
+        z-index: 21;
+        border: 4px solid transparent;
+        border-top-color: rgba(23, 32, 38, 0.94);
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+
       .stats-grid .wide {
         grid-column: 1 / -1;
+      }
+
+      .skill-list {
+        display: grid;
+        gap: 6px;
+      }
+
+      .skill-row {
+        display: grid;
+        grid-template-columns: 28px 1fr 44px 24px;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .skill-row span {
+        min-width: 0;
+        overflow-wrap: anywhere;
       }
 
       .hint {
@@ -228,10 +315,10 @@
 
         <label for="heroId">Hero</label>
         <select id="heroId">
+          <option value="sword">Sword</option>
           <option value="warrior">Warrior</option>
           <option value="archer">Archer</option>
           <option value="tank">Tank</option>
-          <option value="sword">Sword</option>
         </select>
 
         <label for="team">Team</label>
@@ -247,7 +334,6 @@
 
         <label for="spawnKind">Spawn Object</label>
         <select id="spawnKind">
-          <option value="dummy">Dummy</option>
           <option value="enemy_hero">Enemy Hero</option>
           <option value="melee_minion">Melee Minion</option>
           <option value="ranged_minion">Ranged Minion</option>
@@ -266,6 +352,7 @@
 
         <div class="actions">
           <button id="spawnBtn">Spawn</button>
+          <button id="levelUpBtn" class="secondary">Level +1</button>
         </div>
 
         <div class="actions">
@@ -274,12 +361,18 @@
         </div>
 
         <div class="status">
-          <div><strong>Status</strong><span id="status">Disconnected</span></div>
+          <div>
+            <strong>Status</strong><span id="status">Disconnected</span>
+          </div>
           <div><strong>Tick</strong><span id="tick">0</span></div>
           <div><strong>Players</strong><span id="playerCount">0</span></div>
         </div>
 
-        <p class="hint">Right-click the map to move. Left-click an enemy unit to auto attack. Press Q/W/E/R to cast active skills.</p>
+        <p class="hint">
+          Right-click the map to move. Left-click an enemy unit to auto attack.
+          Press Q/W/E/R to cast active skills. Shift+Q/W/E/R or the + buttons
+          upgrade skills.
+        </p>
       </aside>
 
       <main class="viewport">
@@ -287,19 +380,24 @@
           <div class="stats-card">
             <strong>Stats</strong>
             <div class="stats-grid">
-              <span>Level</span><span id="statLevel">-</span>
-              <span>EXP</span><span id="statExp">-</span>
-              <span>HP</span><span id="statHp">-</span>
-              <span>MP</span><span id="statMp">-</span>
-              <span>ATK</span><span id="statAttack">-</span>
-              <span>Phys DEF</span><span id="statPhysicalDefense">-</span>
-              <span>Magic DEF</span><span id="statMagicDefense">-</span>
-              <span>Move SPD</span><span id="statMoveSpeed">-</span>
-              <span>ATK Range</span><span id="statAttackRange">-</span>
-              <span>ATK SPD</span><span id="statAttackSpeed">-</span>
-              <span>Crit</span><span id="statCritChance">-</span>
-              <span>Sword Intent</span><span id="statSwordIntent">-</span>
-              <span>Shield</span><span id="statShield">-</span>
+              <span>Level</span><span id="statLevel">-</span> <span>EXP</span
+              ><span id="statExp">-</span> <span>Skill Points</span
+              ><span id="statSkillPoints">-</span>
+              <span id="statResourceLabel">Resource</span
+              ><span id="statResource">-</span> <span>HP</span
+              ><span id="statHp">-</span> <span id="statMpLabel">MP</span
+              ><span id="statMp">-</span> <span>HP/5s</span
+              ><span id="statHpRegen5">-</span> <span>ATK</span
+              ><span id="statAttack">-</span> <span>AP</span
+              ><span id="statAbilityPower">-</span>
+              <span>Phys DEF<span id="statPhysicalDefenseTip"></span></span
+              ><span id="statPhysicalDefense">-</span>
+              <span>Magic DEF<span id="statMagicDefenseTip"></span></span
+              ><span id="statMagicDefense">-</span> <span>Move SPD</span
+              ><span id="statMoveSpeed">-</span> <span>ATK Range</span
+              ><span id="statAttackRange">-</span> <span>ATK SPD</span
+              ><span id="statAttackSpeed">-</span> <span>Crit</span
+              ><span id="statCritChance">-</span>
             </div>
           </div>
           <div class="player-card">
@@ -307,7 +405,10 @@
             <div class="stats-grid">
               <span>Team</span><span id="teamLabel">-</span>
               <span>Position</span><span id="position">-</span>
-              <span class="wide">Skills <span id="skills">-</span></span>
+              <span class="wide"
+                >Skills
+                <div id="skills">-</div></span
+              >
             </div>
           </div>
         </div>
@@ -328,9 +429,10 @@
         team: "blue",
         showDummies: false,
         seq: 0,
-        map: { width: 2000, height: 2000 },
+        map: { width: 6000, height: 6000 },
         players: new Map(),
         units: new Map(),
+        effects: [],
         sprites: new Map(),
         unitSprites: new Map(),
         damageTexts: [],
@@ -339,6 +441,11 @@
         attackTargetId: "",
         attackMoveArmed: false,
         attackFlashUntil: 0,
+        aimPoint: null,
+        skillPreview: null,
+        snapshotTick: 0,
+        snapshotAtMs: 0,
+        tickRate: 20,
         frame: { scale: 1, offsetX: 0, offsetY: 0 },
       };
 
@@ -352,6 +459,7 @@
         spawnKind: document.querySelector("#spawnKind"),
         spawnTeam: document.querySelector("#spawnTeam"),
         spawnBtn: document.querySelector("#spawnBtn"),
+        levelUpBtn: document.querySelector("#levelUpBtn"),
         connectBtn: document.querySelector("#connectBtn"),
         leaveBtn: document.querySelector("#leaveBtn"),
         status: document.querySelector("#status"),
@@ -361,29 +469,45 @@
         position: document.querySelector("#position"),
         statLevel: document.querySelector("#statLevel"),
         statExp: document.querySelector("#statExp"),
+        statSkillPoints: document.querySelector("#statSkillPoints"),
+        statResourceLabel: document.querySelector("#statResourceLabel"),
+        statResource: document.querySelector("#statResource"),
+        statMpLabel: document.querySelector("#statMpLabel"),
         statHp: document.querySelector("#statHp"),
         statMp: document.querySelector("#statMp"),
+        statHpRegen5: document.querySelector("#statHpRegen5"),
         statAttack: document.querySelector("#statAttack"),
+        statAbilityPower: document.querySelector("#statAbilityPower"),
+        statPhysicalDefenseTip: document.querySelector(
+          "#statPhysicalDefenseTip",
+        ),
         statPhysicalDefense: document.querySelector("#statPhysicalDefense"),
+        statMagicDefenseTip: document.querySelector("#statMagicDefenseTip"),
         statMagicDefense: document.querySelector("#statMagicDefense"),
         statMoveSpeed: document.querySelector("#statMoveSpeed"),
         statAttackRange: document.querySelector("#statAttackRange"),
         statAttackSpeed: document.querySelector("#statAttackSpeed"),
         statCritChance: document.querySelector("#statCritChance"),
-        statSwordIntent: document.querySelector("#statSwordIntent"),
-        statShield: document.querySelector("#statShield"),
         target: document.querySelector("#target"),
         skills: document.querySelector("#skills"),
         stage: document.querySelector("#stage"),
       };
 
-      const heroSkillSlots = {
+      let heroClientConfig = {};
+      let heroSkillSlots = {
+        sword: {
+          passive: "sword_edge",
+          q: "sword_cut",
+          w: "sword_wind_wall",
+          e: "sword_sweeping_blade",
+          r: "sword_storm",
+        },
         warrior: {
           passive: "warrior_toughness",
           q: "slash",
           w: "dash",
-          e: "battle_cry",
-          r: "whirlwind",
+          e: "judgment",
+          r: "justice",
         },
         archer: {
           passive: "archer_focus",
@@ -399,14 +523,18 @@
           e: "taunt",
           r: "earthquake",
         },
-        sword: {
-          passive: "sword_edge",
-          q: "sword_cut",
-          w: "sword_step",
-          e: "sword_guard",
-          r: "sword_storm",
+      };
+
+      let skillClientConfig = {
+        sword_cut: {
+          range: 475,
+          whirlwindRange: 900,
+          eqRadius: 375,
+          previewMs: 450,
         },
       };
+      let levelClientConfig = { maxLevel: 18, levels: [] };
+      let rewardClientConfig = {};
 
       els.playerId.value = state.playerId;
       els.serverUrl.value = websocketURL();
@@ -434,7 +562,94 @@
         app.canvas.addEventListener("contextmenu", (event) => {
           event.preventDefault();
         });
+        app.canvas.addEventListener("pointermove", (event) => {
+          state.aimPoint = screenToWorld(event);
+        });
         app.canvas.addEventListener("pointerdown", handlePointerDown);
+        loadGameConfigs();
+      }
+
+      async function loadGameConfigs() {
+        await Promise.all([
+          loadHeroConfig(),
+          loadSkillConfig(),
+          loadLevelConfig(),
+          loadRewardConfig(),
+        ]);
+      }
+
+      async function fetchConfig(path) {
+        const response = await fetch(path, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`${path} ${response.status}`);
+        }
+        return response.json();
+      }
+
+      async function loadHeroConfig() {
+        try {
+          const heroes = await fetchConfig("/configs/heroes.json");
+          heroClientConfig = Object.fromEntries(
+            heroes.map((hero) => [hero.heroId, hero]),
+          );
+          heroSkillSlots = Object.fromEntries(
+            heroes.map((hero) => [hero.heroId, hero.skills || {}]),
+          );
+          renderHeroOptions(heroes);
+        } catch (error) {
+          console.warn("load hero config failed", error);
+        }
+      }
+
+      async function loadSkillConfig() {
+        try {
+          const skills = await fetchConfig("/configs/skills.json");
+          skillClientConfig = Object.fromEntries(
+            skills.map((skill) => [
+              skill.skillId,
+              {
+                ...skill,
+                ...(skill.meta || {}),
+                meta: skill.meta || {},
+                metaLists: skill.metaLists || {},
+              },
+            ]),
+          );
+        } catch (error) {
+          console.warn("load skill config failed", error);
+        }
+      }
+
+      async function loadLevelConfig() {
+        try {
+          levelClientConfig = await fetchConfig("/configs/levels.json");
+        } catch (error) {
+          console.warn("load level config failed", error);
+        }
+      }
+
+      async function loadRewardConfig() {
+        try {
+          rewardClientConfig = await fetchConfig("/configs/rewards.json");
+        } catch (error) {
+          console.warn("load reward config failed", error);
+        }
+      }
+
+      function renderHeroOptions(heroes) {
+        if (!heroes.length) {
+          return;
+        }
+        const selected = els.heroId.value;
+        els.heroId.innerHTML = heroes
+          .map(
+            (hero) =>
+              `<option value="${escapeHtml(hero.heroId)}">${escapeHtml(hero.name || hero.heroId)}</option>`,
+          )
+          .join("");
+        if (heroClientConfig[selected]) {
+          els.heroId.value = selected;
+        }
       }
 
       function connect() {
@@ -472,7 +687,10 @@
           }
         });
 
-        socket.addEventListener("close", () => setStatus("Disconnected"));
+        socket.addEventListener("close", () => {
+          setStatus("Disconnected");
+          resetClientState();
+        });
         socket.addEventListener("error", () => setStatus("Connection error"));
       }
 
@@ -490,29 +708,39 @@
         state.units = new Map(
           units.map((unit) => [unit.id, normalizeUnit(unit)]),
         );
-        if (state.selectedTargetId && !targetMap().has(state.selectedTargetId)) {
+        state.effects = snapshot.effects || [];
+        const currentTargets = targetMap();
+        if (
+          state.selectedTargetId &&
+          (!currentTargets.has(state.selectedTargetId) ||
+            currentTargets.get(state.selectedTargetId)?.dead)
+        ) {
           state.selectedTargetId = "";
         }
-        if (state.attackTargetId && !targetMap().has(state.attackTargetId)) {
+        if (
+          state.attackTargetId &&
+          (!currentTargets.has(state.attackTargetId) ||
+            currentTargets.get(state.attackTargetId)?.dead)
+        ) {
           state.attackTargetId = "";
         }
-        updateAttackEffects(previousTargets);
+        updateDamageEffects(previousTargets, currentTargets);
+        state.snapshotTick = snapshot.tick;
+        state.snapshotAtMs = performance.now();
         els.tick.textContent = snapshot.tick;
         els.playerCount.textContent = snapshot.players.length;
         updatePositionLabel();
       }
 
-      function updateAttackEffects(previousTargets) {
-        if (!state.attackTargetId) {
-          return;
-        }
-        const previous = previousTargets.get(state.attackTargetId);
-        const current = targetMap().get(state.attackTargetId);
-        if (!previous || !current) {
-          return;
-        }
-        if (current.lastHitTick > previous.lastHitTick) {
-          state.attackFlashUntil = performance.now() + 180;
+      function updateDamageEffects(previousTargets, currentTargets) {
+        for (const [id, current] of currentTargets) {
+          const previous = previousTargets.get(id);
+          if (!previous || current.lastHitTick <= previous.lastHitTick) {
+            continue;
+          }
+          if (id === state.attackTargetId) {
+            state.attackFlashUntil = performance.now() + 180;
+          }
           spawnDamageText(current, current.lastDamage || 0);
         }
       }
@@ -520,6 +748,34 @@
       function leave() {
         sendPacket("leave", null);
         state.socket?.close();
+        resetClientState();
+      }
+
+      function resetClientState() {
+        state.players = new Map();
+        state.units = new Map();
+        state.effects = [];
+        state.moveTarget = null;
+        state.selectedTargetId = "";
+        state.attackTargetId = "";
+        state.attackMoveArmed = false;
+        state.attackFlashUntil = 0;
+        state.skillPreview = null;
+        state.snapshotTick = 0;
+        state.snapshotAtMs = 0;
+
+        for (const effect of state.damageTexts) {
+          effectLayer.removeChild(effect.node);
+        }
+        state.damageTexts = [];
+
+        els.tick.textContent = "0";
+        els.playerCount.textContent = "0";
+        els.position.textContent = "-";
+        els.teamLabel.textContent = "-";
+        els.skills.innerHTML = "-";
+        setStatsCard(null);
+        setTargetCard(null);
       }
 
       function castSkill(slot) {
@@ -527,17 +783,67 @@
         if (!self) {
           return;
         }
-        const skillId = heroSkillSlots[els.heroId.value]?.[slot];
+        const skillId = skillIdForSlot(els.heroId.value, slot);
         if (!skillId) {
           return;
         }
-        const target = state.moveTarget || { x: self.x, y: self.y };
+        if (isSkillOnCooldown(self, skillId)) {
+          return;
+        }
+        const selected = currentTarget();
+        const target =
+          slot === "q"
+            ? state.aimPoint ||
+              selected ||
+              state.moveTarget || { x: self.x + 1, y: self.y }
+            : selected ||
+              state.aimPoint ||
+              state.moveTarget || { x: self.x + 1, y: self.y };
+        if (slot === "q" && skillId === "sword_cut") {
+          showSwordQPreview(self, target);
+        }
         sendPacket("input", {
           cast: {
             skillId,
             targetX: target.x,
             targetY: target.y,
           },
+          clientSeq: state.seq,
+        });
+      }
+
+      function upgradeSkill(slot) {
+        const self = state.players.get(state.playerId);
+        if (!self || self.dead || (self.skillPoints || 0) <= 0) {
+          return;
+        }
+        const skillId = skillIdForSlot(self.heroId || els.heroId.value, slot);
+        if (!skillId) {
+          return;
+        }
+        const skill = skillState(self, skillId);
+        if ((skill?.level || 0) >= maxSkillLevel(slot)) {
+          return;
+        }
+        sendPacket("input", {
+          upgradeSkill: {
+            slot,
+          },
+          clientSeq: state.seq,
+        });
+      }
+
+      function debugLevelUp() {
+        const self = state.players.get(state.playerId);
+        if (
+          !self ||
+          self.dead ||
+          self.level >= (self.maxLevel || levelClientConfig.maxLevel || 18)
+        ) {
+          return;
+        }
+        sendPacket("input", {
+          debugLevelUp: true,
           clientSeq: state.seq,
         });
       }
@@ -560,13 +866,13 @@
 
       function spawnObject() {
         const self = state.players.get(state.playerId);
-        const x = clamp((self?.x ?? state.map.width / 2) + 120, 0, state.map.width);
+        const x = clamp(
+          (self?.x ?? state.map.width / 2) + 120,
+          0,
+          state.map.width,
+        );
         const y = clamp(self?.y ?? state.map.height / 2, 0, state.map.height);
         const kind = els.spawnKind.value;
-        if (kind === "dummy") {
-          els.showDummies.checked = true;
-          state.showDummies = true;
-        }
         sendPacket("spawn_object", {
           kind,
           team: els.spawnTeam.value,
@@ -578,6 +884,7 @@
       function draw(ticker) {
         const frame = calculateFrame();
         drawMap(frame);
+        drawEffects(frame);
         syncUnits(frame);
         syncSprites(frame, ticker.deltaMS);
         syncDamageTexts(frame, ticker.deltaMS);
@@ -617,6 +924,9 @@
           gridLayer.fill(0x22c55e);
         }
 
+        drawActiveSkillRanges(frame);
+        drawSkillPreview(frame);
+
         const selectedTarget = state.selectedTargetId
           ? targetMap().get(state.selectedTargetId)
           : null;
@@ -633,9 +943,7 @@
           const self = state.players.get(state.playerId);
           const target = targetMap().get(state.attackTargetId);
           const showAttackFlash =
-            self?.stats &&
-            target &&
-            performance.now() < state.attackFlashUntil;
+            self?.stats && target && performance.now() < state.attackFlashUntil;
           if (showAttackFlash) {
             gridLayer.circle(
               frame.offsetX + self.x * frame.scale,
@@ -653,6 +961,166 @@
             gridLayer.stroke({ color: 0xf6d365, width: 3 });
           }
         }
+      }
+
+      function drawEffects(frame) {
+        for (const effect of state.effects) {
+          if (effect.kind === "sword_whirlwind") {
+            drawSwordWhirlwindEffect(effect, frame);
+            continue;
+          }
+          if (effect.kind !== "wind_wall") {
+            continue;
+          }
+          const half = effect.width / 2;
+          const startX =
+            frame.offsetX + (effect.x - effect.dirX * half) * frame.scale;
+          const startY =
+            frame.offsetY + (effect.y - effect.dirY * half) * frame.scale;
+          const endX =
+            frame.offsetX + (effect.x + effect.dirX * half) * frame.scale;
+          const endY =
+            frame.offsetY + (effect.y + effect.dirY * half) * frame.scale;
+          gridLayer.moveTo(startX, startY);
+          gridLayer.lineTo(endX, endY);
+          gridLayer.stroke({ color: 0x67e8f9, width: 10, alpha: 0.45 });
+          gridLayer.moveTo(startX, startY);
+          gridLayer.lineTo(endX, endY);
+          gridLayer.stroke({ color: 0x0e7490, width: 2, alpha: 0.9 });
+        }
+      }
+
+      function drawActiveSkillRanges(frame) {
+        const tick = interpolatedTick();
+        for (const player of state.players.values()) {
+          if (player.dead || player.heroId !== "warrior") {
+            continue;
+          }
+          if ((player.warrior?.judgmentUntilTick || 0) <= tick) {
+            continue;
+          }
+          const config = skillClientConfig.judgment || {};
+          const radius = config.range || 180;
+          const x = frame.offsetX + player.x * frame.scale;
+          const y = frame.offsetY + player.y * frame.scale;
+          gridLayer.circle(x, y, radius * frame.scale);
+          gridLayer.fill({ color: 0xf59e0b, alpha: 0.08 });
+          gridLayer.circle(x, y, radius * frame.scale);
+          gridLayer.stroke({ color: 0xf97316, width: 3, alpha: 0.75 });
+        }
+      }
+
+      function drawSwordWhirlwindEffect(effect, frame) {
+        const tick = interpolatedTick();
+        const ageTicks = Math.max(0, tick - (effect.createdAt || tick));
+        const traveled = clamp(
+          ageTicks * (effect.speed || 0),
+          0,
+          effect.range || 0,
+        );
+        const x = effect.x + (effect.dirX || 0) * traveled;
+        const y = effect.y + (effect.dirY || 0) * traveled;
+        const sx = frame.offsetX + x * frame.scale;
+        const sy = frame.offsetY + y * frame.scale;
+        const radius = (effect.radius || 70) * frame.scale;
+        gridLayer.circle(sx, sy, radius);
+        gridLayer.stroke({ color: 0x0284c7, width: 3, alpha: 0.9 });
+        gridLayer.circle(sx, sy, Math.max(6, radius * 0.35));
+        gridLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.8 });
+        gridLayer.moveTo(sx - radius * 0.55, sy);
+        gridLayer.lineTo(sx + radius * 0.55, sy);
+        gridLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.45 });
+      }
+
+      function interpolatedTick() {
+        if (!state.snapshotAtMs) {
+          return Number(els.tick.textContent || 0);
+        }
+        return (
+          state.snapshotTick +
+          ((performance.now() - state.snapshotAtMs) / 1000) * state.tickRate
+        );
+      }
+
+      function showSwordQPreview(self, target) {
+        const tick = Number(els.tick.textContent || 0);
+        const qState = skillState(self, "sword_cut");
+        const config = skillClientConfig.sword_cut || {};
+        let form = "line";
+        let range = config.range || 475;
+        if ((self.control?.dashUntilTick || 0) > tick) {
+          form = "circle";
+          range = config.eqRadius || 375;
+        } else if ((qState?.stacks || 0) >= 2) {
+          form = "whirlwind";
+          range = config.whirlwindRange || 900;
+        }
+        const dx = target.x - self.x;
+        const dy = target.y - self.y;
+        const len = Math.hypot(dx, dy) || 1;
+        state.skillPreview = {
+          kind: "sword_q",
+          form,
+          x: self.x,
+          y: self.y,
+          dirX: dx / len,
+          dirY: dy / len,
+          range,
+          radius: form === "whirlwind" ? config.whirlwindRadius || 70 : 0,
+          previewMs: config.previewMs || 450,
+          expiresAt: performance.now() + (config.previewMs || 450),
+        };
+      }
+
+      function drawSkillPreview(frame) {
+        const preview = state.skillPreview;
+        if (!preview) {
+          return;
+        }
+        if (performance.now() > preview.expiresAt) {
+          state.skillPreview = null;
+          return;
+        }
+        const alpha = Math.max(
+          0,
+          (preview.expiresAt - performance.now()) / (preview.previewMs || 450),
+        );
+        const x = frame.offsetX + preview.x * frame.scale;
+        const y = frame.offsetY + preview.y * frame.scale;
+        if (preview.form === "circle") {
+          gridLayer.circle(x, y, preview.range * frame.scale);
+          gridLayer.stroke({ color: 0x38bdf8, width: 3, alpha: 0.65 * alpha });
+          gridLayer.circle(x, y, 12);
+          gridLayer.fill({ color: 0x38bdf8, alpha: 0.18 * alpha });
+          return;
+        }
+        const endX =
+          frame.offsetX +
+          (preview.x + preview.dirX * preview.range) * frame.scale;
+        const endY =
+          frame.offsetY +
+          (preview.y + preview.dirY * preview.range) * frame.scale;
+        if (preview.form === "whirlwind") {
+          gridLayer.moveTo(x, y);
+          gridLayer.lineTo(endX, endY);
+          gridLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.55 * alpha });
+          gridLayer.circle(endX, endY, (preview.radius || 70) * frame.scale);
+          gridLayer.stroke({ color: 0x0284c7, width: 3, alpha: 0.85 * alpha });
+          gridLayer.circle(
+            endX,
+            endY,
+            Math.max(6, (preview.radius || 70) * frame.scale * 0.28),
+          );
+          gridLayer.fill({ color: 0x38bdf8, alpha: 0.16 * alpha });
+          return;
+        }
+        const width = preview.form === "whirlwind" ? 18 : 12;
+        gridLayer.moveTo(x, y);
+        gridLayer.lineTo(endX, endY);
+        gridLayer.stroke({ color: 0x38bdf8, width, alpha: 0.28 * alpha });
+        gridLayer.moveTo(x, y);
+        gridLayer.lineTo(endX, endY);
+        gridLayer.stroke({ color: 0x0284c7, width: 2, alpha: 0.8 * alpha });
       }
 
       function syncSprites(frame, deltaMS) {
@@ -676,7 +1144,9 @@
           sprite.targetX = player.x;
           sprite.targetY = player.y;
           redrawPlayerBody(sprite, player);
-          updateBars(sprite, player.stats);
+          updateBars(sprite, player);
+          updatePlayerLabel(sprite, player);
+          updateStatusLabel(sprite, player, -43);
           sprite.x += (sprite.targetX - sprite.x) * smoothing;
           sprite.y += (sprite.targetY - sprite.y) * smoothing;
           sprite.node.x = frame.offsetX + sprite.x * frame.scale;
@@ -700,6 +1170,7 @@
             unitLayer.addChild(sprite.node);
           }
           updateBars(sprite, unit.stats);
+          updateStatusLabel(sprite, unit, -48);
           sprite.node.x = frame.offsetX + unit.x * frame.scale;
           sprite.node.y = frame.offsetY + unit.y * frame.scale;
         }
@@ -710,8 +1181,9 @@
         const body = new PIXI.Graphics();
         const hpBack = new PIXI.Graphics();
         const hpFill = new PIXI.Graphics();
-        const mpBack = new PIXI.Graphics();
-        const mpFill = new PIXI.Graphics();
+        const resourceBack = new PIXI.Graphics();
+        const resourceFill = new PIXI.Graphics();
+        const statusLabel = createStatusLabel();
         const label = new PIXI.Text({
           text: player.playerId,
           style: {
@@ -725,11 +1197,24 @@
         redrawPlayerBody({ body }, player);
         drawBar(hpBack, 0x24312b, 1, -29);
         drawBar(hpFill, 0xd94948, 1, -29);
-        drawBar(mpBack, 0x24312b, 1, -23);
-        drawBar(mpFill, 0x3b82f6, 1, -23);
+        drawBar(resourceBack, 0x24312b, 1, -23);
+        drawBar(
+          resourceFill,
+          playerResourceColor(player),
+          playerResourceRatio(player),
+          -23,
+        );
         label.anchor.set(0.5, 0);
         label.y = 16;
-        node.addChild(hpBack, hpFill, mpBack, mpFill, body, label);
+        node.addChild(
+          statusLabel,
+          hpBack,
+          hpFill,
+          resourceBack,
+          resourceFill,
+          body,
+          label,
+        );
         return {
           node,
           body,
@@ -738,16 +1223,40 @@
           targetX: player.x,
           targetY: player.y,
           hpFill,
-          mpFill,
+          resourceFill,
+          label,
+          statusLabel,
         };
+      }
+
+      function updatePlayerLabel(sprite, player) {
+        if (!sprite.label) {
+          return;
+        }
+        sprite.label.text = player.dead
+          ? `${player.playerId} ${Math.ceil(player.respawnIn || 0)}s`
+          : player.playerId;
+        sprite.label.alpha = player.dead ? 0.65 : 1;
       }
 
       function redrawPlayerBody(sprite, player) {
         const isSelf = player.playerId === state.playerId;
+        const radius = playerModelRadius(player);
         sprite.body.clear();
-        sprite.body.circle(0, 0, isSelf ? 10 : 8);
-        sprite.body.fill(colorForTeam(player.team));
-        sprite.body.stroke({ color: isSelf ? 0xffffff : 0x172026, width: isSelf ? 2 : 1 });
+        if (playerModelShape(player) === "triangle") {
+          sprite.body.moveTo(0, -radius);
+          sprite.body.lineTo(radius * 0.92, radius * 0.7);
+          sprite.body.lineTo(-radius * 0.92, radius * 0.7);
+          sprite.body.closePath();
+        } else {
+          sprite.body.circle(0, 0, radius);
+        }
+        sprite.body.fill(player.dead ? 0x6b7280 : colorForTeam(player.team));
+        sprite.body.stroke({
+          color: player.dead ? 0x111827 : isSelf ? 0xffffff : 0x172026,
+          width: isSelf ? 2 : 1,
+          alpha: player.dead ? 0.45 : 1,
+        });
       }
 
       function createUnit(unit) {
@@ -755,6 +1264,7 @@
         const body = new PIXI.Graphics();
         const hpFill = new PIXI.Graphics();
         const visual = unitVisual(unit.kind);
+        const statusLabel = createStatusLabel();
         const label = new PIXI.Text({
           text: visual.label,
           style: {
@@ -770,8 +1280,60 @@
         drawBar(hpFill, 0xd94948, 1, -34);
         label.anchor.set(0.5, 0);
         label.y = unit.radius + 6;
-        node.addChild(hpFill, body, label);
-        return { node, hpFill };
+        node.addChild(statusLabel, hpFill, body, label);
+        return { node, hpFill, statusLabel };
+      }
+
+      function createStatusLabel() {
+        const label = new PIXI.Text({
+          text: "",
+          style: {
+            fill: 0xf97316,
+            fontFamily: "Arial",
+            fontSize: 12,
+            fontWeight: "900",
+            stroke: { color: 0xffffff, width: 2 },
+          },
+        });
+        label.anchor.set(0.5, 0.5);
+        label.visible = false;
+        return label;
+      }
+
+      function updateStatusLabel(sprite, target, y) {
+        if (!sprite.statusLabel) {
+          return;
+        }
+        if (target.kind !== "player" && target.kind !== "enemy_hero") {
+          sprite.statusLabel.visible = false;
+          return;
+        }
+        const statuses = abnormalStatuses(target);
+        if (!statuses.length) {
+          sprite.statusLabel.visible = false;
+          return;
+        }
+        sprite.statusLabel.text = statuses.join(" ");
+        sprite.statusLabel.y = y;
+        sprite.statusLabel.visible = true;
+      }
+
+      function abnormalStatuses(target) {
+        const tick = Number(els.tick.textContent || 0);
+        const statuses = [];
+        if ((target.control?.airborneUntilTick || 0) > tick) {
+          statuses.push("Airborne");
+        }
+        if ((target.control?.actionLockedUntilTick || 0) > tick) {
+          statuses.push("Locked");
+        }
+        if ((target.control?.silencedUntilTick || 0) > tick) {
+          statuses.push("Silence");
+        }
+        if ((target.control?.tenacityUntilTick || 0) > tick) {
+          statuses.push("Tenacity");
+        }
+        return statuses;
       }
 
       function normalizeUnit(unit) {
@@ -787,7 +1349,9 @@
         return units.filter((unit) => {
           const kind = unit.kind || "dummy";
           if (kind === "dummy") {
-            return state.showDummies || String(unit.id || "").startsWith("spawn:");
+            return (
+              state.showDummies || String(unit.id || "").startsWith("spawn:")
+            );
           }
           return String(unit.id || "").startsWith("spawn:");
         });
@@ -815,7 +1379,9 @@
           barracks: { label: "Barracks", color: 0x7c2d12, shape: "rect" },
           dummy: { label: "Dummy", color: 0x8a5a32, shape: "rect" },
         };
-        return visuals[kind] || { label: kind, color: 0x334155, shape: "circle" };
+        return (
+          visuals[kind] || { label: kind, color: 0x334155, shape: "circle" }
+        );
       }
 
       function drawUnitBody(body, visual, radius) {
@@ -881,19 +1447,41 @@
             continue;
           }
           effect.node.x = frame.offsetX + effect.x * frame.scale;
-          effect.node.y = frame.offsetY + (effect.y - progress * 80) * frame.scale;
+          effect.node.y =
+            frame.offsetY + (effect.y - progress * 80) * frame.scale;
           effect.node.alpha = 1 - progress;
         }
       }
 
-      function updateBars(sprite, stats) {
+      function updateBars(sprite, target) {
+        const stats = target?.stats || target;
         if (!stats) {
           return;
         }
-        drawBar(sprite.hpFill, 0xd94948, ratio(stats.hp, stats.maxHp), -29);
-        if (sprite.mpFill) {
-          drawBar(sprite.mpFill, 0x3b82f6, ratio(stats.mp, stats.maxMp), -23);
+        drawBar(sprite.hpFill, 0xd94948, hpShieldRatio(target), -29);
+        if (sprite.resourceFill) {
+          drawBar(
+            sprite.resourceFill,
+            playerResourceColor(target),
+            playerResourceRatio(target),
+            -23,
+          );
         }
+      }
+
+      function playerResourceRatio(player) {
+        const passive = player?.passive || {};
+        if ((player?.heroId || els.heroId.value) === "sword") {
+          return ratio(passive.swordIntent || 0, passive.maxSwordIntent || 0);
+        }
+        return ratio(player?.stats?.mp || 0, player?.stats?.maxMp || 0);
+      }
+
+      function playerResourceColor(player) {
+        if ((player?.heroId || els.heroId.value) === "sword") {
+          return 0xf8fafc;
+        }
+        return 0x3b82f6;
       }
 
       function colorForTeam(team) {
@@ -924,27 +1512,65 @@
         setStatsCard(self);
         setTargetCard(currentTarget());
         if (!self.skills || self.skills.length === 0) {
-          els.skills.textContent = "-";
+          els.skills.innerHTML = "-";
           return;
         }
         const tick = Number(els.tick.textContent || 0);
-        els.skills.textContent = formatSkillCooldowns(self, tick);
+        els.skills.innerHTML = formatSkillCooldowns(self, tick);
       }
 
       function formatSkillCooldowns(player, tick) {
-        const skillById = new Map(player.skills.map((skill) => [skill.skillId, skill]));
-        const slots = heroSkillSlots[player.heroId || els.heroId.value] || heroSkillSlots[els.heroId.value];
+        const slots =
+          heroSkillSlots[player.heroId || els.heroId.value] ||
+          heroSkillSlots[els.heroId.value];
         if (!slots) {
           return "-";
         }
-        return ["q", "w", "e", "r"]
+        const canSpend = (player.skillPoints || 0) > 0;
+        return `<div class="skill-list">${["q", "w", "e", "r"]
           .map((slot) => {
-            const skill = skillById.get(slots[slot]);
-            const remainTicks = Math.max(0, (skill?.cooldownUntilTick || 0) - tick);
+            const skill = skillState(player, slots[slot]);
+            const remainTicks = Math.max(
+              0,
+              (skill?.cooldownUntilTick || 0) - tick,
+            );
             const remainSeconds = (remainTicks / 20).toFixed(1);
-            return `${slot.toUpperCase()} ${remainSeconds}`;
+            const level = skill?.level || 0;
+            const maxLevel = maxSkillLevel(slot);
+            const disabled = !canSpend || level >= maxLevel ? "disabled" : "";
+            return `<div class="skill-row">
+                            <strong>${slot.toUpperCase()}</strong>
+                            <span>${level}/${maxLevel}</span>
+                            <span>${remainSeconds}s</span>
+                            <button type="button" class="icon-button" data-skill-upgrade="${slot}" ${disabled}>+</button>
+                        </div>`;
           })
-          .join("  ");
+          .join("")}</div>`;
+      }
+
+      function maxSkillLevel(slot) {
+        return slot === "r" ? 3 : 5;
+      }
+
+      function skillIdForSlot(heroId, slot) {
+        return (
+          heroSkillSlots[heroId]?.[slot] ||
+          heroClientConfig[heroId]?.skills?.[slot] ||
+          ""
+        );
+      }
+
+      function skillState(player, skillId) {
+        return (
+          (player.skills || []).find((skill) => skill.skillId === skillId) ||
+          null
+        );
+      }
+
+      function isSkillOnCooldown(player, skillId) {
+        const tick = Number(els.tick.textContent || 0);
+        const skill = skillState(player, skillId);
+        return (skill?.cooldownUntilTick || 0) > tick;
       }
 
       function setStatus(value) {
@@ -955,43 +1581,71 @@
         if (!player?.stats) {
           els.statLevel.textContent = "-";
           els.statExp.textContent = "-";
+          els.statSkillPoints.textContent = "-";
+          setStatPairVisible(els.statResourceLabel, els.statResource, false);
+          els.statResource.textContent = "-";
+          els.statMpLabel.textContent = "MP";
           els.statHp.textContent = "-";
           els.statMp.textContent = "-";
+          els.statHpRegen5.textContent = "-";
           els.statAttack.textContent = "-";
+          els.statAbilityPower.textContent = "-";
           els.statPhysicalDefense.textContent = "-";
           els.statMagicDefense.textContent = "-";
           els.statMoveSpeed.textContent = "-";
           els.statAttackRange.textContent = "-";
           els.statAttackSpeed.textContent = "-";
           els.statCritChance.textContent = "-";
-          els.statSwordIntent.textContent = "-";
-          els.statShield.textContent = "-";
           return;
         }
         const stats = player.stats;
         const passive = player.passive || {};
-        els.statLevel.textContent = `${player.level || 1}/${player.maxLevel || 18}`;
+        const heroConfig =
+          heroClientConfig[player.heroId || els.heroId.value] || {};
+        const isSword = (player.heroId || els.heroId.value) === "sword";
+        els.statLevel.textContent = `${player.level || 1}/${player.maxLevel || levelClientConfig.maxLevel || 18}`;
         els.statExp.textContent =
           player.nextLevelExp > 0
             ? `${Math.floor(player.exp || 0)}/${Math.floor(player.nextLevelExp)}`
             : "MAX";
-        els.statHp.textContent = `${stats.hp}/${stats.maxHp}`;
-        els.statMp.textContent = `${stats.mp}/${stats.maxMp}`;
-        els.statAttack.textContent = stats.attack;
-        els.statPhysicalDefense.textContent = stats.physicalDefense;
-        els.statMagicDefense.textContent = stats.magicDefense;
-        els.statMoveSpeed.textContent = stats.moveSpeed;
-        els.statAttackRange.textContent = stats.attackRange;
-        els.statAttackSpeed.textContent = stats.attackSpeed;
+        els.statSkillPoints.textContent = player.skillPoints || 0;
+        const resourceLabel = formatResource(heroConfig.resource);
+        const hasResource = resourceLabel !== "";
+        setStatPairVisible(
+          els.statResourceLabel,
+          els.statResource,
+          hasResource,
+        );
+        els.statResource.textContent = hasResource ? resourceLabel : "-";
+        els.statHp.textContent = formatHpWithShield(player);
+        els.statMpLabel.textContent = isSword ? "Sword Intent" : "MP";
+        els.statMp.textContent = isSword
+          ? formatSwordIntent(passive)
+          : stats.maxMp > 0
+            ? `${stats.mp}/${stats.maxMp}`
+            : "-";
+        els.statHpRegen5.textContent = formatNumber(stats.hpRegen5 || 0);
+        els.statAttack.textContent = formatAttack(stats);
+        els.statAbilityPower.textContent = stats.abilityPower || 0;
+        els.statPhysicalDefense.textContent = formatPhysicalDefense(stats);
+        els.statPhysicalDefenseTip.innerHTML = formatDefenseTip(
+          stats.physicalDefense || 0,
+          "物理",
+        );
+        els.statMagicDefense.textContent = formatMagicDefense(stats);
+        els.statMagicDefenseTip.innerHTML = formatDefenseTip(
+          stats.magicDefense || 0,
+          "魔法",
+        );
+        els.statMoveSpeed.textContent = formatNumber(stats.moveSpeed);
+        els.statAttackRange.textContent = formatNumber(stats.attackRange);
+        els.statAttackSpeed.textContent = formatNumber(stats.attackSpeed);
         els.statCritChance.textContent = `${Math.round((stats.critChance || 0) * 1000) / 10}%`;
-        els.statSwordIntent.textContent =
-          passive.maxSwordIntent > 0
-            ? `${Math.floor(passive.swordIntent || 0)}/${Math.floor(passive.maxSwordIntent)}`
-            : "-";
-        els.statShield.textContent =
-          passive.maxShield > 0 || passive.shield > 0
-            ? `${passive.shield || 0}/${passive.maxShield || 0}`
-            : "-";
+      }
+
+      function setStatPairVisible(label, value, visible) {
+        label.style.display = visible ? "" : "none";
+        value.style.display = visible ? "" : "none";
       }
 
       function setTargetCard(target) {
@@ -1001,16 +1655,24 @@
           return;
         }
         const stats = target.stats;
+        const airborneTicks = Math.max(
+          0,
+          (target.control?.airborneUntilTick || 0) -
+            Number(els.tick.textContent || 0),
+        );
         els.target.parentElement.style.display = "block";
         els.target.innerHTML = `
           <div>${targetLabel(target)}</div>
           <div>${target.id || target.playerId}</div>
           <div>Team ${target.team || "-"}</div>
-          <div>HP ${stats.hp}/${stats.maxHp}</div>
-          <div>MP ${stats.mp}/${stats.maxMp}</div>
-          <div>ATK ${stats.attack}</div>
-          <div>Phys DEF ${stats.physicalDefense}</div>
-          <div>Magic DEF ${stats.magicDefense}</div>
+          ${airborneTicks > 0 ? `<div>Airborne ${(airborneTicks / state.tickRate).toFixed(1)}s</div>` : ""}
+          <div>HP ${formatHpWithShield(target)}</div>
+          ${formatTargetResource(target)}
+          <div>HP/5s ${formatNumber(stats.hpRegen5 || 0)}</div>
+          <div>ATK ${formatAttack(stats)}</div>
+          <div>AP ${stats.abilityPower || 0}</div>
+          <div>Phys DEF ${formatDefenseTip(stats.physicalDefense || 0, "物理")} ${formatPhysicalDefense(stats)}</div>
+          <div>Magic DEF ${formatDefenseTip(stats.magicDefense || 0, "魔法")} ${formatMagicDefense(stats)}</div>
           <div>Move SPD ${stats.moveSpeed}</div>
           <div>ATK Range ${stats.attackRange}</div>
           <div>ATK SPD ${stats.attackSpeed}</div>
@@ -1055,6 +1717,10 @@
       }
 
       function attackTarget(targetId) {
+        const self = state.players.get(state.playerId);
+        if (self?.dead) {
+          return;
+        }
         state.attackTargetId = targetId;
         state.moveTarget = null;
         sendPacket("input", {
@@ -1066,6 +1732,10 @@
       }
 
       function moveToPoint(point) {
+        const self = state.players.get(state.playerId);
+        if (self?.dead) {
+          return;
+        }
         state.attackMoveArmed = false;
         state.attackTargetId = "";
         state.moveTarget = {
@@ -1103,25 +1773,51 @@
 
       function pickTargetUnit(event) {
         const point = screenToWorld(event);
+        const screenPoint = screenPointFromEvent(event);
         const self = state.players.get(state.playerId);
         const targets = [...targetMap().values()]
           .filter((target) => target.id !== self?.id)
-          .filter((target) => !self || target.team !== self.team || target.team === "neutral")
-          .sort((a, b) => (a.radius || 18) - (b.radius || 18));
+          .filter((target) => !target.dead)
+          .filter(
+            (target) =>
+              !self || target.team !== self.team || target.team === "neutral",
+          )
+          .sort(
+            (a, b) =>
+              screenDistanceToTarget(screenPoint, a) -
+              screenDistanceToTarget(screenPoint, b),
+          );
         for (const target of targets) {
-          if (hitTestUnit(point, target)) {
+          if (hitTestUnit(screenPoint, point, target)) {
             return target.id;
           }
         }
         return "";
       }
 
-      function hitTestUnit(point, unit) {
+      function hitTestUnit(screenPoint, worldPoint, unit) {
         const visual = unitVisual(unit.kind || "dummy");
+        const isPlayerModel = unit.kind === "player";
+        const isEnemyHeroModel = unit.kind === "enemy_hero";
+        const sx = state.frame.offsetX + unit.x * state.frame.scale;
+        const sy = state.frame.offsetY + unit.y * state.frame.scale;
+        if (isPlayerModel) {
+          return hitTestPlayerModel(
+            screenPoint.x - sx,
+            screenPoint.y - sy,
+            unit,
+          );
+        }
+        if (isEnemyHeroModel) {
+          return (
+            Math.hypot(screenPoint.x - sx, screenPoint.y - sy) <=
+            unitModelRadius(unit) * state.frame.scale + 4
+          );
+        }
         const size = Math.max(18, unit.radius);
-        const padding = 4;
-        const dx = Math.abs(point.x - unit.x);
-        const dy = Math.abs(point.y - unit.y);
+        const padding = 10;
+        const dx = Math.abs(worldPoint.x - unit.x);
+        const dy = Math.abs(worldPoint.y - unit.y);
         if (visual.shape === "circle") {
           return Math.hypot(dx, dy) <= size + padding;
         }
@@ -1129,6 +1825,12 @@
           return dx <= size + padding && dy <= size * 1.3 + padding;
         }
         return dx <= size + padding && dy <= size + padding;
+      }
+
+      function screenDistanceToTarget(point, unit) {
+        const sx = state.frame.offsetX + unit.x * state.frame.scale;
+        const sy = state.frame.offsetY + unit.y * state.frame.scale;
+        return Math.hypot(point.x - sx, point.y - sy);
       }
 
       function targetMap() {
@@ -1147,21 +1849,158 @@
       }
 
       function targetSelectRadius(target, frame) {
+        if (target.kind === "player") {
+          return playerModelRadius(target) + 4;
+        }
+        if (target.kind === "enemy_hero") {
+          return unitModelRadius(target) * frame.scale + 4;
+        }
         return Math.max(14, (target.radius || 18) * frame.scale + 6);
       }
 
-      function screenToWorld(event) {
+      function playerModelRadius(player) {
+        return player.playerId === state.playerId ? 10 : 8;
+      }
+
+      function playerModelShape(player) {
+        return player.heroId === "warrior" ? "triangle" : "circle";
+      }
+
+      function hitTestPlayerModel(dx, dy, player) {
+        const radius = playerModelRadius(player) + 4;
+        if (playerModelShape(player) !== "triangle") {
+          return Math.hypot(dx, dy) <= radius;
+        }
+        return Math.hypot(dx, dy) <= radius;
+      }
+
+      function unitModelRadius(unit) {
+        return Math.max(18, unit.radius || 0);
+      }
+
+      function screenPointFromEvent(event) {
         const rect = app.canvas.getBoundingClientRect();
-        const canvasX = event.clientX - rect.left;
-        const canvasY = event.clientY - rect.top;
         return {
-          x: (canvasX - state.frame.offsetX) / state.frame.scale,
-          y: (canvasY - state.frame.offsetY) / state.frame.scale,
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        };
+      }
+
+      function screenToWorld(event) {
+        const canvasPoint = screenPointFromEvent(event);
+        return {
+          x: (canvasPoint.x - state.frame.offsetX) / state.frame.scale,
+          y: (canvasPoint.y - state.frame.offsetY) / state.frame.scale,
         };
       }
 
       function clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
+      }
+
+      function formatNumber(value) {
+        return Number.isInteger(value)
+          ? String(value)
+          : String(Math.round(value * 1000) / 1000);
+      }
+
+      function shieldValue(entity) {
+        return Math.max(0, entity?.passive?.shield || 0);
+      }
+
+      function formatHpWithShield(entity) {
+        const stats = entity?.stats || {};
+        const shield = shieldValue(entity);
+        if (shield <= 0) {
+          return `${formatNumber(stats.hp || 0)}/${formatNumber(stats.maxHp || 0)}`;
+        }
+        return `${formatNumber(stats.hp || 0)} + ${formatNumber(shield)}/${formatNumber(stats.maxHp || 0)}`;
+      }
+
+      function hpShieldRatio(entity) {
+        const stats = entity?.stats || {};
+        return ratio((stats.hp || 0) + shieldValue(entity), stats.maxHp || 0);
+      }
+
+      function formatAttack(stats) {
+        return formatBasePlusBonus(stats.attack || 0, stats.bonusAttack || 0);
+      }
+
+      function formatPhysicalDefense(stats) {
+        return formatBasePlusBonus(
+          stats.physicalDefense || 0,
+          stats.bonusPhysicalDefense || 0,
+        );
+      }
+
+      function formatMagicDefense(stats) {
+        return formatBasePlusBonus(
+          stats.magicDefense || 0,
+          stats.bonusMagicDefense || 0,
+        );
+      }
+
+      function formatDefenseTip(resistance, typeLabel) {
+        return `<span class="stat-tip" data-tip="${escapeHtml(formatResistanceTip(resistance, typeLabel))}">?</span>`;
+      }
+
+      function formatResistanceTip(resistance, typeLabel) {
+        if (resistance >= 0) {
+          const reduce = resistance / (resistance + 100);
+          return `${typeLabel}伤害减免 ${formatPercent(reduce)}`;
+        }
+        const multiplier = 100 / Math.max(1, 100 + resistance);
+        return `${typeLabel}伤害放大 ${formatNumber(multiplier)} 倍`;
+      }
+
+      function formatPercent(value) {
+        return `${formatNumber(value * 100)}%`;
+      }
+
+      function formatBasePlusBonus(base, bonus) {
+        if (bonus <= 0) {
+          return formatNumber(base);
+        }
+        return `${formatNumber(base)} + ${formatNumber(bonus)}`;
+      }
+
+      function formatSwordIntent(passive) {
+        return passive?.maxSwordIntent > 0
+          ? `${Math.floor(passive.swordIntent || 0)}/${Math.floor(passive.maxSwordIntent)}`
+          : "-";
+      }
+
+      function formatTargetResource(target) {
+        if (target?.heroId === "sword") {
+          return `<div>Sword Intent ${formatSwordIntent(target.passive || {})}</div>`;
+        }
+        const stats = target?.stats || {};
+        if (!stats.maxMp || stats.maxMp <= 0) {
+          return "";
+        }
+        return `<div>MP ${stats.mp}/${stats.maxMp}</div>`;
+      }
+
+      function formatResource(resource) {
+        if (resource === "sword_intent") {
+          return "Sword Intent";
+        }
+        if (!resource || resource === "mp") {
+          return "MP";
+        }
+        if (resource === "none") {
+          return "";
+        }
+        return resource;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
       }
 
       function ratio(value, max) {
@@ -1182,12 +2021,30 @@
           return;
         }
         event.preventDefault();
+        if (event.shiftKey) {
+          upgradeSkill(slot);
+          return;
+        }
         castSkill(slot);
+      });
+
+      els.skills.addEventListener("pointerdown", (event) => {
+        const button = event.target.closest("[data-skill-upgrade]");
+        if (!button) {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        if (button.disabled) {
+          return;
+        }
+        upgradeSkill(button.dataset.skillUpgrade);
       });
 
       els.connectBtn.addEventListener("click", connect);
       els.leaveBtn.addEventListener("click", leave);
       els.spawnBtn.addEventListener("click", spawnObject);
+      els.levelUpBtn.addEventListener("click", debugLevelUp);
 
       bootPixi();
     </script>

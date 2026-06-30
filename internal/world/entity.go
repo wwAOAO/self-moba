@@ -5,6 +5,48 @@ type Vector2 struct {
 	Y float64
 }
 
+type WindWall struct {
+	ID        string
+	Team      Team
+	Center    Vector2
+	Dir       Vector2
+	Width     float64
+	ExpiresAt uint64
+}
+
+type SkillEffect struct {
+	ID        string
+	Kind      string
+	Team      Team
+	Start     Vector2
+	Dir       Vector2
+	Range     float64
+	Radius    float64
+	Speed     float64
+	CreatedAt uint64
+	ExpiresAt uint64
+}
+
+type Projectile struct {
+	ID           string
+	Kind         string
+	Team         Team
+	SourceID     string
+	SkillID      string
+	Position     Vector2
+	Start        Vector2
+	Dir          Vector2
+	SpeedPerTick float64
+	Range        float64
+	Radius       float64
+	Traveled     float64
+	Damage       int
+	KnockupTicks uint64
+	CreatedAt    uint64
+	ExpiresAt    uint64
+	HitIDs       map[string]bool
+}
+
 type Entity struct {
 	ID           string
 	Kind         EntityKind
@@ -12,6 +54,7 @@ type Entity struct {
 	PlayerID     string
 	HeroID       string
 	Level        int
+	SkillPoints  int
 	Exp          float64
 	TotalExp     float64
 	NextLevelExp float64
@@ -20,7 +63,11 @@ type Entity struct {
 	Radius       float64
 	Skills       map[string]SkillState
 	Combat       CombatState
+	Control      ControlState
 	Passive      PassiveState
+	Sword        SwordState
+	Warrior      WarriorState
+	Death        DeathState
 	Intent       IntentState
 }
 
@@ -47,35 +94,101 @@ const (
 )
 
 type Stats struct {
-	HP              int
-	MaxHP           int
-	MP              int
-	MaxMP           int
-	Attack          int
-	PhysicalDefense int
-	MagicDefense    int
-	MoveSpeed       float64
-	AttackRange     float64
-	AttackSpeed     float64
-	CritChance      float64
+	HP                   int
+	MaxHP                int
+	BonusHP              int
+	MP                   int
+	MaxMP                int
+	HPRegen5             float64
+	Attack               float64
+	BonusAttack          float64
+	AbilityPower         int
+	DamageReduce         float64
+	PhysicalDefense      float64
+	MagicDefense         float64
+	BonusPhysicalDefense float64
+	BonusMagicDefense    float64
+	PhysicalPenPercent   float64
+	PhysicalPenFlat      float64
+	PhysicalDamageReduce float64
+	MagicPenPercent      float64
+	MagicPenFlat         float64
+	MagicDamageReduce    float64
+	MoveSpeed            float64
+	AttackRange          float64
+	AttackSpeed          float64
+	BaseAttackSpeed      float64
+	AttackSpeedBonus     float64
+	AttackSpeedRatio     float64
+	AttackSpeedSlow      float64
+	CritChance           float64
 }
 
 type SkillState struct {
 	SkillID           string
+	Level             int
 	CooldownUntilTick uint64
+	Stacks            int
+	StacksExpireTick  uint64
 }
 
 type CombatState struct {
-	NextAttackTick uint64
-	LastHitTick    uint64
-	LastDamage     int
+	NextAttackTick             uint64
+	LastHitTick                uint64
+	LastDamage                 int
+	PhysicalDefenseShredUntil  uint64
+	PhysicalDefenseShredAmount float64
+}
+
+type ControlState struct {
+	AirborneUntilTick     uint64
+	DashUntilTick         uint64
+	ActionLockedUntilTick uint64
+	SilencedUntilTick     uint64
+	TenacityUntilTick     uint64
+}
+
+type SwordState struct {
+	SweepingBladeStacks      int
+	SweepingBladeTargetUntil map[string]uint64
+	LastBreathUntilTick      uint64
+}
+
+type WarriorState struct {
+	DecisiveStrikeUntilTick      uint64
+	DecisiveStrikeSpeedUntilTick uint64
+	DecisiveStrikeLevel          int
+	DecisiveStrikeMoveSpeedBonus float64
+	CourageUntilTick             uint64
+	CourageFrontUntilTick        uint64
+	CourageFrontDamageReduce     float64
+	CourageFrontTenacity         float64
+	CourageBackDamageReduce      float64
+	CouragePassiveResistGain     float64
+	JudgmentUntilTick            uint64
+	JudgmentNextSpinTick         uint64
+	JudgmentSpinIntervalTicks    uint64
+	JudgmentSpinsRemaining       int
+	JudgmentLevel                int
+	JudgmentHits                 map[string]int
 }
 
 type PassiveState struct {
-	SwordIntent    float64
-	MaxSwordIntent float64
-	Shield         int
-	MaxShield      int
+	SwordIntent        float64
+	MaxSwordIntent     float64
+	Shield             int
+	MaxShield          int
+	ShieldExpireTick   uint64
+	LastRegenBreakTick uint64
+	NextRegenTick      uint64
+}
+
+type DeathState struct {
+	Dead              bool
+	RespawnTick       uint64
+	RespawnTickRate   int
+	RespawnSeconds    int
+	LastDeathPosition Vector2
 }
 
 type IntentState struct {
