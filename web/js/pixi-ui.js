@@ -1,0 +1,199 @@
+function updatePositionLabel() {
+  const self = state.players.get(state.playerId);
+  if (!self) {
+    els.position.textContent = "-";
+    setStatsCard(null);
+    return;
+  }
+  els.position.textContent = `${self.x.toFixed(1)}, ${self.y.toFixed(1)}`;
+  els.teamLabel.textContent = self.team || state.team;
+  setStatsCard(self);
+  setTargetCard(currentTarget());
+  if (!self.skills || self.skills.length === 0) {
+    els.skills.innerHTML = "-";
+    return;
+  }
+  const tick = Number(els.tick.textContent || 0);
+  els.skills.innerHTML = formatSkillCooldowns(self, tick);
+}
+
+function formatSkillCooldowns(player, tick) {
+  const slots =
+    heroSkillSlots[player.heroId || els.heroId.value] ||
+    heroSkillSlots[els.heroId.value];
+  if (!slots) {
+    return "-";
+  }
+  const canSpend = (player.skillPoints || 0) > 0;
+  return `<div class="skill-list">${["q", "w", "e", "r"]
+    .map((slot) => {
+      const skill = skillState(player, slots[slot]);
+      const remainTicks = Math.max(0, (skill?.cooldownUntilTick || 0) - tick);
+      const remainSeconds = (remainTicks / 20).toFixed(1);
+      const level = skill?.level || 0;
+      const maxLevel = maxSkillLevel(slot);
+      const disabled = !canSpend || level >= maxLevel ? "disabled" : "";
+      return `<div class="skill-row">
+                      <strong>${slot.toUpperCase()}</strong>
+                      <span>${level}/${maxLevel}</span>
+                      <span>${remainSeconds}s</span>
+                      <button type="button" class="icon-button" data-skill-upgrade="${slot}" ${disabled}>+</button>
+                  </div>`;
+    })
+    .join("")}</div>`;
+}
+
+function maxSkillLevel(slot) {
+  return slot === "r" ? 3 : 5;
+}
+
+function skillIdForSlot(heroId, slot) {
+  return (
+    heroSkillSlots[heroId]?.[slot] ||
+    heroClientConfig[heroId]?.skills?.[slot] ||
+    ""
+  );
+}
+
+function skillState(player, skillId) {
+  return (
+    (player.skills || []).find((skill) => skill.skillId === skillId) || null
+  );
+}
+
+function skillMetaListValue(skillId, key, level, fallback) {
+  const values = skillClientConfig[skillId]?.metaLists?.[key] || fallback;
+  const index = clamp(Math.max(1, level || 1), 1, values.length) - 1;
+  return values[index] || 0;
+}
+
+function swordETargetCooldownTicks(player) {
+  const level = skillState(player, "sword_sweeping_blade")?.level || 1;
+  const cooldownMs = skillMetaListValue(
+    "sword_sweeping_blade",
+    "targetCooldownMs",
+    level,
+    [10000, 9000, 8000, 7000, 6000],
+  );
+  return (cooldownMs / 1000) * state.tickRate;
+}
+
+function isSkillOnCooldown(player, skillId) {
+  const tick = Number(els.tick.textContent || 0);
+  const skill = skillState(player, skillId);
+  return (skill?.cooldownUntilTick || 0) > tick;
+}
+
+function isSkillLearned(player, skillId) {
+  return (skillState(player, skillId)?.level || 0) > 0;
+}
+
+function setStatus(value) {
+  els.status.textContent = value;
+}
+
+function setStatsCard(player) {
+  if (!player?.stats) {
+    els.statLevel.textContent = "-";
+    els.statExp.textContent = "-";
+    els.statSkillPoints.textContent = "-";
+    setStatPairVisible(els.statResourceLabel, els.statResource, false);
+    els.statResource.textContent = "-";
+    els.statMpLabel.textContent = "MP";
+    els.statHp.textContent = "-";
+    els.statMp.textContent = "-";
+    els.statHpRegen5.textContent = "-";
+    setStatPairVisible(els.statMpRegen5Label, els.statMpRegen5, false);
+    els.statMpRegen5.textContent = "-";
+    els.statAttack.textContent = "-";
+    els.statAbilityPower.textContent = "-";
+    els.statPhysicalDefense.textContent = "-";
+    els.statMagicDefense.textContent = "-";
+    els.statMoveSpeed.textContent = "-";
+    els.statAttackRange.textContent = "-";
+    els.statAttackSpeed.textContent = "-";
+    els.statCritChance.textContent = "-";
+    return;
+  }
+  const stats = player.stats;
+  const passive = player.passive || {};
+  const heroConfig = heroClientConfig[player.heroId || els.heroId.value] || {};
+  const isSword = (player.heroId || els.heroId.value) === "sword";
+  els.statLevel.textContent = `${player.level || 1}/${player.maxLevel || levelClientConfig.maxLevel || 18}`;
+  els.statExp.textContent =
+    player.nextLevelExp > 0
+      ? `${Math.floor(player.exp || 0)}/${Math.floor(player.nextLevelExp)}`
+      : "MAX";
+  els.statSkillPoints.textContent = player.skillPoints || 0;
+  const resourceLabel = formatResource(heroConfig.resource);
+  const hasResource = resourceLabel !== "";
+  setStatPairVisible(els.statResourceLabel, els.statResource, hasResource);
+  els.statResource.textContent = hasResource ? resourceLabel : "-";
+  els.statHp.textContent = formatHpWithShield(player);
+  els.statMpLabel.textContent = isSword ? "Sword Intent" : "MP";
+  els.statMp.textContent = isSword
+    ? formatSwordIntent(passive)
+    : stats.maxMp > 0
+      ? `${formatNumber(stats.mp)}/${formatNumber(stats.maxMp)}`
+      : "-";
+  els.statHpRegen5.textContent = formatNumber(stats.hpRegen5 || 0);
+  const showMpRegen = !isSword && stats.maxMp > 0;
+  setStatPairVisible(els.statMpRegen5Label, els.statMpRegen5, showMpRegen);
+  els.statMpRegen5.textContent = showMpRegen
+    ? formatNumber(stats.mpRegen5 || 0)
+    : "-";
+  els.statAttack.textContent = formatAttack(stats);
+  els.statAbilityPower.textContent = stats.abilityPower || 0;
+  els.statPhysicalDefense.textContent = formatPhysicalDefense(stats);
+  els.statPhysicalDefenseTip.innerHTML = formatDefenseTip(
+    stats.physicalDefense || 0,
+    "物理",
+  );
+  els.statMagicDefense.textContent = formatMagicDefense(stats);
+  els.statMagicDefenseTip.innerHTML = formatDefenseTip(
+    stats.magicDefense || 0,
+    "魔法",
+  );
+  els.statMoveSpeed.textContent = formatNumber(stats.moveSpeed);
+  els.statAttackRange.textContent = formatNumber(stats.attackRange);
+  els.statAttackSpeed.textContent = formatNumber(stats.attackSpeed);
+  els.statCritChance.textContent = `${Math.round((stats.critChance || 0) * 1000) / 10}%`;
+}
+
+function setStatPairVisible(label, value, visible) {
+  label.style.display = visible ? "" : "none";
+  value.style.display = visible ? "" : "none";
+}
+
+function setTargetCard(target) {
+  if (!target?.stats) {
+    els.target.parentElement.style.display = "none";
+    els.target.innerHTML = "-";
+    return;
+  }
+  const stats = target.stats;
+  const airborneTicks = Math.max(
+    0,
+    (target.control?.airborneUntilTick || 0) -
+      Number(els.tick.textContent || 0),
+  );
+  els.target.parentElement.style.display = "block";
+  els.target.innerHTML = `
+    <div>${targetLabel(target)}</div>
+    <div>${target.id || target.playerId}</div>
+    <div>Team ${target.team || "-"}</div>
+    ${airborneTicks > 0 ? `<div>Airborne ${(airborneTicks / state.tickRate).toFixed(1)}s</div>` : ""}
+    <div>HP ${formatHpWithShield(target)}</div>
+    ${formatTargetResource(target)}
+    <div>HP/5s ${formatNumber(stats.hpRegen5 || 0)}</div>
+    ${formatTargetMpRegen(stats)}
+    <div>ATK ${formatAttack(stats)}</div>
+    <div>AP ${stats.abilityPower || 0}</div>
+    <div>Phys DEF ${formatDefenseTip(stats.physicalDefense || 0, "物理")} ${formatPhysicalDefense(stats)}</div>
+    <div>Magic DEF ${formatDefenseTip(stats.magicDefense || 0, "魔法")} ${formatMagicDefense(stats)}</div>
+    <div>Move SPD ${stats.moveSpeed}</div>
+    <div>ATK Range ${stats.attackRange}</div>
+    <div>ATK SPD ${stats.attackSpeed}</div>
+    <div>Crit ${Math.round((stats.critChance || 0) * 1000) / 10}%</div>
+  `;
+}

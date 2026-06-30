@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Battle Room PixiJS Test</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        color: #172026;
+        background: #e7ece8;
+      }
+
+      .app-shell {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        min-height: 100vh;
+      }
+
+      .panel {
+        padding: 20px;
+        border-right: 1px solid #cbd5cf;
+        background: #f6f8f4;
+      }
+
+      h1 {
+        margin: 0 0 18px;
+        font-size: 22px;
+        line-height: 1.2;
+      }
+
+      label {
+        display: block;
+        margin: 14px 0 6px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      input,
+      select {
+        width: 100%;
+        height: 38px;
+        padding: 0 10px;
+        border: 1px solid #b7c2bb;
+        border-radius: 6px;
+        font-size: 14px;
+        background: #fff;
+      }
+
+      input[type="checkbox"] {
+        width: auto;
+        height: auto;
+        margin: 0 8px 0 0;
+      }
+
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        margin-top: 14px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      button {
+        height: 38px;
+        border: 0;
+        border-radius: 6px;
+        font-weight: 700;
+        cursor: pointer;
+        color: #fff;
+        background: #1f6f5b;
+      }
+
+      button.secondary {
+        color: #24312b;
+        background: #d7dfd8;
+      }
+
+      button.icon-button {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        font-size: 16px;
+        line-height: 1;
+        display: inline-grid;
+        place-items: center;
+        padding: 0;
+      }
+
+      button.icon-button:disabled {
+        cursor: default;
+        color: #7d8a82;
+        background: #d8dfda;
+        opacity: 0.7;
+      }
+
+      .status {
+        margin-top: 16px;
+        padding: 10px;
+        border-radius: 6px;
+        background: #e8efe9;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .status strong {
+        display: inline-block;
+        min-width: 78px;
+      }
+
+      .left-cards {
+        position: absolute;
+        left: 16px;
+        top: 16px;
+        z-index: 2;
+        width: 260px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .stats-card {
+        padding: 10px;
+        border: 2px solid #1f6f5b;
+        border-radius: 4px;
+        background: #f8fbf8;
+        box-shadow: 0 8px 22px rgba(23, 32, 38, 0.14);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .target-card {
+        position: absolute;
+        display: none;
+        right: 16px;
+        top: 16px;
+        z-index: 2;
+        width: 240px;
+        padding: 10px;
+        border: 2px solid #ef4444;
+        border-radius: 4px;
+        background: #f8fbf8;
+        box-shadow: 0 8px 22px rgba(23, 32, 38, 0.14);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .player-card {
+        padding: 10px;
+        border: 2px solid #1f6f5b;
+        border-radius: 4px;
+        background: #f8fbf8;
+        box-shadow: 0 8px 22px rgba(23, 32, 38, 0.14);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .target-card strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .stats-card strong,
+      .player-card strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 8px;
+      }
+
+      .stats-grid span:nth-child(even) {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .stat-tip {
+        display: inline-grid;
+        position: relative;
+        width: 14px;
+        height: 14px;
+        margin-left: 4px;
+        place-items: center;
+        border: 1px solid #9aa8a0;
+        border-radius: 50%;
+        color: #526158;
+        font-size: 10px;
+        line-height: 1;
+        cursor: help;
+      }
+
+      .stat-tip:hover::after {
+        content: attr(data-tip);
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 6px);
+        z-index: 20;
+        width: max-content;
+        max-width: 220px;
+        padding: 6px 8px;
+        border-radius: 4px;
+        color: #fff;
+        background: rgba(23, 32, 38, 0.94);
+        font-size: 12px;
+        line-height: 1.4;
+        text-align: left;
+        transform: translateX(-50%);
+        white-space: normal;
+        pointer-events: none;
+      }
+
+      .stat-tip:hover::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 2px);
+        z-index: 21;
+        border: 4px solid transparent;
+        border-top-color: rgba(23, 32, 38, 0.94);
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+
+      .stats-grid .wide {
+        grid-column: 1 / -1;
+      }
+
+      .skill-list {
+        display: grid;
+        gap: 6px;
+      }
+
+      .skill-row {
+        display: grid;
+        grid-template-columns: 28px 1fr 44px 24px;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .skill-row span {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .hint {
+        margin-top: 14px;
+        color: #516057;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .viewport {
+        position: relative;
+        min-width: 0;
+        overflow: hidden;
+        background: #9eb89f;
+      }
+
+      #stage {
+        width: 100%;
+        height: 100vh;
+      }
+
+      @media (max-width: 760px) {
+        .app-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .panel {
+          border-right: 0;
+          border-bottom: 1px solid #cbd5cf;
+        }
+
+        #stage {
+          height: 70vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="panel">
+        <h1>2D Battle Room</h1>
+
+        <label for="serverUrl">WebSocket</label>
+        <input id="serverUrl" />
+
+        <label for="roomId">Room ID</label>
+        <input id="roomId" value="demo-room" />
+
+        <label for="playerId">Player ID</label>
+        <input id="playerId" />
+
+        <label for="heroId">Hero</label>
+        <select id="heroId">
+          <option value="sword">Sword</option>
+          <option value="warrior">Warrior</option>
+          <option value="archer">Archer</option>
+          <option value="tank">Tank</option>
+        </select>
+
+        <label for="team">Team</label>
+        <select id="team">
+          <option value="blue">Blue</option>
+          <option value="red">Red</option>
+        </select>
+
+        <label class="checkbox-row">
+          <input id="showDummies" type="checkbox" />
+          Show Dummies
+        </label>
+
+        <label for="spawnKind">Spawn Object</label>
+        <select id="spawnKind">
+          <option value="enemy_hero">Enemy Hero</option>
+          <option value="melee_minion">Melee Minion</option>
+          <option value="ranged_minion">Ranged Minion</option>
+          <option value="siege_minion">Cannon Minion</option>
+          <option value="tower">Tower</option>
+          <option value="barracks">Barracks</option>
+          <option value="crystal">Crystal</option>
+        </select>
+
+        <label for="spawnTeam">Spawn Team</label>
+        <select id="spawnTeam">
+          <option value="red">Red</option>
+          <option value="blue">Blue</option>
+          <option value="neutral">Neutral</option>
+        </select>
+
+        <div class="actions">
+          <button id="spawnBtn">Spawn</button>
+          <button id="levelUpBtn" class="secondary">Level +1</button>
+        </div>
+
+        <div class="actions">
+          <button id="connectBtn">Connect</button>
+          <button id="leaveBtn" class="secondary">Leave</button>
+        </div>
+
+        <div class="status">
+          <div>
+            <strong>Status</strong><span id="status">Disconnected</span>
+          </div>
+          <div><strong>Tick</strong><span id="tick">0</span></div>
+          <div><strong>Players</strong><span id="playerCount">0</span></div>
+        </div>
+
+        <p class="hint">
+          Right-click the map to move. Left-click an enemy unit to auto attack.
+          Press Q/W/E/R to cast active skills. Shift+Q/W/E/R or the + buttons
+          upgrade skills.
+        </p>
+      </aside>
+
+      <main class="viewport">
+        <div class="left-cards">
+          <div class="stats-card">
+            <strong>Stats</strong>
+            <div class="stats-grid">
+              <span>Level</span><span id="statLevel">-</span> <span>EXP</span
+              ><span id="statExp">-</span> <span>Skill Points</span
+              ><span id="statSkillPoints">-</span>
+              <span id="statResourceLabel">Resource</span
+              ><span id="statResource">-</span> <span>HP</span
+              ><span id="statHp">-</span> <span id="statMpLabel">MP</span
+              ><span id="statMp">-</span> <span>HP/5s</span
+              ><span id="statHpRegen5">-</span>
+              <span id="statMpRegen5Label">MP/5s</span
+              ><span id="statMpRegen5">-</span> <span>ATK</span
+              ><span id="statAttack">-</span> <span>AP</span
+              ><span id="statAbilityPower">-</span>
+              <span>Phys DEF<span id="statPhysicalDefenseTip"></span></span
+              ><span id="statPhysicalDefense">-</span>
+              <span>Magic DEF<span id="statMagicDefenseTip"></span></span
+              ><span id="statMagicDefense">-</span> <span>Move SPD</span
+              ><span id="statMoveSpeed">-</span> <span>ATK Range</span
+              ><span id="statAttackRange">-</span> <span>ATK SPD</span
+              ><span id="statAttackSpeed">-</span> <span>Crit</span
+              ><span id="statCritChance">-</span>
+            </div>
+          </div>
+          <div class="player-card">
+            <strong>Player</strong>
+            <div class="stats-grid">
+              <span>Team</span><span id="teamLabel">-</span>
+              <span>Position</span><span id="position">-</span>
+              <span class="wide"
+                >Skills
+                <div id="skills">-</div></span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="target-card">
+          <strong>Target</strong>
+          <span id="target">-</span>
+        </div>
+        <div id="stage"></div>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.2.6/dist/pixi.min.js"></script>
+    <script src="/js/pixi-state.js"></script>
+    <script src="/js/pixi-config.js"></script>
+    <script src="/js/pixi-network.js"></script>
+    <script src="/js/pixi-render.js"></script>
+    <script src="/js/pixi-ui.js"></script>
+    <script src="/js/pixi-input.js"></script>
+  </body>
+</html>

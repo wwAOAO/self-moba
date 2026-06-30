@@ -33,7 +33,7 @@ func (s *Server) Routes() http.Handler {
 	mux.Handle("/configs/", http.StripPrefix("/configs/", http.FileServer(http.Dir("configs"))))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-			http.Redirect(w, r, "/pixi-test.html", http.StatusFound)
+			http.ServeFile(w, r, "web/index.html")
 			return
 		}
 		http.FileServer(http.Dir("web")).ServeHTTP(w, r)
