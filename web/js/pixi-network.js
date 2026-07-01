@@ -53,6 +53,7 @@ function applySnapshot(snapshot) {
   const units = visibleUnits(snapshot);
   state.units = new Map(units.map((unit) => [unit.id, normalizeUnit(unit)]));
   updateEffectFlashes(snapshot.effects || []);
+  cleanupHiddenEffects(snapshot.effects || []);
   state.effects = snapshot.effects || [];
   const currentTargets = targetMap();
   if (
@@ -75,6 +76,15 @@ function applySnapshot(snapshot) {
   els.tick.textContent = snapshot.tick;
   els.playerCount.textContent = snapshot.players.length;
   updatePositionLabel();
+}
+
+function cleanupHiddenEffects(effects) {
+  const visibleEffectIds = new Set(effects.map((effect) => effect.id).filter(Boolean));
+  for (const id of state.hiddenEffectIds) {
+    if (!visibleEffectIds.has(id)) {
+      state.hiddenEffectIds.delete(id);
+    }
+  }
 }
 
 function updateEffectFlashes(effects) {
@@ -139,6 +149,7 @@ function resetClientState() {
   state.units = new Map();
   state.effects = [];
   state.seenEffectIds.clear();
+  state.hiddenEffectIds.clear();
   state.moveTarget = null;
   state.selectedTargetId = "";
   state.attackTargetId = "";
@@ -182,6 +193,7 @@ function castSkill(slot) {
   const useAimPointFirst =
     skillId === "sword_cut" ||
     skillId === "sword_sweeping_blade" ||
+    skillId === "trap" ||
     skillId === "earthquake";
   const fallbackTarget = state.moveTarget || { x: self.x + 1, y: self.y };
   const target = useAimPointFirst
@@ -194,7 +206,7 @@ function castSkill(slot) {
   sendPacket("input", {
     cast: {
       skillId,
-      targetId: skillId === "slam" ? "" : selected?.id || "",
+      targetId: skillId === "slam" || skillId === "trap" ? "" : selected?.id || "",
       targetX: target.x,
       targetY: target.y,
     },
@@ -269,6 +281,18 @@ function debugLevelUp() {
   }
   sendPacket("input", {
     debugLevelUp: true,
+    clientSeq: state.seq,
+  });
+}
+
+function toggleDebugAbilityHaste() {
+  const self = state.players.get(state.playerId);
+  if (!self || self.dead) {
+    return;
+  }
+  const enabled = (self.stats?.abilityHaste || 0) >= 200;
+  sendPacket("input", {
+    debugAbilityHaste: enabled ? 0 : 200,
     clientSeq: state.seq,
   });
 }

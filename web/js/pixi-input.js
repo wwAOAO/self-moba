@@ -4,6 +4,7 @@ function websocketURL() {
 }
 
 function handlePointerDown(event) {
+  updateAimPoint(event);
   if (event.button === 0) {
     const targetId = pickTargetUnit(event);
     if (targetId) {
@@ -32,6 +33,14 @@ function handlePointerDown(event) {
     return;
   }
   moveToPoint(point);
+}
+
+function updateAimPoint(event) {
+  const point = screenToWorld(event);
+  state.aimPoint = {
+    x: clamp(point.x, 0, state.map.width),
+    y: clamp(point.y, 0, state.map.height),
+  };
 }
 
 function attackTarget(targetId) {
@@ -436,6 +445,30 @@ function formatHpWithShield(entity) {
   return `${formatNumber(stats.hp || 0)} + ${formatNumber(shield)}/${formatNumber(stats.maxHp || 0)}`;
 }
 
+function formatHpRegen5(entity) {
+  const stats = entity?.stats || {};
+  const base = stats.hpRegen5 || 0;
+  const passive = warriorToughnessRegen5(entity);
+  if (passive <= 0) {
+    return formatNumber(base);
+  }
+  return `${formatNumber(base)} + ${formatNumber(passive)}`;
+}
+
+function warriorToughnessRegen5(entity) {
+  if ((entity?.heroId || "") !== "warrior") {
+    return 0;
+  }
+  const ratios =
+    skillClientConfig.warrior_toughness?.metaLists?.regenMaxHPRatio || [];
+  if (ratios.length === 0) {
+    return 0;
+  }
+  const level = clamp(Math.max(1, entity.level || 1), 1, ratios.length);
+  const ratio = ratios[level - 1] || 0;
+  return (entity.stats?.maxHp || 0) * ratio;
+}
+
 function hpShieldRatio(entity) {
   const stats = entity?.stats || {};
   return ratio((stats.hp || 0) + shieldValue(entity), stats.maxHp || 0);
@@ -571,6 +604,7 @@ els.connectBtn.addEventListener("click", connect);
 els.leaveBtn.addEventListener("click", leave);
 els.spawnBtn.addEventListener("click", spawnObject);
 els.levelUpBtn.addEventListener("click", debugLevelUp);
+els.abilityHasteBtn.addEventListener("click", toggleDebugAbilityHaste);
 
 els.serverUrl.value = websocketURL();
 bootPixi();

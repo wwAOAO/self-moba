@@ -29,14 +29,15 @@ type JoinRoom struct {
 }
 
 type PlayerInput struct {
-	MoveX        float64            `json:"moveX,omitempty"`
-	MoveY        float64            `json:"moveY,omitempty"`
-	Move         *MoveInput         `json:"move,omitempty"`
-	Attack       *AttackInput       `json:"attack,omitempty"`
-	Cast         *CastInput         `json:"cast,omitempty"`
-	UpgradeSkill *UpgradeSkillInput `json:"upgradeSkill,omitempty"`
-	DebugLevelUp bool               `json:"debugLevelUp,omitempty"`
-	ClientSeq    uint64             `json:"clientSeq"`
+	MoveX             float64            `json:"moveX,omitempty"`
+	MoveY             float64            `json:"moveY,omitempty"`
+	Move              *MoveInput         `json:"move,omitempty"`
+	Attack            *AttackInput       `json:"attack,omitempty"`
+	Cast              *CastInput         `json:"cast,omitempty"`
+	UpgradeSkill      *UpgradeSkillInput `json:"upgradeSkill,omitempty"`
+	DebugLevelUp      bool               `json:"debugLevelUp,omitempty"`
+	DebugAbilityHaste *float64           `json:"debugAbilityHaste,omitempty"`
+	ClientSeq         uint64             `json:"clientSeq"`
 }
 
 type MoveInput struct {
@@ -152,6 +153,7 @@ type EffectSnapshot struct {
 	Speed     float64 `json:"speed"`
 	CreatedAt uint64  `json:"createdAt"`
 	ExpiresAt uint64  `json:"expiresAt"`
+	Count     int     `json:"count"`
 }
 
 type StatsSnapshot struct {

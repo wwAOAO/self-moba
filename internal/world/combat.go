@@ -149,6 +149,10 @@ func (w *World) fireBasicAttackProjectile(attacker *Entity, target *Entity, tick
 	}
 	w.nextProjectileID++
 	id := "projectile:basic_arrow:" + strconv.Itoa(w.nextProjectileID)
+	displayCount := 1
+	if attacker.HeroID == archerHeroID && tick < attacker.Archer.FocusActiveUntil {
+		displayCount = 3
+	}
 	w.projectiles[id] = &Projectile{
 		ID:           id,
 		Kind:         "basic_arrow",
@@ -162,6 +166,7 @@ func (w *World) fireBasicAttackProjectile(attacker *Entity, target *Entity, tick
 		Range:        w.attackReachAtTick(attacker, target, tick) + 220,
 		Radius:       10,
 		DisplayRange: attacker.Stats.AttackRange,
+		DisplayCount: displayCount,
 		CreatedAt:    tick,
 		ExpiresAt:    tick + secondsToTicks(2, tickRate),
 		HitIDs:       make(map[string]bool),

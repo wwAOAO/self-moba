@@ -80,14 +80,14 @@ function formatArcherSkillState(player, tick) {
     const remain = ((archer.focusActiveUntil - tick) / state.tickRate).toFixed(
       1,
     );
-    return `<div class="skill-list"><div class="skill-row"><strong>Focus</strong><span>Active</span><span>+${Math.round((archer.focusAttackSpeed || 0) * 100)}%</span><span>${remain}s</span></div></div>`;
+    return `<div class="skill-list"><div class="skill-row"><strong>foc</strong><span>Active</span><span>${remain}s</span><span></span></div></div>`;
   }
   const stacks = archer.focusStacks || 0;
   if (stacks <= 0) {
     return "";
   }
   const remain = Math.max(0, (archer.focusExpireTick || 0) - tick);
-  return `<div class="skill-list"><div class="skill-row"><strong>Focus</strong><span>${stacks}/4</span><span>${(remain / state.tickRate).toFixed(1)}s</span><span></span></div></div>`;
+  return `<div class="skill-list"><div class="skill-row"><strong>foc</strong><span>${stacks}/4</span><span>${(remain / state.tickRate).toFixed(1)}s</span><span></span></div></div>`;
 }
 
 function formatSwordSkillState(player, tick) {
@@ -99,7 +99,7 @@ function formatSwordSkillState(player, tick) {
   if (remain <= 0) {
     return "";
   }
-  return `<div class="skill-list"><div class="skill-row"><strong>Q Buff</strong><span>${qState.stacks}/2</span><span>${(remain / state.tickRate).toFixed(1)}s</span><span></span></div></div>`;
+  return `<div class="skill-list"><div class="skill-row"><strong>buf</strong><span>${qState.stacks}/2</span><span>${(remain / state.tickRate).toFixed(1)}s</span><span></span></div></div>`;
 }
 
 function skillIdForSlot(heroId, slot) {
@@ -169,6 +169,7 @@ function setStatsCard(player) {
     els.statAttackRange.textContent = "-";
     els.statAttackSpeed.textContent = "-";
     els.statCritChance.textContent = "-";
+    els.abilityHasteBtn.textContent = "+200 Haste";
     return;
   }
   const stats = player.stats;
@@ -192,7 +193,7 @@ function setStatsCard(player) {
     : stats.maxMp > 0
       ? `${formatNumber(stats.mp)}/${formatNumber(stats.maxMp)}`
       : "-";
-  els.statHpRegen5.textContent = formatNumber(stats.hpRegen5 || 0);
+  els.statHpRegen5.textContent = formatHpRegen5(player);
   const showMpRegen = !isSword && stats.maxMp > 0;
   setStatPairVisible(els.statMpRegen5Label, els.statMpRegen5, showMpRegen);
   els.statMpRegen5.textContent = showMpRegen
@@ -215,6 +216,8 @@ function setStatsCard(player) {
   els.statAttackRange.textContent = formatNumber(stats.attackRange);
   els.statAttackSpeed.textContent = formatNumber(stats.attackSpeed);
   els.statCritChance.textContent = `${Math.round((stats.critChance || 0) * 1000) / 10}%`;
+  els.abilityHasteBtn.textContent =
+    (stats.abilityHaste || 0) >= 200 ? "Close 200 Haste" : "+200 Haste";
 }
 
 function setStatPairVisible(label, value, visible) {
@@ -242,11 +245,11 @@ function setTargetCard(target) {
     ${airborneTicks > 0 ? `<div>Airborne ${(airborneTicks / state.tickRate).toFixed(1)}s</div>` : ""}
     <div>HP ${formatHpWithShield(target)}</div>
     ${formatTargetResource(target)}
-    <div>HP/5s ${formatNumber(stats.hpRegen5 || 0)}</div>
+    <div>HP/5s ${formatHpRegen5(target)}</div>
     ${formatTargetMpRegen(stats)}
     <div>ATK ${formatAttack(stats)}</div>
     <div>AP ${stats.abilityPower || 0}</div>
-    <div>Skill Haste ${formatNumber(stats.abilityHaste || 0)}</div>
+    <div>CD ${formatNumber(stats.abilityHaste || 0)}</div>
     <div>Phys DEF ${formatDefenseTip(stats.physicalDefense || 0, "物理")} ${formatPhysicalDefense(stats)}</div>
     <div>Magic DEF ${formatDefenseTip(stats.magicDefense || 0, "魔法")} ${formatMagicDefense(stats)}</div>
     <div>Move SPD ${stats.moveSpeed}</div>

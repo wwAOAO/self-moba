@@ -117,6 +117,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Speed:     effect.Speed,
 			CreatedAt: effect.CreatedAt,
 			ExpiresAt: effect.ExpiresAt,
+			Count:     effect.Count,
 		})
 	}
 	return snapshot

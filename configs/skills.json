@@ -257,7 +257,7 @@
     "meta": {
       "manaCost": 100,
       "apRatio": 0.8,
-      "dashSpeed": 2000,
+      "dashSpeed": 2200,
       "landingRadius": 300,
       "knockupSeconds": 1.5
     },
@@ -293,7 +293,7 @@
       "minCooldownSeconds": 1.33,
       "lineWidth": 55,
       "whirlwindRadius": 80,
-      "whirlwindSpeed": 1200,
+      "whirlwindSpeed": 1400,
       "castWindupSeconds": 0.328,
       "minCastWindupSeconds": 0.09
     },

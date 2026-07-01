@@ -207,6 +207,35 @@ func (w *World) tickWarriorToughness(entity *Entity, tick uint64, tickRate int) 
 	entity.Passive.NextRegenTick = tick + intervalTicks
 }
 
+func tickBaseRegen(entity *Entity, tickRate int) {
+	if entity == nil || tickRate <= 0 || entity.Stats.HP <= 0 {
+		return
+	}
+	if entity.Stats.HP < entity.Stats.MaxHP && entity.Stats.HPRegen5 > 0 {
+		entity.Regen.HPRemainder += entity.Stats.HPRegen5 / 5 / float64(tickRate)
+		heal := int(math.Floor(entity.Regen.HPRemainder + 0.000000001))
+		if heal > 0 {
+			entity.Stats.HP += heal
+			entity.Regen.HPRemainder -= float64(heal)
+			if entity.Stats.HP > entity.Stats.MaxHP {
+				entity.Stats.HP = entity.Stats.MaxHP
+				entity.Regen.HPRemainder = 0
+			}
+		}
+	} else {
+		entity.Regen.HPRemainder = 0
+	}
+	if entity.Stats.MP < entity.Stats.MaxMP && entity.Stats.MPRegen5 > 0 {
+		entity.Stats.MP += entity.Stats.MPRegen5 / 5 / float64(tickRate)
+		if entity.Stats.MP > entity.Stats.MaxMP {
+			entity.Stats.MP = entity.Stats.MaxMP
+			entity.Regen.MPRemainder = 0
+		}
+	} else {
+		entity.Regen.MPRemainder = 0
+	}
+}
+
 func warriorToughnessRegenRatio(level int, skill config.SkillConfig) float64 {
 	return skillMetaListByLevel(skill, "regenMaxHPRatio", level, []float64{
 		0.015, 0.0198, 0.0246, 0.0294, 0.0342, 0.039,

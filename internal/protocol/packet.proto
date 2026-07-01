@@ -28,6 +28,7 @@ message PlayerInput {
   MoveInput move = 6;
   UpgradeSkillInput upgrade_skill = 7;
   bool debug_level_up = 8;
+  double debug_ability_haste = 9;
 }
 
 message MoveInput {
@@ -176,6 +177,7 @@ message EffectSnapshot {
   double speed = 14;
   uint64 created_at = 15;
   uint64 expires_at = 16;
+  int32 count = 17;
 }
 
 message SkillSnapshot {

@@ -20,6 +20,9 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	if input.DebugLevelUp {
 		w.debugLevelUp(entity)
 	}
+	if input.DebugAbilityHaste != nil {
+		entity.Stats.AbilityHaste = clamp(*input.DebugAbilityHaste, 0, 10000)
+	}
 	if input.UpgradeSkill != nil {
 		w.upgradeSkill(entity, input.UpgradeSkill.Slot)
 	}

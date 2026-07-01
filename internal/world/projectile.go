@@ -32,6 +32,7 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 		if projectile.SkillID == tankQSkillID || projectile.Kind == "basic_arrow" {
 			updateTrackingProjectileDir(projectile, w.entities[projectile.TargetID])
 		}
+		previousPosition := projectile.Position
 		projectile.Position.X = clamp(projectile.Position.X+projectile.Dir.X*step, 0, w.width)
 		projectile.Position.Y = clamp(projectile.Position.Y+projectile.Dir.Y*step, 0, w.height)
 		projectile.Traveled += step
@@ -47,10 +48,15 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 			if projectile.HitIDs[target.ID] || !canAttackTarget(source, target) {
 				continue
 			}
-			if w.projectileGroupHit(projectile, target.ID) {
+			if !projectileIntersectsTarget(projectile, previousPosition, target) {
 				continue
 			}
-			if distance(projectile.Position, target.Position) > projectile.Radius+target.Radius {
+			if w.projectileGroupHit(projectile, target.ID) {
+				if projectile.SkillID == archerWSkillID {
+					delete(w.projectiles, id)
+					removeProjectile = true
+					break
+				}
 				continue
 			}
 			projectile.HitIDs[target.ID] = true
@@ -86,8 +92,9 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 					if projectile.Kind == "basic_arrow" && source != nil && source.HeroID == archerHeroID {
 						w.applyArcherFocusOnBasicHit(source, target, tick, tickRate)
 					}
-					if projectile.Kind == "basic_arrow" {
+					if projectile.Kind == "basic_arrow" || projectile.SkillID == archerWSkillID {
 						delete(w.projectiles, id)
+						removeProjectile = true
 					}
 				}
 				if projectile.KnockupTicks > 0 {
@@ -111,7 +118,7 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 				} else if projectile.SkillID == archerRSkillID {
 					delete(w.projectiles, id)
 					removeProjectile = true
-				} else if projectile.Kind == "basic_arrow" {
+				} else if projectile.Kind == "basic_arrow" || projectile.SkillID == archerWSkillID {
 					delete(w.projectiles, id)
 					removeProjectile = true
 				}
@@ -125,6 +132,68 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 			w.cleanupProjectileGroup(projectile)
 		}
 	}
+}
+
+func projectileIntersectsTarget(projectile *Projectile, previousPosition Vector2, target *Entity) bool {
+	if projectile == nil || target == nil {
+		return false
+	}
+	if projectile.SkillID == archerWSkillID {
+		return archerVolleyArrowIntersectsTarget(projectile, previousPosition, target)
+	}
+	return distancePointToSegment(target.Position, previousPosition, projectile.Position) <= projectile.Radius+target.Radius
+}
+
+func archerVolleyArrowIntersectsTarget(projectile *Projectile, previousPosition Vector2, target *Entity) bool {
+	length := projectileArrowLength(projectile)
+	radius := projectileArrowCollisionRadius(projectile) + target.Radius
+	segments := [][2]Vector2{
+		arrowBodySegment(previousPosition, projectile.Dir, length),
+		arrowBodySegment(projectile.Position, projectile.Dir, length),
+		{arrowTail(previousPosition, projectile.Dir, length), arrowTail(projectile.Position, projectile.Dir, length)},
+		{arrowHead(previousPosition, projectile.Dir, length), arrowHead(projectile.Position, projectile.Dir, length)},
+	}
+	for _, segment := range segments {
+		if distancePointToSegment(target.Position, segment[0], segment[1]) <= radius {
+			return true
+		}
+	}
+	return false
+}
+
+func arrowBodySegment(center Vector2, direction Vector2, length float64) [2]Vector2 {
+	return [2]Vector2{
+		arrowTail(center, direction, length),
+		arrowHead(center, direction, length),
+	}
+}
+
+func arrowTail(center Vector2, direction Vector2, length float64) Vector2 {
+	return Vector2{
+		X: center.X - direction.X*length*0.5,
+		Y: center.Y - direction.Y*length*0.5,
+	}
+}
+
+func arrowHead(center Vector2, direction Vector2, length float64) Vector2 {
+	return Vector2{
+		X: center.X + direction.X*length*0.5,
+		Y: center.Y + direction.Y*length*0.5,
+	}
+}
+
+func projectileArrowLength(projectile *Projectile) float64 {
+	if projectile == nil || projectile.Radius <= 0 {
+		return 26
+	}
+	return projectile.Radius * 1.625
+}
+
+func projectileArrowCollisionRadius(projectile *Projectile) float64 {
+	if projectile == nil || projectile.Radius <= 0 {
+		return 16
+	}
+	return projectile.Radius
 }
 
 func updateProjectileSpeed(projectile *Projectile, tickRate int) {
@@ -188,8 +257,10 @@ func (w *World) SkillEffects() []SkillEffect {
 	for _, projectile := range w.projectiles {
 		start := projectile.Start
 		createdAt := projectile.CreatedAt
-		if projectile.SkillID == tankQSkillID {
+		if projectile.SkillID == tankQSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID {
 			start = projectile.Position
+		}
+		if projectile.SkillID == tankQSkillID {
 			createdAt = 0
 		}
 		effects = append(effects, SkillEffect{
@@ -200,6 +271,7 @@ func (w *World) SkillEffects() []SkillEffect {
 			Dir:       projectile.Dir,
 			Range:     projectile.Range,
 			Radius:    projectile.Radius,
+			Count:     projectile.DisplayCount,
 			Speed:     projectile.SpeedPerTick,
 			CreatedAt: createdAt,
 			ExpiresAt: projectile.ExpiresAt,

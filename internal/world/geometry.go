@@ -47,6 +47,22 @@ func distance(a Vector2, b Vector2) float64 {
 	return math.Hypot(a.X-b.X, a.Y-b.Y)
 }
 
+func distancePointToSegment(point Vector2, start Vector2, end Vector2) float64 {
+	dx := end.X - start.X
+	dy := end.Y - start.Y
+	lengthSquared := dx*dx + dy*dy
+	if lengthSquared <= 0 {
+		return distance(point, start)
+	}
+	t := ((point.X-start.X)*dx + (point.Y-start.Y)*dy) / lengthSquared
+	t = clamp(t, 0, 1)
+	closest := Vector2{
+		X: start.X + dx*t,
+		Y: start.Y + dy*t,
+	}
+	return distance(point, closest)
+}
+
 func projectPoint(origin Vector2, direction Vector2, point Vector2) (float64, float64) {
 	dx := point.X - origin.X
 	dy := point.Y - origin.Y

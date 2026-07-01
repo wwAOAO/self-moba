@@ -103,6 +103,7 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		if entity.Death.Dead || entity.Stats.HP <= 0 {
 			continue
 		}
+		tickBaseRegen(entity, tickRate)
 		w.tickWarriorToughness(entity, tick, tickRate)
 		w.tickPlayer(entity, tick, tickRate)
 		w.tickWarriorJudgment(entity, tick, tickRate)

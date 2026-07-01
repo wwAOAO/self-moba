@@ -25,6 +25,7 @@ type SkillEffect struct {
 	Radius    float64
 	Width     float64
 	Height    float64
+	Count     int
 	Speed     float64
 	CreatedAt uint64
 	ExpiresAt uint64
@@ -47,6 +48,7 @@ type Projectile struct {
 	Range        float64
 	Radius       float64
 	DisplayRange float64
+	DisplayCount int
 	Traveled     float64
 	Damage       int
 	KnockupTicks uint64
@@ -81,6 +83,12 @@ type Entity struct {
 	Tank         TankState
 	Death        DeathState
 	Intent       IntentState
+	Regen        RegenState
+}
+
+type RegenState struct {
+	HPRemainder float64
+	MPRemainder float64
 }
 
 type EntityKind string

@@ -207,24 +207,35 @@ function drawTankImpactEffect(effect, frame) {
 }
 
 function drawBasicArrowEffect(effect, frame) {
+  if ((effect.count || 1) >= 3) {
+    drawTripleArrowProjectile(effect, frame, 0xf8d36a, 0xf59e0b);
+    return;
+  }
   drawArrowProjectile(effect, frame, 0xf8d36a, 0xf59e0b);
 }
 
 function drawVolleyArrowEffect(effect, frame) {
-  drawArrowProjectile(effect, frame, 0xbae6fd, 0x38bdf8);
+  if (state.hiddenEffectIds.has(effect.id)) {
+    return;
+  }
+  drawArrowProjectile(effect, frame, 0xbae6fd, 0x38bdf8, {
+    fromSnapshot: true,
+    hideOnEnemyHit: true,
+  });
 }
 
 function drawCrystalArrowEffect(effect, frame) {
-  drawArrowProjectile(effect, frame, 0xc4b5fd, 0x7c3aed);
-  const tick = interpolatedTick();
-  const traveled =
-    Math.max(0, tick - (effect.createdAt || tick)) * (effect.speed || 0);
-  const x =
-    frame.offsetX + (effect.x + (effect.dirX || 1) * traveled) * frame.scale;
-  const y =
-    frame.offsetY + (effect.y + (effect.dirY || 0) * traveled) * frame.scale;
-  gridLayer.circle(x, y, Math.max(8, (effect.radius || 28) * frame.scale));
-  gridLayer.stroke({ color: 0xa78bfa, width: 2, alpha: 0.65 });
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = (effect.radius || 130) * frame.scale;
+  gridLayer.circle(x, y, radius);
+  gridLayer.fill({ color: 0xa78bfa, alpha: 0.08 });
+  gridLayer.circle(x, y, radius);
+  gridLayer.stroke({ color: 0x8b5cf6, width: 2, alpha: 0.7 });
+  drawArrowProjectile(effect, frame, 0xc4b5fd, 0x7c3aed, {
+    fromSnapshot: true,
+  });
 }
 
 function drawArcherHawkEffect(effect, frame) {
@@ -275,17 +286,17 @@ function drawArcherHawkEffect(effect, frame) {
   gridLayer.fill({ color: 0x0ea5e9, alpha: arrived ? 0.8 : 0.95 });
 }
 
-function drawArrowProjectile(effect, frame, shaftColor, headColor) {
-  const tick = interpolatedTick();
-  const traveled =
-    Math.max(0, tick - (effect.createdAt || tick)) * (effect.speed || 0);
-  const x =
-    frame.offsetX + (effect.x + (effect.dirX || 1) * traveled) * frame.scale;
-  const y =
-    frame.offsetY + (effect.y + (effect.dirY || 0) * traveled) * frame.scale;
+function drawArrowProjectile(effect, frame, shaftColor, headColor, options = {}) {
+  const position = projectileDrawPosition(effect, options);
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
   const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
   const length = 26;
   const width = 5;
+  if (options.hideOnEnemyHit && volleyArrowHitsEnemy(effect, frame, x, y, angle, length)) {
+    state.hiddenEffectIds.add(effect.id);
+    return;
+  }
   gridLayer
     .moveTo(
       x + Math.cos(angle) * length * 0.5,
@@ -311,6 +322,92 @@ function drawArrowProjectile(effect, frame, shaftColor, headColor) {
     )
     .closePath();
   gridLayer.fill({ color: headColor, alpha: 0.95 });
+}
+
+function projectileDrawPosition(effect, options = {}) {
+  const tick = interpolatedTick();
+  const baseTick = options.fromSnapshot
+    ? state.snapshotTick
+    : (effect.createdAt ?? tick);
+  const traveled = Math.max(0, tick - baseTick) * (effect.speed || 0);
+  return {
+    x: (effect.x || 0) + (effect.dirX || 1) * traveled,
+    y: (effect.y || 0) + (effect.dirY || 0) * traveled,
+  };
+}
+
+function volleyArrowHitsEnemy(effect, frame, x, y, angle, length) {
+  const halfLength = length * 0.5;
+  const start = {
+    x: x - Math.cos(angle) * halfLength,
+    y: y - Math.sin(angle) * halfLength,
+  };
+  const end = {
+    x: x + Math.cos(angle) * halfLength,
+    y: y + Math.sin(angle) * halfLength,
+  };
+  const arrowRadius = 5;
+  for (const target of targetMap().values()) {
+    if (!target || target.dead || target.team === effect.team) {
+      continue;
+    }
+    const targetX = frame.offsetX + target.x * frame.scale;
+    const targetY = frame.offsetY + target.y * frame.scale;
+    const radius = targetScreenRadius(target, frame);
+    if (distancePointToSegment({ x: targetX, y: targetY }, start, end) <= arrowRadius + radius) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function distancePointToSegment(point, start, end) {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared <= 0) {
+    return Math.hypot(point.x - start.x, point.y - start.y);
+  }
+  const t = Math.max(
+    0,
+    Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared),
+  );
+  const closestX = start.x + dx * t;
+  const closestY = start.y + dy * t;
+  return Math.hypot(point.x - closestX, point.y - closestY);
+}
+
+function targetScreenRadius(target, frame) {
+  if (typeof targetSelectRadius === "function") {
+    return targetSelectRadius(target, frame);
+  }
+  return Math.max(14, (target.radius || 18) * frame.scale + 6);
+}
+
+function drawTripleArrowProjectile(effect, frame, shaftColor, headColor) {
+  const arrows = [
+    { forward: -82, side: 0 },
+    { forward: 0, side: -25 },
+    { forward: 82, side: 25 },
+  ];
+  for (const arrow of arrows) {
+    drawArrowProjectile(
+      {
+        ...effect,
+        x:
+          (effect.x || 0) +
+          (effect.dirX || 1) * arrow.forward -
+          (effect.dirY || 0) * arrow.side,
+        y:
+          (effect.y || 0) +
+          (effect.dirY || 0) * arrow.forward +
+          (effect.dirX || 1) * arrow.side,
+      },
+      frame,
+      shaftColor,
+      headColor,
+    );
+  }
 }
 
 function effectAlpha(effect) {

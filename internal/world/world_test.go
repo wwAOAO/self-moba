@@ -173,6 +173,50 @@ func TestHeroStatsAtMaxLevelUseGrowth(t *testing.T) {
 	}
 }
 
+func TestBaseRegenRestoresHPAndMPOverTime(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.Base.HPRegen5 = 10
+	hero.Base.MPRegen5 = 5
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Stats.HP = player.Stats.MaxHP - 20
+	player.Stats.MP = player.Stats.MaxMP - 20
+
+	for tick := uint64(1); tick <= 100; tick++ {
+		w.Tick(tick, 20)
+	}
+
+	if player.Stats.HP != player.Stats.MaxHP-10 {
+		t.Fatalf("hp after 5s regen = %d, want %d", player.Stats.HP, player.Stats.MaxHP-10)
+	}
+	if math.Abs(player.Stats.MP-(player.Stats.MaxMP-15)) > 0.000001 {
+		t.Fatalf("mp after 5s regen = %f, want %f", player.Stats.MP, player.Stats.MaxMP-15)
+	}
+}
+
+func TestBaseRegenDoesNotExceedMaxHPOrMP(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.Base.HPRegen5 = 10
+	hero.Base.MPRegen5 = 10
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Stats.HP = player.Stats.MaxHP - 1
+	player.Stats.MP = player.Stats.MaxMP - 1
+
+	for tick := uint64(1); tick <= 100; tick++ {
+		w.Tick(tick, 20)
+	}
+
+	if player.Stats.HP != player.Stats.MaxHP {
+		t.Fatalf("hp after regen = %d, want max %d", player.Stats.HP, player.Stats.MaxHP)
+	}
+	if player.Stats.MP != player.Stats.MaxMP {
+		t.Fatalf("mp after regen = %f, want max %f", player.Stats.MP, player.Stats.MaxMP)
+	}
+}
+
 func TestSwordConfiguredStatsAtLevel18(t *testing.T) {
 	heroes, err := config.LoadHeroes("../../configs/heroes.json")
 	if err != nil {
@@ -503,6 +547,274 @@ func TestArcherWTargetTakesDamageOnceAndIsSlowed(t *testing.T) {
 	}
 }
 
+func TestArcherWProjectileDisappearsAfterHittingEnemy(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(archerHeroID)
+	if !ok {
+		t.Fatal("archer hero not found")
+	}
+	hero.Base.Attack = 100
+	hero.Base.CritChance = 0
+	w.SpawnHero("archer", hero, TeamBlue)
+	player := w.entities[playerEntityID("archer")]
+	learnSkill(player, archerWSkillID, 1)
+	target := &Entity{
+		ID:       "target",
+		Kind:     EntityKindEnemyHero,
+		Team:     TeamRed,
+		Position: Vector2{X: player.Position.X + 300, Y: player.Position.Y},
+		Stats:    Stats{HP: 1000, MaxHP: 1000, PhysicalDefense: 0},
+		Radius:   80,
+	}
+	w.entities[target.ID] = target
+
+	w.ApplyInput("archer", protocolPlayerInputCast(archerWSkillID, target.Position.X, target.Position.Y), 10, nil, 20)
+	if len(w.projectiles) != 7 {
+		t.Fatalf("volley projectiles before hit = %d, want 7", len(w.projectiles))
+	}
+	for tick := uint64(11); tick < 30; tick++ {
+		w.Tick(tick, 20)
+	}
+	if len(w.projectiles) >= 7 {
+		t.Fatalf("volley projectile count after hit = %d, want less than 7", len(w.projectiles))
+	}
+}
+
+func TestArcherWRepeatedGroupHitProjectileStillDisappears(t *testing.T) {
+	w := testWorld(t)
+	source := &Entity{
+		ID:       "player:archer",
+		Kind:     EntityKindPlayer,
+		HeroID:   archerHeroID,
+		Team:     TeamBlue,
+		Position: Vector2{X: 100, Y: 100},
+		Stats:    Stats{HP: 1000, MaxHP: 1000, Attack: 100},
+	}
+	target := &Entity{
+		ID:       "target",
+		Kind:     EntityKindEnemyHero,
+		Team:     TeamRed,
+		Position: Vector2{X: 130, Y: 100},
+		Stats:    Stats{HP: 1000, MaxHP: 1000, PhysicalDefense: 0},
+		Radius:   20,
+	}
+	w.entities[source.ID] = source
+	w.entities[target.ID] = target
+	w.projectileHits["volley"] = map[string]bool{target.ID: true}
+	w.projectiles["arrow"] = &Projectile{
+		ID:           "arrow",
+		Kind:         "archer_volley_arrow",
+		SkillID:      archerWSkillID,
+		GroupID:      "volley",
+		SourceID:     source.ID,
+		Team:         TeamBlue,
+		Position:     Vector2{X: 120, Y: 100},
+		Dir:          Vector2{X: 1, Y: 0},
+		Radius:       20,
+		SpeedPerTick: 1,
+		Range:        200,
+		ExpiresAt:    100,
+		HitIDs:       make(map[string]bool),
+	}
+
+	w.Tick(10, 20)
+
+	if _, ok := w.projectiles["arrow"]; ok {
+		t.Fatal("repeated archer w group-hit projectile should disappear")
+	}
+	if target.Stats.HP != 1000 {
+		t.Fatalf("target hp = %d, want unchanged for repeated group hit", target.Stats.HP)
+	}
+}
+
+func TestProjectileSweptCollisionRemovesArcherWBeforeItVisuallyPassesTarget(t *testing.T) {
+	w := testWorld(t)
+	source := &Entity{
+		ID:       "player:archer",
+		Kind:     EntityKindPlayer,
+		HeroID:   archerHeroID,
+		Team:     TeamBlue,
+		Position: Vector2{X: 100, Y: 100},
+		Stats:    Stats{HP: 1000, MaxHP: 1000, Attack: 100},
+	}
+	target := &Entity{
+		ID:       "target",
+		Kind:     EntityKindEnemyHero,
+		Team:     TeamRed,
+		Position: Vector2{X: 160, Y: 100},
+		Stats:    Stats{HP: 1000, MaxHP: 1000, PhysicalDefense: 0},
+		Radius:   20,
+	}
+	w.entities[source.ID] = source
+	w.entities[target.ID] = target
+	w.projectiles["arrow"] = &Projectile{
+		ID:           "arrow",
+		Kind:         "archer_volley_arrow",
+		SkillID:      archerWSkillID,
+		GroupID:      "volley",
+		SourceID:     source.ID,
+		Team:         TeamBlue,
+		Position:     Vector2{X: 100, Y: 100},
+		Dir:          Vector2{X: 1, Y: 0},
+		Radius:       5,
+		SpeedPerTick: 120,
+		Range:        300,
+		ExpiresAt:    100,
+		HitIDs:       make(map[string]bool),
+	}
+
+	w.Tick(10, 20)
+
+	if _, ok := w.projectiles["arrow"]; ok {
+		t.Fatal("fast archer w projectile should be removed when its path crosses the target")
+	}
+	if target.Stats.HP >= 1000 {
+		t.Fatalf("target hp = %d, want damaged by swept collision", target.Stats.HP)
+	}
+}
+
+func TestArcherWArrowBodyCollisionRemovesProjectile(t *testing.T) {
+	w := testWorld(t)
+	source := &Entity{
+		ID:       "player:archer",
+		Kind:     EntityKindPlayer,
+		HeroID:   archerHeroID,
+		Team:     TeamBlue,
+		Position: Vector2{X: 100, Y: 100},
+		Stats:    Stats{HP: 1000, MaxHP: 1000, Attack: 100},
+	}
+	target := &Entity{
+		ID:       "target",
+		Kind:     EntityKindEnemyHero,
+		Team:     TeamRed,
+		Position: Vector2{X: 113, Y: 119},
+		Stats:    Stats{HP: 1000, MaxHP: 1000, PhysicalDefense: 0},
+		Radius:   8,
+	}
+	w.entities[source.ID] = source
+	w.entities[target.ID] = target
+	w.projectiles["arrow"] = &Projectile{
+		ID:           "arrow",
+		Kind:         "archer_volley_arrow",
+		SkillID:      archerWSkillID,
+		GroupID:      "volley",
+		SourceID:     source.ID,
+		Team:         TeamBlue,
+		Position:     Vector2{X: 100, Y: 100},
+		Dir:          Vector2{X: 1, Y: 0},
+		Radius:       16,
+		SpeedPerTick: 1,
+		Range:        300,
+		ExpiresAt:    100,
+		HitIDs:       make(map[string]bool),
+	}
+
+	w.Tick(10, 20)
+
+	if _, ok := w.projectiles["arrow"]; ok {
+		t.Fatal("archer w projectile should be removed when its arrow body collides with target")
+	}
+	if target.Stats.HP >= 1000 {
+		t.Fatalf("target hp = %d, want damaged by arrow body collision", target.Stats.HP)
+	}
+}
+
+func TestArcherWPointBlankVolleyProjectilesAllDisappearOnSameTarget(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(archerHeroID)
+	if !ok {
+		t.Fatal("archer hero not found")
+	}
+	hero.Base.Attack = 100
+	hero.Base.CritChance = 0
+	w.SpawnHero("archer", hero, TeamBlue)
+	player := w.entities[playerEntityID("archer")]
+	learnSkill(player, archerWSkillID, 1)
+	target := &Entity{
+		ID:       "target",
+		Kind:     EntityKindEnemyHero,
+		Team:     TeamRed,
+		Position: Vector2{X: player.Position.X + 45, Y: player.Position.Y},
+		Stats:    Stats{HP: 1000, MaxHP: 1000, PhysicalDefense: 0},
+		Radius:   18,
+	}
+	w.entities[target.ID] = target
+
+	w.ApplyInput("archer", protocolPlayerInputCast(archerWSkillID, target.Position.X, target.Position.Y), 10, nil, 20)
+	w.Tick(11, 20)
+
+	if len(w.projectiles) != 0 {
+		t.Fatalf("point blank volley projectiles after hit = %d, want 0", len(w.projectiles))
+	}
+	if target.Stats.HP != 880 {
+		t.Fatalf("target hp = %d, want one volley hit only", target.Stats.HP)
+	}
+}
+
+func TestArcherWEffectUsesCurrentPositionForFrontendSnapshotSmoothing(t *testing.T) {
+	w := testWorld(t)
+	projectile := &Projectile{
+		ID:           "arrow",
+		Kind:         "archer_volley_arrow",
+		SkillID:      archerWSkillID,
+		Team:         TeamBlue,
+		Start:        Vector2{X: 100, Y: 100},
+		Position:     Vector2{X: 180, Y: 100},
+		Dir:          Vector2{X: 1, Y: 0},
+		SpeedPerTick: 75,
+		Range:        1200,
+		Radius:       16,
+		CreatedAt:    10,
+		ExpiresAt:    100,
+		HitIDs:       make(map[string]bool),
+	}
+	w.projectiles[projectile.ID] = projectile
+
+	effects := w.SkillEffects()
+
+	if len(effects) != 1 {
+		t.Fatalf("effect count = %d, want 1", len(effects))
+	}
+	if effects[0].Start != projectile.Position {
+		t.Fatalf("effect start = %+v, want current position %+v", effects[0].Start, projectile.Position)
+	}
+	if effects[0].CreatedAt != projectile.CreatedAt {
+		t.Fatalf("effect created at = %d, want %d", effects[0].CreatedAt, projectile.CreatedAt)
+	}
+}
+
+func TestArcherREffectUsesCurrentPositionForFrontendSnapshotSmoothing(t *testing.T) {
+	w := testWorld(t)
+	projectile := &Projectile{
+		ID:           "arrow",
+		Kind:         "archer_crystal_arrow",
+		SkillID:      archerRSkillID,
+		Team:         TeamBlue,
+		Start:        Vector2{X: 100, Y: 100},
+		Position:     Vector2{X: 260, Y: 100},
+		Dir:          Vector2{X: 1, Y: 0},
+		SpeedPerTick: 75,
+		Range:        6000,
+		Radius:       130,
+		CreatedAt:    10,
+		ExpiresAt:    100,
+		HitIDs:       make(map[string]bool),
+	}
+	w.projectiles[projectile.ID] = projectile
+
+	effects := w.SkillEffects()
+
+	if len(effects) != 1 {
+		t.Fatalf("effect count = %d, want 1", len(effects))
+	}
+	if effects[0].Start != projectile.Position {
+		t.Fatalf("effect start = %+v, want current position %+v", effects[0].Start, projectile.Position)
+	}
+	if effects[0].CreatedAt != projectile.CreatedAt {
+		t.Fatalf("effect created at = %d, want %d", effects[0].CreatedAt, projectile.CreatedAt)
+	}
+}
+
 func TestArcherEStartsWithTwoChargesAndLaunchesHawk(t *testing.T) {
 	w := testWorld(t)
 	hero, ok := w.heroes.Get(archerHeroID)
@@ -531,6 +843,34 @@ func TestArcherEStartsWithTwoChargesAndLaunchesHawk(t *testing.T) {
 		t.Fatalf("hawk recharge tick = %d, want 1810", state.StacksExpireTick)
 	}
 	assertSkillEffect(t, w.SkillEffects(), "archer_hawk")
+}
+
+func TestArcherEUsesMousePointAsLandingLocation(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(archerHeroID)
+	if !ok {
+		t.Fatal("archer hero not found")
+	}
+	w.SpawnHero("archer", hero, TeamBlue)
+	player := w.entities[playerEntityID("archer")]
+	learnSkill(player, archerESkillID, 1)
+	w.refreshArcherSkillOnUpgrade(player, archerESkillID)
+	target := w.entities["enemy:hero-1"]
+	target.Position = Vector2{X: player.Position.X + 100, Y: player.Position.Y}
+	landing := Vector2{X: player.Position.X + 700, Y: player.Position.Y + 250}
+
+	w.ApplyInput("archer", protocolPlayerInputCastTarget(archerESkillID, target.ID, landing.X, landing.Y), 10, nil, 20)
+
+	effects := w.SkillEffects()
+	if len(effects) != 1 {
+		t.Fatalf("effect count = %d, want 1", len(effects))
+	}
+	if effects[0].Kind != "archer_hawk" {
+		t.Fatalf("effect kind = %s, want archer_hawk", effects[0].Kind)
+	}
+	if effects[0].End != landing {
+		t.Fatalf("hawk landing = %+v, want mouse point %+v", effects[0].End, landing)
+	}
 }
 
 func TestArcherERechargeRestoresCharge(t *testing.T) {
@@ -1905,6 +2245,22 @@ func TestAbilityHasteReducesSkillCooldowns(t *testing.T) {
 	}
 }
 
+func TestDebugAbilityHasteToggleInput(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+
+	w.ApplyInput("p1", protocolPlayerInputDebugAbilityHaste(200), 1, nil, 20)
+	if player.Stats.AbilityHaste != 200 {
+		t.Fatalf("ability haste = %f, want 200", player.Stats.AbilityHaste)
+	}
+	w.ApplyInput("p1", protocolPlayerInputDebugAbilityHaste(0), 2, nil, 20)
+	if player.Stats.AbilityHaste != 0 {
+		t.Fatalf("ability haste = %f, want 0", player.Stats.AbilityHaste)
+	}
+}
+
 func TestSwordQIgnoresAbilityHaste(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()
@@ -1992,6 +2348,38 @@ func TestRangedBasicAttackFiresProjectileAfterWindup(t *testing.T) {
 	w.Tick(16, 20)
 	if len(w.projectiles) == 0 {
 		t.Fatal("ranged basic attack should fire projectile after windup")
+	}
+}
+
+func TestArcherFocusBasicArrowDisplaysThreeArrowsWithoutExtraProjectiles(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(archerHeroID)
+	if !ok {
+		t.Fatal("archer hero not found")
+	}
+	w.SpawnHero("archer", hero, TeamBlue)
+	player := w.entities[playerEntityID("archer")]
+	target := w.entities["enemy:hero-1"]
+	target.Team = TeamRed
+	target.Position = Vector2{X: player.Position.X + 300, Y: player.Position.Y}
+	player.Archer.FocusActiveUntil = 100
+
+	w.ApplyInput("archer", protocolPlayerInputAttack(target.ID), 10, nil, 20)
+	w.Tick(10, 20)
+	w.Tick(16, 20)
+
+	if len(w.projectiles) != 1 {
+		t.Fatalf("projectile count = %d, want 1", len(w.projectiles))
+	}
+	effects := w.SkillEffects()
+	if len(effects) != 1 {
+		t.Fatalf("effect count = %d, want 1", len(effects))
+	}
+	if effects[0].Kind != "basic_arrow" {
+		t.Fatalf("effect kind = %s, want basic_arrow", effects[0].Kind)
+	}
+	if effects[0].Count != 3 {
+		t.Fatalf("display arrow count = %d, want 3", effects[0].Count)
 	}
 }
 
@@ -3326,6 +3714,12 @@ func protocolPlayerInputUpgrade(slot string) protocol.PlayerInput {
 func protocolPlayerInputDebugLevelUp() protocol.PlayerInput {
 	return protocol.PlayerInput{
 		DebugLevelUp: true,
+	}
+}
+
+func protocolPlayerInputDebugAbilityHaste(value float64) protocol.PlayerInput {
+	return protocol.PlayerInput{
+		DebugAbilityHaste: &value,
 	}
 }
 
