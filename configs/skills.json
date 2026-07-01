@@ -238,7 +238,8 @@
     "meta": {
       "armorRatio": 0.4,
       "apRatio": 0.6,
-      "attackSpeedSlowSeconds": 3
+      "attackSpeedSlowSeconds": 3,
+      "castWindupSeconds": 0.242
     },
     "metaLists": {
       "manaCost": [50, 55, 60, 65, 70],
@@ -293,14 +294,12 @@
       "lineWidth": 55,
       "whirlwindRadius": 80,
       "whirlwindSpeed": 1200,
-      "castWindupSeconds": 0.54,
-      "minCastWindupSeconds": 0.18,
-      "castWindupAttackSpeedDivisor": 1.667,
-      "castWindupAttackSpeedCap": 1.111
+      "castWindupSeconds": 0.328,
+      "minCastWindupSeconds": 0.09
     },
     "metaLists": {
       "baseDamage": [20, 45, 70, 95, 120],
-      "cooldownMs": [6000, 5500, 5000, 4500, 4000]
+      "cooldownMs": [1000, 5500, 5000, 4500, 4000]
     }
   },
   {

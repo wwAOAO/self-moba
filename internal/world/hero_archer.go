@@ -41,7 +41,7 @@ func (w *World) applyArcherW(entity *Entity, cast protocol.CastInput, state Skil
 	entity.Skills[archerWSkillID] = SkillState{
 		SkillID:           state.SkillID,
 		Level:             state.Level,
-		CooldownUntilTick: tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{14000, 11500, 9000, 6500, 4000}), tickRate),
+		CooldownUntilTick: tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{14000, 11500, 9000, 6500, 4000}), tickRate),
 		Stacks:            state.Stacks,
 		StacksExpireTick:  state.StacksExpireTick,
 	}
@@ -105,9 +105,9 @@ func (w *World) applyArcherE(entity *Entity, cast protocol.CastInput, state Skil
 		return
 	}
 	state.Stacks--
-	state.CooldownUntilTick = tick + cooldownTicks(skill.CooldownMS, tickRate)
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skill.CooldownMS, tickRate)
 	if state.Stacks < maxCharges && state.StacksExpireTick == 0 {
-		state.StacksExpireTick = tick + archerHawkRechargeTicks(skill, state.Level, tickRate)
+		state.StacksExpireTick = tick + archerHawkRechargeTicks(entity, skill, state.Level, tickRate)
 	}
 	entity.Skills[archerESkillID] = state
 	w.lockAttackAfterCast(entity, tick, tickRate)
@@ -154,7 +154,7 @@ func (w *World) applyArcherR(entity *Entity, cast protocol.CastInput, state Skil
 		return
 	}
 	entity.Stats.MP -= manaCost
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{100000, 90000, 80000}), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{100000, 90000, 80000}), tickRate)
 	entity.Skills[archerRSkillID] = state
 	delayTicks := secondsToTicks(skillMetaRange(skill, "castDelaySeconds", 0.25), tickRate)
 	entity.Control.ActionLockedUntilTick = tick + delayTicks
@@ -287,7 +287,7 @@ func (w *World) tickArcherHawkCharges(entity *Entity, tick uint64, tickRate int)
 		return
 	}
 	if state.StacksExpireTick == 0 {
-		state.StacksExpireTick = tick + archerHawkRechargeTicks(w.skillConfig(archerESkillID), state.Level, tickRate)
+		state.StacksExpireTick = tick + archerHawkRechargeTicks(entity, w.skillConfig(archerESkillID), state.Level, tickRate)
 		entity.Skills[archerESkillID] = state
 		return
 	}
@@ -297,7 +297,7 @@ func (w *World) tickArcherHawkCharges(entity *Entity, tick uint64, tickRate int)
 			state.StacksExpireTick = 0
 			break
 		}
-		state.StacksExpireTick += archerHawkRechargeTicks(w.skillConfig(archerESkillID), state.Level, tickRate)
+		state.StacksExpireTick += archerHawkRechargeTicks(entity, w.skillConfig(archerESkillID), state.Level, tickRate)
 	}
 	entity.Skills[archerESkillID] = state
 }
@@ -310,8 +310,8 @@ func archerHawkMaxCharges(skill config.SkillConfig) int {
 	return maxCharges
 }
 
-func archerHawkRechargeTicks(skill config.SkillConfig, level int, tickRate int) uint64 {
-	return cooldownTicks(skillMetaListByLevelMS(skill, "rechargeMs", level, []float64{90000, 80000, 70000, 60000, 50000}), tickRate)
+func archerHawkRechargeTicks(entity *Entity, skill config.SkillConfig, level int, tickRate int) uint64 {
+	return cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "rechargeMs", level, []float64{90000, 80000, 70000, 60000, 50000}), tickRate)
 }
 
 func archerWDamage(entity *Entity, target *Entity, skill config.SkillConfig, level int, tick uint64) int {

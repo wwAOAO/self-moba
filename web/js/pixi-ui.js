@@ -34,10 +34,13 @@ function formatSkillCooldowns(player, tick) {
       const level = skill?.level || 0;
       const maxLevel = maxSkillLevel(slot);
       const disabled = !canSpend || level >= maxLevel ? "disabled" : "";
-      const chargeText =
-        (player.heroId || els.heroId.value) === "archer" && slot === "e"
-          ? `${skill?.stacks || 0}/2`
-          : `${remainSeconds}s`;
+      const chargeText = formatSkillRowState(
+        player,
+        slot,
+        skill,
+        remainSeconds,
+        tick,
+      );
       return `<div class="skill-row">
                       <strong>${slot.toUpperCase()}</strong>
                       <span>${level}/${maxLevel}</span>
@@ -48,14 +51,30 @@ function formatSkillCooldowns(player, tick) {
     .join("")}</div>`;
 }
 
+function formatSkillRowState(player, slot, skill, remainSeconds, tick) {
+  const heroId = player.heroId || els.heroId.value;
+  if (heroId === "archer" && slot === "e") {
+    return `${skill?.stacks || 0}/2`;
+  }
+  return `${remainSeconds}s`;
+}
+
 function maxSkillLevel(slot) {
   return slot === "r" ? 3 : 5;
 }
 
 function formatHeroSkillState(player, tick) {
-  if ((player.heroId || els.heroId.value) !== "archer") {
-    return "";
+  const heroId = player.heroId || els.heroId.value;
+  if (heroId === "sword") {
+    return formatSwordSkillState(player, tick);
   }
+  if (heroId === "archer") {
+    return formatArcherSkillState(player, tick);
+  }
+  return "";
+}
+
+function formatArcherSkillState(player, tick) {
   const archer = player.archer || {};
   if ((archer.focusActiveUntil || 0) > tick) {
     const remain = ((archer.focusActiveUntil - tick) / state.tickRate).toFixed(
@@ -69,6 +88,18 @@ function formatHeroSkillState(player, tick) {
   }
   const remain = Math.max(0, (archer.focusExpireTick || 0) - tick);
   return `<div class="skill-list"><div class="skill-row"><strong>Focus</strong><span>${stacks}/4</span><span>${(remain / state.tickRate).toFixed(1)}s</span><span></span></div></div>`;
+}
+
+function formatSwordSkillState(player, tick) {
+  const qState = skillState(player, "sword_cut");
+  if (!qState || (qState.level || 0) <= 0 || (qState.stacks || 0) <= 0) {
+    return "";
+  }
+  const remain = Math.max(0, (qState.stacksExpireTick || 0) - tick);
+  if (remain <= 0) {
+    return "";
+  }
+  return `<div class="skill-list"><div class="skill-row"><strong>Q Buff</strong><span>${qState.stacks}/2</span><span>${(remain / state.tickRate).toFixed(1)}s</span><span></span></div></div>`;
 }
 
 function skillIdForSlot(heroId, slot) {
@@ -131,6 +162,7 @@ function setStatsCard(player) {
     els.statMpRegen5.textContent = "-";
     els.statAttack.textContent = "-";
     els.statAbilityPower.textContent = "-";
+    els.statAbilityHaste.textContent = "-";
     els.statPhysicalDefense.textContent = "-";
     els.statMagicDefense.textContent = "-";
     els.statMoveSpeed.textContent = "-";
@@ -168,6 +200,7 @@ function setStatsCard(player) {
     : "-";
   els.statAttack.textContent = formatAttack(stats);
   els.statAbilityPower.textContent = stats.abilityPower || 0;
+  els.statAbilityHaste.textContent = formatNumber(stats.abilityHaste || 0);
   els.statPhysicalDefense.textContent = formatPhysicalDefense(stats);
   els.statPhysicalDefenseTip.innerHTML = formatDefenseTip(
     stats.physicalDefense || 0,
@@ -213,6 +246,7 @@ function setTargetCard(target) {
     ${formatTargetMpRegen(stats)}
     <div>ATK ${formatAttack(stats)}</div>
     <div>AP ${stats.abilityPower || 0}</div>
+    <div>Skill Haste ${formatNumber(stats.abilityHaste || 0)}</div>
     <div>Phys DEF ${formatDefenseTip(stats.physicalDefense || 0, "物理")} ${formatPhysicalDefense(stats)}</div>
     <div>Magic DEF ${formatDefenseTip(stats.magicDefense || 0, "魔法")} ${formatMagicDefense(stats)}</div>
     <div>Move SPD ${stats.moveSpeed}</div>

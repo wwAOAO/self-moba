@@ -87,12 +87,18 @@ func (w *World) Tick(tick uint64, tickRate int) {
 			continue
 		}
 		w.expireArcherFocus(entity, tick)
+		w.expireSwordQStacks(entity, tick)
 		w.tickArcherHawkCharges(entity, tick, tickRate)
 		w.releaseArcherCrystalArrow(entity, tick, tickRate)
+		if entity.HeroID == swordHeroID && entity.Sword.QPending {
+			w.tickDashMovement(entity, tick, tickRate)
+		}
 		w.releaseSwordQ(entity, tick, tickRate)
 		w.releaseWarriorR(entity, tick, tickRate)
 		w.releaseTankQ(entity, tick, tickRate)
+		w.releaseTankE(entity, tick, tickRate)
 		w.tickDashMovement(entity, tick, tickRate)
+		w.releasePendingAttack(entity, tick, tickRate)
 		w.tickRespawn(entity, tick)
 		if entity.Death.Dead || entity.Stats.HP <= 0 {
 			continue

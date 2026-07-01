@@ -145,6 +145,7 @@ function resetClientState() {
   state.attackMoveArmed = false;
   state.attackFlash = null;
   state.skillPreview = null;
+  state.castWindups = [];
   state.snapshotTick = 0;
   state.snapshotAtMs = 0;
 
@@ -186,12 +187,10 @@ function castSkill(slot) {
   const target = useAimPointFirst
     ? state.aimPoint || selected || fallbackTarget
     : selected || state.aimPoint || fallbackTarget;
-  if (slot === "q" && skillId === "sword_cut") {
-    showSwordQPreview(self, target);
-  }
   if (slot === "e" && skillId === "taunt") {
     showTankEPreview(self);
   }
+  addCastWindup(self, skillId, target, selected);
   sendPacket("input", {
     cast: {
       skillId,
@@ -200,6 +199,41 @@ function castSkill(slot) {
       targetY: target.y,
     },
     clientSeq: state.seq,
+  });
+}
+
+function addCastWindup(self, skillId, target, selectedTarget) {
+  const config = skillClientConfig[skillId] || {};
+  const windupSeconds =
+    Number(config.castWindupSeconds || 0) ||
+    Number(config.castDelaySeconds || 0);
+  if (windupSeconds <= 0) {
+    return;
+  }
+  const now = performance.now();
+  const durationMs = windupSeconds * 1000;
+  const dx = (target?.x ?? self.x + 1) - self.x;
+  const dy = (target?.y ?? self.y) - self.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const preview =
+    skillId === "sword_cut" ? swordQPreviewData(self, target) : null;
+  state.castWindups.push({
+    id: `${skillId}:${now}`,
+    skillId,
+    heroId: self.heroId,
+    x: self.x,
+    y: self.y,
+    targetX: target?.x ?? self.x + 1,
+    targetY: target?.y ?? self.y,
+    targetId: selectedTarget?.id || "",
+    dirX: dx / len,
+    dirY: dy / len,
+    range: config.range || 0,
+    radius: config.landingRadius || config.whirlwindRadius || 0,
+    preview,
+    startedAt: now,
+    expiresAt: now + durationMs,
+    durationMs,
   });
 }
 

@@ -165,6 +165,7 @@ type StatsSnapshot struct {
 	Attack               float64 `json:"attack"`
 	BonusAttack          float64 `json:"bonusAttack"`
 	AbilityPower         int     `json:"abilityPower"`
+	AbilityHaste         float64 `json:"abilityHaste"`
 	DamageReduce         float64 `json:"damageReduce"`
 	PhysicalDefense      float64 `json:"physicalDefense"`
 	BonusPhysicalDefense float64 `json:"bonusPhysicalDefense"`

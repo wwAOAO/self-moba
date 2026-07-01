@@ -976,19 +976,32 @@ func TestTankEDealsMagicDamageAndSlowsAttackSpeed(t *testing.T) {
 	if player.Skills[tankESkillID].CooldownUntilTick != 150 {
 		t.Fatalf("tank e cooldown = %d, want 150", player.Skills[tankESkillID].CooldownUntilTick)
 	}
+	if got := startHP - target.Stats.HP; got != 0 {
+		t.Fatalf("tank e damage before windup release = %d, want 0", got)
+	}
+	if !player.Tank.GroundSlamPending {
+		t.Fatal("tank e should be pending during windup")
+	}
+	if player.Tank.GroundSlamReleaseTick != 15 {
+		t.Fatalf("tank e release tick = %d, want 15", player.Tank.GroundSlamReleaseTick)
+	}
+	if player.Control.ActionLockedUntilTick != 15 {
+		t.Fatalf("tank e action lock until = %d, want 15", player.Control.ActionLockedUntilTick)
+	}
+	w.Tick(15, 20)
 	if got := startHP - target.Stats.HP; got != 136 {
 		t.Fatalf("tank e damage = %d, want 136", got)
 	}
 	if outside.Stats.HP != startOutsideHP {
 		t.Fatalf("outside hp = %d, want unchanged %d", outside.Stats.HP, startOutsideHP)
 	}
-	if target.Control.AttackSpeedSlow != 0.3 || target.Control.AttackSpeedSlowUntil != 70 {
-		t.Fatalf("attack speed slow = %f until %d, want 0.3 until 70", target.Control.AttackSpeedSlow, target.Control.AttackSpeedSlowUntil)
+	if target.Control.AttackSpeedSlow != 0.3 || target.Control.AttackSpeedSlowUntil != 75 {
+		t.Fatalf("attack speed slow = %f until %d, want 0.3 until 75", target.Control.AttackSpeedSlow, target.Control.AttackSpeedSlowUntil)
 	}
-	if math.Abs(EffectiveAttackSpeedAtTick(target, 11)-0.7) > 0.000001 {
-		t.Fatalf("slowed attack speed = %f, want 0.7", EffectiveAttackSpeedAtTick(target, 11))
+	if math.Abs(EffectiveAttackSpeedAtTick(target, 16)-0.7) > 0.000001 {
+		t.Fatalf("slowed attack speed = %f, want 0.7", EffectiveAttackSpeedAtTick(target, 16))
 	}
-	if EffectiveAttackSpeedAtTick(target, 70) != target.Stats.AttackSpeed {
+	if EffectiveAttackSpeedAtTick(target, 75) != target.Stats.AttackSpeed {
 		t.Fatalf("attack speed should recover at expire tick")
 	}
 }
@@ -1824,17 +1837,17 @@ func TestSwordQWindupUsesAttackSpeedBonus(t *testing.T) {
 	skill := w.skillConfig(swordQSkillID)
 	entity := &Entity{Stats: Stats{AttackSpeedBonus: 0}}
 
-	if got := swordQWindupSeconds(entity, skill); math.Abs(got-0.54) > 0.000001 {
-		t.Fatalf("base windup = %f, want 0.54", got)
+	if got := swordQWindupSeconds(entity, skill); math.Abs(got-0.328) > 0.000001 {
+		t.Fatalf("base windup = %f, want 0.328", got)
 	}
 	entity.Stats.AttackSpeedBonus = 0.5
-	want := 0.54 * (1 - 0.5/1.667)
+	want := 0.328 / 1.5
 	if got := swordQWindupSeconds(entity, skill); math.Abs(got-want) > 0.000001 {
 		t.Fatalf("50%% bonus attack speed windup = %f, want %f", got, want)
 	}
-	entity.Stats.AttackSpeedBonus = 2
-	if got := swordQWindupSeconds(entity, skill); math.Abs(got-0.18) > 0.000001 {
-		t.Fatalf("capped windup = %f, want 0.18", got)
+	entity.Stats.AttackSpeedBonus = 10
+	if got := swordQWindupSeconds(entity, skill); math.Abs(got-0.09) > 0.000001 {
+		t.Fatalf("capped windup = %f, want 0.09", got)
 	}
 }
 
@@ -1850,6 +1863,135 @@ func TestFinalAttackSpeedUsesBonusRatioSlowAndCap(t *testing.T) {
 	}
 	if got := finalAttackSpeed(1, 1, 0, 0); got != 1 {
 		t.Fatalf("zero ratio attack speed = %f, want 1", got)
+	}
+}
+
+func TestHeroConfigLoadsAttackWindups(t *testing.T) {
+	heroes, err := config.LoadHeroes("../../configs/heroes.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := map[string]float64{
+		swordHeroID:   0.328,
+		tankHeroID:    0.25,
+		warriorHeroID: 0.273,
+		archerHeroID:  0.274,
+	}
+	for heroID, want := range cases {
+		hero, ok := heroes.Get(heroID)
+		if !ok {
+			t.Fatalf("missing hero %s", heroID)
+		}
+		if math.Abs(hero.Base.AttackWindupSeconds-want) > 0.000001 {
+			t.Fatalf("%s attack windup = %f, want %f", heroID, hero.Base.AttackWindupSeconds, want)
+		}
+	}
+}
+
+func TestAbilityHasteReducesSkillCooldowns(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.HeroID = warriorHeroID
+	hero.Skills.Q = warriorQSkillID
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	learnSkill(player, warriorQSkillID, 1)
+	player.Stats.AbilityHaste = 100
+
+	w.ApplyInput("p1", protocolPlayerInputCast(warriorQSkillID, player.Position.X, player.Position.Y), 10, w.skills, 20)
+
+	if got := player.Skills[warriorQSkillID].CooldownUntilTick; got != 90 {
+		t.Fatalf("warrior q cooldown with 100 haste = %d, want 90", got)
+	}
+}
+
+func TestSwordQIgnoresAbilityHaste(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.HeroID = swordHeroID
+	hero.Skills.Q = swordQSkillID
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	learnSkill(player, swordQSkillID, 1)
+	player.Stats.AbilityHaste = 100
+
+	w.ApplyInput("p1", protocolPlayerInputCast(swordQSkillID, player.Position.X+1, player.Position.Y), 10, w.skills, 20)
+
+	want := uint64(10) + w.swordQCooldownTicks(player, w.skillConfig(swordQSkillID), 1, 20)
+	if got := player.Skills[swordQSkillID].CooldownUntilTick; got != want {
+		t.Fatalf("sword q cooldown with ability haste = %d, want %d", got, want)
+	}
+}
+
+func TestBasicAttackUsesWindupBeforeDamage(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.Base.AttackRange = 1000
+	hero.Base.AttackSpeed = 1
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	target := w.entities["enemy:hero-1"]
+	target.Team = TeamRed
+	target.Position = Vector2{X: player.Position.X + 100, Y: player.Position.Y}
+
+	w.ApplyInput("p1", protocolPlayerInputAttack(target.ID), 10, nil, 20)
+	w.Tick(10, 20)
+	if target.Combat.LastDamage != 0 {
+		t.Fatalf("damage during attack windup = %d, want 0", target.Combat.LastDamage)
+	}
+	w.Tick(15, 20)
+	if target.Combat.LastDamage <= 0 {
+		t.Fatal("basic attack should damage after windup")
+	}
+	if player.Combat.NextAttackTick != 30 {
+		t.Fatalf("next attack tick = %d, want 30", player.Combat.NextAttackTick)
+	}
+}
+
+func TestBasicAttackWindupUsesAttackSpeedBonus(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.Base.AttackRange = 1000
+	hero.Base.AttackSpeed = 1
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Stats.AttackSpeedBonus = 1
+	target := w.entities["enemy:hero-1"]
+	target.Team = TeamRed
+	target.Position = Vector2{X: player.Position.X + 100, Y: player.Position.Y}
+
+	w.ApplyInput("p1", protocolPlayerInputAttack(target.ID), 10, nil, 20)
+	w.Tick(10, 20)
+	w.Tick(12, 20)
+	if target.Combat.LastDamage != 0 {
+		t.Fatalf("damage before shortened windup = %d, want 0", target.Combat.LastDamage)
+	}
+	w.Tick(13, 20)
+	if target.Combat.LastDamage <= 0 {
+		t.Fatal("basic attack should damage after shortened windup")
+	}
+}
+
+func TestRangedBasicAttackFiresProjectileAfterWindup(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(archerHeroID)
+	if !ok {
+		t.Fatal("archer hero not found")
+	}
+	w.SpawnHero("archer", hero, TeamBlue)
+	player := w.entities[playerEntityID("archer")]
+	target := w.entities["enemy:hero-1"]
+	target.Team = TeamRed
+	target.Position = Vector2{X: player.Position.X + 300, Y: player.Position.Y}
+
+	w.ApplyInput("archer", protocolPlayerInputAttack(target.ID), 10, nil, 20)
+	w.Tick(10, 20)
+	if len(w.projectiles) != 0 {
+		t.Fatalf("projectiles during attack windup = %d, want 0", len(w.projectiles))
+	}
+	w.Tick(16, 20)
+	if len(w.projectiles) == 0 {
+		t.Fatal("ranged basic attack should fire projectile after windup")
 	}
 }
 
@@ -1875,8 +2017,8 @@ func TestCastingSkillLocksAutoAttackForAttackInterval(t *testing.T) {
 		t.Fatalf("auto attack should not fire on same tick as skill cast: got hit tick %d want %d", target.Combat.LastHitTick, qDamageTick)
 	}
 	tickSwordQRelease(t, w, player, 20)
-	if player.Combat.NextAttackTick != 32 {
-		t.Fatalf("next attack tick = %d, want 32", player.Combat.NextAttackTick)
+	if player.Combat.NextAttackTick != 28 {
+		t.Fatalf("next attack tick = %d, want 28", player.Combat.NextAttackTick)
 	}
 }
 
@@ -2801,6 +2943,48 @@ func TestSwordEQMakesCircularQ(t *testing.T) {
 	}
 }
 
+func TestSwordEQDamageUsesReleasePositionAfterDashMovement(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.HeroID = swordHeroID
+	hero.Skills.Q = swordQSkillID
+	hero.Skills.E = swordESkillID
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	learnSkill(player, swordQSkillID, 1)
+	learnSkill(player, swordESkillID, 1)
+	dashTarget := w.entities["enemy:hero-1"]
+	oldPositionTarget := w.entities["enemy:blue-hero-1"]
+	newPositionTarget := &Entity{
+		ID:       "enemy:eq-release-position",
+		Kind:     EntityKindEnemyHero,
+		Team:     TeamRed,
+		HeroID:   warriorHeroID,
+		Position: Vector2{X: player.Position.X + 680, Y: player.Position.Y},
+		Radius:   30,
+		Stats:    Stats{HP: 1000, MaxHP: 1000, PhysicalDefense: 0, MagicDefense: 0},
+		Skills:   make(map[string]SkillState),
+	}
+	w.entities[newPositionTarget.ID] = newPositionTarget
+	dashTarget.Team = TeamRed
+	oldPositionTarget.Team = TeamRed
+	dashTarget.Position = Vector2{X: player.Position.X + 300, Y: player.Position.Y}
+	oldPositionTarget.Position = Vector2{X: player.Position.X, Y: player.Position.Y + 450}
+
+	w.ApplyInput("p1", protocolPlayerInputCast(swordESkillID, dashTarget.Position.X, dashTarget.Position.Y), 10, nil, 20)
+	w.Tick(14, 20)
+	player.Skills[swordQSkillID] = SkillState{SkillID: swordQSkillID, Level: 1}
+	w.ApplyInput("p1", protocolPlayerInputCast(swordQSkillID, player.Position.X+1, player.Position.Y), 14, nil, 20)
+	tickSwordQRelease(t, w, player, 20)
+
+	if oldPositionTarget.Combat.LastDamage != 0 {
+		t.Fatalf("old position target damage = %d, want 0", oldPositionTarget.Combat.LastDamage)
+	}
+	if newPositionTarget.Combat.LastDamage <= 0 {
+		t.Fatal("new position target should be hit by EQ at release position")
+	}
+}
+
 func TestSwordQBeforeEQWindowDoesNotBecomeCircular(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()
@@ -2855,8 +3039,8 @@ func TestSwordEQWithWhirlwindStacksKnocksUpAndClearsStacks(t *testing.T) {
 	w.ApplyInput("p1", protocolPlayerInputCast(swordQSkillID, player.Position.X+1, player.Position.Y), 14, nil, 20)
 	tickSwordQRelease(t, w, player, 20)
 
-	if sideTarget.Control.AirborneUntilTick != 45 {
-		t.Fatalf("side target airborne until = %d, want 45", sideTarget.Control.AirborneUntilTick)
+	if sideTarget.Control.AirborneUntilTick != 41 {
+		t.Fatalf("side target airborne until = %d, want 41", sideTarget.Control.AirborneUntilTick)
 	}
 	qState := player.Skills[swordQSkillID]
 	if qState.Stacks != 0 {

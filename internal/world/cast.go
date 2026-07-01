@@ -202,6 +202,6 @@ func (w *World) applyCast(entity *Entity, cast protocol.CastInput, tick uint64, 
 		return
 	}
 	w.lockAttackAfterCast(entity, tick, tickRate)
-	state.CooldownUntilTick = tick + cooldownTicks(skill.CooldownMS, tickRate)
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skill.CooldownMS, tickRate)
 	entity.Skills[cast.SkillID] = state
 }

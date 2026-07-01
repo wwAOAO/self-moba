@@ -35,6 +35,10 @@ func heroStatsAtLevel(hero config.HeroConfig, level int) Stats {
 	attackSpeedBonus := hero.Base.BonusAttackSpeed
 	attackSpeedSlow := hero.Base.AttackSpeedSlow
 	attackSpeed := finalAttackSpeed(baseAttackSpeed, attackSpeedBonus, attackSpeedRatio, attackSpeedSlow)
+	attackWindupSeconds := hero.Base.AttackWindupSeconds + hero.Growth.AttackWindupSeconds*growthStepValue
+	if attackWindupSeconds <= 0 {
+		attackWindupSeconds = 0.25
+	}
 	return Stats{
 		HP:                   hp,
 		MaxHP:                hp,
@@ -46,6 +50,7 @@ func heroStatsAtLevel(hero config.HeroConfig, level int) Stats {
 		Attack:               hero.Base.Attack + hero.Growth.Attack*growthStepValue,
 		BonusAttack:          hero.Base.BonusAttack + hero.Growth.BonusAttack*growthStepValue,
 		AbilityPower:         hero.Base.AbilityPower + hero.Growth.AbilityPower*growthSteps,
+		AbilityHaste:         hero.Base.AbilityHaste + hero.Growth.AbilityHaste*growthStepValue,
 		DamageReduce:         hero.Base.DamageReduce + hero.Growth.DamageReduce*growthStepValue,
 		PhysicalDefense:      hero.Base.PhysicalDefense + hero.Growth.PhysicalDefense*growthStepValue,
 		BonusPhysicalDefense: hero.Base.BonusPhysicalDefense + hero.Growth.BonusPhysicalDefense*growthStepValue,
@@ -60,6 +65,7 @@ func heroStatsAtLevel(hero config.HeroConfig, level int) Stats {
 		MoveSpeed:            hero.Base.MoveSpeed + hero.Growth.MoveSpeed*growthStepValue,
 		AttackRange:          hero.Base.AttackRange + hero.Growth.AttackRange*growthStepValue,
 		AttackSpeed:          attackSpeed,
+		AttackWindupSeconds:  attackWindupSeconds,
 		BaseAttackSpeed:      baseAttackSpeed,
 		AttackSpeedBonus:     attackSpeedBonus,
 		AttackSpeedRatio:     attackSpeedRatio,

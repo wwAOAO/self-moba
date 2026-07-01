@@ -134,6 +134,7 @@ func buildStatsSnapshot(stats world.Stats) protocol.StatsSnapshot {
 		Attack:               stats.Attack,
 		BonusAttack:          stats.BonusAttack,
 		AbilityPower:         stats.AbilityPower,
+		AbilityHaste:         stats.AbilityHaste,
 		DamageReduce:         stats.DamageReduce,
 		PhysicalDefense:      stats.PhysicalDefense,
 		BonusPhysicalDefense: stats.BonusPhysicalDefense,

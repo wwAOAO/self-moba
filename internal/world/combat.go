@@ -41,6 +41,9 @@ func (w *World) applyAttack(attacker *Entity, target *Entity, tick uint64, tickR
 	if attacker.Kind != EntityKindPlayer || tick < attacker.Combat.NextAttackTick {
 		return
 	}
+	if attacker.Combat.PendingAttackTargetID != "" {
+		return
+	}
 	if attacker.HeroID == warriorHeroID && tick < attacker.Warrior.JudgmentUntilTick {
 		return
 	}
@@ -51,9 +54,62 @@ func (w *World) applyAttack(attacker *Entity, target *Entity, tick uint64, tickR
 		return
 	}
 
+	w.startAttackWindup(attacker, target, tick, tickRate)
+}
+
+func (w *World) startAttackWindup(attacker *Entity, target *Entity, tick uint64, tickRate int) {
+	if attacker == nil || target == nil {
+		return
+	}
+	attacker.Combat.PendingAttackTargetID = target.ID
+	attacker.Combat.AttackReleaseTick = tick + attackWindupTicks(attacker, tickRate)
+	attacker.Combat.NextAttackTick = tick + attackCooldownTicks(EffectiveAttackSpeedAtTick(attacker, tick), tickRate)
+}
+
+func attackWindupTicks(attacker *Entity, tickRate int) uint64 {
+	if tickRate <= 0 {
+		return 1
+	}
+	bonus := 0.0
+	if attacker != nil {
+		bonus = attacker.Stats.AttackSpeedBonus
+	}
+	if bonus < 0 {
+		bonus = 0
+	}
+	baseWindup := 0.25
+	if attacker != nil && attacker.Stats.AttackWindupSeconds > 0 {
+		baseWindup = attacker.Stats.AttackWindupSeconds
+	}
+	ticks := math.Ceil((baseWindup / (1 + bonus)) * float64(tickRate))
+	if ticks < 1 {
+		return 1
+	}
+	return uint64(ticks)
+}
+
+func (w *World) releasePendingAttack(attacker *Entity, tick uint64, tickRate int) {
+	if attacker == nil || attacker.Combat.PendingAttackTargetID == "" || tick < attacker.Combat.AttackReleaseTick {
+		return
+	}
+	target := w.entities[attacker.Combat.PendingAttackTargetID]
+	attacker.Combat.PendingAttackTargetID = ""
+	attacker.Combat.AttackReleaseTick = 0
+	if attacker.Death.Dead || attacker.Stats.HP <= 0 || target == nil || !canAttackTarget(attacker, target) {
+		return
+	}
+	if attacker.HeroID == warriorHeroID && tick < attacker.Warrior.JudgmentUntilTick {
+		return
+	}
+	if distance(attacker.Position, target.Position) > w.attackReachAtTick(attacker, target, tick) {
+		return
+	}
+	w.resolveBasicAttack(attacker, target, tick, tickRate)
+}
+
+func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64, tickRate int) {
 	if isRangedBasicAttacker(attacker) {
 		w.fireBasicAttackProjectile(attacker, target, tick, tickRate)
-		attacker.Combat.NextAttackTick = tick + attackCooldownTicks(EffectiveAttackSpeedAtTick(attacker, tick), tickRate)
 		return
 	}
 
@@ -71,7 +127,6 @@ func (w *World) applyAttack(attacker *Entity, target *Entity, tick uint64, tickR
 		target.Combat.LastDamage = damage
 		target.Combat.LastDamageType = "physical"
 	}
-	attacker.Combat.NextAttackTick = tick + attackCooldownTicks(EffectiveAttackSpeedAtTick(attacker, tick), tickRate)
 	w.applyTankWAftershock(attacker, target, tick, tickRate)
 	w.consumeWarriorQ(attacker, target, tick, tickRate)
 }

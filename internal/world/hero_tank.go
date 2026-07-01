@@ -38,7 +38,7 @@ func (w *World) applyTankQ(entity *Entity, cast protocol.CastInput, state SkillS
 	entity.Tank.SeismicShardTargetID = target.ID
 	entity.Tank.SeismicShardLevel = state.Level
 	entity.Control.ActionLockedUntilTick = entity.Tank.SeismicShardReleaseTick
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{8000, 8000, 8000, 8000, 8000}), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{8000, 8000, 8000, 8000, 8000}), tickRate)
 	entity.Skills[tankQSkillID] = state
 }
 
@@ -131,7 +131,7 @@ func (w *World) applyTankW(entity *Entity, state SkillState, skill config.SkillC
 	entity.Tank.ThunderclapEmpowerUntil = tick + secondsToTicks(skillMetaRange(skill, "aftershockDurationSeconds", 5), tickRate)
 	entity.Tank.ThunderclapAftershockUntil = entity.Tank.ThunderclapEmpowerUntil
 	entity.Tank.ThunderclapLevel = state.Level
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{10000, 9500, 9000, 8500, 8000}), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{10000, 9500, 9000, 8500, 8000}), tickRate)
 	entity.Skills[tankWSkillID] = state
 }
 
@@ -164,13 +164,40 @@ func (w *World) applyTankE(entity *Entity, state SkillState, skill config.SkillC
 	if entity == nil || state.Level <= 0 {
 		return
 	}
+	if entity.Tank.GroundSlamPending {
+		return
+	}
 	manaCost := skillMetaListByLevel(skill, "manaCost", state.Level, []float64{50, 55, 60, 65, 70})
 	if entity.Stats.MP < manaCost {
 		return
 	}
 	entity.Stats.MP -= manaCost
-	damage := tankEDamage(entity, skill, state.Level)
-	slow := skillMetaListByLevel(skill, "attackSpeedSlow", state.Level, []float64{0.3, 0.35, 0.4, 0.45, 0.5})
+	windupTicks := secondsToTicks(skillMetaRange(skill, "castWindupSeconds", 0.242), tickRate)
+	if windupTicks < 1 {
+		windupTicks = 1
+	}
+	entity.Tank.GroundSlamPending = true
+	entity.Tank.GroundSlamReleaseTick = tick + windupTicks
+	entity.Tank.GroundSlamLevel = state.Level
+	entity.Control.ActionLockedUntilTick = entity.Tank.GroundSlamReleaseTick
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{7000, 7000, 7000, 7000, 7000}), tickRate)
+	entity.Skills[tankESkillID] = state
+}
+
+func (w *World) releaseTankE(entity *Entity, tick uint64, tickRate int) {
+	if entity == nil || entity.HeroID != tankHeroID || !entity.Tank.GroundSlamPending || tick < entity.Tank.GroundSlamReleaseTick {
+		return
+	}
+	level := entity.Tank.GroundSlamLevel
+	entity.Tank.GroundSlamPending = false
+	entity.Tank.GroundSlamReleaseTick = 0
+	entity.Tank.GroundSlamLevel = 0
+	if level <= 0 {
+		level = 1
+	}
+	skill := w.skillConfig(tankESkillID)
+	damage := tankEDamage(entity, skill, level)
+	slow := skillMetaListByLevel(skill, "attackSpeedSlow", level, []float64{0.3, 0.35, 0.4, 0.45, 0.5})
 	slowUntil := tick + secondsToTicks(skillMetaRange(skill, "attackSpeedSlowSeconds", 3), tickRate)
 	for _, target := range w.targetsInRadius(entity, entity.Position, skillRange(skill, 400)) {
 		target.Combat.LastHitTick = tick
@@ -189,9 +216,7 @@ func (w *World) applyTankE(entity *Entity, state SkillState, skill config.SkillC
 			applyAttackSpeedSlow(target, slow, slowUntil)
 		}
 	}
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{7000, 7000, 7000, 7000, 7000}), tickRate)
 	w.lockAttackAfterCast(entity, tick, tickRate)
-	entity.Skills[tankESkillID] = state
 }
 
 func tankEDamage(entity *Entity, skill config.SkillConfig, level int) float64 {
@@ -283,7 +308,7 @@ func (w *World) startTankRDash(entity *Entity, targetPoint Vector2, state SkillS
 	entity.Tank.UnstoppableImpactLevel = state.Level
 	entity.Tank.UnstoppableImpactRadius = landingRadius
 	entity.Tank.UnstoppableKnockupTicks = secondsToTicks(skillMetaRange(skill, "knockupSeconds", 1.5), tickRate)
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{130000, 105000, 80000}), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{130000, 105000, 80000}), tickRate)
 	entity.Skills[tankRSkillID] = state
 }
 

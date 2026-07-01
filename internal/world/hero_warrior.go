@@ -15,7 +15,7 @@ func (w *World) applyWarriorQ(entity *Entity, state SkillState, skill config.Ski
 	entity.Warrior.DecisiveStrikeLevel = state.Level
 	entity.Warrior.DecisiveStrikeMoveSpeedBonus = skillMetaRange(skill, "moveSpeedBonus", 0.3)
 	entity.Combat.NextAttackTick = tick
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{8000, 8000, 8000, 8000, 8000}), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{8000, 8000, 8000, 8000, 8000}), tickRate)
 	entity.Skills[warriorQSkillID] = state
 }
 
@@ -32,7 +32,7 @@ func (w *World) applyWarriorW(entity *Entity, state SkillState, skill config.Ski
 	entity.Passive.MaxShield = warriorWShieldValue(entity, skill, state.Level)
 	entity.Passive.Shield = entity.Passive.MaxShield
 	entity.Passive.ShieldExpireTick = entity.Warrior.CourageUntilTick
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{24000, 22000, 20000, 18000, 16000}), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{24000, 22000, 20000, 18000, 16000}), tickRate)
 	entity.Skills[warriorWSkillID] = state
 }
 
@@ -64,7 +64,7 @@ func (w *World) stopWarriorE(entity *Entity, state SkillState, skill config.Skil
 		return
 	}
 	remainingTicks := entity.Warrior.JudgmentUntilTick - tick
-	cooldownTicks := cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{9000, 8250, 7500, 6750, 6000}), tickRate)
+	cooldownTicks := cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{9000, 8250, 7500, 6750, 6000}), tickRate)
 	if cooldownTicks > remainingTicks {
 		state.CooldownUntilTick = tick + cooldownTicks - remainingTicks
 	} else {
@@ -104,7 +104,7 @@ func (w *World) tickWarriorJudgment(entity *Entity, tick uint64, tickRate int) {
 func (w *World) finishWarriorE(entity *Entity, skill config.SkillConfig, tick uint64, tickRate int) {
 	state := entity.Skills[warriorESkillID]
 	if skill.SkillID != "" {
-		state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{9000, 8250, 7500, 6750, 6000}), tickRate)
+		state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{9000, 8250, 7500, 6750, 6000}), tickRate)
 		entity.Skills[warriorESkillID] = state
 	}
 	clearWarriorE(entity)
@@ -251,7 +251,7 @@ func (w *World) applyWarriorR(entity *Entity, cast protocol.CastInput, state Ski
 	entity.Warrior.JusticeTargetID = target.ID
 	entity.Warrior.JusticeLevel = state.Level
 	entity.Control.ActionLockedUntilTick = entity.Warrior.JusticeReleaseTick
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{120000, 100000, 80000}), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{120000, 100000, 80000}), tickRate)
 	entity.Skills[warriorRSkillID] = state
 }
 

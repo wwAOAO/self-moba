@@ -21,6 +21,7 @@ type BaseStats struct {
 	Attack               float64 `json:"attack"`
 	BonusAttack          float64 `json:"bonusAttack"`
 	AbilityPower         int     `json:"abilityPower"`
+	AbilityHaste         float64 `json:"abilityHaste"`
 	DamageReduce         float64 `json:"damageReduce"`
 	PhysicalDefense      float64 `json:"physicalDefense"`
 	BonusPhysicalDefense float64 `json:"bonusPhysicalDefense"`
@@ -35,6 +36,7 @@ type BaseStats struct {
 	MoveSpeed            float64 `json:"moveSpeed"`
 	AttackRange          float64 `json:"attackRange"`
 	AttackSpeed          float64 `json:"attackSpeed"`
+	AttackWindupSeconds  float64 `json:"attackWindupSeconds"`
 	AttackSpeedRatio     float64 `json:"attackSpeedRatio"`
 	BonusAttackSpeed     float64 `json:"bonusAttackSpeed"`
 	AttackSpeedSlow      float64 `json:"attackSpeedSlow"`
@@ -109,6 +111,9 @@ func NewHeroStore(heroes []HeroConfig) (*HeroStore, error) {
 		if hero.Base.AbilityPower < 0 {
 			return nil, fmt.Errorf("hero %s ability power must not be negative", hero.HeroID)
 		}
+		if hero.Base.AbilityHaste < 0 {
+			return nil, fmt.Errorf("hero %s ability haste must not be negative", hero.HeroID)
+		}
 		if hero.Base.DamageReduce < 0 || hero.Base.DamageReduce > 1 {
 			return nil, fmt.Errorf("hero %s damage reduce must be in [0, 1]", hero.HeroID)
 		}
@@ -151,6 +156,9 @@ func NewHeroStore(heroes []HeroConfig) (*HeroStore, error) {
 		if hero.Base.AttackSpeed <= 0 {
 			return nil, fmt.Errorf("hero %s attack speed must be positive", hero.HeroID)
 		}
+		if hero.Base.AttackWindupSeconds < 0 {
+			return nil, fmt.Errorf("hero %s attack windup seconds must not be negative", hero.HeroID)
+		}
 		if hero.Base.AttackSpeedRatio < 0 {
 			return nil, fmt.Errorf("hero %s attack speed ratio must not be negative", hero.HeroID)
 		}
@@ -186,6 +194,9 @@ func NewHeroStore(heroes []HeroConfig) (*HeroStore, error) {
 		}
 		if hero.Growth.AbilityPower < 0 {
 			return nil, fmt.Errorf("hero %s ability power growth must not be negative", hero.HeroID)
+		}
+		if hero.Growth.AbilityHaste < 0 {
+			return nil, fmt.Errorf("hero %s ability haste growth must not be negative", hero.HeroID)
 		}
 		if hero.Growth.DamageReduce < 0 {
 			return nil, fmt.Errorf("hero %s damage reduce growth must not be negative", hero.HeroID)
@@ -228,6 +239,9 @@ func NewHeroStore(heroes []HeroConfig) (*HeroStore, error) {
 		}
 		if hero.Growth.AttackSpeed < 0 {
 			return nil, fmt.Errorf("hero %s attack speed growth must not be negative", hero.HeroID)
+		}
+		if hero.Growth.AttackWindupSeconds < 0 {
+			return nil, fmt.Errorf("hero %s attack windup seconds growth must not be negative", hero.HeroID)
 		}
 		if hero.Growth.CritChance < 0 {
 			return nil, fmt.Errorf("hero %s crit chance growth must not be negative", hero.HeroID)

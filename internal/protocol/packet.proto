@@ -112,25 +112,26 @@ message StatsSnapshot {
   double attack = 8;
   double bonus_attack = 9;
   int32 ability_power = 10;
-  double damage_reduce = 11;
-  double physical_defense = 12;
-  double bonus_physical_defense = 13;
-  double physical_pen_percent = 14;
-  double physical_pen_flat = 15;
-  double physical_damage_reduce = 16;
-  double magic_defense = 17;
-  double bonus_magic_defense = 18;
-  double magic_pen_percent = 19;
-  double magic_pen_flat = 20;
-  double magic_damage_reduce = 21;
-  double move_speed = 22;
-  double attack_range = 23;
-  double attack_speed = 24;
-  double base_attack_speed = 25;
-  double attack_speed_bonus = 26;
-  double attack_speed_ratio = 27;
-  double attack_speed_slow = 28;
-  double crit_chance = 29;
+  double ability_haste = 11;
+  double damage_reduce = 12;
+  double physical_defense = 13;
+  double bonus_physical_defense = 14;
+  double physical_pen_percent = 15;
+  double physical_pen_flat = 16;
+  double physical_damage_reduce = 17;
+  double magic_defense = 18;
+  double bonus_magic_defense = 19;
+  double magic_pen_percent = 20;
+  double magic_pen_flat = 21;
+  double magic_damage_reduce = 22;
+  double move_speed = 23;
+  double attack_range = 24;
+  double attack_speed = 25;
+  double base_attack_speed = 26;
+  double attack_speed_bonus = 27;
+  double attack_speed_ratio = 28;
+  double attack_speed_slow = 29;
+  double crit_chance = 30;
 }
 
 message DummySnapshot {

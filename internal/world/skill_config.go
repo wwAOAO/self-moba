@@ -9,7 +9,32 @@ func cooldownTicks(cooldownMS int, tickRate int) uint64 {
 	if cooldownMS <= 0 {
 		return 0
 	}
-	ticks := math.Ceil(float64(cooldownMS) / 1000 * float64(tickRate))
+	return cooldownSecondsTicks(float64(cooldownMS)/1000, tickRate)
+}
+
+func cooldownTicksFor(entity *Entity, cooldownMS int, tickRate int) uint64 {
+	return cooldownSecondsTicks(cooldownSecondsAfterAbilityHaste(float64(cooldownMS)/1000, entity), tickRate)
+}
+
+func cooldownSecondsAfterAbilityHaste(seconds float64, entity *Entity) float64 {
+	if seconds <= 0 {
+		return 0
+	}
+	haste := 0.0
+	if entity != nil {
+		haste = entity.Stats.AbilityHaste
+	}
+	if haste < 0 {
+		haste = 0
+	}
+	return seconds / (1 + haste/100)
+}
+
+func cooldownSecondsTicks(seconds float64, tickRate int) uint64 {
+	if seconds <= 0 {
+		return 0
+	}
+	ticks := math.Ceil(seconds * float64(tickRate))
 	return uint64(ticks)
 }
 

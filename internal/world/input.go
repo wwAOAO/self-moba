@@ -28,6 +28,8 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	}
 	if input.Move != nil {
 		w.cancelTankRPreparedCast(entity)
+		entity.Combat.PendingAttackTargetID = ""
+		entity.Combat.AttackReleaseTick = 0
 		target := Vector2{
 			X: clamp(input.Move.TargetX, 0, w.width),
 			Y: clamp(input.Move.TargetY, 0, w.height),
@@ -37,6 +39,8 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	}
 	if input.Move == nil && (input.MoveX != 0 || input.MoveY != 0) {
 		w.cancelTankRPreparedCast(entity)
+		entity.Combat.PendingAttackTargetID = ""
+		entity.Combat.AttackReleaseTick = 0
 		dx, dy := normalize(input.MoveX, input.MoveY)
 		before := entity.Position
 		step := movementStepAtTick(entity, tickRate, tick)
@@ -49,7 +53,13 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	if input.Attack != nil {
 		if input.Attack.Clear {
 			entity.Intent.AttackTargetID = ""
+			entity.Combat.PendingAttackTargetID = ""
+			entity.Combat.AttackReleaseTick = 0
 		} else if input.Attack.TargetID != "" && tick >= entity.Control.DashUntilTick {
+			if entity.Intent.AttackTargetID != input.Attack.TargetID {
+				entity.Combat.PendingAttackTargetID = ""
+				entity.Combat.AttackReleaseTick = 0
+			}
 			entity.Intent.AttackTargetID = input.Attack.TargetID
 			entity.Intent.AttackPausedTill = 0
 			entity.Intent.MoveTarget = nil

@@ -101,6 +101,19 @@ func (w *World) releaseSwordQ(entity *Entity, tick uint64, tickRate int) {
 	entity.Skills[swordQSkillID] = state
 }
 
+func (w *World) expireSwordQStacks(entity *Entity, tick uint64) {
+	if entity == nil || entity.HeroID != swordHeroID {
+		return
+	}
+	state := entity.Skills[swordQSkillID]
+	if state.Stacks <= 0 || state.StacksExpireTick == 0 || tick < state.StacksExpireTick {
+		return
+	}
+	state.Stacks = 0
+	state.StacksExpireTick = 0
+	entity.Skills[swordQSkillID] = state
+}
+
 func (w *World) swordQWindupTicks(entity *Entity, skill config.SkillConfig, tickRate int) uint64 {
 	seconds := swordQWindupSeconds(entity, skill)
 	ticks := secondsToTicks(seconds, tickRate)
@@ -111,22 +124,14 @@ func (w *World) swordQWindupTicks(entity *Entity, skill config.SkillConfig, tick
 }
 
 func swordQWindupSeconds(entity *Entity, skill config.SkillConfig) float64 {
-	base := skillMetaRange(skill, "castWindupSeconds", 0.54)
-	minimum := skillMetaRange(skill, "minCastWindupSeconds", 0.18)
-	divisor := skillMetaRange(skill, "castWindupAttackSpeedDivisor", 1.667)
-	capBonus := skillMetaRange(skill, "castWindupAttackSpeedCap", 1.111)
+	base := skillMetaRange(skill, "castWindupSeconds", 0.328)
+	minimum := skillMetaRange(skill, "minCastWindupSeconds", 0.09)
 	bonus := 0.0
 	if entity != nil {
 		bonus = entity.Stats.AttackSpeedBonus
 	}
-	if bonus >= capBonus {
-		return minimum
-	}
-	bonus = clamp(bonus, 0, capBonus)
-	seconds := base
-	if divisor > 0 {
-		seconds = base * (1 - bonus/divisor)
-	}
+	bonus = clamp(bonus, 0, math.MaxFloat64)
+	seconds := base / (1 + bonus)
 	if seconds < minimum {
 		return minimum
 	}
@@ -165,7 +170,7 @@ func (w *World) applySwordW(entity *Entity, cast protocol.CastInput, state Skill
 		Width:     width,
 		ExpiresAt: tick + secondsToTicks(skillMetaRange(skill, "durationSeconds", windWallDuration), tickRate),
 	}
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{26000, 24000, 22000, 20000, 18000}), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{26000, 24000, 22000, 20000, 18000}), tickRate)
 	w.lockAttackAfterCast(entity, tick, tickRate)
 	entity.Skills[swordWSkillID] = state
 }
@@ -252,7 +257,7 @@ func (w *World) applySwordE(entity *Entity, cast protocol.CastInput, state Skill
 	entity.Control.DashStart = entity.Position
 	entity.Control.DashEnd = dashEnd
 	entity.Control.DashUntilTick = tick + secondsToTicks(skillMetaRange(skill, "dashDurationSeconds", 0.35), tickRate)
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{500, 400, 300, 200, 100}), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{500, 400, 300, 200, 100}), tickRate)
 	w.lockAttackAfterCast(entity, tick, tickRate)
 	entity.Skills[swordESkillID] = state
 }
@@ -298,7 +303,7 @@ func (w *World) applySwordR(entity *Entity, cast protocol.CastInput, state Skill
 	entity.Skills[swordQSkillID] = qState
 	entity.Sword.LastBreathUntilTick = tick + secondsToTicks(skillMetaRange(skill, "lastBreathDurationSeconds", 15), tickRate)
 	entity.Control.ActionLockedUntilTick = tick + secondsToTicks(skillMetaRange(skill, "selfActionLockSeconds", 1), tickRate)
-	state.CooldownUntilTick = tick + cooldownTicks(skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{80000, 55000, 30000}), tickRate)
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{80000, 55000, 30000}), tickRate)
 	w.lockAttackAfterCast(entity, tick, tickRate)
 	entity.Skills[swordRSkillID] = state
 }

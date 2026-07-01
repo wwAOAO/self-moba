@@ -43,6 +43,7 @@ function drawMap(frame) {
 
   drawActiveSkillRanges(frame);
   drawSwordETargetCooldowns(frame);
+  drawCastWindups(frame);
   drawSkillPreview(frame);
 
   const selectedTarget = state.selectedTargetId
@@ -390,6 +391,157 @@ function drawTankShardEffect(effect, frame) {
   gridLayer.stroke({ color: 0x5c4033, width: 2, alpha: 0.75 });
 }
 
+function drawCastWindups(frame) {
+  const now = performance.now();
+  const activeWindups = [];
+  for (const windup of state.castWindups) {
+    if (now <= windup.expiresAt) {
+      activeWindups.push(windup);
+      continue;
+    }
+    finishCastWindup(windup);
+  }
+  state.castWindups = activeWindups;
+  for (const windup of state.castWindups) {
+    drawCastWindup(windup, frame, now);
+  }
+}
+
+function finishCastWindup(windup) {
+  if (windup.finished) {
+    return;
+  }
+  windup.finished = true;
+  if (windup.skillId !== "sword_cut") {
+    return;
+  }
+  showSwordQReleasePreview(windup);
+}
+
+function showSwordQReleasePreview(windup) {
+  const self = state.players.get(state.playerId);
+  if (!self || self.dead) {
+    return;
+  }
+  if (windup.preview) {
+    showSwordQPreviewFromData(windup.preview);
+    return;
+  }
+  showSwordQPreview(self, {
+    x: windup.targetX,
+    y: windup.targetY,
+  });
+}
+
+function drawCastWindup(windup, frame, now) {
+  const progress = clamp(
+    (now - windup.startedAt) / Math.max(1, windup.durationMs || 1),
+    0,
+    1,
+  );
+  const alpha = 1 - progress * 0.35;
+  const x = frame.offsetX + windup.x * frame.scale;
+  const y = frame.offsetY + windup.y * frame.scale;
+  const pulseRadius = (20 + 18 * progress) * frame.scale;
+  const color = castWindupColor(windup.skillId);
+  gridLayer.circle(x, y, pulseRadius);
+  gridLayer.stroke({ color, width: 3, alpha: 0.7 * alpha });
+  gridLayer.circle(x, y, Math.max(5, pulseRadius * 0.18));
+  gridLayer.fill({ color, alpha: 0.18 * alpha });
+  const angleStart = -Math.PI / 2;
+  gridLayer.moveTo(
+    x + Math.cos(angleStart) * (pulseRadius + 6),
+    y + Math.sin(angleStart) * (pulseRadius + 6),
+  );
+  gridLayer.arc(
+    x,
+    y,
+    pulseRadius + 6,
+    angleStart,
+    angleStart + Math.PI * 2 * progress,
+  );
+  gridLayer.stroke({ color, width: 4, alpha: 0.85 });
+
+  if (windup.skillId === "sword_cut") {
+    drawSwordQWindup(windup, frame, color, alpha);
+    return;
+  }
+  if (windup.skillId === "slam") {
+    drawDirectionalWindup(windup, frame, color, alpha, 18);
+    return;
+  }
+  if (windup.skillId === "taunt") {
+    drawCircleWindup(windup, frame, color, alpha, windup.range || 400);
+    return;
+  }
+  if (windup.skillId === "justice") {
+    drawTargetLockWindup(windup, frame, color, alpha);
+    return;
+  }
+  if (windup.skillId === "arrow_rain") {
+    drawDirectionalWindup(windup, frame, color, alpha, 10);
+  }
+}
+
+function drawSwordQWindup(windup, frame, color, alpha) {
+  return;
+}
+
+function drawDirectionalWindup(windup, frame, color, alpha, width) {
+  const range = windup.range || 475;
+  const x = frame.offsetX + windup.x * frame.scale;
+  const y = frame.offsetY + windup.y * frame.scale;
+  const endX =
+    frame.offsetX + (windup.x + (windup.dirX || 1) * range) * frame.scale;
+  const endY =
+    frame.offsetY + (windup.y + (windup.dirY || 0) * range) * frame.scale;
+  gridLayer.moveTo(x, y);
+  gridLayer.lineTo(endX, endY);
+  gridLayer.stroke({ color, width, alpha: 0.16 * alpha });
+  gridLayer.moveTo(x, y);
+  gridLayer.lineTo(endX, endY);
+  gridLayer.stroke({ color, width: 2, alpha: 0.72 * alpha });
+}
+
+function drawCircleWindup(windup, frame, color, alpha, range) {
+  const x = frame.offsetX + windup.x * frame.scale;
+  const y = frame.offsetY + windup.y * frame.scale;
+  gridLayer.circle(x, y, range * frame.scale);
+  gridLayer.fill({ color, alpha: 0.06 * alpha });
+  gridLayer.circle(x, y, range * frame.scale);
+  gridLayer.stroke({ color, width: 3, alpha: 0.55 * alpha });
+}
+
+function drawTargetLockWindup(windup, frame, color, alpha) {
+  const x = frame.offsetX + windup.x * frame.scale;
+  const y = frame.offsetY + windup.y * frame.scale;
+  const tx = frame.offsetX + windup.targetX * frame.scale;
+  const ty = frame.offsetY + windup.targetY * frame.scale;
+  gridLayer.moveTo(x, y);
+  gridLayer.lineTo(tx, ty);
+  gridLayer.stroke({ color, width: 3, alpha: 0.55 * alpha });
+  gridLayer.circle(tx, ty, 26);
+  gridLayer.stroke({ color, width: 3, alpha: 0.8 * alpha });
+  gridLayer.circle(tx, ty, 8);
+  gridLayer.fill({ color, alpha: 0.18 * alpha });
+}
+
+function castWindupColor(skillId) {
+  if (skillId === "justice") {
+    return 0xf97316;
+  }
+  if (skillId === "slam") {
+    return 0x8b5e34;
+  }
+  if (skillId === "taunt") {
+    return 0x64748b;
+  }
+  if (skillId === "arrow_rain") {
+    return 0xa78bfa;
+  }
+  return 0x38bdf8;
+}
+
 function interpolatedTick() {
   if (!state.snapshotAtMs) {
     return Number(els.tick.textContent || 0);
@@ -401,10 +553,18 @@ function interpolatedTick() {
 }
 
 function showSwordQPreview(self, target) {
+  const preview = swordQPreviewData(self, target);
+  if (!preview) {
+    return;
+  }
+  showSwordQPreviewFromData(preview);
+}
+
+function swordQPreviewData(self, target) {
   const tick = Number(els.tick.textContent || 0);
   const qState = skillState(self, "sword_cut");
   if ((qState?.level || 0) <= 0) {
-    return;
+    return null;
   }
   const config = skillClientConfig.sword_cut || {};
   let form = "line";
@@ -419,7 +579,7 @@ function showSwordQPreview(self, target) {
   const dx = target.x - self.x;
   const dy = target.y - self.y;
   const len = Math.hypot(dx, dy) || 1;
-  state.skillPreview = {
+  return {
     kind: "sword_q",
     form,
     x: self.x,
@@ -429,7 +589,15 @@ function showSwordQPreview(self, target) {
     range,
     radius: form === "whirlwind" ? config.whirlwindRadius || 70 : 0,
     previewMs: config.previewMs || 450,
-    expiresAt: performance.now() + (config.previewMs || 450),
+  };
+}
+
+function showSwordQPreviewFromData(preview) {
+  const previewMs = preview.previewMs || 450;
+  state.skillPreview = {
+    ...preview,
+    previewMs,
+    expiresAt: performance.now() + previewMs,
   };
 }
 

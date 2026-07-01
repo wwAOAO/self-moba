@@ -116,6 +116,7 @@ type Stats struct {
 	Attack               float64
 	BonusAttack          float64
 	AbilityPower         int
+	AbilityHaste         float64
 	DamageReduce         float64
 	PhysicalDefense      float64
 	MagicDefense         float64
@@ -130,6 +131,7 @@ type Stats struct {
 	MoveSpeed            float64
 	AttackRange          float64
 	AttackSpeed          float64
+	AttackWindupSeconds  float64
 	BaseAttackSpeed      float64
 	AttackSpeedBonus     float64
 	AttackSpeedRatio     float64
@@ -147,6 +149,8 @@ type SkillState struct {
 
 type CombatState struct {
 	NextAttackTick             uint64
+	PendingAttackTargetID      string
+	AttackReleaseTick          uint64
 	LastHitTick                uint64
 	LastDamage                 int
 	LastDamageType             string
@@ -228,6 +232,9 @@ type TankState struct {
 	SeismicShardReleaseTick    uint64
 	SeismicShardTargetID       string
 	SeismicShardLevel          int
+	GroundSlamPending          bool
+	GroundSlamReleaseTick      uint64
+	GroundSlamLevel            int
 	UnstoppableCastPending     bool
 	UnstoppableCastTarget      Vector2
 	UnstoppableCastLevel       int
