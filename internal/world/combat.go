@@ -130,6 +130,7 @@ func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64
 	}
 	w.applyTankWAftershock(attacker, target, tick, tickRate)
 	w.consumeWarriorQ(attacker, target, tick, tickRate)
+	w.triggerMageIlluminationOnBasicAttack(attacker, target, tick, tickRate)
 }
 
 func isRangedBasicAttacker(attacker *Entity) bool {

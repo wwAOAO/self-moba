@@ -213,6 +213,8 @@ func buildControlSnapshot(state world.ControlState) protocol.ControlSnapshot {
 		TenacityUntilTick:     state.TenacityUntilTick,
 		MoveSpeedSlow:         state.MoveSpeedSlow,
 		MoveSpeedSlowUntil:    state.MoveSpeedSlowUntil,
+		RootedUntilTick:       state.RootedUntilTick,
+		MageIlluminationUntil: state.MageIlluminationUntil,
 	}
 }
 

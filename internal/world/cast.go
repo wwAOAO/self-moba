@@ -74,6 +74,17 @@ func (w *World) applyCast(entity *Entity, cast protocol.CastInput, tick uint64, 
 		w.applyArcherR(entity, cast, state, skill, tick, tickRate)
 		return
 	}
+	if entity.HeroID == mageHeroID && cast.SkillID == mageQSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyMageQ(entity, cast, state, skill, tick, tickRate)
+		return
+	}
 	if entity.HeroID == swordHeroID && cast.SkillID == swordQSkillID {
 		var skill config.SkillConfig
 		if skills != nil {

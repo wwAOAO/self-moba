@@ -124,6 +124,10 @@ function drawEffects(frame) {
       drawCrystalArrowEffect(effect, frame);
       continue;
     }
+    if (effect.kind === "mage_light_binding") {
+      drawMageLightBindingEffect(effect, frame);
+      continue;
+    }
     if (effect.kind !== "wind_wall") {
       continue;
     }
@@ -233,6 +237,27 @@ function drawCrystalArrowEffect(effect, frame) {
   drawArrowProjectile(effect, frame, 0xc4b5fd, 0x7c3aed, {
     fromSnapshot: true,
   });
+}
+
+function drawMageLightBindingEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(8, (effect.radius || 45) * frame.scale);
+  const alpha = 0.9;
+  gridLayer.circle(x, y, radius * 0.45);
+  gridLayer.fill({ color: 0xfef3c7, alpha: 0.9 });
+  gridLayer.circle(x, y, radius);
+  gridLayer.stroke({ color: 0xfacc15, width: 3, alpha: 0.72 * alpha });
+  gridLayer.moveTo(
+    x - (effect.dirX || 1) * radius * 0.9,
+    y - (effect.dirY || 0) * radius * 0.9,
+  );
+  gridLayer.lineTo(
+    x + (effect.dirX || 1) * radius * 1.2,
+    y + (effect.dirY || 0) * radius * 1.2,
+  );
+  gridLayer.stroke({ color: 0xfbbf24, width: 4, alpha: 0.8 });
 }
 
 function drawProjectileSweepArea(effect, frame, position, radius, fillColor, strokeColor) {
@@ -946,6 +971,8 @@ function redrawPlayerBody(sprite, player) {
     drawWarriorIcon(sprite.body, radius);
   } else if (shape === "sword") {
     drawSwordIcon(sprite.body, radius);
+  } else if (shape === "mage") {
+    drawMageIcon(sprite.body, radius);
   } else {
     sprite.body.circle(0, 0, radius);
   }
@@ -1035,11 +1062,17 @@ function abnormalStatuses(target) {
   if ((target.control?.silencedUntilTick || 0) > tick) {
     statuses.push("Silence");
   }
+  if ((target.control?.rootedUntilTick || 0) > tick) {
+    statuses.push("Root");
+  }
   if ((target.control?.tenacityUntilTick || 0) > tick) {
     statuses.push("Tenacity");
   }
   if ((target.control?.moveSpeedSlowUntil || 0) > tick) {
     statuses.push("Slow");
+  }
+  if ((target.control?.mageIlluminationUntil || 0) > tick) {
+    statuses.push("启明");
   }
   return statuses;
 }

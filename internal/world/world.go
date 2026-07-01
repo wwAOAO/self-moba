@@ -15,6 +15,7 @@ const (
 	warriorHeroID      = "warrior"
 	archerHeroID       = "archer"
 	tankHeroID         = "tank"
+	mageHeroID         = "mage"
 	critRollModulo     = 10000
 	respawnSeconds     = 20
 	swordQSkillID      = "sword_cut"
@@ -34,6 +35,10 @@ const (
 	archerWSkillID     = "roll"
 	archerESkillID     = "trap"
 	archerRSkillID     = "arrow_rain"
+	mageQSkillID       = "mage_q"
+	mageWSkillID       = "mage_w"
+	mageESkillID       = "mage_e"
+	mageRSkillID       = "mage_r"
 	windWallDuration   = 4
 )
 
@@ -92,6 +97,7 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		w.expireSwordQStacks(entity, tick)
 		w.tickArcherHawkCharges(entity, tick, tickRate)
 		w.releaseArcherCrystalArrow(entity, tick, tickRate)
+		w.releaseMageQ(entity, tick, tickRate)
 		if entity.HeroID == swordHeroID && entity.Sword.QPending {
 			w.tickDashMovement(entity, tick, tickRate)
 		}
@@ -158,6 +164,7 @@ func (w *World) tickRespawn(entity *Entity, tick uint64) {
 	entity.Sword = swordStateForHero(entity.HeroID)
 	entity.Warrior = WarriorState{}
 	entity.Archer = ArcherState{}
+	entity.Mage = MageState{}
 	entity.Tank = TankState{}
 	entity.Passive.Shield = 0
 	entity.Passive.MaxShield = 0

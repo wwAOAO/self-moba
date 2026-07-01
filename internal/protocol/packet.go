@@ -238,6 +238,8 @@ type ControlSnapshot struct {
 	TenacityUntilTick     uint64  `json:"tenacityUntilTick"`
 	MoveSpeedSlow         float64 `json:"moveSpeedSlow"`
 	MoveSpeedSlowUntil    uint64  `json:"moveSpeedSlowUntil"`
+	RootedUntilTick       uint64  `json:"rootedUntilTick,omitempty"`
+	MageIlluminationUntil uint64  `json:"mageIlluminationUntil,omitempty"`
 }
 
 type WarriorSnapshot struct {

@@ -84,6 +84,7 @@ type Entity struct {
 	Sword        SwordState
 	Warrior      WarriorState
 	Archer       ArcherState
+	Mage         MageState
 	Tank         TankState
 	Death        DeathState
 	Intent       IntentState
@@ -209,8 +210,11 @@ type ControlState struct {
 	MoveSpeedBonusUntil   uint64
 	MoveSpeedSlow         float64
 	MoveSpeedSlowUntil    uint64
+	RootedUntilTick       uint64
 	AttackSpeedSlow       float64
 	AttackSpeedSlowUntil  uint64
+	MageIlluminationUntil uint64
+	MageIlluminationBy    string
 }
 
 type SwordState struct {
@@ -258,6 +262,13 @@ type ArcherState struct {
 	CrystalArrowReleaseTick uint64
 	CrystalArrowTarget      Vector2
 	CrystalArrowLevel       int
+}
+
+type MageState struct {
+	LightBindingPending     bool
+	LightBindingReleaseTick uint64
+	LightBindingTarget      Vector2
+	LightBindingLevel       int
 }
 
 type TankState struct {

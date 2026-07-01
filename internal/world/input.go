@@ -38,7 +38,8 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick || tick < entity.Control.StunnedUntilTick {
 		return
 	}
-	if input.Move != nil {
+	rooted := tick < entity.Control.RootedUntilTick
+	if input.Move != nil && !rooted {
 		w.cancelTankRPreparedCast(entity)
 		entity.Combat.PendingAttackTargetID = ""
 		entity.Combat.AttackReleaseTick = 0
@@ -49,7 +50,7 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 		entity.Intent.MoveTarget = &target
 		entity.Intent.AttackPausedTill = tick + uint64(tickRate*3)
 	}
-	if input.Move == nil && (input.MoveX != 0 || input.MoveY != 0) {
+	if input.Move == nil && !rooted && (input.MoveX != 0 || input.MoveY != 0) {
 		w.cancelTankRPreparedCast(entity)
 		entity.Combat.PendingAttackTargetID = ""
 		entity.Combat.AttackReleaseTick = 0
@@ -92,6 +93,7 @@ func (w *World) tickPlayer(entity *Entity, tick uint64, tickRate int) {
 	if tick < entity.Control.DashUntilTick {
 		return
 	}
+	rooted := tick < entity.Control.RootedUntilTick
 	target := w.entities[entity.Intent.AttackTargetID]
 	attackPaused := tick < entity.Intent.AttackPausedTill
 	if !attackPaused && canAttackTarget(entity, target) {
@@ -99,10 +101,13 @@ func (w *World) tickPlayer(entity *Entity, tick uint64, tickRate int) {
 			w.applyAttack(entity, target, tick, tickRate)
 			return
 		}
+		if rooted {
+			return
+		}
 		w.moveToward(entity, target.Position, movementStepAtTick(entity, tickRate, tick), 0)
 		return
 	}
-	if entity.Intent.MoveTarget != nil {
+	if entity.Intent.MoveTarget != nil && !rooted {
 		if w.moveToward(entity, *entity.Intent.MoveTarget, movementStepAtTick(entity, tickRate, tick), 8) {
 			entity.Intent.MoveTarget = nil
 			if entity.HeroID == tankHeroID && entity.Tank.UnstoppableCastPending {

@@ -193,6 +193,9 @@ function playerModelRadius(player) {
   if (player.heroId === "tank") {
     return player.playerId === state.playerId ? 13 : 11;
   }
+  if (player.heroId === "mage") {
+    return player.playerId === state.playerId ? 13 : 11;
+  }
   return player.playerId === state.playerId ? 10 : 8;
 }
 
@@ -208,6 +211,9 @@ function playerModelShape(player) {
   }
   if (player.heroId === "tank") {
     return "octagon";
+  }
+  if (player.heroId === "mage") {
+    return "mage";
   }
   return "circle";
 }
@@ -370,6 +376,21 @@ function drawBowArrowIcon(graphics, radius) {
     radius * 0.14,
   );
   graphics.closePath();
+}
+
+function drawMageIcon(graphics, radius) {
+  graphics.moveTo(0, -radius * 1.35);
+  graphics.lineTo(radius * 0.34, -radius * 0.34);
+  graphics.lineTo(radius * 1.28, -radius * 0.34);
+  graphics.lineTo(radius * 0.5, radius * 0.22);
+  graphics.lineTo(radius * 0.78, radius * 1.18);
+  graphics.lineTo(0, radius * 0.58);
+  graphics.lineTo(-radius * 0.78, radius * 1.18);
+  graphics.lineTo(-radius * 0.5, radius * 0.22);
+  graphics.lineTo(-radius * 1.28, -radius * 0.34);
+  graphics.lineTo(-radius * 0.34, -radius * 0.34);
+  graphics.closePath();
+  graphics.circle(0, 0, radius * 0.34);
 }
 
 function drawChamferedOctagon(graphics, radius) {

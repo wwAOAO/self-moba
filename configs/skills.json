@@ -378,5 +378,62 @@
       "shieldValue": [125, 160, 275, 600],
       "shieldValueLevels": [1, 6, 12, 18]
     }
+  },
+  {
+    "skillId": "mage_arcane_flow",
+    "name": "光芒四射",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive",
+    "meta": {
+      "debuffSeconds": 6,
+      "apRatio": 0.3
+    },
+    "metaLists": {
+      "detonateDamage": [20, 200],
+      "detonateDamageLevels": [1, 18]
+    }
+  },
+  {
+    "skillId": "mage_q",
+    "name": "光之束缚",
+    "cooldownMs": 15000,
+    "range": 1175,
+    "type": "projectile_line",
+    "meta": {
+      "apRatio": 0.7,
+      "projectileRadius": 45,
+      "projectileSpeed": 1400,
+      "castWindupSeconds": 0.25,
+      "rootSeconds": 2,
+      "maxHits": 2,
+      "secondHitDamageMultiplier": 0.5
+    },
+    "metaLists": {
+      "manaCost": [50, 55, 60, 65, 70],
+      "cooldownMs": [15000, 14000, 13000, 12000, 11000],
+      "baseDamage": [50, 100, 150, 200, 250]
+    }
+  },
+  {
+    "skillId": "mage_w",
+    "name": "Mage W",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "mage_e",
+    "name": "Mage E",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "mage_r",
+    "name": "Mage R",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
   }
 ]

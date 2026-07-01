@@ -130,6 +130,13 @@ let heroSkillSlots = {
     e: "taunt",
     r: "earthquake",
   },
+  mage: {
+    passive: "mage_arcane_flow",
+    q: "mage_q",
+    w: "mage_w",
+    e: "mage_e",
+    r: "mage_r",
+  },
 };
 
 let skillClientConfig = {

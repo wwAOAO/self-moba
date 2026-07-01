@@ -72,6 +72,13 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 				damage = w.swordQDamage(source, target, w.skillConfig(projectile.SkillID), tick)
 			} else if projectile.SkillID == tankQSkillID && source != nil {
 				damage = tankQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+			} else if projectile.SkillID == mageQSkillID && source != nil {
+				hitNumber := len(projectile.HitIDs)
+				multiplier := 1.0
+				if hitNumber >= 2 {
+					multiplier = skillMetaRange(w.skillConfig(projectile.SkillID), "secondHitDamageMultiplier", 0.5)
+				}
+				damage = mageQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, multiplier, tick)
 			}
 			target.Combat.LastHitTick = tick
 			if target.Kind != EntityKindDummy {
@@ -81,6 +88,14 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 					applyTankQMoveSpeedSteal(source, target, projectile.EffectRatio, tick+projectile.EffectTicks)
 					delete(w.projectiles, id)
 					removeProjectile = true
+				} else if projectile.SkillID == mageQSkillID {
+					w.applyMagicDamage(source, target, damage, tickRate)
+					target.Control.RootedUntilTick = tick + controlTicksAfterTenacity(target, projectile.EffectTicks, tick)
+					w.applyMageIlluminationOnSkillHit(source, target, tick, tickRate)
+					if len(projectile.HitIDs) >= int(skillMetaRange(w.skillConfig(projectile.SkillID), "maxHits", 2)) {
+						delete(w.projectiles, id)
+						removeProjectile = true
+					}
 				} else if projectile.SkillID == archerRSkillID {
 					w.applyMagicDamage(source, target, damage, tickRate)
 					target.Control.StunnedUntilTick = tick + controlTicksAfterTenacity(target, archerRStunTicks(projectile, w.skillConfig(projectile.SkillID), tickRate), tick)
@@ -97,6 +112,9 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 					}
 					if projectile.Kind == "basic_arrow" && source != nil && source.HeroID == archerHeroID {
 						w.applyArcherFocusOnBasicHit(source, target, tick, tickRate)
+					}
+					if projectile.Kind == "basic_arrow" {
+						w.triggerMageIlluminationOnBasicAttack(source, target, tick, tickRate)
 					}
 					if projectile.Kind == "basic_arrow" || projectile.SkillID == archerWSkillID {
 						delete(w.projectiles, id)
@@ -121,6 +139,13 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 					applyTankQMoveSpeedSteal(source, target, projectile.EffectRatio, tick+projectile.EffectTicks)
 					delete(w.projectiles, id)
 					removeProjectile = true
+				} else if projectile.SkillID == mageQSkillID {
+					target.Control.RootedUntilTick = tick + projectile.EffectTicks
+					w.applyMageIlluminationOnSkillHit(source, target, tick, tickRate)
+					if len(projectile.HitIDs) >= int(skillMetaRange(w.skillConfig(projectile.SkillID), "maxHits", 2)) {
+						delete(w.projectiles, id)
+						removeProjectile = true
+					}
 				} else if projectile.SkillID == archerRSkillID {
 					delete(w.projectiles, id)
 					removeProjectile = true
@@ -301,7 +326,7 @@ func updateTrackingProjectileDir(projectile *Projectile, target *Entity) {
 }
 
 func projectileDamageType(skillID string) string {
-	if skillID == tankQSkillID {
+	if skillID == tankQSkillID || skillID == mageQSkillID {
 		return "magic"
 	}
 	return "physical"
