@@ -17,6 +17,7 @@ const state = {
   moveTarget: null,
   selectedTargetId: "",
   attackTargetId: "",
+  selectedEquipmentSlot: 0,
   attackMoveArmed: false,
   attackFlash: null,
   aimPoint: null,
@@ -38,8 +39,12 @@ const els = {
   spawnKind: document.querySelector("#spawnKind"),
   spawnTeam: document.querySelector("#spawnTeam"),
   spawnBtn: document.querySelector("#spawnBtn"),
+  shopItem: document.querySelector("#shopItem"),
+  buyEquipmentBtn: document.querySelector("#buyEquipmentBtn"),
+  sellEquipmentBtn: document.querySelector("#sellEquipmentBtn"),
   levelUpBtn: document.querySelector("#levelUpBtn"),
   abilityHasteBtn: document.querySelector("#abilityHasteBtn"),
+  goldBtn: document.querySelector("#goldBtn"),
   connectBtn: document.querySelector("#connectBtn"),
   leaveBtn: document.querySelector("#leaveBtn"),
   status: document.querySelector("#status"),
@@ -50,6 +55,23 @@ const els = {
   statLevel: document.querySelector("#statLevel"),
   statExp: document.querySelector("#statExp"),
   statSkillPoints: document.querySelector("#statSkillPoints"),
+  equipGold: document.querySelector("#equipGold"),
+  equipmentSlots: [
+    document.querySelector("#equipment1"),
+    document.querySelector("#equipment2"),
+    document.querySelector("#equipment3"),
+    document.querySelector("#equipment4"),
+    document.querySelector("#equipment5"),
+    document.querySelector("#equipment6"),
+  ],
+  equipmentTips: [
+    document.querySelector("#equipmentTip1"),
+    document.querySelector("#equipmentTip2"),
+    document.querySelector("#equipmentTip3"),
+    document.querySelector("#equipmentTip4"),
+    document.querySelector("#equipmentTip5"),
+    document.querySelector("#equipmentTip6"),
+  ],
   statResourceLabel: document.querySelector("#statResourceLabel"),
   statResource: document.querySelector("#statResource"),
   statMpLabel: document.querySelector("#statMpLabel"),
@@ -69,6 +91,10 @@ const els = {
   statAttackRange: document.querySelector("#statAttackRange"),
   statAttackSpeed: document.querySelector("#statAttackSpeed"),
   statCritChance: document.querySelector("#statCritChance"),
+  statOmnivamp: document.querySelector("#statOmnivamp"),
+  statLifeSteal: document.querySelector("#statLifeSteal"),
+  statHealingPower: document.querySelector("#statHealingPower"),
+  statGrievousWounds: document.querySelector("#statGrievousWounds"),
   target: document.querySelector("#target"),
   skills: document.querySelector("#skills"),
   stage: document.querySelector("#stage"),
@@ -116,6 +142,7 @@ let skillClientConfig = {
 };
 let levelClientConfig = { maxLevel: 18, levels: [] };
 let rewardClientConfig = {};
+let equipmentClientConfig = {};
 
 els.playerId.value = state.playerId;
 

@@ -114,6 +114,39 @@
         opacity: 0.7;
       }
 
+      .stats-grid button {
+        height: 26px;
+        padding: 0 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #24312b;
+        background: #e2e9e3;
+      }
+
+      .stats-grid button.selected {
+        color: #fff;
+        background: #1f6f5b;
+      }
+
+      .stats-grid button:disabled {
+        cursor: default;
+        color: #7d8a82;
+        background: #edf2ee;
+      }
+
+      .equipment-slot-row {
+        display: grid;
+        grid-template-columns: 18px 1fr;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .equipment-slot-row .stat-tip {
+        margin-left: 0;
+      }
+
       .status {
         margin-top: 16px;
         padding: 10px;
@@ -162,6 +195,34 @@
         box-shadow: 0 8px 22px rgba(23, 32, 38, 0.14);
         font-size: 13px;
         line-height: 1.45;
+      }
+
+      .right-bottom-cards {
+        position: absolute;
+        right: 16px;
+        bottom: 16px;
+        z-index: 2;
+        width: 280px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .shop-card {
+        padding: 10px;
+        border: 2px solid #cbd5cf;
+        border-radius: 4px;
+        background: #f8fbf8;
+        box-shadow: 0 8px 22px rgba(23, 32, 38, 0.14);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .shop-card label {
+        margin: 0 0 6px;
+      }
+
+      .shop-card .actions {
+        margin-top: 8px;
       }
 
       .player-card {
@@ -354,6 +415,7 @@
           <button id="spawnBtn">Spawn</button>
           <button id="levelUpBtn" class="secondary">Level +1</button>
           <button id="abilityHasteBtn" class="secondary">+200 Haste</button>
+          <button id="goldBtn" class="secondary">+10000 Gold</button>
         </div>
 
         <div class="actions">
@@ -369,11 +431,6 @@
           <div><strong>Players</strong><span id="playerCount">0</span></div>
         </div>
 
-        <p class="hint">
-          Right-click the map to move. Left-click an enemy unit to auto attack.
-          Press Q/W/E/R to cast active skills. Shift+Q/W/E/R or the + buttons
-          upgrade skills.
-        </p>
       </aside>
 
       <main class="viewport">
@@ -402,6 +459,10 @@
               ><span id="statAttackRange">-</span> <span>ATK SPD</span
               ><span id="statAttackSpeed">-</span> <span>Crit</span
               ><span id="statCritChance">-</span>
+              <span>Omnivamp</span><span id="statOmnivamp">-</span>
+              <span>Life Steal</span><span id="statLifeSteal">-</span>
+              <span>Heal+</span><span id="statHealingPower">-</span>
+              <span>Grievous</span><span id="statGrievousWounds">-</span>
             </div>
           </div>
           <div class="player-card">
@@ -419,6 +480,46 @@
         <div class="target-card">
           <strong>Target</strong>
           <span id="target">-</span>
+        </div>
+        <div class="right-bottom-cards">
+          <div class="player-card">
+            <strong>Equipment</strong>
+            <div class="stats-grid">
+              <span>Gold</span><span id="equipGold">-</span>
+              <span>1</span
+              ><span class="equipment-slot-row"
+                ><span id="equipmentTip1"></span><button id="equipment1">-</button></span
+              >
+              <span>2</span
+              ><span class="equipment-slot-row"
+                ><span id="equipmentTip2"></span><button id="equipment2">-</button></span
+              >
+              <span>3</span
+              ><span class="equipment-slot-row"
+                ><span id="equipmentTip3"></span><button id="equipment3">-</button></span
+              >
+              <span>4</span
+              ><span class="equipment-slot-row"
+                ><span id="equipmentTip4"></span><button id="equipment4">-</button></span
+              >
+              <span>5</span
+              ><span class="equipment-slot-row"
+                ><span id="equipmentTip5"></span><button id="equipment5">-</button></span
+              >
+              <span>6</span
+              ><span class="equipment-slot-row"
+                ><span id="equipmentTip6"></span><button id="equipment6">-</button></span
+              >
+            </div>
+          </div>
+          <div class="shop-card">
+            <label for="shopItem">Shop</label>
+            <select id="shopItem"></select>
+            <div class="actions">
+              <button id="buyEquipmentBtn">Buy</button>
+              <button id="sellEquipmentBtn" class="secondary">Sell Selected</button>
+            </div>
+          </div>
         </div>
         <div id="stage"></div>
       </main>

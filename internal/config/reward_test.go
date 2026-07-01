@@ -20,6 +20,48 @@ func TestRewardConfigMinionSharedExp(t *testing.T) {
 	}
 }
 
+func TestRewardConfigMinionGold(t *testing.T) {
+	rewards, err := LoadRewards("../../configs/rewards.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cases := map[string]int{
+		"melee_minion":  20,
+		"ranged_minion": 17,
+		"siege_minion":  45,
+		"super_minion":  45,
+	}
+	for kind, want := range cases {
+		got, ok := rewards.MinionGold(kind)
+		if !ok || got != want {
+			t.Fatalf("%s gold = %d, ok=%v, want %d", kind, got, ok, want)
+		}
+	}
+}
+
+func TestEquipmentConfig(t *testing.T) {
+	equipment, err := LoadEquipment("../../configs/equipment.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	blade, ok := equipment.Get("small_blade")
+	if !ok {
+		t.Fatal("small blade not found")
+	}
+	if blade.Price != 475 || blade.SellRatio != 0.5 || blade.Stats.Attack != 8 || blade.Stats.HP != 80 || blade.Stats.Omnivamp != 0.025 {
+		t.Fatalf("unexpected small blade: %+v", blade)
+	}
+	ring, ok := equipment.Get("spell_ring")
+	if !ok {
+		t.Fatal("spell ring not found")
+	}
+	if ring.Stats.AbilityPower != 15 || ring.Stats.MPRegen5 != 5 || ring.Effects.MinionBasicAttackBonusDamageType != "magic" {
+		t.Fatalf("unexpected spell ring: %+v", ring)
+	}
+}
+
 func TestRewardConfigJungleExp(t *testing.T) {
 	rewards, err := LoadRewards("../../configs/rewards.json")
 	if err != nil {
@@ -52,6 +94,28 @@ func TestRewardConfigJungleExp(t *testing.T) {
 	}
 }
 
+func TestRewardConfigJungleGold(t *testing.T) {
+	rewards, err := LoadRewards("../../configs/rewards.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cases := map[string]int{
+		"blue_buff": 160,
+		"red_buff":  160,
+		"gromp":     120,
+		"raptor":    90,
+		"murk_wolf": 100,
+		"krug_camp": 110,
+	}
+	for kind, want := range cases {
+		got, ok := rewards.JungleGold(kind)
+		if !ok || got != want {
+			t.Fatalf("%s gold = %d, ok=%v, want %d", kind, got, ok, want)
+		}
+	}
+}
+
 func TestRewardConfigEpicRewards(t *testing.T) {
 	rewards, err := LoadRewards("../../configs/rewards.json")
 	if err != nil {
@@ -78,7 +142,7 @@ func TestRewardConfigEpicRewards(t *testing.T) {
 	if !ok {
 		t.Fatal("baron reward not found")
 	}
-	if baron.Split != "team_equal" || !baron.ScalesWithGameTime {
+	if baron.Split != "team_equal" || !baron.ScalesWithGameTime || baron.TeamGold != 300 {
 		t.Fatalf("unexpected baron reward: %+v", baron)
 	}
 }
@@ -97,6 +161,9 @@ func TestRewardConfigHeroKillExp(t *testing.T) {
 
 	if rewards.HeroKill.NearbyRadius != 1600 {
 		t.Fatalf("nearby radius = %f, want 1600", rewards.HeroKill.NearbyRadius)
+	}
+	if rewards.HeroKillGold() != 300 {
+		t.Fatalf("hero kill gold = %d, want 300", rewards.HeroKillGold())
 	}
 	if rewards.HeroKill.DeadGraceSeconds != 10 {
 		t.Fatalf("dead grace seconds = %d, want 10", rewards.HeroKill.DeadGraceSeconds)

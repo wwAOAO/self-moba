@@ -299,7 +299,7 @@
     },
     "metaLists": {
       "baseDamage": [20, 45, 70, 95, 120],
-      "cooldownMs": [1000, 5500, 5000, 4500, 4000]
+      "cooldownMs": [4000, 4000, 4000, 4000, 4000]
     }
   },
   {
@@ -369,7 +369,8 @@
       "intentMax": 100,
       "shieldDurationSeconds": 1,
       "critChanceMultiplier": 2,
-      "critDamageMultiplier": 1.9
+      "critOverflowAttackPerPercent": 0.5,
+      "critFinalDamageMultiplier": 0.9
     },
     "metaLists": {
       "intentMoveUnitsPerPercent": [59, 52.5, 46],

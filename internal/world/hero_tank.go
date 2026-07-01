@@ -38,7 +38,6 @@ func (w *World) applyTankQ(entity *Entity, cast protocol.CastInput, state SkillS
 	entity.Tank.SeismicShardTargetID = target.ID
 	entity.Tank.SeismicShardLevel = state.Level
 	entity.Control.ActionLockedUntilTick = entity.Tank.SeismicShardReleaseTick
-	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{8000, 8000, 8000, 8000, 8000}), tickRate)
 	entity.Skills[tankQSkillID] = state
 }
 
@@ -56,6 +55,9 @@ func (w *World) releaseTankQ(entity *Entity, tick uint64, tickRate int) {
 		return
 	}
 	skill := w.skillConfig(tankQSkillID)
+	state := entity.Skills[tankQSkillID]
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", level, []float64{8000, 8000, 8000, 8000, 8000}), tickRate)
+	entity.Skills[tankQSkillID] = state
 	dx, dy := normalize(target.Position.X-entity.Position.X, target.Position.Y-entity.Position.Y)
 	if dx == 0 && dy == 0 {
 		dx = 1
@@ -180,7 +182,6 @@ func (w *World) applyTankE(entity *Entity, state SkillState, skill config.SkillC
 	entity.Tank.GroundSlamReleaseTick = tick + windupTicks
 	entity.Tank.GroundSlamLevel = state.Level
 	entity.Control.ActionLockedUntilTick = entity.Tank.GroundSlamReleaseTick
-	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{7000, 7000, 7000, 7000, 7000}), tickRate)
 	entity.Skills[tankESkillID] = state
 }
 
@@ -196,6 +197,9 @@ func (w *World) releaseTankE(entity *Entity, tick uint64, tickRate int) {
 		level = 1
 	}
 	skill := w.skillConfig(tankESkillID)
+	state := entity.Skills[tankESkillID]
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", level, []float64{7000, 7000, 7000, 7000, 7000}), tickRate)
+	entity.Skills[tankESkillID] = state
 	damage := tankEDamage(entity, skill, level)
 	slow := skillMetaListByLevel(skill, "attackSpeedSlow", level, []float64{0.3, 0.35, 0.4, 0.45, 0.5})
 	slowUntil := tick + secondsToTicks(skillMetaRange(skill, "attackSpeedSlowSeconds", 3), tickRate)
@@ -203,7 +207,7 @@ func (w *World) releaseTankE(entity *Entity, tick uint64, tickRate int) {
 		target.Combat.LastHitTick = tick
 		if target.Kind != EntityKindDummy {
 			wasAlive := target.Stats.HP > 0
-			w.applyMagicDamage(entity, target, magicDamageAfterResistance(entity, target, damage, tick), tickRate)
+			w.applyAOEDamage(entity, target, magicDamageAfterResistance(entity, target, damage, tick), "magic", tickRate)
 			applyAttackSpeedSlow(target, slow, slowUntil)
 			if wasAlive && target.Stats.HP == 0 {
 				w.applyKillReward(entity, target)
@@ -367,7 +371,7 @@ func (w *World) resolveTankRImpact(entity *Entity, tick uint64, tickRate int) {
 		target.Combat.LastHitTick = tick
 		if target.Kind != EntityKindDummy {
 			wasAlive := target.Stats.HP > 0
-			w.applyMagicDamage(entity, target, magicDamageAfterResistance(entity, target, damage, tick), tickRate)
+			w.applyAOEDamage(entity, target, magicDamageAfterResistance(entity, target, damage, tick), "magic", tickRate)
 			target.Control.AirborneUntilTick = tick + controlTicksAfterTenacity(target, knockupTicks, tick)
 			if wasAlive && target.Stats.HP == 0 {
 				w.applyKillReward(entity, target)

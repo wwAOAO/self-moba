@@ -1,6 +1,7 @@
 package battle
 
 import (
+	"l-battle/internal/config"
 	"l-battle/internal/protocol"
 	"l-battle/internal/world"
 )
@@ -28,6 +29,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 		stats := buildStatsSnapshot(entity.Stats)
 		stats.MoveSpeed = world.EffectiveMoveSpeedAtTick(&entity, tick)
 		stats.AttackSpeed = world.EffectiveAttackSpeedAtTick(&entity, tick)
+		stats.CritChance = w.DisplayCritChance(&entity)
 		snapshot.Players = append(snapshot.Players, protocol.PlayerSnapshot{
 			PlayerID:       entity.PlayerID,
 			HeroID:         entity.HeroID,
@@ -35,9 +37,13 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Level:          entity.Level,
 			MaxLevel:       world.MaxHeroLevel,
 			SkillPoints:    entity.SkillPoints,
+			Gold:           entity.Gold,
+			Equipment:      buildEquipmentSnapshots(entity.Equipment),
 			Exp:            entity.Exp,
 			TotalExp:       entity.TotalExp,
 			NextLevelExp:   entity.NextLevelExp,
+			Message:        entity.Message,
+			MessageTick:    entity.MessageTick,
 			X:              entity.Position.X,
 			Y:              entity.Position.Y,
 			Stats:          stats,
@@ -155,7 +161,23 @@ func buildStatsSnapshot(stats world.Stats) protocol.StatsSnapshot {
 		AttackSpeedRatio:     stats.AttackSpeedRatio,
 		AttackSpeedSlow:      stats.AttackSpeedSlow,
 		CritChance:           stats.CritChance,
+		Omnivamp:             stats.Omnivamp,
+		LifeSteal:            stats.LifeSteal,
+		HealingPower:         stats.HealingPower,
+		GrievousWounds:       stats.GrievousWounds,
 	}
+}
+
+func buildEquipmentSnapshots(equipment []world.EquipmentSlot) []protocol.EquipmentSlot {
+	slots := make([]protocol.EquipmentSlot, config.MaxEquipmentSlots)
+	for i := 0; i < len(slots) && i < len(equipment); i++ {
+		slots[i] = protocol.EquipmentSlot{
+			EquipmentID: equipment[i].EquipmentID,
+			Name:        equipment[i].Name,
+			Stacks:      int(equipment[i].Stacks),
+		}
+	}
+	return slots
 }
 
 func buildSkillSnapshots(states map[string]world.SkillState) []protocol.SkillSnapshot {

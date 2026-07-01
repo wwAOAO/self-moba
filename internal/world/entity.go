@@ -67,11 +67,15 @@ type Entity struct {
 	HeroID       string
 	Level        int
 	SkillPoints  int
+	Gold         float64
+	Equipment    []EquipmentSlot
 	Exp          float64
 	TotalExp     float64
 	NextLevelExp float64
 	Position     Vector2
 	Stats        Stats
+	Message      string
+	MessageTick  uint64
 	Radius       float64
 	Skills       map[string]SkillState
 	Combat       CombatState
@@ -91,14 +95,35 @@ type RegenState struct {
 	MPRemainder float64
 }
 
+type EquipmentSlot struct {
+	EquipmentID              string
+	Name                     string
+	Stacks                   float64
+	LowHealthShieldUsed      bool
+	LowHealthDamageReduce    float64
+	LowHealthShieldThreshold float64
+	LowHealthShieldMin       int
+	LowHealthShieldMax       int
+	OutOfCombatMoveSpeed     float64
+	OutOfCombatRequiredTicks uint64
+}
+
 type EntityKind string
 
 const (
 	EntityKindPlayer       EntityKind = "player"
 	EntityKindEnemyHero    EntityKind = "enemy_hero"
 	EntityKindSiegeMinion  EntityKind = "siege_minion"
+	EntityKindSuperMinion  EntityKind = "super_minion"
 	EntityKindMeleeMinion  EntityKind = "melee_minion"
 	EntityKindRangedMinion EntityKind = "ranged_minion"
+	EntityKindBlueBuff     EntityKind = "blue_buff"
+	EntityKindRedBuff      EntityKind = "red_buff"
+	EntityKindGromp        EntityKind = "gromp"
+	EntityKindRaptor       EntityKind = "raptor"
+	EntityKindMurkWolf     EntityKind = "murk_wolf"
+	EntityKindKrugCamp     EntityKind = "krug_camp"
+	EntityKindBaronNashor  EntityKind = "baron_nashor"
 	EntityKindTower        EntityKind = "tower"
 	EntityKindCrystal      EntityKind = "crystal"
 	EntityKindBarracks     EntityKind = "barracks"
@@ -145,6 +170,10 @@ type Stats struct {
 	AttackSpeedRatio     float64
 	AttackSpeedSlow      float64
 	CritChance           float64
+	Omnivamp             float64
+	LifeSteal            float64
+	HealingPower         float64
+	GrievousWounds       float64
 }
 
 type SkillState struct {

@@ -1,0 +1,349 @@
+[
+  {
+    "equipmentId": "small_blade",
+    "name": "小刃",
+    "price": 475,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 8,
+      "hp": 80,
+      "omnivamp": 0.025
+    },
+    "effects": {
+      "minionBasicAttackBonusDamage": 5,
+      "minionBasicAttackBonusDamageType": "physical"
+    }
+  },
+  {
+    "equipmentId": "spell_ring",
+    "name": "法戒",
+    "price": 475,
+    "sellRatio": 0.5,
+    "stats": {
+      "abilityPower": 15,
+      "hp": 80,
+      "mpRegen5": 5
+    },
+    "effects": {
+      "minionBasicAttackBonusDamage": 5,
+      "minionBasicAttackBonusDamageType": "magic"
+    }
+  },
+  {
+    "equipmentId": "wooden_shield",
+    "name": "木盾",
+    "price": 435,
+    "sellRatio": 0.5,
+    "stats": {
+      "hp": 110,
+      "physicalDefense": 9,
+      "hpRegen5": 8
+    },
+    "effects": {
+      "heroHitSmallHeal": true,
+      "heroHitHeal": 5,
+      "minionBasicAttackBonusDamage": 5,
+      "minionBasicAttackBonusDamageType": "physical"
+    }
+  },
+  {
+    "equipmentId": "iron_bow",
+    "name": "铁弓",
+    "price": 400,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 6,
+      "attackSpeedBonus": 0.15,
+      "omnivamp": 0.015
+    },
+    "effects": {
+      "minionBasicAttackBonusDamage": 5,
+      "minionBasicAttackBonusDamageType": "physical"
+    }
+  },
+  {
+    "equipmentId": "steel_helmet",
+    "name": "钢盔",
+    "price": 450,
+    "sellRatio": 0.5,
+    "stats": {
+      "hp": 110,
+      "physicalDefense": 10,
+      "magicDefense": 10
+    },
+    "effects": {
+      "minionBasicAttackBonusDamage": 5,
+      "minionBasicAttackBonusDamageType": "physical"
+    }
+  },
+  {
+    "equipmentId": "short_sword",
+    "name": "小剑",
+    "price": 350,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 10
+    }
+  },
+  {
+    "equipmentId": "pickaxe",
+    "name": "镐子",
+    "price": 875,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 25
+    }
+  },
+  {
+    "equipmentId": "bf_sword",
+    "name": "大剑",
+    "price": 1300,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 40
+    }
+  },
+  {
+    "equipmentId": "infinity_edge",
+    "name": "无尽之刃",
+    "price": 3500,
+    "sellRatio": 0.5,
+    "components": ["bf_sword", "pickaxe", "cloak_of_agility"],
+    "stats": {
+      "attack": 70,
+      "critChance": 0.2
+    },
+    "effects": {
+      "critDamageBonus": 0.5
+    }
+  },
+  {
+    "equipmentId": "phantom_dancer",
+    "name": "幻影之舞",
+    "price": 2800,
+    "sellRatio": 0.5,
+    "components": ["recurve_bow", "cloak_of_agility", "recurve_bow"],
+    "stats": {
+      "attackSpeedBonus": 0.3,
+      "critChance": 0.3,
+      "moveSpeedPercent": 0.07
+    },
+    "effects": {
+      "lowHealthShieldMin": 200,
+      "lowHealthShieldMax": 500,
+      "lowHealthShieldThreshold": 0.3,
+      "lowHealthDamageReduce": 0.1
+    }
+  },
+  {
+    "equipmentId": "dagger",
+    "name": "短剑",
+    "price": 300,
+    "sellRatio": 0.5,
+    "stats": {
+      "attackSpeedBonus": 0.15
+    }
+  },
+  {
+    "equipmentId": "recurve_bow",
+    "name": "曲弓",
+    "price": 700,
+    "sellRatio": 0.5,
+    "stats": {
+      "attackSpeedBonus": 0.3
+    },
+    "effects": {
+      "basicAttackBonusDamage": 15,
+      "basicAttackBonusDamageType": "magic"
+    }
+  },
+  {
+    "equipmentId": "brawlers_gloves",
+    "name": "手套",
+    "price": 600,
+    "sellRatio": 0.5,
+    "stats": {
+      "critChance": 0.1
+    }
+  },
+  {
+    "equipmentId": "cloak_of_agility",
+    "name": "披风",
+    "price": 800,
+    "sellRatio": 0.5,
+    "stats": {
+      "critChance": 0.2
+    }
+  },
+  {
+    "equipmentId": "amplifying_tome",
+    "name": "典籍",
+    "price": 435,
+    "sellRatio": 0.5,
+    "stats": {
+      "abilityPower": 20
+    }
+  },
+  {
+    "equipmentId": "blasting_wand",
+    "name": "魔杖",
+    "price": 850,
+    "sellRatio": 0.5,
+    "stats": {
+      "abilityPower": 40
+    }
+  },
+  {
+    "equipmentId": "needlessly_large_rod",
+    "name": "大棒",
+    "price": 1250,
+    "sellRatio": 0.5,
+    "stats": {
+      "abilityPower": 60
+    }
+  },
+  {
+    "equipmentId": "faerie_charm",
+    "name": "仙女护符",
+    "price": 180,
+    "sellRatio": 0.5,
+    "stats": {
+      "mpRegen5": 3
+    }
+  },
+  {
+    "equipmentId": "sapphire_crystal",
+    "name": "蓝水晶",
+    "price": 350,
+    "sellRatio": 0.5,
+    "stats": {
+      "mp": 300
+    }
+  },
+  {
+    "equipmentId": "ruby_crystal",
+    "name": "红水晶",
+    "price": 400,
+    "sellRatio": 0.5,
+    "stats": {
+      "hp": 150
+    }
+  },
+  {
+    "equipmentId": "cloth_armor",
+    "name": "布甲",
+    "price": 300,
+    "sellRatio": 0.5,
+    "stats": {
+      "physicalDefense": 15
+    }
+  },
+  {
+    "equipmentId": "chain_vest",
+    "name": "锁子甲",
+    "price": 800,
+    "sellRatio": 0.5,
+    "components": ["cloth_armor"],
+    "stats": {
+      "physicalDefense": 30
+    }
+  },
+  {
+    "equipmentId": "null_magic_mantle",
+    "name": "抗魔斗篷",
+    "price": 450,
+    "sellRatio": 0.5,
+    "stats": {
+      "magicDefense": 20
+    }
+  },
+  {
+    "equipmentId": "negatron_cloak",
+    "name": "负极斗篷",
+    "price": 740,
+    "sellRatio": 0.5,
+    "components": ["null_magic_mantle"],
+    "stats": {
+      "magicDefense": 48
+    }
+  },
+  {
+    "equipmentId": "glacial_buckler",
+    "name": "冰川护甲",
+    "price": 1250,
+    "sellRatio": 0.5,
+    "components": ["chain_vest", "sapphire_crystal"],
+    "stats": {
+      "physicalDefense": 45,
+      "mp": 300,
+      "abilityHaste": 15
+    }
+  },
+  {
+    "equipmentId": "catalyst_of_aeons",
+    "name": "催化神石",
+    "price": 900,
+    "sellRatio": 0.5,
+    "components": ["ruby_crystal", "sapphire_crystal"],
+    "stats": {
+      "hp": 290,
+      "mp": 325
+    },
+    "effects": {
+      "levelUpRestoreHpRatio": 0.1,
+      "levelUpRestoreMpRatio": 0.1
+    }
+  },
+  {
+    "equipmentId": "jungle_fist",
+    "name": "紫雨林之拳",
+    "price": 1000,
+    "sellRatio": 0.5,
+    "components": ["ruby_crystal", "short_sword"],
+    "stats": {
+      "hp": 300,
+      "attack": 15
+    }
+  },
+  {
+    "equipmentId": "raptor_cloak",
+    "name": "猛禽斗篷",
+    "price": 850,
+    "sellRatio": 0.5,
+    "components": ["cloth_armor", "ruby_crystal"],
+    "stats": {
+      "physicalDefense": 30,
+      "hp": 300
+    },
+    "effects": {
+      "outOfCombatMoveSpeed": 20,
+      "outOfCombatSeconds": 5
+    }
+  },
+  {
+    "equipmentId": "seekers_armguard",
+    "name": "探索者护臂",
+    "price": 950,
+    "sellRatio": 0.5,
+    "components": ["cloth_armor", "amplifying_tome"],
+    "stats": {
+      "physicalDefense": 20,
+      "abilityPower": 30
+    },
+    "effects": {
+      "unitKillPhysicalDefenseGain": 0.2,
+      "unitKillAbilityPowerGain": 0.2,
+      "unitKillMaxGain": 10
+    }
+  },
+  {
+    "equipmentId": "boots",
+    "name": "草鞋",
+    "price": 350,
+    "sellRatio": 0.5,
+    "uniqueGroup": "boots",
+    "stats": {
+      "moveSpeed": 25
+    }
+  }
+]

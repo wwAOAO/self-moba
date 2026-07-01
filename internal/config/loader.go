@@ -56,3 +56,16 @@ func LoadRewards(path string) (*RewardConfig, error) {
 	}
 	return NewRewardConfig(rewards)
 }
+
+func LoadEquipment(path string) (*EquipmentStore, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var equipment []EquipmentConfig
+	if err := json.Unmarshal(data, &equipment); err != nil {
+		return nil, err
+	}
+	return NewEquipmentStore(equipment)
+}

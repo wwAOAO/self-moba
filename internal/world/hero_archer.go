@@ -154,7 +154,6 @@ func (w *World) applyArcherR(entity *Entity, cast protocol.CastInput, state Skil
 		return
 	}
 	entity.Stats.MP -= manaCost
-	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{100000, 90000, 80000}), tickRate)
 	entity.Skills[archerRSkillID] = state
 	delayTicks := secondsToTicks(skillMetaRange(skill, "castDelaySeconds", 0.25), tickRate)
 	entity.Control.ActionLockedUntilTick = tick + delayTicks
@@ -171,6 +170,9 @@ func (w *World) releaseArcherCrystalArrow(entity *Entity, tick uint64, tickRate 
 	skill := w.skillConfig(archerRSkillID)
 	target := entity.Archer.CrystalArrowTarget
 	level := entity.Archer.CrystalArrowLevel
+	state := entity.Skills[archerRSkillID]
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", level, []float64{100000, 90000, 80000}), tickRate)
+	entity.Skills[archerRSkillID] = state
 	entity.Archer.CrystalArrowPending = false
 	entity.Archer.CrystalArrowReleaseTick = 0
 	entity.Archer.CrystalArrowTarget = Vector2{}
@@ -245,7 +247,7 @@ func (w *World) applyArcherRSplash(source *Entity, primary *Entity, projectile *
 		damage := archerRDamage(source, target, skill, projectile.Damage, tick, multiplier)
 		target.Combat.LastHitTick = tick
 		wasAlive := target.Stats.HP > 0
-		w.applyMagicDamage(source, target, damage, tickRate)
+		w.applyAOEDamage(source, target, damage, "magic", tickRate)
 		if wasAlive && target.Stats.HP == 0 {
 			w.applyKillReward(source, target)
 			w.killPlayer(target, tick, tickRate)

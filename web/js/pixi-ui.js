@@ -152,6 +152,7 @@ function setStatsCard(player) {
     els.statLevel.textContent = "-";
     els.statExp.textContent = "-";
     els.statSkillPoints.textContent = "-";
+    setEquipmentCard(null);
     setStatPairVisible(els.statResourceLabel, els.statResource, false);
     els.statResource.textContent = "-";
     els.statMpLabel.textContent = "MP";
@@ -169,6 +170,10 @@ function setStatsCard(player) {
     els.statAttackRange.textContent = "-";
     els.statAttackSpeed.textContent = "-";
     els.statCritChance.textContent = "-";
+    els.statOmnivamp.textContent = "-";
+    els.statLifeSteal.textContent = "-";
+    els.statHealingPower.textContent = "-";
+    els.statGrievousWounds.textContent = "-";
     els.abilityHasteBtn.textContent = "+200 Haste";
     return;
   }
@@ -182,6 +187,7 @@ function setStatsCard(player) {
       ? `${Math.floor(player.exp || 0)}/${Math.floor(player.nextLevelExp)}`
       : "MAX";
   els.statSkillPoints.textContent = player.skillPoints || 0;
+  setEquipmentCard(player);
   const resourceLabel = formatResource(heroConfig.resource);
   const hasResource = resourceLabel !== "";
   setStatPairVisible(els.statResourceLabel, els.statResource, hasResource);
@@ -216,8 +222,147 @@ function setStatsCard(player) {
   els.statAttackRange.textContent = formatNumber(stats.attackRange);
   els.statAttackSpeed.textContent = formatNumber(stats.attackSpeed);
   els.statCritChance.textContent = `${Math.round((stats.critChance || 0) * 1000) / 10}%`;
+  els.statOmnivamp.textContent = formatPercent(stats.omnivamp || 0);
+  els.statLifeSteal.textContent = formatPercent(stats.lifeSteal || 0);
+  els.statHealingPower.textContent = formatPercent(stats.healingPower || 0);
+  els.statGrievousWounds.textContent = formatPercent(stats.grievousWounds || 0);
   els.abilityHasteBtn.textContent =
     (stats.abilityHaste || 0) >= 200 ? "Close 200 Haste" : "+200 Haste";
+}
+
+function formatPercent(value) {
+  return `${Math.round(value * 1000) / 10}%`;
+}
+
+function setEquipmentCard(player) {
+  els.equipGold.textContent = player ? Math.floor(player.gold || 0) : "-";
+  const equipments = Array.isArray(player?.equipment) ? player.equipment : [];
+  els.equipmentSlots.forEach((slot, index) => {
+    const equipment = equipments[index];
+    const name = equipmentName(equipment);
+    slot.textContent = name;
+    slot.disabled = !player || name === "-";
+    slot.classList.toggle("selected", state.selectedEquipmentSlot === index + 1);
+    setEquipmentTip(els.equipmentTips[index], equipment);
+  });
+}
+
+function setEquipmentTip(tip, equipment) {
+  if (!tip) {
+    return;
+  }
+  const text = formatEquipmentTip(equipment);
+  if (!text) {
+    tip.innerHTML = "";
+    return;
+  }
+  tip.innerHTML = `<span class="stat-tip" data-tip="${escapeHtml(text)}">?</span>`;
+}
+
+function formatEquipmentTip(equipment) {
+  const config = equipmentConfig(equipment);
+  if (!config) {
+    return "";
+  }
+  const parts = [];
+  const stats = config.stats || {};
+  addTipStat(parts, stats.attack, "ATK");
+  addTipStat(parts, stats.abilityPower, "AP");
+  addTipStat(parts, stats.abilityHaste, "CD");
+  addTipStat(parts, stats.hp, "HP");
+  addTipStat(parts, stats.mp, "MP");
+  addTipStat(parts, stats.physicalDefense, "Phys DEF");
+  addTipStat(parts, stats.magicDefense, "Magic DEF");
+  addTipStat(parts, stats.moveSpeed, "Move SPD");
+  addTipStat(parts, stats.hpRegen5, "HP/5s");
+  addTipStat(parts, stats.mpRegen5, "MP/5s");
+  addTipPercent(parts, stats.attackSpeedBonus, "ATK SPD");
+  addTipPercent(parts, stats.critChance, "Crit");
+  addTipPercent(parts, stats.moveSpeedPercent, "Move SPD");
+  addTipPercent(parts, stats.omnivamp, "Omnivamp");
+  addTipPercent(parts, stats.lifeSteal, "Life Steal");
+  addTipPercent(parts, stats.healingPower, "Heal+");
+  addTipPercent(parts, stats.grievousWounds, "Grievous");
+  const effects = config.effects || {};
+  if (effects.basicAttackBonusDamage) {
+    parts.push(
+      `Basic hit +${formatNumber(effects.basicAttackBonusDamage)} ${effects.basicAttackBonusDamageType || "damage"}`,
+    );
+  }
+  if (effects.minionBasicAttackBonusDamage) {
+    parts.push(
+      `Minion hit +${formatNumber(effects.minionBasicAttackBonusDamage)} ${effects.minionBasicAttackBonusDamageType || "damage"}`,
+    );
+  }
+  if (effects.heroHitSmallHeal) {
+    parts.push(`Hero hit heal +${formatNumber(effects.heroHitHeal || 0)}`);
+  }
+  if (effects.levelUpRestoreHpRatio || effects.levelUpRestoreMpRatio) {
+    parts.push(
+      `Level up restore HP ${formatPercent(effects.levelUpRestoreHpRatio || 0)} / MP ${formatPercent(effects.levelUpRestoreMpRatio || 0)}`,
+    );
+  }
+  if (effects.outOfCombatMoveSpeed) {
+    parts.push(`Out of combat Move SPD +${formatNumber(effects.outOfCombatMoveSpeed)}`);
+  }
+  if (effects.unitKillPhysicalDefenseGain || effects.unitKillAbilityPowerGain) {
+    parts.push(
+      `Unit kill +${formatNumber(effects.unitKillPhysicalDefenseGain || 0)} Phys DEF / +${formatNumber(effects.unitKillAbilityPowerGain || 0)} AP, max +${formatNumber(effects.unitKillMaxGain || 0)}`,
+    );
+  }
+  if (effects.critDamageBonus) {
+    parts.push(`Crit damage +${formatPercent(effects.critDamageBonus)}`);
+  }
+  if (effects.lowHealthShieldMax) {
+    parts.push(
+      `Low HP shield ${formatNumber(effects.lowHealthShieldMin || 0)}-${formatNumber(effects.lowHealthShieldMax)} / DR ${formatPercent(effects.lowHealthDamageReduce || 0)}`,
+    );
+  }
+  return parts.join("\n");
+}
+
+function equipmentConfig(equipment) {
+  if (!equipment) {
+    return null;
+  }
+  if (typeof equipment === "string") {
+    return equipmentClientConfig[equipment] || null;
+  }
+  const equipmentId = equipment.equipmentId || equipment.id || "";
+  if (equipmentId && equipmentClientConfig[equipmentId]) {
+    return equipmentClientConfig[equipmentId];
+  }
+  return equipment.stats || equipment.effects ? equipment : null;
+}
+
+function addTipStat(parts, value, label) {
+  if (!value || value <= 0) {
+    return;
+  }
+  parts.push(`${label} +${formatNumber(value)}`);
+}
+
+function addTipPercent(parts, value, label) {
+  if (!value || value <= 0) {
+    return;
+  }
+  parts.push(`${label} +${formatPercent(value)}`);
+}
+
+function equipmentName(equipment) {
+  if (!equipment) {
+    return "-";
+  }
+  if (typeof equipment === "string") {
+    return equipment || "-";
+  }
+  if (typeof equipment.name === "string" && equipment.name) {
+    return equipment.name;
+  }
+  if (typeof equipment.equipmentId === "string" && equipment.equipmentId) {
+    return equipment.equipmentId;
+  }
+  return "-";
 }
 
 function setStatPairVisible(label, value, visible) {

@@ -75,6 +75,10 @@ function applySnapshot(snapshot) {
   state.snapshotAtMs = performance.now();
   els.tick.textContent = snapshot.tick;
   els.playerCount.textContent = snapshot.players.length;
+  const self = state.players.get(state.playerId);
+  if (self?.message && self.messageTick === snapshot.tick) {
+    setStatus(self.message);
+  }
   updatePositionLabel();
 }
 
@@ -153,6 +157,7 @@ function resetClientState() {
   state.moveTarget = null;
   state.selectedTargetId = "";
   state.attackTargetId = "";
+  state.selectedEquipmentSlot = 0;
   state.attackMoveArmed = false;
   state.attackFlash = null;
   state.skillPreview = null;
@@ -293,6 +298,42 @@ function toggleDebugAbilityHaste() {
   const enabled = (self.stats?.abilityHaste || 0) >= 200;
   sendPacket("input", {
     debugAbilityHaste: enabled ? 0 : 200,
+    clientSeq: state.seq,
+  });
+}
+
+function debugAddGold() {
+  const self = state.players.get(state.playerId);
+  if (!self || self.dead) {
+    return;
+  }
+  sendPacket("input", {
+    debugGold: 10000,
+    clientSeq: state.seq,
+  });
+}
+
+function buyEquipment() {
+  const equipmentId = els.shopItem.value;
+  if (!equipmentId) {
+    return;
+  }
+  sendPacket("input", {
+    buyEquipment: {
+      equipmentId,
+    },
+    clientSeq: state.seq,
+  });
+}
+
+function sellSelectedEquipment() {
+  if (!state.selectedEquipmentSlot) {
+    return;
+  }
+  sendPacket("input", {
+    sellEquipment: {
+      slot: state.selectedEquipmentSlot,
+    },
     clientSeq: state.seq,
   });
 }

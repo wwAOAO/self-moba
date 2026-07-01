@@ -130,7 +130,7 @@ func (w *World) applyWarriorESpin(entity *Entity, skill config.SkillConfig, tick
 		target.Combat.LastHitTick = tick
 		if target.Kind != EntityKindDummy {
 			wasAlive := target.Stats.HP > 0
-			w.applyDamage(entity, target, damage, tickRate)
+			w.applyAOEDamage(entity, target, damage, "physical", tickRate)
 			w.recordWarriorEHit(entity, target, skill, tick, tickRate)
 			if wasAlive && target.Stats.HP == 0 {
 				w.applyKillReward(entity, target)
@@ -251,7 +251,6 @@ func (w *World) applyWarriorR(entity *Entity, cast protocol.CastInput, state Ski
 	entity.Warrior.JusticeTargetID = target.ID
 	entity.Warrior.JusticeLevel = state.Level
 	entity.Control.ActionLockedUntilTick = entity.Warrior.JusticeReleaseTick
-	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", state.Level, []float64{120000, 100000, 80000}), tickRate)
 	entity.Skills[warriorRSkillID] = state
 }
 
@@ -269,6 +268,9 @@ func (w *World) releaseWarriorR(entity *Entity, tick uint64, tickRate int) {
 		return
 	}
 	skill := w.skillConfig(warriorRSkillID)
+	state := entity.Skills[warriorRSkillID]
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListByLevelMS(skill, "cooldownMs", level, []float64{120000, 100000, 80000}), tickRate)
+	entity.Skills[warriorRSkillID] = state
 	damage := warriorRDamage(target, skill, level)
 	target.Combat.LastHitTick = tick
 	if target.Kind != EntityKindDummy {

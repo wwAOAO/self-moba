@@ -23,8 +23,17 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	if input.DebugAbilityHaste != nil {
 		entity.Stats.AbilityHaste = clamp(*input.DebugAbilityHaste, 0, 10000)
 	}
+	if input.DebugGold > 0 {
+		w.addGold(entity, input.DebugGold)
+	}
 	if input.UpgradeSkill != nil {
 		w.upgradeSkill(entity, input.UpgradeSkill.Slot)
+	}
+	if input.BuyEquipment != nil {
+		w.buyEquipment(entity, input.BuyEquipment.EquipmentID, tick)
+	}
+	if input.SellEquipment != nil {
+		w.sellEquipment(entity, input.SellEquipment.Slot)
 	}
 	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick || tick < entity.Control.StunnedUntilTick {
 		return
@@ -126,6 +135,7 @@ func EffectiveMoveSpeedAtTick(entity *Entity, tick uint64) float64 {
 	if entity.Control.MoveSpeedBonusUntil > 0 && (tick == 0 || tick < entity.Control.MoveSpeedBonusUntil) {
 		moveSpeed += entity.Control.MoveSpeedBonusFlat
 	}
+	moveSpeed += equipmentOutOfCombatMoveSpeed(entity, tick)
 	if entity.Control.MoveSpeedSlowUntil > 0 && (tick == 0 || tick < entity.Control.MoveSpeedSlowUntil) {
 		moveSpeed *= 1 - clamp(entity.Control.MoveSpeedSlow, 0, 1)
 	}

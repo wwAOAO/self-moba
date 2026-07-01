@@ -45,6 +45,7 @@ type World struct {
 	skills           *config.SkillStore
 	levels           *config.LevelConfig
 	rewards          *config.RewardConfig
+	equipment        *config.EquipmentStore
 	nextObjectID     int
 	nextWallID       int
 	nextProjectileID int
@@ -55,7 +56,7 @@ type World struct {
 	skillEffects     map[string]SkillEffect
 }
 
-func NewWorld(heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig) *World {
+func NewWorld(heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig, equipment *config.EquipmentStore) *World {
 	w := &World{
 		width:          DefaultMapWidth,
 		height:         DefaultMapHeight,
@@ -64,6 +65,7 @@ func NewWorld(heroes *config.HeroStore, skills *config.SkillStore, levels *confi
 		skills:         skills,
 		levels:         levels,
 		rewards:        rewards,
+		equipment:      equipment,
 		windWalls:      make(map[string]WindWall),
 		projectiles:    make(map[string]*Projectile),
 		projectileHits: make(map[string]map[string]bool),

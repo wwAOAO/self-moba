@@ -88,7 +88,13 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 					delete(w.projectiles, id)
 					removeProjectile = true
 				} else {
-					w.applyDamage(source, target, damage, tickRate)
+					if projectile.Kind == "basic_arrow" {
+						w.applyBasicAttackDamage(source, target, damage, tickRate)
+					} else if projectile.SkillID == archerWSkillID || projectile.SkillID == swordQSkillID {
+						w.applyAOEDamage(source, target, damage, "physical", tickRate)
+					} else {
+						w.applyDamage(source, target, damage, tickRate)
+					}
 					if projectile.Kind == "basic_arrow" && source != nil && source.HeroID == archerHeroID {
 						w.applyArcherFocusOnBasicHit(source, target, tick, tickRate)
 					}

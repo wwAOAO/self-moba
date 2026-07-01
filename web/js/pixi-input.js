@@ -603,8 +603,16 @@ els.skills.addEventListener("pointerdown", (event) => {
 els.connectBtn.addEventListener("click", connect);
 els.leaveBtn.addEventListener("click", leave);
 els.spawnBtn.addEventListener("click", spawnObject);
+els.buyEquipmentBtn.addEventListener("click", buyEquipment);
+els.sellEquipmentBtn.addEventListener("click", sellSelectedEquipment);
+els.equipmentSlots.forEach((slot, index) => {
+  slot.addEventListener("click", () => {
+    state.selectedEquipmentSlot = index + 1;
+  });
+});
 els.levelUpBtn.addEventListener("click", debugLevelUp);
 els.abilityHasteBtn.addEventListener("click", toggleDebugAbilityHaste);
+els.goldBtn.addEventListener("click", debugAddGold);
 
 els.serverUrl.value = websocketURL();
 bootPixi();

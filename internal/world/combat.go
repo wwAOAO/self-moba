@@ -10,10 +10,11 @@ func (w *World) swordQDamage(attacker *Entity, target *Entity, skill config.Skil
 	state := attacker.Skills[swordQSkillID]
 	baseDamage := skillMetaListByLevel(skill, "baseDamage", state.Level, []float64{20, 45, 70, 95, 120})
 	attack := baseDamage + attacker.Stats.Attack*skillMetaRange(skill, "adRatio", 1)
-	if w.attackCrits(attacker, target, tick) {
+	crit := w.attackCrits(attacker, target, tick)
+	if crit {
 		attack *= w.critDamageMultiplier(attacker)
 	}
-	return physicalDamageAfterResistance(attacker, target, attack, tick)
+	return w.applyCritFinalDamageMultiplier(attacker, physicalDamageAfterResistance(attacker, target, attack, tick), crit)
 }
 
 func (w *World) swordQCooldownTicks(entity *Entity, skill config.SkillConfig, skillLevel int, tickRate int) uint64 {
@@ -117,7 +118,7 @@ func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64
 	target.Combat.LastHitTick = tick
 	if target.Kind != EntityKindDummy {
 		wasAlive := target.Stats.HP > 0
-		w.applyDamage(attacker, target, damage, tickRate)
+		w.applyBasicAttackDamage(attacker, target, damage, tickRate)
 		if wasAlive && target.Stats.HP == 0 {
 			w.applyKillReward(attacker, target)
 			w.killPlayer(target, tick, tickRate)
@@ -175,12 +176,24 @@ func (w *World) fireBasicAttackProjectile(attacker *Entity, target *Entity, tick
 
 func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64) int {
 	attack := attacker.Stats.Attack
+	crit := false
 	if attacker.HeroID == archerHeroID {
 		attack *= w.archerBasicAttackMultiplier(attacker, target, tick)
 	} else if w.attackCrits(attacker, target, tick) {
+		crit = true
 		attack *= w.critDamageMultiplier(attacker)
 	}
-	return physicalDamageAfterResistance(attacker, target, attack+w.warriorQBonusDamage(attacker, tick)+w.tankWBonusDamage(attacker, tick), tick)
+	rawPhysical := attack + w.warriorQBonusDamage(attacker, tick) + w.tankWBonusDamage(attacker, tick)
+	if isMinion(target) {
+		rawPhysical += w.equipmentMinionBasicAttackBonus(attacker, "physical")
+	}
+	damage := w.applyCritFinalDamageMultiplier(attacker, physicalDamageAfterResistance(attacker, target, rawPhysical, tick), crit)
+	damage += magicDamageAfterResistance(attacker, target, w.equipmentBasicAttackBonus(attacker, "magic"), tick)
+	damage += physicalDamageAfterResistance(attacker, target, w.equipmentBasicAttackBonus(attacker, "physical"), tick)
+	if isMinion(target) {
+		damage += magicDamageAfterResistance(attacker, target, w.equipmentMinionBasicAttackBonus(attacker, "magic"), tick)
+	}
+	return damage
 }
 
 func (w *World) archerBasicAttackMultiplier(attacker *Entity, target *Entity, tick uint64) float64 {
@@ -276,7 +289,7 @@ func (w *World) applyTankWAftershock(attacker *Entity, primary *Entity, tick uin
 		}
 		if target.Kind != EntityKindDummy {
 			wasAlive := target.Stats.HP > 0
-			w.applyDamage(attacker, target, physicalDamageAfterResistance(attacker, target, aftershockDamage, tick), tickRate)
+			w.applyAOEDamage(attacker, target, physicalDamageAfterResistance(attacker, target, aftershockDamage, tick), "physical", tickRate)
 			if wasAlive && target.Stats.HP == 0 {
 				w.applyKillReward(attacker, target)
 				w.killPlayer(target, tick, tickRate)
@@ -361,6 +374,7 @@ func (entity *Entity) damageReductionForType(damageType string, tick uint64) flo
 	if entity.HeroID == warriorHeroID && entity.Warrior.CourageUntilTick > 0 {
 		reductions = append(reductions, entity.Warrior.courageDamageReductionAtTick(tick))
 	}
+	reductions = append(reductions, equipmentLowHealthDamageReduce(entity))
 	return stackDamageReduction(reductions...)
 }
 
@@ -486,11 +500,24 @@ func (w *World) critChance(attacker *Entity) float64 {
 	return chance
 }
 
+func (w *World) DisplayCritChance(attacker *Entity) float64 {
+	return w.critChance(attacker)
+}
+
 func (w *World) critDamageMultiplier(attacker *Entity) float64 {
-	if attacker.HeroID == swordHeroID {
-		return skillMetaRange(w.heroPassiveSkill(attacker), "critDamageMultiplier", 1.9)
+	return 2.0 + w.equipmentCritDamageBonus(attacker)
+}
+
+func (w *World) applyCritFinalDamageMultiplier(attacker *Entity, damage int, crit bool) int {
+	if !crit || attacker == nil || attacker.HeroID != swordHeroID || damage <= 0 {
+		return damage
 	}
-	return 2
+	multiplier := skillMetaRange(w.heroPassiveSkill(attacker), "critFinalDamageMultiplier", 0.9)
+	result := int(math.Round(float64(damage) * multiplier))
+	if result < 1 {
+		return 1
+	}
+	return result
 }
 
 func deterministicCritRoll(attackerID string, targetID string, tick uint64) float64 {
@@ -505,18 +532,26 @@ func deterministicCritRoll(attackerID string, targetID string, tick uint64) floa
 }
 
 func (w *World) applyDamage(source *Entity, target *Entity, damage int, tickRate int) {
-	w.applyResolvedDamage(source, target, damage, "physical", tickRate)
+	w.applyResolvedDamage(source, target, damage, "physical", sustainSingleTargetSkill, tickRate)
 }
 
 func (w *World) applyMagicDamage(source *Entity, target *Entity, damage int, tickRate int) {
-	w.applyResolvedDamage(source, target, damage, "magic", tickRate)
+	w.applyResolvedDamage(source, target, damage, "magic", sustainSingleTargetSkill, tickRate)
 }
 
 func (w *World) applyTrueDamage(source *Entity, target *Entity, rawDamage float64, tickRate int) {
-	w.applyResolvedDamage(source, target, trueDamageAfterReduction(target, rawDamage, target.Combat.LastHitTick), "true", tickRate)
+	w.applyResolvedDamage(source, target, trueDamageAfterReduction(target, rawDamage, target.Combat.LastHitTick), "true", sustainSingleTargetSkill, tickRate)
 }
 
-func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, damageType string, tickRate int) {
+func (w *World) applyBasicAttackDamage(source *Entity, target *Entity, damage int, tickRate int) {
+	w.applyResolvedDamage(source, target, damage, "physical", sustainBasicAttack, tickRate)
+}
+
+func (w *World) applyAOEDamage(source *Entity, target *Entity, damage int, damageType string, tickRate int) {
+	w.applyResolvedDamage(source, target, damage, damageType, sustainAOESkill, tickRate)
+}
+
+func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, damageType string, context sustainContext, tickRate int) {
 	if damage <= 0 {
 		target.Combat.LastDamage = 0
 		target.Combat.LastDamageType = ""
@@ -530,10 +565,14 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 	if damage <= 0 {
 		return
 	}
+	beforeHP := target.Stats.HP
 	target.Stats.HP -= damage
 	if target.Stats.HP < 0 {
 		target.Stats.HP = 0
 	}
+	w.triggerEquipmentLowHealthShield(target, tickRate)
+	w.applySustain(source, beforeHP-target.Stats.HP, context)
+	w.triggerEquipmentHeroHitHeal(source, target)
 	w.breakWarriorToughness(source, target, target.Combat.LastHitTick)
 }
 

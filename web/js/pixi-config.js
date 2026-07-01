@@ -27,6 +27,7 @@ async function loadGameConfigs() {
     loadSkillConfig(),
     loadLevelConfig(),
     loadRewardConfig(),
+    loadEquipmentConfig(),
   ]);
 }
 
@@ -86,6 +87,30 @@ async function loadRewardConfig() {
   } catch (error) {
     console.warn("load reward config failed", error);
   }
+}
+
+async function loadEquipmentConfig() {
+  try {
+    const equipment = await fetchConfig("/configs/equipment.json");
+    equipmentClientConfig = Object.fromEntries(
+      equipment.map((item) => [item.equipmentId, item]),
+    );
+    renderEquipmentOptions(equipment);
+  } catch (error) {
+    console.warn("load equipment config failed", error);
+  }
+}
+
+function renderEquipmentOptions(equipment) {
+  if (!equipment.length) {
+    return;
+  }
+  els.shopItem.innerHTML = equipment
+    .map(
+      (item) =>
+        `<option value="${escapeHtml(item.equipmentId)}">${escapeHtml(item.name || item.equipmentId)} ${item.price || 0}G</option>`,
+    )
+    .join("");
 }
 
 function renderHeroOptions(heroes) {

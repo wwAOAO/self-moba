@@ -29,15 +29,18 @@ type JoinRoom struct {
 }
 
 type PlayerInput struct {
-	MoveX             float64            `json:"moveX,omitempty"`
-	MoveY             float64            `json:"moveY,omitempty"`
-	Move              *MoveInput         `json:"move,omitempty"`
-	Attack            *AttackInput       `json:"attack,omitempty"`
-	Cast              *CastInput         `json:"cast,omitempty"`
-	UpgradeSkill      *UpgradeSkillInput `json:"upgradeSkill,omitempty"`
-	DebugLevelUp      bool               `json:"debugLevelUp,omitempty"`
-	DebugAbilityHaste *float64           `json:"debugAbilityHaste,omitempty"`
-	ClientSeq         uint64             `json:"clientSeq"`
+	MoveX             float64             `json:"moveX,omitempty"`
+	MoveY             float64             `json:"moveY,omitempty"`
+	Move              *MoveInput          `json:"move,omitempty"`
+	Attack            *AttackInput        `json:"attack,omitempty"`
+	Cast              *CastInput          `json:"cast,omitempty"`
+	UpgradeSkill      *UpgradeSkillInput  `json:"upgradeSkill,omitempty"`
+	BuyEquipment      *BuyEquipmentInput  `json:"buyEquipment,omitempty"`
+	SellEquipment     *SellEquipmentInput `json:"sellEquipment,omitempty"`
+	DebugLevelUp      bool                `json:"debugLevelUp,omitempty"`
+	DebugAbilityHaste *float64            `json:"debugAbilityHaste,omitempty"`
+	DebugGold         float64             `json:"debugGold,omitempty"`
+	ClientSeq         uint64              `json:"clientSeq"`
 }
 
 type MoveInput struct {
@@ -59,6 +62,14 @@ type CastInput struct {
 
 type UpgradeSkillInput struct {
 	Slot string `json:"slot"`
+}
+
+type BuyEquipmentInput struct {
+	EquipmentID string `json:"equipmentId"`
+}
+
+type SellEquipmentInput struct {
+	Slot int `json:"slot"`
 }
 
 type SpawnObject struct {
@@ -90,9 +101,13 @@ type PlayerSnapshot struct {
 	Level          int             `json:"level"`
 	MaxLevel       int             `json:"maxLevel"`
 	SkillPoints    int             `json:"skillPoints"`
+	Gold           float64         `json:"gold"`
+	Equipment      []EquipmentSlot `json:"equipment"`
 	Exp            float64         `json:"exp"`
 	TotalExp       float64         `json:"totalExp"`
 	NextLevelExp   float64         `json:"nextLevelExp"`
+	Message        string          `json:"message,omitempty"`
+	MessageTick    uint64          `json:"messageTick,omitempty"`
 	X              float64         `json:"x"`
 	Y              float64         `json:"y"`
 	Stats          StatsSnapshot   `json:"stats"`
@@ -134,6 +149,12 @@ type UnitSnapshot struct {
 	LastDamage     int             `json:"lastDamage"`
 	LastDamageType string          `json:"lastDamageType"`
 	Control        ControlSnapshot `json:"control"`
+}
+
+type EquipmentSlot struct {
+	EquipmentID string `json:"equipmentId"`
+	Name        string `json:"name"`
+	Stacks      int    `json:"stacks,omitempty"`
 }
 
 type EffectSnapshot struct {
@@ -187,6 +208,10 @@ type StatsSnapshot struct {
 	AttackSpeedRatio     float64 `json:"attackSpeedRatio"`
 	AttackSpeedSlow      float64 `json:"attackSpeedSlow"`
 	CritChance           float64 `json:"critChance"`
+	Omnivamp             float64 `json:"omnivamp"`
+	LifeSteal            float64 `json:"lifeSteal"`
+	HealingPower         float64 `json:"healingPower"`
+	GrievousWounds       float64 `json:"grievousWounds"`
 }
 
 type SkillSnapshot struct {

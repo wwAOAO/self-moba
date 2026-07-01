@@ -8,6 +8,12 @@
       "ranged_minion": 31,
       "siege_minion": 75,
       "super_minion": 75
+    },
+    "killGold": {
+      "melee_minion": 20,
+      "ranged_minion": 17,
+      "siege_minion": 45,
+      "super_minion": 45
     }
   },
   "jungle": {
@@ -19,6 +25,14 @@
       "raptor": 105,
       "krug_camp": 160,
       "rift_scuttler": 70
+    },
+    "killGold": {
+      "blue_buff": 160,
+      "red_buff": 160,
+      "gromp": 120,
+      "raptor": 90,
+      "murk_wolf": 100,
+      "krug_camp": 110
     }
   },
   "jungleScaling": {
@@ -40,10 +54,12 @@
     },
     "baron_nashor": {
       "split": "team_equal",
-      "scalesWithGameTime": true
+      "scalesWithGameTime": true,
+      "teamGold": 300
     }
   },
   "heroKill": {
+    "gold": 300,
     "baseNextLevelExpMultiplier": 0.75,
     "levelDiffStepMultiplier": 0.2,
     "higherLevelMinMultiplier": 0.4,

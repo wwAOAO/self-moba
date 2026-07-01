@@ -30,6 +30,7 @@ func main() {
 	skillConfigPath := env("SKILL_CONFIG", "configs/skills.json")
 	levelConfigPath := env("LEVEL_CONFIG", "configs/levels.json")
 	rewardConfigPath := env("REWARD_CONFIG", "configs/rewards.json")
+	equipmentConfigPath := env("EQUIPMENT_CONFIG", "configs/equipment.json")
 
 	heroes, err := config.LoadHeroes(heroConfigPath)
 	if err != nil {
@@ -59,6 +60,12 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("reward config loaded", "path", rewardConfigPath, "minionKinds", len(rewards.Minion.KillExp), "jungleKinds", len(rewards.Jungle.KillExp), "epicKinds", len(rewards.Epic), "structureKinds", len(rewards.Structure.TeamExp), "jungleScalingMax", rewards.JungleScaling.MaxMultiplier)
+	equipment, err := config.LoadEquipment(equipmentConfigPath)
+	if err != nil {
+		logger.Error("load equipment config", "path", equipmentConfigPath, "error", err)
+		os.Exit(1)
+	}
+	logger.Info("equipment config loaded", "path", equipmentConfigPath, "count", equipment.Count())
 
 	natsClient, err := messagingnats.Connect(natsURL, "battle-server")
 	if err != nil {
@@ -77,7 +84,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	manager := battle.NewManager(js, heroes, skills, levels, rewards)
+	manager := battle.NewManager(js, heroes, skills, levels, rewards, equipment)
 	if err := messagingnats.RegisterHandlers(natsClient.Conn(), manager, logger); err != nil {
 		logger.Error("register nats handlers", "error", err)
 		os.Exit(1)

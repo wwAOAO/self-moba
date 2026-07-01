@@ -18,6 +18,7 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 	position := w.spawnPosition(team)
 	level := MinHeroLevel
 	stats := heroStatsAtLevel(hero, level)
+	w.applySwordCritOverflowStats(&Entity{HeroID: hero.HeroID}, &stats)
 	nextLevelExp := w.nextLevelExp(level)
 	startingSkillPoints := 1
 	if entity := w.entities[entityID]; entity != nil {
@@ -25,6 +26,8 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 		entity.HeroID = hero.HeroID
 		entity.Level = level
 		entity.SkillPoints = startingSkillPoints
+		entity.Gold = 0
+		entity.Equipment = nil
 		entity.Exp = 0
 		entity.TotalExp = 0
 		entity.NextLevelExp = nextLevelExp
@@ -49,6 +52,8 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 		HeroID:       hero.HeroID,
 		Level:        level,
 		SkillPoints:  startingSkillPoints,
+		Gold:         0,
+		Equipment:    nil,
 		Exp:          0,
 		TotalExp:     0,
 		NextLevelExp: nextLevelExp,

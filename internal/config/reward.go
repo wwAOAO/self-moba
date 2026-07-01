@@ -16,10 +16,12 @@ type RewardGroup struct {
 	ShareMinPlayers int            `json:"shareMinPlayers,omitempty"`
 	ShareRadius     float64        `json:"shareRadius,omitempty"`
 	KillExp         map[string]int `json:"killExp"`
+	KillGold        map[string]int `json:"killGold,omitempty"`
 }
 
 type StructureReward struct {
-	TeamExp map[string]int `json:"teamExp"`
+	TeamExp  map[string]int `json:"teamExp"`
+	TeamGold map[string]int `json:"teamGold,omitempty"`
 }
 
 type JungleScalingReward struct {
@@ -32,6 +34,7 @@ type EpicReward struct {
 	ParticipantExp            int    `json:"participantExp,omitempty"`
 	NonParticipantTeamPoolExp int    `json:"nonParticipantTeamPoolExp,omitempty"`
 	NonParticipantSplit       string `json:"nonParticipantSplit,omitempty"`
+	TeamGold                  int    `json:"teamGold,omitempty"`
 	MinExp                    int    `json:"minExp,omitempty"`
 	MaxExp                    int    `json:"maxExp,omitempty"`
 	Split                     string `json:"split,omitempty"`
@@ -40,6 +43,7 @@ type EpicReward struct {
 }
 
 type HeroKillReward struct {
+	Gold                         int             `json:"gold,omitempty"`
 	BaseNextLevelExpMultiplier   float64         `json:"baseNextLevelExpMultiplier"`
 	LevelDiffStepMultiplier      float64         `json:"levelDiffStepMultiplier"`
 	HigherLevelMinMultiplier     float64         `json:"higherLevelMinMultiplier"`
@@ -89,12 +93,28 @@ func (c *RewardConfig) MinionExp(kind string, players int) (float64, bool) {
 	return sharedExp(float64(base), players, c.Minion.ShareMultiplier, c.Minion.ShareMinPlayers), true
 }
 
+func (c *RewardConfig) MinionGold(kind string) (int, bool) {
+	if c == nil {
+		return 0, false
+	}
+	gold, ok := c.Minion.KillGold[kind]
+	return gold, ok
+}
+
 func (c *RewardConfig) JungleExp(kind string) (int, bool) {
 	if c == nil {
 		return 0, false
 	}
 	exp, ok := c.Jungle.KillExp[kind]
 	return exp, ok
+}
+
+func (c *RewardConfig) JungleGold(kind string) (int, bool) {
+	if c == nil {
+		return 0, false
+	}
+	gold, ok := c.Jungle.KillGold[kind]
+	return gold, ok
 }
 
 func (c *RewardConfig) StructureTeamExp(kind string) (int, bool) {
@@ -105,12 +125,27 @@ func (c *RewardConfig) StructureTeamExp(kind string) (int, bool) {
 	return exp, ok
 }
 
+func (c *RewardConfig) StructureTeamGold(kind string) (int, bool) {
+	if c == nil {
+		return 0, false
+	}
+	gold, ok := c.Structure.TeamGold[kind]
+	return gold, ok
+}
+
 func (c *RewardConfig) EpicReward(kind string) (EpicReward, bool) {
 	if c == nil {
 		return EpicReward{}, false
 	}
 	reward, ok := c.Epic[kind]
 	return reward, ok
+}
+
+func (c *RewardConfig) HeroKillGold() int {
+	if c == nil {
+		return 0
+	}
+	return c.HeroKill.Gold
 }
 
 func (c *RewardConfig) HeroKillExp(targetNextLevelExp int, killerLevel int, targetLevel int) float64 {
@@ -160,6 +195,14 @@ func validateRewardGroup(name string, group RewardGroup, shared bool) error {
 			return fmt.Errorf("%s %s kill exp must not be negative", name, kind)
 		}
 	}
+	for kind, gold := range group.KillGold {
+		if kind == "" {
+			return fmt.Errorf("%s kill gold kind is required", name)
+		}
+		if gold < 0 {
+			return fmt.Errorf("%s %s kill gold must not be negative", name, kind)
+		}
+	}
 	if !shared {
 		return nil
 	}
@@ -185,6 +228,14 @@ func validateStructureReward(reward StructureReward) error {
 		}
 		if exp < 0 {
 			return fmt.Errorf("structure %s team exp must not be negative", kind)
+		}
+	}
+	for kind, gold := range reward.TeamGold {
+		if kind == "" {
+			return fmt.Errorf("structure team gold kind is required")
+		}
+		if gold < 0 {
+			return fmt.Errorf("structure %s team gold must not be negative", kind)
 		}
 	}
 	return nil
@@ -220,6 +271,9 @@ func validateEpicRewards(rewards map[string]EpicReward) error {
 		if reward.ParticipantExp < 0 || reward.NonParticipantTeamPoolExp < 0 || reward.MinExp < 0 || reward.MaxExp < 0 {
 			return fmt.Errorf("epic reward %s exp must not be negative", kind)
 		}
+		if reward.TeamGold < 0 {
+			return fmt.Errorf("epic reward %s team gold must not be negative", kind)
+		}
 		if reward.MaxExp > 0 && reward.MaxExp < reward.MinExp {
 			return fmt.Errorf("epic reward %s max exp must be >= min exp", kind)
 		}
@@ -228,6 +282,9 @@ func validateEpicRewards(rewards map[string]EpicReward) error {
 }
 
 func validateHeroKillReward(reward HeroKillReward) error {
+	if reward.Gold < 0 {
+		return fmt.Errorf("hero kill gold must not be negative")
+	}
 	if reward.BaseNextLevelExpMultiplier <= 0 {
 		return fmt.Errorf("hero kill base next level exp multiplier must be positive")
 	}

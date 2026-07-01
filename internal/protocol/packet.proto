@@ -29,6 +29,9 @@ message PlayerInput {
   UpgradeSkillInput upgrade_skill = 7;
   bool debug_level_up = 8;
   double debug_ability_haste = 9;
+  BuyEquipmentInput buy_equipment = 10;
+  SellEquipmentInput sell_equipment = 11;
+  double debug_gold = 12;
 }
 
 message MoveInput {
@@ -50,6 +53,14 @@ message CastInput {
 
 message UpgradeSkillInput {
   string slot = 1;
+}
+
+message BuyEquipmentInput {
+  string equipment_id = 1;
+}
+
+message SellEquipmentInput {
+  int32 slot = 1;
 }
 
 message SpawnObject {
@@ -81,25 +92,35 @@ message PlayerSnapshot {
   int32 level = 4;
   int32 max_level = 5;
   int32 skill_points = 6;
-  double exp = 7;
-  double total_exp = 8;
-  double next_level_exp = 9;
-  double x = 10;
-  double y = 11;
-  StatsSnapshot stats = 12;
-  repeated SkillSnapshot skills = 13;
-  PassiveSnapshot passive = 14;
-  uint64 last_hit_tick = 15;
-  int32 last_damage = 16;
-  string last_damage_type = 17;
-  bool dead = 18;
-  uint64 respawn_tick = 19;
-  double respawn_in = 20;
-  ControlSnapshot control = 21;
-  WarriorSnapshot warrior = 22;
-  SwordSnapshot sword = 23;
-  TankSnapshot tank = 24;
-  ArcherSnapshot archer = 25;
+  double gold = 7;
+  repeated EquipmentSlot equipment = 8;
+  double exp = 9;
+  double total_exp = 10;
+  double next_level_exp = 11;
+  string message = 12;
+  uint64 message_tick = 13;
+  double x = 14;
+  double y = 15;
+  StatsSnapshot stats = 16;
+  repeated SkillSnapshot skills = 17;
+  PassiveSnapshot passive = 18;
+  uint64 last_hit_tick = 19;
+  int32 last_damage = 20;
+  string last_damage_type = 21;
+  bool dead = 22;
+  uint64 respawn_tick = 23;
+  double respawn_in = 24;
+  ControlSnapshot control = 25;
+  WarriorSnapshot warrior = 26;
+  SwordSnapshot sword = 27;
+  TankSnapshot tank = 28;
+  ArcherSnapshot archer = 29;
+}
+
+message EquipmentSlot {
+  string equipment_id = 1;
+  string name = 2;
+  int32 stacks = 3;
 }
 
 message StatsSnapshot {
@@ -133,6 +154,10 @@ message StatsSnapshot {
   double attack_speed_ratio = 28;
   double attack_speed_slow = 29;
   double crit_chance = 30;
+  double omnivamp = 31;
+  double life_steal = 32;
+  double healing_power = 33;
+  double grievous_wounds = 34;
 }
 
 message DummySnapshot {

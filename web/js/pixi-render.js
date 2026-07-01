@@ -229,13 +229,41 @@ function drawCrystalArrowEffect(effect, frame) {
   const x = frame.offsetX + position.x * frame.scale;
   const y = frame.offsetY + position.y * frame.scale;
   const radius = (effect.radius || 130) * frame.scale;
-  gridLayer.circle(x, y, radius);
-  gridLayer.fill({ color: 0xa78bfa, alpha: 0.08 });
-  gridLayer.circle(x, y, radius);
-  gridLayer.stroke({ color: 0x8b5cf6, width: 2, alpha: 0.7 });
+  drawProjectileSweepArea(effect, frame, position, radius, 0xa78bfa, 0x8b5cf6);
   drawArrowProjectile(effect, frame, 0xc4b5fd, 0x7c3aed, {
     fromSnapshot: true,
   });
+}
+
+function drawProjectileSweepArea(effect, frame, position, radius, fillColor, strokeColor) {
+  const startX = frame.offsetX + (effect.x || 0) * frame.scale;
+  const startY = frame.offsetY + (effect.y || 0) * frame.scale;
+  const endX = frame.offsetX + position.x * frame.scale;
+  const endY = frame.offsetY + position.y * frame.scale;
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const length = Math.hypot(dx, dy);
+  if (length > 0.5) {
+    const nx = -dy / length;
+    const ny = dx / length;
+    gridLayer
+      .moveTo(startX + nx * radius, startY + ny * radius)
+      .lineTo(endX + nx * radius, endY + ny * radius)
+      .lineTo(endX - nx * radius, endY - ny * radius)
+      .lineTo(startX - nx * radius, startY - ny * radius)
+      .closePath();
+    gridLayer.fill({ color: fillColor, alpha: 0.06 });
+  }
+  gridLayer.circle(endX, endY, radius);
+  gridLayer.fill({ color: fillColor, alpha: 0.08 });
+  if (length > 0.5) {
+    gridLayer
+      .moveTo(startX, startY)
+      .lineTo(endX, endY)
+      .stroke({ color: strokeColor, width: Math.max(2, radius * 2), alpha: 0.16 });
+  }
+  gridLayer.circle(endX, endY, radius);
+  gridLayer.stroke({ color: strokeColor, width: 2, alpha: 0.7 });
 }
 
 function drawArcherHawkEffect(effect, frame) {
@@ -378,10 +406,7 @@ function distancePointToSegment(point, start, end) {
 }
 
 function targetScreenRadius(target, frame) {
-  if (typeof targetSelectRadius === "function") {
-    return targetSelectRadius(target, frame);
-  }
-  return Math.max(14, (target.radius || 18) * frame.scale + 6);
+  return (target.radius || 18) * frame.scale;
 }
 
 function drawTripleArrowProjectile(effect, frame, shaftColor, headColor) {
@@ -561,10 +586,6 @@ function drawCastWindup(windup, frame, now) {
 
   if (windup.skillId === "sword_cut") {
     drawSwordQWindup(windup, frame, color, alpha);
-    return;
-  }
-  if (windup.skillId === "slam") {
-    drawDirectionalWindup(windup, frame, color, alpha, 18);
     return;
   }
   if (windup.skillId === "taunt") {
@@ -817,10 +838,27 @@ function syncUnits(frame) {
       unitLayer.addChild(sprite.node);
     }
     updateUnitBars(sprite, unit);
+    updateUnitCollisionCircle(sprite, unit, frame);
     updateStatusLabel(sprite, unit, -(unitModelDisplayRadius(unit) + 30));
     sprite.node.x = frame.offsetX + unit.x * frame.scale;
     sprite.node.y = frame.offsetY + unit.y * frame.scale;
   }
+}
+
+function updateUnitCollisionCircle(sprite, unit, frame) {
+  if (!sprite.collision) {
+    return;
+  }
+  sprite.collision.clear();
+  if (unit.kind !== "enemy_hero") {
+    return;
+  }
+  const radius = (unit.radius || 18) * frame.scale;
+  if (radius < 1) {
+    return;
+  }
+  sprite.collision.circle(0, 0, radius);
+  sprite.collision.stroke({ color: 0x172026, width: 1, alpha: 0.65 });
 }
 
 function createPlayer(player) {
@@ -924,6 +962,7 @@ function redrawPlayerBody(sprite, player) {
 function createUnit(unit) {
   const node = new PIXI.Container();
   const body = new PIXI.Graphics();
+  const collision = new PIXI.Graphics();
   const hpFill = new PIXI.Graphics();
   const visual = unitVisual(unit.kind);
   const statusLabel = createStatusLabel();
@@ -943,8 +982,8 @@ function createUnit(unit) {
   drawBar(hpFill, 0xd94948, 1, -(modelRadius + 16));
   label.anchor.set(0.5, 0);
   label.y = modelRadius + 6;
-  node.addChild(statusLabel, hpFill, body, label);
-  return { node, hpFill, statusLabel };
+  node.addChild(statusLabel, hpFill, collision, body, label);
+  return { node, hpFill, collision, statusLabel };
 }
 
 function createStatusLabel() {

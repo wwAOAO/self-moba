@@ -5,20 +5,39 @@ func (w *World) applyKillReward(killer *Entity, target *Entity) {
 		return
 	}
 	w.applyWarriorWPassiveKill(killer, target)
+	w.applyEquipmentUnitKillGrowth(killer, target)
 	switch target.Kind {
-	case EntityKindMeleeMinion, EntityKindRangedMinion, EntityKindSiegeMinion:
+	case EntityKindMeleeMinion, EntityKindRangedMinion, EntityKindSiegeMinion, EntityKindSuperMinion:
 		if exp, ok := w.rewards.MinionExp(string(target.Kind), 1); ok {
 			w.addExperience(killer, exp)
+		}
+		if gold, ok := w.rewards.MinionGold(string(target.Kind)); ok {
+			w.addGold(killer, float64(gold))
+		}
+	case EntityKindBlueBuff, EntityKindRedBuff, EntityKindGromp, EntityKindRaptor, EntityKindMurkWolf, EntityKindKrugCamp:
+		if exp, ok := w.rewards.JungleExp(string(target.Kind)); ok {
+			w.addExperience(killer, float64(exp))
+		}
+		if gold, ok := w.rewards.JungleGold(string(target.Kind)); ok {
+			w.addGold(killer, float64(gold))
+		}
+	case EntityKindBaronNashor:
+		if reward, ok := w.rewards.EpicReward(string(target.Kind)); ok && reward.TeamGold > 0 {
+			w.addTeamGold(killer.Team, float64(reward.TeamGold))
 		}
 	case EntityKindTower:
 		if exp, ok := w.rewards.StructureTeamExp(string(target.Kind)); ok {
 			w.addTeamExperience(killer.Team, float64(exp))
+		}
+		if gold, ok := w.rewards.StructureTeamGold(string(target.Kind)); ok {
+			w.addTeamGold(killer.Team, float64(gold))
 		}
 	case EntityKindEnemyHero, EntityKindPlayer:
 		targetNextExp := w.nextLevelExp(target.Level)
 		if targetNextExp > 0 {
 			w.addExperience(killer, w.rewards.HeroKillExp(int(targetNextExp), killer.Level, target.Level))
 		}
+		w.addGold(killer, float64(w.rewards.HeroKillGold()))
 	}
 }
 
@@ -61,6 +80,21 @@ func (w *World) addTeamExperience(team Team, exp float64) {
 	}
 }
 
+func (w *World) addTeamGold(team Team, gold float64) {
+	for _, entity := range w.entities {
+		if entity.Kind == EntityKindPlayer && entity.Team == team {
+			w.addGold(entity, gold)
+		}
+	}
+}
+
+func (w *World) addGold(entity *Entity, gold float64) {
+	if entity == nil || entity.Kind != EntityKindPlayer || gold <= 0 {
+		return
+	}
+	entity.Gold += gold
+}
+
 func (w *World) addExperience(entity *Entity, exp float64) {
 	if entity == nil || entity.Kind != EntityKindPlayer || exp <= 0 || entity.Level >= MaxHeroLevel {
 		return
@@ -87,6 +121,8 @@ func (w *World) levelUp(entity *Entity) {
 	oldMaxMP := entity.Stats.MaxMP
 	entity.Level = clampInt(entity.Level+1, MinHeroLevel, MaxHeroLevel)
 	nextStats := heroStatsAtLevel(hero, entity.Level)
+	w.applyEquipmentStats(entity, &nextStats)
+	w.applySwordCritOverflowStats(entity, &nextStats)
 	hpGain := nextStats.MaxHP - oldMaxHP
 	mpGain := nextStats.MaxMP - oldMaxMP
 	nextStats.HP = entity.Stats.HP + hpGain
@@ -101,6 +137,7 @@ func (w *World) levelUp(entity *Entity) {
 	entity.Stats = nextStats
 	w.refreshTankGraniteShieldMax(entity)
 	w.refreshTankWPassive(entity)
+	w.applyEquipmentLevelUpRestore(entity)
 	entity.SkillPoints++
 }
 

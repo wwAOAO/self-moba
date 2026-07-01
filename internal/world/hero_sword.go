@@ -38,7 +38,6 @@ func (w *World) applySwordQ(entity *Entity, cast protocol.CastInput, state Skill
 	entity.Sword.QForm = form
 	entity.Sword.QRange = qRange
 	entity.Control.ActionLockedUntilTick = tick + windupTicks
-	state.CooldownUntilTick = tick + w.swordQCooldownTicks(entity, skill, state.Level, tickRate)
 	entity.Skills[swordQSkillID] = state
 }
 
@@ -57,6 +56,7 @@ func (w *World) releaseSwordQ(entity *Entity, tick uint64, tickRate int) {
 	entity.Sword.QForm = ""
 	entity.Sword.QRange = 0
 	hasWhirlwindStack := state.Stacks >= 2
+	state.CooldownUntilTick = tick + w.swordQCooldownTicks(entity, skill, state.Level, tickRate)
 	if form == "whirlwind" {
 		w.spawnSwordWhirlwind(entity, targetPoint, qRange, skill, tick, tickRate)
 		w.lockAttackAfterCast(entity, tick, tickRate)
@@ -71,7 +71,11 @@ func (w *World) releaseSwordQ(entity *Entity, tick uint64, tickRate int) {
 		target.Combat.LastHitTick = tick
 		if target.Kind != EntityKindDummy {
 			wasAlive := target.Stats.HP > 0
-			w.applyDamage(entity, target, damage, tickRate)
+			if form == "circle" {
+				w.applyAOEDamage(entity, target, damage, "physical", tickRate)
+			} else {
+				w.applyDamage(entity, target, damage, tickRate)
+			}
 			if form == "circle" && hasWhirlwindStack {
 				target.Control.AirborneUntilTick = tick + secondsToTicks(skillMetaRange(skill, "knockupSeconds", 1), tickRate)
 			}
@@ -278,7 +282,7 @@ func (w *World) applySwordR(entity *Entity, cast protocol.CastInput, state Skill
 		hit.Combat.LastHitTick = tick
 		if hit.Kind != EntityKindDummy {
 			wasAlive := hit.Stats.HP > 0
-			w.applyDamage(entity, hit, damage, tickRate)
+			w.applyAOEDamage(entity, hit, damage, "physical", tickRate)
 			hit.Control.AirborneUntilTick += secondsToTicks(skillMetaRange(skill, "airborneExtendSeconds", 1), tickRate)
 			if wasAlive && hit.Stats.HP == 0 {
 				w.applyKillReward(entity, hit)
@@ -294,12 +298,8 @@ func (w *World) applySwordR(entity *Entity, cast protocol.CastInput, state Skill
 	entity.Passive.MaxShield = w.swordShieldValue(entity)
 	entity.Passive.Shield = entity.Passive.MaxShield
 	qState := entity.Skills[swordQSkillID]
-	qState.Stacks = int(skillMetaRange(skill, "qStacksAfterCast", 2))
-	if qState.Stacks > 0 {
-		qState.StacksExpireTick = tick + secondsToTicks(skillMetaRange(skill, "qStackDurationSeconds", swordQStackTicks), tickRate)
-	} else {
-		qState.StacksExpireTick = 0
-	}
+	qState.Stacks = 0
+	qState.StacksExpireTick = 0
 	entity.Skills[swordQSkillID] = qState
 	entity.Sword.LastBreathUntilTick = tick + secondsToTicks(skillMetaRange(skill, "lastBreathDurationSeconds", 15), tickRate)
 	entity.Control.ActionLockedUntilTick = tick + secondsToTicks(skillMetaRange(skill, "selfActionLockSeconds", 1), tickRate)
@@ -493,5 +493,17 @@ func isMonster(entity *Entity) bool {
 		return false
 	default:
 		return entity.Team == TeamNeutral
+	}
+}
+
+func isMinion(entity *Entity) bool {
+	if entity == nil {
+		return false
+	}
+	switch entity.Kind {
+	case EntityKindMeleeMinion, EntityKindRangedMinion, EntityKindSiegeMinion, EntityKindSuperMinion:
+		return true
+	default:
+		return false
 	}
 }
