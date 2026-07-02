@@ -14,7 +14,7 @@ func (w *World) swordQDamage(attacker *Entity, target *Entity, skill config.Skil
 	if crit {
 		attack *= w.critDamageMultiplier(attacker)
 	}
-	return w.applyCritFinalDamageMultiplier(attacker, physicalDamageAfterResistance(attacker, target, attack, tick), crit)
+	return reduceCritDamage(target, w.applyCritFinalDamageMultiplier(attacker, physicalDamageAfterResistance(attacker, target, attack, tick), crit), crit)
 }
 
 func (w *World) swordQCooldownTicks(entity *Entity, skill config.SkillConfig, skillLevel int, tickRate int) uint64 {
@@ -116,6 +116,7 @@ func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64
 
 	damage := w.attackDamage(attacker, target, tick)
 	target.Combat.LastHitTick = tick
+	target.Combat.DamageEvents = nil
 	if target.Kind != EntityKindDummy {
 		wasAlive := target.Stats.HP > 0
 		w.applyBasicAttackDamage(attacker, target, damage, tickRate)
@@ -134,7 +135,7 @@ func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64
 }
 
 func isRangedBasicAttacker(attacker *Entity) bool {
-	return attacker != nil && attacker.HeroID == archerHeroID
+	return attacker != nil && (attacker.HeroID == archerHeroID || attacker.HeroID == mageHeroID)
 }
 
 func (w *World) fireBasicAttackProjectile(attacker *Entity, target *Entity, tick uint64, tickRate int) {
@@ -188,7 +189,7 @@ func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64) int 
 	if isMinion(target) {
 		rawPhysical += w.equipmentMinionBasicAttackBonus(attacker, "physical")
 	}
-	damage := w.applyCritFinalDamageMultiplier(attacker, physicalDamageAfterResistance(attacker, target, rawPhysical, tick), crit)
+	damage := reduceCritDamage(target, w.applyCritFinalDamageMultiplier(attacker, physicalDamageAfterResistance(attacker, target, rawPhysical, tick), crit), crit)
 	damage += magicDamageAfterResistance(attacker, target, w.equipmentBasicAttackBonus(attacker, "magic"), tick)
 	damage += physicalDamageAfterResistance(attacker, target, w.equipmentBasicAttackBonus(attacker, "physical"), tick)
 	if isMinion(target) {
@@ -334,7 +335,11 @@ func (w *World) addTankWAftershockEffect(attacker *Entity, direction Vector2, co
 
 func physicalDamageAfterResistance(attacker *Entity, target *Entity, rawDamage float64, tick uint64) int {
 	damageReduce := target.damageReductionForType("physical", tick)
-	return damageAfterResistance(rawDamage, effectiveResistance(target.Stats.PhysicalDefense, attacker.Stats.PhysicalPenPercent, attacker.Stats.PhysicalPenFlat), damageReduce)
+	resistance := target.Stats.PhysicalDefense
+	if tick < target.Combat.BlackCleaverUntil && target.Combat.BlackCleaverStacks > 0 {
+		resistance *= 1 - float64(target.Combat.BlackCleaverStacks)*0.05
+	}
+	return damageAfterResistance(rawDamage, effectiveResistance(resistance, attacker.Stats.PhysicalPenPercent, attacker.Stats.PhysicalPenFlat), damageReduce)
 }
 
 func magicDamageAfterResistance(attacker *Entity, target *Entity, rawDamage float64, tick uint64) int {
@@ -380,7 +385,7 @@ func (entity *Entity) damageReductionForType(damageType string, tick uint64) flo
 }
 
 func (entity *Entity) tenacityAtTick(tick uint64) float64 {
-	tenacity := []float64{}
+	tenacity := []float64{entity.Stats.Tenacity}
 	if entity.HeroID == warriorHeroID && entity.Warrior.CourageFrontUntilTick > 0 && (tick == 0 || tick < entity.Warrior.CourageFrontUntilTick) {
 		tenacity = append(tenacity, entity.Warrior.CourageFrontTenacity)
 	}
@@ -556,11 +561,24 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 	if damage <= 0 {
 		target.Combat.LastDamage = 0
 		target.Combat.LastDamageType = ""
+		target.Combat.DamageEvents = nil
+		target.Combat.DamageEventsTick = target.Combat.LastHitTick
 		return
+	}
+	if context.BasicAttack && target.Stats.BasicAttackBlock > 0 {
+		damage = int(math.Round(float64(damage) * (1 - clamp(target.Stats.BasicAttackBlock, 0, 1))))
+		if damage < 1 {
+			damage = 1
+		}
 	}
 	damage = w.applyShield(source, target, damage, tickRate)
 	target.Combat.LastDamage = damage
 	target.Combat.LastDamageType = damageType
+	if target.Combat.DamageEventsTick != target.Combat.LastHitTick {
+		target.Combat.DamageEvents = nil
+		target.Combat.DamageEventsTick = target.Combat.LastHitTick
+	}
+	target.Combat.DamageEvents = append(target.Combat.DamageEvents, DamageEvent{Damage: damage, DamageType: damageType})
 	w.applyArcherFrostShot(source, target, target.Combat.LastHitTick, tickRate)
 	w.breakTankGraniteShield(target, target.Combat.LastHitTick)
 	if damage <= 0 {
@@ -572,7 +590,24 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 		target.Stats.HP = 0
 	}
 	w.triggerEquipmentLowHealthShield(target, tickRate)
+	w.triggerEquipmentHeroDamageManaShield(source, target, tickRate)
+	if context.BasicAttack {
+		w.triggerEquipmentBasicAttackAttackerSlow(source, target, tickRate)
+		w.triggerEquipmentBasicAttackStacks(source, target.Combat.LastHitTick, tickRate)
+	}
+	if damageType == "magic" {
+		w.triggerEquipmentMagicHitStacks(target)
+	}
+	w.triggerStoneplateCooldown(target, tickRate)
+	if !context.BasicAttack && !context.Pet {
+		w.applyEquipmentSkillBurn(source, target, target.Combat.LastHitTick, tickRate)
+	}
 	w.applySustain(source, beforeHP-target.Stats.HP, context)
+	if damageType == "physical" {
+		w.triggerEquipmentPhysicalDamageEffects(source, target, beforeHP-target.Stats.HP, target.Combat.LastHitTick, tickRate)
+	}
+	w.triggerSunfireCombat(source, target.Combat.LastHitTick, tickRate)
+	w.triggerSunfireCombat(target, target.Combat.LastHitTick, tickRate)
 	w.triggerEquipmentHeroHitHeal(source, target)
 	w.breakWarriorToughness(source, target, target.Combat.LastHitTick)
 }
@@ -590,6 +625,17 @@ func (w *World) applyArcherFrostShot(source *Entity, target *Entity, tick uint64
 	applyMoveSpeedSlow(target, slow, tick+duration)
 }
 
+func reduceCritDamage(target *Entity, damage int, crit bool) int {
+	if target == nil || !crit || target.Stats.CritDamageReduce <= 0 {
+		return damage
+	}
+	reduced := int(math.Round(float64(damage) * (1 - clamp(target.Stats.CritDamageReduce, 0, 1))))
+	if reduced < 1 {
+		return 1
+	}
+	return reduced
+}
+
 func archerFrostSlowRatio(level int, skill config.SkillConfig) float64 {
 	minSlow := skillMetaRange(skill, "slowMin", 0.2)
 	maxSlow := skillMetaRange(skill, "slowMax", 0.3)
@@ -605,7 +651,7 @@ func applyMoveSpeedSlow(target *Entity, slow float64, until uint64) {
 	if target == nil || slow <= 0 || until == 0 {
 		return
 	}
-	slow = clamp(slow, 0, 1)
+	slow = clamp(slow*(1-clamp(target.Stats.SlowResist, 0, 1)), 0, 1)
 	if until < target.Control.MoveSpeedSlowUntil && slow <= target.Control.MoveSpeedSlow {
 		return
 	}
@@ -701,8 +747,36 @@ func (w *World) applyShield(source *Entity, target *Entity, damage int, tickRate
 	if absorbed > target.Passive.Shield {
 		absorbed = target.Passive.Shield
 	}
+	consumeShieldLayers(target, absorbed)
 	target.Passive.Shield -= absorbed
+	if absorbed > 0 {
+		w.triggerStoneplateCooldown(target, tickRate)
+	}
+	if target.Passive.Shield <= 0 {
+		if deactivateStoneplateShield(target) {
+			w.recalculatePlayerStats(target)
+		}
+	}
 	return damage - absorbed
+}
+
+func consumeShieldLayers(target *Entity, absorbed int) {
+	if target == nil || absorbed <= 0 || len(target.Passive.ShieldLayers) == 0 {
+		return
+	}
+	remaining := absorbed
+	for i := range target.Passive.ShieldLayers {
+		if remaining <= 0 {
+			break
+		}
+		if target.Passive.ShieldLayers[i].Amount <= remaining {
+			remaining -= target.Passive.ShieldLayers[i].Amount
+			target.Passive.ShieldLayers[i].Amount = 0
+			continue
+		}
+		target.Passive.ShieldLayers[i].Amount -= remaining
+		remaining = 0
+	}
 }
 
 func swordShieldTriggers(source *Entity) bool {

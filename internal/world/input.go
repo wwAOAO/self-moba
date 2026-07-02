@@ -21,7 +21,8 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 		w.debugLevelUp(entity)
 	}
 	if input.DebugAbilityHaste != nil {
-		entity.Stats.AbilityHaste = clamp(*input.DebugAbilityHaste, 0, 10000)
+		w.setDebugAbilityHasteBuff(entity, clamp(*input.DebugAbilityHaste, 0, 10000))
+		w.recalculatePlayerStats(entity)
 	}
 	if input.DebugGold > 0 {
 		w.addGold(entity, input.DebugGold)

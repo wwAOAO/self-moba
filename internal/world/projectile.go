@@ -18,14 +18,32 @@ func (w *World) expireSkillEffects(tick uint64) {
 
 func (w *World) tickProjectiles(tick uint64, tickRate int) {
 	for id, projectile := range w.projectiles {
-		if tick >= projectile.ExpiresAt || projectile.Traveled >= projectile.Range {
+		source := w.entities[projectile.SourceID]
+		if tick >= projectile.ExpiresAt || (projectile.SkillID != mageWSkillID && projectile.Traveled >= projectile.Range) {
+			if projectile.SkillID == mageESkillID {
+				w.finishMageEProjectile(source, projectile, tick, tickRate)
+			}
+			if projectile.SkillID == tankQSkillID {
+				w.resolveTankQProjectileHit(source, projectile, tick, tickRate)
+			}
 			delete(w.projectiles, id)
 			w.cleanupProjectileGroup(projectile)
 			continue
 		}
-		updateProjectileSpeed(projectile, tickRate)
+		if projectile.SkillID == mageWSkillID {
+			updateMageWProjectileSpeed(projectile)
+		}
+		if projectile.SkillID != mageWSkillID {
+			updateProjectileSpeed(projectile, tickRate)
+		}
 		step := projectile.SpeedPerTick
 		remaining := projectile.Range - projectile.Traveled
+		if projectile.SkillID == mageWSkillID && !projectile.Returning {
+			remaining = projectile.Range/2 - projectile.Traveled
+		}
+		if projectile.SkillID == mageWSkillID && projectile.Returning {
+			remaining = distance(projectile.Position, projectile.Start)
+		}
 		if step > remaining {
 			step = remaining
 		}
@@ -36,9 +54,30 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 		projectile.Position.X = clamp(projectile.Position.X+projectile.Dir.X*step, 0, w.width)
 		projectile.Position.Y = clamp(projectile.Position.Y+projectile.Dir.Y*step, 0, w.height)
 		projectile.Traveled += step
-		source := w.entities[projectile.SourceID]
+		if projectile.SkillID == mageESkillID && projectile.Traveled >= projectile.Range {
+			w.finishMageEProjectile(source, projectile, tick, tickRate)
+			delete(w.projectiles, id)
+			continue
+		}
+		if projectile.SkillID == mageWSkillID && !projectile.Returning && projectile.Traveled >= projectile.Range/2 {
+			projectile.Returning = true
+			projectile.Dir.X = -projectile.Dir.X
+			projectile.Dir.Y = -projectile.Dir.Y
+			projectile.HitIDs = make(map[string]bool)
+		}
+		if projectile.SkillID == mageESkillID {
+			continue
+		}
 		removeProjectile := false
 		for _, target := range w.entities {
+			if projectile.SkillID == mageWSkillID {
+				if projectile.HitIDs[target.ID] || !canShieldTarget(source, target) || !projectileIntersectsTarget(projectile, previousPosition, target) {
+					continue
+				}
+				projectile.HitIDs[target.ID] = true
+				w.addMageShieldLayer(target, mageWShieldValue(source, w.skillConfig(projectile.SkillID), projectile.Damage), tick+projectile.EffectTicks)
+				continue
+			}
 			if projectile.SkillID == archerRSkillID && target.Kind != EntityKindPlayer && target.Kind != EntityKindEnemyHero {
 				continue
 			}
@@ -81,11 +120,11 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 				damage = mageQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, multiplier, tick)
 			}
 			target.Combat.LastHitTick = tick
+			target.Combat.DamageEvents = nil
 			if target.Kind != EntityKindDummy {
 				wasAlive := target.Stats.HP > 0
 				if projectile.SkillID == tankQSkillID {
-					w.applyMagicDamage(source, target, damage, tickRate)
-					applyTankQMoveSpeedSteal(source, target, projectile.EffectRatio, tick+projectile.EffectTicks)
+					w.resolveTankQProjectileHit(source, projectile, tick, tickRate)
 					delete(w.projectiles, id)
 					removeProjectile = true
 				} else if projectile.SkillID == mageQSkillID {
@@ -136,7 +175,7 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 					w.applyArcherFocusOnBasicHit(source, target, tick, tickRate)
 				}
 				if projectile.SkillID == tankQSkillID {
-					applyTankQMoveSpeedSteal(source, target, projectile.EffectRatio, tick+projectile.EffectTicks)
+					w.resolveTankQProjectileHit(source, projectile, tick, tickRate)
 					delete(w.projectiles, id)
 					removeProjectile = true
 				} else if projectile.SkillID == mageQSkillID {
@@ -158,11 +197,59 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 				break
 			}
 		}
-		if projectile.Traveled >= projectile.Range {
+		if projectile.SkillID == mageWSkillID && projectile.Returning && distance(projectile.Position, projectile.Start) <= 1 {
+			if source != nil {
+				w.addMageShieldLayer(source, mageWShieldValue(source, w.skillConfig(projectile.SkillID), projectile.Damage), tick+projectile.EffectTicks)
+			}
+			delete(w.projectiles, id)
+			continue
+		}
+		if projectile.SkillID != mageWSkillID && projectile.Traveled >= projectile.Range {
+			if projectile.SkillID == tankQSkillID {
+				w.resolveTankQProjectileHit(source, projectile, tick, tickRate)
+			}
 			delete(w.projectiles, id)
 			w.cleanupProjectileGroup(projectile)
 		}
 	}
+}
+
+func (w *World) resolveTankQProjectileHit(source *Entity, projectile *Projectile, tick uint64, tickRate int) {
+	if source == nil || projectile == nil {
+		return
+	}
+	target := w.entities[projectile.TargetID]
+	if !canAttackTarget(source, target) {
+		return
+	}
+	damage := tankQDamage(source, target, w.skillConfig(tankQSkillID), projectile.Damage, tick)
+	target.Combat.LastHitTick = tick
+	target.Combat.DamageEvents = nil
+	if target.Kind == EntityKindDummy {
+		target.Combat.LastDamage = damage
+		target.Combat.LastDamageType = "magic"
+		applyTankQMoveSpeedSteal(source, target, projectile.EffectRatio, tick+projectile.EffectTicks)
+		return
+	}
+	wasAlive := target.Stats.HP > 0
+	w.applyMagicDamage(source, target, damage, tickRate)
+	applyTankQMoveSpeedSteal(source, target, projectile.EffectRatio, tick+projectile.EffectTicks)
+	if wasAlive && target.Stats.HP == 0 {
+		w.applyKillReward(source, target)
+		w.killPlayer(target, tick, tickRate)
+		w.removeDeadUnit(target)
+	}
+}
+
+func (w *World) finishMageEProjectile(source *Entity, projectile *Projectile, tick uint64, tickRate int) {
+	if source == nil || projectile == nil {
+		return
+	}
+	center := Vector2{
+		X: clamp(projectile.Start.X+projectile.Dir.X*projectile.Range, 0, w.width),
+		Y: clamp(projectile.Start.Y+projectile.Dir.Y*projectile.Range, 0, w.height),
+	}
+	w.activateMageEZone(source, center, projectile.Damage, w.skillConfig(mageESkillID), tick, tickRate)
 }
 
 func projectileIntersectsTarget(projectile *Projectile, previousPosition Vector2, target *Entity) bool {
@@ -173,6 +260,16 @@ func projectileIntersectsTarget(projectile *Projectile, previousPosition Vector2
 		return archerVolleyArrowIntersectsTarget(projectile, previousPosition, target)
 	}
 	return distancePointToSegment(target.Position, previousPosition, projectile.Position) <= projectile.Radius+target.Radius
+}
+
+func canShieldTarget(source *Entity, target *Entity) bool {
+	if source == nil || target == nil || target.Stats.HP <= 0 {
+		return false
+	}
+	if target.Kind == EntityKindPlayer && target.Death.Dead {
+		return false
+	}
+	return source.Team == target.Team
 }
 
 func archerVolleyArrowIntersectsTarget(projectile *Projectile, previousPosition Vector2, target *Entity) bool {
@@ -243,6 +340,23 @@ func updateProjectileSpeed(projectile *Projectile, tickRate int) {
 	projectile.SpeedPerTick = speed
 }
 
+func updateMageWProjectileSpeed(projectile *Projectile) {
+	if projectile == nil || projectile.SkillID != mageWSkillID || projectile.SpeedMin <= 0 || projectile.Range <= 0 {
+		return
+	}
+	halfRange := projectile.Range / 2
+	if halfRange <= 0 {
+		return
+	}
+	if projectile.Returning {
+		progress := clamp((projectile.Traveled-halfRange)/halfRange, 0, 1)
+		projectile.SpeedPerTick = projectile.SpeedMin * (0.35 + 0.65*progress)
+		return
+	}
+	progress := clamp(projectile.Traveled/halfRange, 0, 1)
+	projectile.SpeedPerTick = projectile.SpeedMin * (1 - 0.65*progress)
+}
+
 func (w *World) projectileGroupHit(projectile *Projectile, targetID string) bool {
 	if projectile == nil || projectile.GroupID == "" || targetID == "" {
 		return false
@@ -288,24 +402,29 @@ func (w *World) SkillEffects() []SkillEffect {
 	for _, projectile := range w.projectiles {
 		start := projectile.Start
 		createdAt := projectile.CreatedAt
-		if projectile.SkillID == tankQSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID {
+		sourceHeroID := ""
+		if source := w.entities[projectile.SourceID]; source != nil {
+			sourceHeroID = source.HeroID
+		}
+		if projectile.SkillID == tankQSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID {
 			start = projectile.Position
 		}
 		if projectile.SkillID == tankQSkillID {
 			createdAt = 0
 		}
 		effects = append(effects, SkillEffect{
-			ID:        projectile.ID,
-			Kind:      projectile.Kind,
-			Team:      projectile.Team,
-			Start:     start,
-			Dir:       projectile.Dir,
-			Range:     projectile.Range,
-			Radius:    projectile.Radius,
-			Count:     projectile.DisplayCount,
-			Speed:     projectile.SpeedPerTick,
-			CreatedAt: createdAt,
-			ExpiresAt: projectile.ExpiresAt,
+			ID:           projectile.ID,
+			Kind:         projectile.Kind,
+			Team:         projectile.Team,
+			SourceHeroID: sourceHeroID,
+			Start:        start,
+			Dir:          projectile.Dir,
+			Range:        projectile.Range,
+			Radius:       projectile.Radius,
+			Count:        projectile.DisplayCount,
+			Speed:        projectile.SpeedPerTick,
+			CreatedAt:    createdAt,
+			ExpiresAt:    projectile.ExpiresAt,
 		})
 		if projectile.DisplayRange > 0 {
 			effects[len(effects)-1].Width = projectile.DisplayRange
@@ -326,7 +445,7 @@ func updateTrackingProjectileDir(projectile *Projectile, target *Entity) {
 }
 
 func projectileDamageType(skillID string) string {
-	if skillID == tankQSkillID || skillID == mageQSkillID {
+	if skillID == tankQSkillID || skillID == mageQSkillID || skillID == mageESkillID {
 		return "magic"
 	}
 	return "physical"

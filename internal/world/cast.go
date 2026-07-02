@@ -27,6 +27,17 @@ func (w *World) applyCast(entity *Entity, cast protocol.CastInput, tick uint64, 
 		w.stopWarriorE(entity, state, skill, tick, tickRate)
 		return
 	}
+	if entity.HeroID == mageHeroID && cast.SkillID == mageESkillID && entity.Mage.LucentSingularityActive {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.detonateMageE(entity, skill, tick, tickRate)
+		return
+	}
 	if tick < state.CooldownUntilTick {
 		return
 	}
@@ -83,6 +94,39 @@ func (w *World) applyCast(entity *Entity, cast protocol.CastInput, tick uint64, 
 			skill = w.skillConfig(cast.SkillID)
 		}
 		w.applyMageQ(entity, cast, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == mageHeroID && cast.SkillID == mageWSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyMageW(entity, cast, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == mageHeroID && cast.SkillID == mageESkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyMageE(entity, cast, state, skill, tick, tickRate)
+		return
+	}
+	if entity.HeroID == mageHeroID && cast.SkillID == mageRSkillID {
+		var skill config.SkillConfig
+		if skills != nil {
+			skill, _ = skills.Get(cast.SkillID)
+		}
+		if skill.SkillID == "" {
+			skill = w.skillConfig(cast.SkillID)
+		}
+		w.applyMageR(entity, cast, state, skill, tick, tickRate)
 		return
 	}
 	if entity.HeroID == swordHeroID && cast.SkillID == swordQSkillID {

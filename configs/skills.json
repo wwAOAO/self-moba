@@ -417,23 +417,63 @@
   },
   {
     "skillId": "mage_w",
-    "name": "Mage W",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "name": "曲光屏障",
+    "cooldownMs": 14000,
+    "range": 1075,
+    "type": "shield_boomerang",
+    "meta": {
+      "manaCost": 60,
+      "apRatio": 0.2,
+      "projectileRadius": 55,
+      "projectileSpeed": 2400,
+      "castWindupSeconds": 0.2,
+      "shieldSeconds": 3
+    },
+    "metaLists": {
+      "cooldownMs": [14000, 13000, 12000, 11000, 10000],
+      "shieldValue": [50, 65, 80, 95, 110]
+    }
   },
   {
     "skillId": "mage_e",
-    "name": "Mage E",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "name": "透光奇点",
+    "cooldownMs": 10000,
+    "range": 1100,
+    "type": "zone_detonate",
+    "meta": {
+      "manaCost": 70,
+      "apRatio": 0.8,
+      "castWindupSeconds": 0.25,
+      "radius": 310,
+      "projectileRadius": 34,
+      "projectileSpeed": 1200,
+      "durationSeconds": 5,
+      "detonateSlowSeconds": 1
+    },
+    "metaLists": {
+      "manaCost": [70, 80, 90, 100, 110],
+      "cooldownMs": [10000, 9500, 9000, 8500, 8000],
+      "baseDamage": [80, 120, 160, 200, 240],
+      "slow": [0.3, 0.35, 0.4, 0.45, 0.5]
+    }
   },
   {
     "skillId": "mage_r",
-    "name": "Mage R",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "name": "终极闪光",
+    "cooldownMs": 80000,
+    "range": 3400,
+    "type": "beam",
+    "meta": {
+      "manaCost": 100,
+      "apRatio": 0.75,
+      "castWindupSeconds": 0.5,
+      "beamWidth": 200,
+      "refundWindowSeconds": 1.75
+    },
+    "metaLists": {
+      "baseDamage": [300, 400, 500],
+      "cooldownMs": [80000, 65000, 50000],
+      "cooldownRefund": [0.3, 0.4, 0.5]
+    }
   }
 ]

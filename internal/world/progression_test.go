@@ -357,3 +357,20 @@ func TestDebugAbilityHasteToggleInput(t *testing.T) {
 		t.Fatalf("ability haste = %f, want 0", player.Stats.AbilityHaste)
 	}
 }
+
+func TestDebugAbilityHasteBuffSurvivesLevelUp(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+
+	w.ApplyInput("p1", protocolPlayerInputDebugAbilityHaste(200), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputDebugLevelUp(), 2, nil, 20)
+
+	if player.Stats.AbilityHaste != 200 {
+		t.Fatalf("ability haste after level up = %f, want 200", player.Stats.AbilityHaste)
+	}
+	if len(player.Buffs) != 1 || player.Buffs[0].ID != debugAbilityHasteBuffID {
+		t.Fatalf("debug haste buff missing after level up: %+v", player.Buffs)
+	}
+}

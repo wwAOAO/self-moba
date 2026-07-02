@@ -60,6 +60,13 @@
         background: #fff;
       }
 
+      input[readonly] {
+        color: #66736b;
+        background: #e5ebe6;
+        cursor: default;
+        pointer-events: none;
+      }
+
       input[type="checkbox"] {
         width: auto;
         height: auto;
@@ -79,6 +86,25 @@
         grid-template-columns: 1fr 1fr;
         gap: 8px;
         margin-top: 16px;
+      }
+
+      .connection-actions {
+        grid-template-columns: 1fr;
+      }
+
+      #connectBtn {
+        background: #2563eb;
+      }
+
+      #leaveBtn {
+        color: #fff;
+        background: #dc2626;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
       }
 
       button {
@@ -320,9 +346,28 @@
         gap: 6px;
       }
 
+      .skill-row.has-charge {
+        grid-template-columns: 28px 1fr 40px 44px 24px;
+      }
+
       .skill-row span {
         min-width: 0;
         overflow-wrap: anywhere;
+      }
+
+      .buff-row {
+        display: grid;
+        grid-template-columns: 1fr 44px;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .buff-row > :last-child {
+        text-align: right;
+      }
+
+      .buff-row strong {
+        margin: 0;
       }
 
       .hint {
@@ -366,51 +411,56 @@
         <h1>2D Battle Room</h1>
 
         <label for="serverUrl">WebSocket</label>
-        <input id="serverUrl" />
+        <input id="serverUrl" readonly />
 
         <label for="roomId">Room ID</label>
-        <input id="roomId" value="demo-room" />
+        <input id="roomId" value="demo-room" readonly />
 
         <label for="playerId">Player ID</label>
         <input id="playerId" />
 
-        <label for="heroId">Hero</label>
-        <select id="heroId">
-          <option value="sword">Sword</option>
-          <option value="warrior">Warrior</option>
-          <option value="archer">Archer</option>
-          <option value="tank">Tank</option>
-          <option value="mage">Mage</option>
-        </select>
+        <div class="form-row">
+          <div>
+            <label for="heroId">Hero</label>
+            <select id="heroId">
+              <option value="sword">Sword</option>
+              <option value="warrior">Warrior</option>
+              <option value="archer">Archer</option>
+              <option value="tank">Tank</option>
+              <option value="mage">Mage</option>
+            </select>
+          </div>
+          <div>
+            <label for="team">Team</label>
+            <select id="team">
+              <option value="blue">Blue</option>
+              <option value="red">Red</option>
+            </select>
+          </div>
+        </div>
 
-        <label for="team">Team</label>
-        <select id="team">
-          <option value="blue">Blue</option>
-          <option value="red">Red</option>
-        </select>
-
-        <label class="checkbox-row">
-          <input id="showDummies" type="checkbox" />
-          Show Dummies
-        </label>
-
-        <label for="spawnKind">Spawn Object</label>
-        <select id="spawnKind">
-          <option value="enemy_hero">Enemy Hero</option>
-          <option value="melee_minion">Melee Minion</option>
-          <option value="ranged_minion">Ranged Minion</option>
-          <option value="siege_minion">Cannon Minion</option>
-          <option value="tower">Tower</option>
-          <option value="barracks">Barracks</option>
-          <option value="crystal">Crystal</option>
-        </select>
-
-        <label for="spawnTeam">Spawn Team</label>
-        <select id="spawnTeam">
-          <option value="red">Red</option>
-          <option value="blue">Blue</option>
-          <option value="neutral">Neutral</option>
-        </select>
+        <div class="form-row">
+          <div>
+            <label for="spawnKind">Spawn Object</label>
+            <select id="spawnKind">
+              <option value="enemy_hero">Enemy Hero</option>
+              <option value="melee_minion">Melee Minion</option>
+              <option value="ranged_minion">Ranged Minion</option>
+              <option value="siege_minion">Cannon Minion</option>
+              <option value="tower">Tower</option>
+              <option value="barracks">Barracks</option>
+              <option value="crystal">Crystal</option>
+            </select>
+          </div>
+          <div>
+            <label for="spawnTeam">Spawn Team</label>
+            <select id="spawnTeam">
+              <option value="red">Red</option>
+              <option value="blue">Blue</option>
+              <option value="neutral">Neutral</option>
+            </select>
+          </div>
+        </div>
 
         <div class="actions">
           <button id="spawnBtn">Spawn</button>
@@ -419,7 +469,7 @@
           <button id="goldBtn" class="secondary">+10000 Gold</button>
         </div>
 
-        <div class="actions">
+        <div class="actions connection-actions">
           <button id="connectBtn">Connect</button>
           <button id="leaveBtn" class="secondary">Leave</button>
         </div>
@@ -428,7 +478,7 @@
           <div>
             <strong>Status</strong><span id="status">Disconnected</span>
           </div>
-          <div><strong>Tick</strong><span id="tick">0</span></div>
+          <span id="tick" hidden>0</span>
           <div><strong>Players</strong><span id="playerCount">0</span></div>
         </div>
 
@@ -437,56 +487,59 @@
       <main class="viewport">
         <div class="left-cards">
           <div class="stats-card">
-            <strong>Stats</strong>
+            <strong>属性</strong>
             <div class="stats-grid">
-              <span>Level</span><span id="statLevel">-</span> <span>EXP</span
-              ><span id="statExp">-</span> <span>Skill Points</span
-              ><span id="statSkillPoints">-</span>
-              <span id="statResourceLabel">Resource</span
-              ><span id="statResource">-</span> <span>HP</span
-              ><span id="statHp">-</span> <span id="statMpLabel">MP</span
-              ><span id="statMp">-</span> <span>HP/5s</span
+              <span>等级</span><span id="statLevel">-</span> <span>经验</span
+              ><span id="statExp">-</span>
+              <span id="statResourceLabel">资源</span
+              ><span id="statResource">-</span> <span>生命</span
+              ><span id="statHp">-</span> <span id="statMpLabel">法力</span
+              ><span id="statMp">-</span> <span>生命/5秒</span
               ><span id="statHpRegen5">-</span>
-              <span id="statMpRegen5Label">MP/5s</span
-              ><span id="statMpRegen5">-</span> <span>ATK</span
-              ><span id="statAttack">-</span> <span>AP</span
-              ><span id="statAbilityPower">-</span> <span>CD</span
+              <span id="statMpRegen5Label">法力/5秒</span
+              ><span id="statMpRegen5">-</span> <span>攻击力</span
+              ><span id="statAttack">-</span> <span>法术强度</span
+              ><span id="statAbilityPower">-</span> <span>技能急速<span id="statAbilityHasteTip"></span></span
               ><span id="statAbilityHaste">-</span>
-              <span>Phys DEF<span id="statPhysicalDefenseTip"></span></span
+              <span>物理防御<span id="statPhysicalDefenseTip"></span></span
               ><span id="statPhysicalDefense">-</span>
-              <span>Magic DEF<span id="statMagicDefenseTip"></span></span
-              ><span id="statMagicDefense">-</span> <span>Move SPD</span
-              ><span id="statMoveSpeed">-</span> <span>ATK Range</span
-              ><span id="statAttackRange">-</span> <span>ATK SPD</span
-              ><span id="statAttackSpeed">-</span> <span>Crit</span
+              <span>魔法防御<span id="statMagicDefenseTip"></span></span
+              ><span id="statMagicDefense">-</span> <span>移动速度</span
+              ><span id="statMoveSpeed">-</span> <span>攻击距离</span
+              ><span id="statAttackRange">-</span> <span>攻击速度</span
+              ><span id="statAttackSpeed">-</span> <span>暴击率</span
               ><span id="statCritChance">-</span>
-              <span>Omnivamp</span><span id="statOmnivamp">-</span>
-              <span>Life Steal</span><span id="statLifeSteal">-</span>
-              <span>Heal+</span><span id="statHealingPower">-</span>
-              <span>Grievous</span><span id="statGrievousWounds">-</span>
+              <span>全能吸血</span><span id="statOmnivamp">-</span>
+              <span>生命偷取</span><span id="statLifeSteal">-</span>
+              <span>治疗加成</span><span id="statHealingPower">-</span>
             </div>
           </div>
           <div class="player-card">
-            <strong>Player</strong>
+            <strong>玩家</strong>
             <div class="stats-grid">
-              <span>Team</span><span id="teamLabel">-</span>
-              <span>Position</span><span id="position">-</span>
+              <span>阵营</span><span id="teamLabel">-</span>
+              <span>坐标</span><span id="position">-</span>
+              <span>技能点</span><span id="statSkillPoints">-</span>
               <span class="wide"
-                >Skills
+                >技能
                 <div id="skills">-</div></span
               >
             </div>
           </div>
+          <div class="player-card">
+            <strong>Buff</strong>
+            <div id="buffs">-</div>
+          </div>
         </div>
         <div class="target-card">
-          <strong>Target</strong>
+          <strong>目标</strong>
           <span id="target">-</span>
         </div>
         <div class="right-bottom-cards">
           <div class="player-card">
-            <strong>Equipment</strong>
+            <strong>装备</strong>
             <div class="stats-grid">
-              <span>Gold</span><span id="equipGold">-</span>
+              <span>金币</span><span id="equipGold">-</span>
               <span>1</span
               ><span class="equipment-slot-row"
                 ><span id="equipmentTip1"></span><button id="equipment1">-</button></span
@@ -519,6 +572,9 @@
             <div class="actions">
               <button id="buyEquipmentBtn">Buy</button>
               <button id="sellEquipmentBtn" class="secondary">Sell Selected</button>
+            </div>
+            <div class="status">
+              <div><strong>提示</strong><span id="shopStatus">-</span></div>
             </div>
           </div>
         </div>

@@ -48,10 +48,12 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Y:              entity.Position.Y,
 			Stats:          stats,
 			Skills:         buildSkillSnapshots(entity.Skills),
+			Buffs:          buildBuffSnapshots(entity.Buffs),
 			Passive:        buildPassiveSnapshot(entity.Passive),
 			LastHitTick:    entity.Combat.LastHitTick,
 			LastDamage:     entity.Combat.LastDamage,
 			LastDamageType: entity.Combat.LastDamageType,
+			DamageEvents:   buildDamageEventSnapshots(entity.Combat.DamageEvents),
 			Dead:           entity.Death.Dead,
 			RespawnTick:    entity.Death.RespawnTick,
 			RespawnIn:      respawnInSeconds(tick, entity.Death),
@@ -72,6 +74,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			LastHitTick:    entity.Combat.LastHitTick,
 			LastDamage:     entity.Combat.LastDamage,
 			LastDamageType: entity.Combat.LastDamageType,
+			DamageEvents:   buildDamageEventSnapshots(entity.Combat.DamageEvents),
 		})
 	}
 	for _, entity := range units {
@@ -89,6 +92,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			LastHitTick:    entity.Combat.LastHitTick,
 			LastDamage:     entity.Combat.LastDamage,
 			LastDamageType: entity.Combat.LastDamageType,
+			DamageEvents:   buildDamageEventSnapshots(entity.Combat.DamageEvents),
 			Control:        buildControlSnapshot(entity.Control),
 		})
 	}
@@ -107,26 +111,58 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 	}
 	for _, effect := range effects {
 		snapshot.Effects = append(snapshot.Effects, protocol.EffectSnapshot{
-			ID:        effect.ID,
-			Kind:      effect.Kind,
-			Team:      string(effect.Team),
-			X:         effect.Start.X,
-			Y:         effect.Start.Y,
-			EndX:      effect.End.X,
-			EndY:      effect.End.Y,
-			DirX:      effect.Dir.X,
-			DirY:      effect.Dir.Y,
-			Width:     effect.Width,
-			Height:    effect.Height,
-			Radius:    effect.Radius,
-			Range:     effect.Range,
-			Speed:     effect.Speed,
-			CreatedAt: effect.CreatedAt,
-			ExpiresAt: effect.ExpiresAt,
-			Count:     effect.Count,
+			ID:           effect.ID,
+			Kind:         effect.Kind,
+			Team:         string(effect.Team),
+			SourceHeroID: effect.SourceHeroID,
+			X:            effect.Start.X,
+			Y:            effect.Start.Y,
+			EndX:         effect.End.X,
+			EndY:         effect.End.Y,
+			DirX:         effect.Dir.X,
+			DirY:         effect.Dir.Y,
+			Width:        effect.Width,
+			Height:       effect.Height,
+			Radius:       effect.Radius,
+			Range:        effect.Range,
+			Speed:        effect.Speed,
+			CreatedAt:    effect.CreatedAt,
+			ExpiresAt:    effect.ExpiresAt,
+			Count:        effect.Count,
 		})
 	}
 	return snapshot
+}
+
+func buildBuffSnapshots(buffs []world.BuffState) []protocol.BuffSnapshot {
+	if len(buffs) == 0 {
+		return nil
+	}
+	snapshots := make([]protocol.BuffSnapshot, 0, len(buffs))
+	for _, buff := range buffs {
+		snapshots = append(snapshots, protocol.BuffSnapshot{
+			ID:            buff.ID,
+			Name:          buff.Name,
+			ExpiresAtTick: buff.ExpiresAtTick,
+			Negative:      buff.Negative,
+			AbilityHaste:  buff.AbilityHaste,
+		})
+	}
+	return snapshots
+}
+
+func buildDamageEventSnapshots(events []world.DamageEvent) []protocol.DamageEventSnapshot {
+	if len(events) == 0 {
+		return nil
+	}
+	snapshots := make([]protocol.DamageEventSnapshot, 0, len(events))
+	for _, event := range events {
+		snapshots = append(snapshots, protocol.DamageEventSnapshot{
+			Damage:     event.Damage,
+			DamageType: event.DamageType,
+		})
+	}
+	return snapshots
 }
 
 func buildStatsSnapshot(stats world.Stats) protocol.StatsSnapshot {

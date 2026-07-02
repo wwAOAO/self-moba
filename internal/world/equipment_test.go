@@ -71,7 +71,7 @@ func TestBuyEquipmentStopsAtSixSlots(t *testing.T) {
 	}
 }
 
-func TestBuyEquipmentAllowsOnlyOneBootsGroup(t *testing.T) {
+func TestBuyEquipmentAllowsOnlyOneShoesCategory(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()
 	w.SpawnHero("p1", hero, TeamBlue)
@@ -90,6 +90,166 @@ func TestBuyEquipmentAllowsOnlyOneBootsGroup(t *testing.T) {
 	}
 	if player.Stats.MoveSpeed != baseMoveSpeed+25 {
 		t.Fatalf("move speed = %f, want %f", player.Stats.MoveSpeed, baseMoveSpeed+25)
+	}
+}
+
+func TestBootsUpgradeConsumesBootsAndAppliesShoeStats(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 1100
+	baseMoveSpeed := player.Stats.MoveSpeed
+
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("boots"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("sorcerers_shoes"), 2, nil, 20)
+
+	if player.Gold != 0 {
+		t.Fatalf("gold = %f, want 0", player.Gold)
+	}
+	if len(player.Equipment) != 1 || player.Equipment[0].EquipmentID != "sorcerers_shoes" {
+		t.Fatalf("equipment = %+v, want sorcerers_shoes", player.Equipment)
+	}
+	if player.Stats.MoveSpeed != baseMoveSpeed+45 || player.Stats.MagicPenFlat != 18 {
+		t.Fatalf("move speed/magic pen = %f/%f, want %f/18", player.Stats.MoveSpeed, player.Stats.MagicPenFlat, baseMoveSpeed+45)
+	}
+}
+
+func TestShoeDefensiveEffectsApply(t *testing.T) {
+	target := &Entity{Stats: Stats{HP: 1000, MaxHP: 1000, BasicAttackBlock: 0.12, Tenacity: 0.3, SlowResist: 0.25}}
+	source := &Entity{ID: "source", Kind: EntityKindPlayer, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	w := testWorld(t)
+
+	target.Combat.LastHitTick = 1
+	w.applyBasicAttackDamage(source, target, 100, 20)
+	if target.Stats.HP != 912 {
+		t.Fatalf("hp after basic attack block = %d, want 912", target.Stats.HP)
+	}
+	if got := controlTicksAfterTenacity(target, 20, 1); got != 14 {
+		t.Fatalf("tenacity ticks = %d, want 14", got)
+	}
+	applyMoveSpeedSlow(target, 0.4, 20)
+	if target.Control.MoveSpeedSlow < 0.299 || target.Control.MoveSpeedSlow > 0.301 {
+		t.Fatalf("slow = %f, want 0.3", target.Control.MoveSpeedSlow)
+	}
+}
+
+func TestRanduinsOmenReducesCritDamageAndSlowsBasicAttacker(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 2900
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("randuins_omen"), 1, nil, 20)
+	attacker := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+
+	if got := reduceCritDamage(player, 100, true); got != 80 {
+		t.Fatalf("reduced crit damage = %d, want 80", got)
+	}
+	player.Combat.LastHitTick = 10
+	w.applyBasicAttackDamage(attacker, player, 10, 20)
+	if attacker.Control.MoveSpeedSlow != 0.05 {
+		t.Fatalf("attacker slow = %f, want 0.05", attacker.Control.MoveSpeedSlow)
+	}
+}
+
+func TestForceOfNatureStacksOnMagicDamage(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 2800
+	baseMoveSpeed := player.Stats.MoveSpeed
+	baseMagicDefense := player.Stats.MagicDefense
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("force_of_nature"), 1, nil, 20)
+	attacker := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+
+	player.Combat.LastHitTick = 10
+	w.applyMagicDamage(attacker, player, 10, 20)
+
+	if player.Equipment[0].Stacks != 1 {
+		t.Fatalf("stacks = %f, want 1", player.Equipment[0].Stacks)
+	}
+	if player.Stats.MagicDefense != baseMagicDefense+70 {
+		t.Fatalf("magic defense = %f, want %f", player.Stats.MagicDefense, baseMagicDefense+70)
+	}
+	wantMoveSpeed := baseMoveSpeed * 1.01 * 1.05
+	if player.Stats.MoveSpeed < wantMoveSpeed-0.0001 || player.Stats.MoveSpeed > wantMoveSpeed+0.0001 {
+		t.Fatalf("move speed = %f, want %f", player.Stats.MoveSpeed, wantMoveSpeed)
+	}
+}
+
+func TestGargoyleStoneplateShieldCooldownAndResists(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3200
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("gargoyle_stoneplate"), 1, nil, 20)
+	attacker := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+
+	if player.Passive.Shield != 270 {
+		t.Fatalf("shield = %d, want 270", player.Passive.Shield)
+	}
+	if player.Stats.PhysicalDefense != 52.5 || player.Stats.MagicDefense != 52.5 {
+		t.Fatalf("resists = %f/%f, want 52.5/52.5", player.Stats.PhysicalDefense, player.Stats.MagicDefense)
+	}
+
+	player.Combat.LastHitTick = 10
+	w.applyDamage(attacker, player, 300, 20)
+	if player.Passive.Shield != 0 || player.Equipment[0].StoneplateShieldActive {
+		t.Fatalf("shield active after break = %d/%v, want 0/false", player.Passive.Shield, player.Equipment[0].StoneplateShieldActive)
+	}
+	if player.Stats.PhysicalDefense != 50 || player.Stats.MagicDefense != 50 {
+		t.Fatalf("resists after break = %f/%f, want 50/50", player.Stats.PhysicalDefense, player.Stats.MagicDefense)
+	}
+
+	w.tickStoneplateShield(player, player.Equipment[0].StoneplateCooldownUntil)
+	if player.Passive.Shield != 270 || !player.Equipment[0].StoneplateShieldActive {
+		t.Fatalf("shield after cooldown = %d/%v, want 270/true", player.Passive.Shield, player.Equipment[0].StoneplateShieldActive)
+	}
+}
+
+func TestGargoyleStoneplateShieldBreaksFiveSecondsAfterDamage(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3200
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("gargoyle_stoneplate"), 1, nil, 20)
+	attacker := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+
+	player.Combat.LastHitTick = 10
+	w.applyDamage(attacker, player, 1, 20)
+	w.tickStoneplateShield(player, 109)
+	if player.Passive.Shield <= 0 || !player.Equipment[0].StoneplateShieldActive {
+		t.Fatalf("shield before 5s break = %d/%v, want active", player.Passive.Shield, player.Equipment[0].StoneplateShieldActive)
+	}
+
+	w.tickStoneplateShield(player, 110)
+	if player.Passive.Shield != 0 || player.Equipment[0].StoneplateShieldActive {
+		t.Fatalf("shield after 5s break = %d/%v, want 0/false", player.Passive.Shield, player.Equipment[0].StoneplateShieldActive)
+	}
+}
+
+func TestSellingGargoyleStoneplateRemovesShield(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3200
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("gargoyle_stoneplate"), 1, nil, 20)
+
+	w.ApplyInput("p1", protocolPlayerInputSellEquipment(1), 2, nil, 20)
+
+	if player.Passive.Shield != 0 || player.Passive.MaxShield != 0 {
+		t.Fatalf("shield after sell = %d/%d, want 0/0", player.Passive.Shield, player.Passive.MaxShield)
+	}
+	if len(player.Equipment) != 0 {
+		t.Fatalf("equipment after sell = %+v, want empty", player.Equipment)
+	}
+	if player.Stats.PhysicalDefense != 10 || player.Stats.MagicDefense != 10 {
+		t.Fatalf("resists after sell = %f/%f, want 10/10", player.Stats.PhysicalDefense, player.Stats.MagicDefense)
 	}
 }
 
@@ -319,6 +479,85 @@ func TestCatalystRestoresHpAndMpOnLevelUp(t *testing.T) {
 	}
 }
 
+func TestRabadonsDeathcapIncreasesTotalAbilityPower(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3600
+
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("rabadons_deathcap"), 1, nil, 20)
+
+	if player.Stats.AbilityPower != 162 {
+		t.Fatalf("ability power = %d, want 162", player.Stats.AbilityPower)
+	}
+}
+
+func TestLiandrysAnguishBurnsAfterSkillDamage(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3100
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("liandrys_anguish"), 1, nil, 20)
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	w.entities[target.ID] = target
+
+	target.Combat.LastHitTick = 10
+	w.applyMagicDamage(player, target, 1, 20)
+	for _, tick := range []uint64{30, 50, 70} {
+		w.tickEquipmentBurns(tick, 20)
+	}
+
+	if target.Stats.HP != 1000-1-3*40 {
+		t.Fatalf("target hp = %d, want %d", target.Stats.HP, 1000-1-3*40)
+	}
+}
+
+func TestAthenesUnholyGrailStatsAndPercentRegen(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get("mage")
+	if !ok {
+		t.Fatal("mage hero not found")
+	}
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 2250
+	baseAP := player.Stats.AbilityPower
+	baseMR := player.Stats.MagicDefense
+	baseHaste := player.Stats.AbilityHaste
+	baseMPRegen := player.Stats.MPRegen5
+
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("athenes_unholy_grail"), 1, nil, 20)
+
+	if player.Stats.AbilityPower != baseAP+30 || player.Stats.MagicDefense != baseMR+30 || player.Stats.AbilityHaste != baseHaste+10 {
+		t.Fatalf("stats ap/mr/haste = %d/%f/%f, want %d/%f/%f", player.Stats.AbilityPower, player.Stats.MagicDefense, player.Stats.AbilityHaste, baseAP+30, baseMR+30, baseHaste+10)
+	}
+	if player.Stats.MPRegen5 != baseMPRegen*2 {
+		t.Fatalf("mp regen = %f, want %f", player.Stats.MPRegen5, baseMPRegen*2)
+	}
+
+	player.Stats.HP = player.Stats.MaxHP - 100
+	player.Stats.MP = 50
+	player.Combat.LastHitTick = 50
+	wantCombatHP := player.Stats.HP + int(float64(player.Stats.MaxHP)*0.01)
+	wantCombatMP := player.Stats.MP + player.Stats.MaxMP*0.01
+	w.tickEquipmentPercentRegen(player, 100, 20)
+	if player.Stats.HP != wantCombatHP || player.Stats.MP != wantCombatMP {
+		t.Fatalf("combat regen hp/mp = %d/%f, want %d/%f", player.Stats.HP, player.Stats.MP, wantCombatHP, wantCombatMP)
+	}
+
+	player.Stats.HP = player.Stats.MaxHP - 100
+	player.Stats.MP = 50
+	player.Combat.LastHitTick = 0
+	wantOutHP := player.Stats.HP + int(float64(player.Stats.MaxHP)*0.05)
+	wantOutMP := player.Stats.MP + player.Stats.MaxMP*0.05
+	w.tickEquipmentPercentRegen(player, 100, 20)
+	if player.Stats.HP != wantOutHP || player.Stats.MP != wantOutMP {
+		t.Fatalf("out of combat regen hp/mp = %d/%f, want %d/%f", player.Stats.HP, player.Stats.MP, wantOutHP, wantOutMP)
+	}
+}
+
 func TestRaptorCloakAddsOutOfCombatMoveSpeed(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()
@@ -434,6 +673,33 @@ func TestWoodenShieldHealsAfterHeroHit(t *testing.T) {
 	}
 }
 
+func TestHarmonyChaliceConvertsManaToShieldAfterHeroDamage(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 980
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("chalice_of_harmony"), 1, nil, 20)
+	player.Stats.MP = 200
+	attacker := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+
+	player.Combat.LastHitTick = 10
+	w.applyDamage(attacker, player, 1, 20)
+
+	if player.Stats.MP != 160 {
+		t.Fatalf("mp = %f, want 160", player.Stats.MP)
+	}
+	if player.Passive.Shield != 40 {
+		t.Fatalf("shield = %d, want 40", player.Passive.Shield)
+	}
+
+	player.Combat.LastHitTick = 11
+	w.applyDamage(attacker, player, 1, 20)
+	if player.Passive.Shield != 39 {
+		t.Fatalf("shield during cooldown = %d, want 39", player.Passive.Shield)
+	}
+}
+
 func TestDuplicateWoodenShieldHeroHitHealOnlyAppliesOnce(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()
@@ -513,5 +779,69 @@ func TestLifeStealOnlyAppliesToBasicAttacks(t *testing.T) {
 	w.applyBasicAttackDamage(source, target, 100, 20)
 	if source.Stats.HP != 520 {
 		t.Fatalf("hp after basic attack life steal = %d, want 520", source.Stats.HP)
+	}
+}
+
+func TestBlackCleaverShredsArmorOnPhysicalHeroDamage(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3300
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("black_cleaver"), 1, nil, 20)
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000, PhysicalDefense: 100}}
+
+	for i := 0; i < 6; i++ {
+		target.Combat.LastHitTick = uint64(i + 1)
+		w.applyDamage(player, target, 1, 20)
+	}
+
+	if target.Combat.BlackCleaverStacks != 6 {
+		t.Fatalf("black cleaver stacks = %d, want 6", target.Combat.BlackCleaverStacks)
+	}
+	if got := physicalDamageAfterResistance(player, target, 100, 6); got != 59 {
+		t.Fatalf("damage with shred = %d, want 59", got)
+	}
+}
+
+func TestGuinsoosRagebladeZeroesCritAndStacksAttackSpeed(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3200
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("guinsoos_rageblade"), 1, nil, 20)
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+
+	if player.Stats.CritChance != 0 {
+		t.Fatalf("crit chance = %f, want 0", player.Stats.CritChance)
+	}
+	target.Combat.LastHitTick = 10
+	w.applyBasicAttackDamage(player, target, 10, 20)
+
+	if player.Equipment[0].Stacks != 1 {
+		t.Fatalf("rageblade stacks = %f, want 1", player.Equipment[0].Stacks)
+	}
+	if player.Stats.AttackSpeedBonus != 0.53 {
+		t.Fatalf("attack speed bonus = %f, want 0.53", player.Stats.AttackSpeedBonus)
+	}
+}
+
+func TestSunfireAegisBurnsNearbyEnemies(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3000
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("sunfire_aegis"), 1, nil, 20)
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Position: player.Position, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	w.entities[target.ID] = target
+
+	target.Combat.LastHitTick = 1
+	w.applyDamage(player, target, 1, 20)
+	w.tickSunfire(player, 21, 20)
+
+	if target.Stats.HP >= 999 {
+		t.Fatalf("target hp = %d, want sunfire damage", target.Stats.HP)
 	}
 }

@@ -2,6 +2,7 @@ function updatePositionLabel() {
   const self = state.players.get(state.playerId);
   if (!self) {
     els.position.textContent = "-";
+    els.buffs.innerHTML = "-";
     setStatsCard(null);
     return;
   }
@@ -9,13 +10,13 @@ function updatePositionLabel() {
   els.teamLabel.textContent = self.team || state.team;
   setStatsCard(self);
   setTargetCard(currentTarget());
+  const tick = Number(els.tick.textContent || 0);
+  els.buffs.innerHTML = formatPlayerBuffs(self, tick) || "-";
   if (!self.skills || self.skills.length === 0) {
     els.skills.innerHTML = "-";
     return;
   }
-  const tick = Number(els.tick.textContent || 0);
-  els.skills.innerHTML =
-    formatSkillCooldowns(self, tick) + formatHeroSkillState(self, tick);
+  els.skills.innerHTML = formatSkillCooldowns(self, tick);
 }
 
 function formatSkillCooldowns(player, tick) {
@@ -30,31 +31,36 @@ function formatSkillCooldowns(player, tick) {
     .map((slot) => {
       const skill = skillState(player, slots[slot]);
       const remainTicks = Math.max(0, (skill?.cooldownUntilTick || 0) - tick);
-      const remainSeconds = (remainTicks / 20).toFixed(1);
+      const remainSeconds = (remainTicks / state.tickRate).toFixed(1);
       const level = skill?.level || 0;
       const maxLevel = maxSkillLevel(slot);
       const disabled = !canSpend || level >= maxLevel ? "disabled" : "";
-      const chargeText = formatSkillRowState(
-        player,
-        slot,
-        skill,
-        remainSeconds,
-        tick,
-      );
-      return `<div class="skill-row">
+      const chargeText = formatSkillChargeText(player, slot, skill);
+      const timeText = formatSkillTimeText(player, slot, skill, remainSeconds, tick);
+      return `<div class="skill-row${chargeText ? " has-charge" : ""}">
                       <strong>${slot.toUpperCase()}</strong>
                       <span>${level}/${maxLevel}</span>
-                      <span>${chargeText}</span>
+                      ${chargeText ? `<span>${chargeText}</span>` : ""}
+                      <span>${timeText}</span>
                       <button type="button" class="icon-button" data-skill-upgrade="${slot}" ${disabled}>+</button>
                   </div>`;
     })
     .join("")}</div>`;
 }
 
-function formatSkillRowState(player, slot, skill, remainSeconds, tick) {
+function formatSkillChargeText(player, slot, skill) {
   const heroId = player.heroId || els.heroId.value;
   if (heroId === "archer" && slot === "e") {
     return `${skill?.stacks || 0}/2`;
+  }
+  return "";
+}
+
+function formatSkillTimeText(player, slot, skill, remainSeconds, tick) {
+  const heroId = player.heroId || els.heroId.value;
+  if (heroId === "archer" && slot === "e") {
+    const rechargeTicks = Math.max(0, (skill?.stacksExpireTick || 0) - tick);
+    return `${(rechargeTicks / state.tickRate).toFixed(1)}s`;
   }
   return `${remainSeconds}s`;
 }
@@ -72,6 +78,55 @@ function formatHeroSkillState(player, tick) {
     return formatArcherSkillState(player, tick);
   }
   return "";
+}
+
+function formatPlayerBuffs(player, tick) {
+  const rows = [];
+  for (const buff of player.buffs || []) {
+    rows.push(formatBuffRow(buff, tick));
+  }
+  rows.push(...formatControlBuffRows(player, tick));
+  const heroBuffs = formatHeroSkillState(player, tick);
+  if (heroBuffs) {
+    rows.push(heroBuffs);
+  }
+  return rows.length ? `<div class="skill-list">${rows.join("")}</div>` : "";
+}
+
+function formatControlBuffRows(player, tick) {
+  const control = player.control || {};
+  return [
+    controlBuffRow("击飞", control.airborneUntilTick, tick),
+    controlBuffRow("眩晕", control.stunnedUntilTick, tick),
+    controlBuffRow("沉默", control.silencedUntilTick, tick),
+    controlBuffRow("禁锢", control.rootedUntilTick, tick),
+    controlBuffRow("韧性", control.tenacityUntilTick, tick),
+    controlBuffRow("减速", control.moveSpeedSlowUntil, tick),
+    controlBuffRow("启明", control.mageIlluminationUntil, tick),
+  ].filter(Boolean);
+}
+
+function controlBuffRow(name, untilTick, tick) {
+  if (!untilTick || untilTick <= tick) {
+    return "";
+  }
+  return `<div class="buff-row"><strong>${name}</strong><span>${((untilTick - tick) / state.tickRate).toFixed(1)}s</span></div>`;
+}
+
+function formatBuffRow(buff, tick) {
+  const name = escapeHtml(formatBuffName(buff));
+  const remain =
+    buff.expiresAtTick > 0
+      ? `${Math.max(0, (buff.expiresAtTick - tick) / state.tickRate).toFixed(1)}s`
+      : "∞";
+  return `<div class="buff-row"><strong>${name}</strong><span>${remain}</span></div>`;
+}
+
+function formatBuffName(buff) {
+  if (buff.id === "debug_ability_haste") {
+    return `+${formatNumber(buff.abilityHaste || 0)}技能急速`;
+  }
+  return buff.name || buff.id || "buff";
 }
 
 function formatArcherSkillState(player, tick) {
@@ -147,6 +202,10 @@ function setStatus(value) {
   els.status.textContent = value;
 }
 
+function setShopStatus(value) {
+  els.shopStatus.textContent = value || "-";
+}
+
 function setStatsCard(player) {
   if (!player?.stats) {
     els.statLevel.textContent = "-";
@@ -155,7 +214,7 @@ function setStatsCard(player) {
     setEquipmentCard(null);
     setStatPairVisible(els.statResourceLabel, els.statResource, false);
     els.statResource.textContent = "-";
-    els.statMpLabel.textContent = "MP";
+    els.statMpLabel.textContent = "法力";
     els.statHp.textContent = "-";
     els.statMp.textContent = "-";
     els.statHpRegen5.textContent = "-";
@@ -163,6 +222,7 @@ function setStatsCard(player) {
     els.statMpRegen5.textContent = "-";
     els.statAttack.textContent = "-";
     els.statAbilityPower.textContent = "-";
+    els.statAbilityHasteTip.innerHTML = "";
     els.statAbilityHaste.textContent = "-";
     els.statPhysicalDefense.textContent = "-";
     els.statMagicDefense.textContent = "-";
@@ -173,8 +233,7 @@ function setStatsCard(player) {
     els.statOmnivamp.textContent = "-";
     els.statLifeSteal.textContent = "-";
     els.statHealingPower.textContent = "-";
-    els.statGrievousWounds.textContent = "-";
-    els.abilityHasteBtn.textContent = "+200 Haste";
+    els.abilityHasteBtn.textContent = "+200急速";
     return;
   }
   const stats = player.stats;
@@ -193,20 +252,23 @@ function setStatsCard(player) {
   setStatPairVisible(els.statResourceLabel, els.statResource, hasResource);
   els.statResource.textContent = hasResource ? resourceLabel : "-";
   els.statHp.textContent = formatHpWithShield(player);
-  els.statMpLabel.textContent = isSword ? "Sword Intent" : "MP";
+  els.statMpLabel.textContent = isSword ? "剑意" : "法力";
   els.statMp.textContent = isSword
     ? formatSwordIntent(passive)
     : stats.maxMp > 0
-      ? `${formatNumber(stats.mp)}/${formatNumber(stats.maxMp)}`
+      ? `${formatInteger(stats.mp)}/${formatInteger(stats.maxMp)}`
       : "-";
   els.statHpRegen5.textContent = formatHpRegen5(player);
   const showMpRegen = !isSword && stats.maxMp > 0;
   setStatPairVisible(els.statMpRegen5Label, els.statMpRegen5, showMpRegen);
   els.statMpRegen5.textContent = showMpRegen
-    ? formatNumber(stats.mpRegen5 || 0)
+    ? formatNumber((stats.mpRegen5 || 0) + equipmentPercentRegen5(player, "mp"))
     : "-";
   els.statAttack.textContent = formatAttack(stats);
   els.statAbilityPower.textContent = stats.abilityPower || 0;
+  els.statAbilityHasteTip.innerHTML = formatAbilityHasteTip(
+    stats.abilityHaste || 0,
+  );
   els.statAbilityHaste.textContent = formatNumber(stats.abilityHaste || 0);
   els.statPhysicalDefense.textContent = formatPhysicalDefense(stats);
   els.statPhysicalDefenseTip.innerHTML = formatDefenseTip(
@@ -225,13 +287,19 @@ function setStatsCard(player) {
   els.statOmnivamp.textContent = formatPercent(stats.omnivamp || 0);
   els.statLifeSteal.textContent = formatPercent(stats.lifeSteal || 0);
   els.statHealingPower.textContent = formatPercent(stats.healingPower || 0);
-  els.statGrievousWounds.textContent = formatPercent(stats.grievousWounds || 0);
   els.abilityHasteBtn.textContent =
-    (stats.abilityHaste || 0) >= 200 ? "Close 200 Haste" : "+200 Haste";
+    (player.buffs || []).some((buff) => buff.id === "debug_ability_haste")
+      ? "关闭200急速"
+      : "+200急速";
 }
 
 function formatPercent(value) {
   return `${Math.round(value * 1000) / 10}%`;
+}
+
+function formatAbilityHasteTip(abilityHaste) {
+  const reduction = abilityHaste / (100 + abilityHaste);
+  return `<span class="stat-tip" data-tip="实际减少 ${formatPercent(reduction)} 冷却">?</span>`;
 }
 
 function setEquipmentCard(player) {
@@ -264,61 +332,77 @@ function formatEquipmentTip(equipment) {
   if (!config) {
     return "";
   }
+  if (Array.isArray(config.description) && config.description.length) {
+    return config.description.join("\n");
+  }
   const parts = [];
   const stats = config.stats || {};
-  addTipStat(parts, stats.attack, "ATK");
-  addTipStat(parts, stats.abilityPower, "AP");
-  addTipStat(parts, stats.abilityHaste, "CD");
-  addTipStat(parts, stats.hp, "HP");
-  addTipStat(parts, stats.mp, "MP");
-  addTipStat(parts, stats.physicalDefense, "Phys DEF");
-  addTipStat(parts, stats.magicDefense, "Magic DEF");
-  addTipStat(parts, stats.moveSpeed, "Move SPD");
-  addTipStat(parts, stats.hpRegen5, "HP/5s");
-  addTipStat(parts, stats.mpRegen5, "MP/5s");
-  addTipPercent(parts, stats.attackSpeedBonus, "ATK SPD");
-  addTipPercent(parts, stats.critChance, "Crit");
-  addTipPercent(parts, stats.moveSpeedPercent, "Move SPD");
-  addTipPercent(parts, stats.omnivamp, "Omnivamp");
-  addTipPercent(parts, stats.lifeSteal, "Life Steal");
-  addTipPercent(parts, stats.healingPower, "Heal+");
-  addTipPercent(parts, stats.grievousWounds, "Grievous");
+  addTipStat(parts, stats.attack, "攻击力");
+  addTipStat(parts, stats.abilityPower, "法术强度");
+  addTipStat(parts, stats.abilityHaste, "技能急速");
+  addTipStat(parts, stats.hp, "生命");
+  addTipStat(parts, stats.mp, "法力");
+  addTipStat(parts, stats.physicalDefense, "物理防御");
+  addTipStat(parts, stats.magicDefense, "魔法防御");
+  addTipStat(parts, stats.moveSpeed, "移动速度");
+  addTipStat(parts, stats.hpRegen5, "生命/5秒");
+  addTipStat(parts, stats.mpRegen5, "法力/5秒");
+  addTipPercent(parts, stats.attackSpeedBonus, "攻击速度");
+  addTipPercent(parts, stats.critChance, "暴击率");
+  addTipPercent(parts, stats.moveSpeedPercent, "移动速度");
+  addTipPercent(parts, stats.omnivamp, "全能吸血");
+  addTipPercent(parts, stats.lifeSteal, "生命偷取");
+  addTipPercent(parts, stats.healingPower, "治疗加成");
+  addTipPercent(parts, stats.grievousWounds, "重伤");
   const effects = config.effects || {};
   if (effects.basicAttackBonusDamage) {
     parts.push(
-      `Basic hit +${formatNumber(effects.basicAttackBonusDamage)} ${effects.basicAttackBonusDamageType || "damage"}`,
+      `普攻命中 +${formatNumber(effects.basicAttackBonusDamage)} ${formatDamageTypeName(effects.basicAttackBonusDamageType)}`,
     );
   }
   if (effects.minionBasicAttackBonusDamage) {
     parts.push(
-      `Minion hit +${formatNumber(effects.minionBasicAttackBonusDamage)} ${effects.minionBasicAttackBonusDamageType || "damage"}`,
+      `普攻小兵 +${formatNumber(effects.minionBasicAttackBonusDamage)} ${formatDamageTypeName(effects.minionBasicAttackBonusDamageType)}`,
     );
   }
   if (effects.heroHitSmallHeal) {
-    parts.push(`Hero hit heal +${formatNumber(effects.heroHitHeal || 0)}`);
+    parts.push(`被英雄命中回血 +${formatNumber(effects.heroHitHeal || 0)}`);
   }
   if (effects.levelUpRestoreHpRatio || effects.levelUpRestoreMpRatio) {
     parts.push(
-      `Level up restore HP ${formatPercent(effects.levelUpRestoreHpRatio || 0)} / MP ${formatPercent(effects.levelUpRestoreMpRatio || 0)}`,
+      `升级回复生命 ${formatPercent(effects.levelUpRestoreHpRatio || 0)} / 法力 ${formatPercent(effects.levelUpRestoreMpRatio || 0)}`,
     );
   }
   if (effects.outOfCombatMoveSpeed) {
-    parts.push(`Out of combat Move SPD +${formatNumber(effects.outOfCombatMoveSpeed)}`);
+    parts.push(`脱战移动速度 +${formatNumber(effects.outOfCombatMoveSpeed)}`);
   }
   if (effects.unitKillPhysicalDefenseGain || effects.unitKillAbilityPowerGain) {
     parts.push(
-      `Unit kill +${formatNumber(effects.unitKillPhysicalDefenseGain || 0)} Phys DEF / +${formatNumber(effects.unitKillAbilityPowerGain || 0)} AP, max +${formatNumber(effects.unitKillMaxGain || 0)}`,
+      `击杀单位 +${formatNumber(effects.unitKillPhysicalDefenseGain || 0)} 物理防御 / +${formatNumber(effects.unitKillAbilityPowerGain || 0)} 法术强度，最多 +${formatNumber(effects.unitKillMaxGain || 0)}`,
     );
   }
   if (effects.critDamageBonus) {
-    parts.push(`Crit damage +${formatPercent(effects.critDamageBonus)}`);
+    parts.push(`暴击伤害 +${formatPercent(effects.critDamageBonus)}`);
   }
   if (effects.lowHealthShieldMax) {
     parts.push(
-      `Low HP shield ${formatNumber(effects.lowHealthShieldMin || 0)}-${formatNumber(effects.lowHealthShieldMax)} / DR ${formatPercent(effects.lowHealthDamageReduce || 0)}`,
+      `低生命护盾 ${formatNumber(effects.lowHealthShieldMin || 0)}-${formatNumber(effects.lowHealthShieldMax)} / 减伤 ${formatPercent(effects.lowHealthDamageReduce || 0)}`,
     );
   }
   return parts.join("\n");
+}
+
+function formatDamageTypeName(type) {
+  if (type === "physical") {
+    return "物理伤害";
+  }
+  if (type === "magic") {
+    return "魔法伤害";
+  }
+  if (type === "true") {
+    return "真实伤害";
+  }
+  return "伤害";
 }
 
 function equipmentConfig(equipment) {
@@ -386,20 +470,20 @@ function setTargetCard(target) {
   els.target.innerHTML = `
     <div>${targetLabel(target)}</div>
     <div>${target.id || target.playerId}</div>
-    <div>Team ${target.team || "-"}</div>
-    ${airborneTicks > 0 ? `<div>Airborne ${(airborneTicks / state.tickRate).toFixed(1)}s</div>` : ""}
-    <div>HP ${formatHpWithShield(target)}</div>
+    <div>阵营 ${target.team || "-"}</div>
+    ${airborneTicks > 0 ? `<div>击飞 ${(airborneTicks / state.tickRate).toFixed(1)}s</div>` : ""}
+    <div>生命 ${formatHpWithShield(target)}</div>
     ${formatTargetResource(target)}
-    <div>HP/5s ${formatHpRegen5(target)}</div>
-    ${formatTargetMpRegen(stats)}
-    <div>ATK ${formatAttack(stats)}</div>
-    <div>AP ${stats.abilityPower || 0}</div>
-    <div>CD ${formatNumber(stats.abilityHaste || 0)}</div>
-    <div>Phys DEF ${formatDefenseTip(stats.physicalDefense || 0, "物理")} ${formatPhysicalDefense(stats)}</div>
-    <div>Magic DEF ${formatDefenseTip(stats.magicDefense || 0, "魔法")} ${formatMagicDefense(stats)}</div>
-    <div>Move SPD ${stats.moveSpeed}</div>
-    <div>ATK Range ${stats.attackRange}</div>
-    <div>ATK SPD ${stats.attackSpeed}</div>
-    <div>Crit ${Math.round((stats.critChance || 0) * 1000) / 10}%</div>
+    <div>生命/5秒 ${formatHpRegen5(target)}</div>
+    ${formatTargetMpRegen(target)}
+    <div>攻击力 ${formatAttack(stats)}</div>
+    <div>法术强度 ${stats.abilityPower || 0}</div>
+    <div>技能急速 ${formatNumber(stats.abilityHaste || 0)}</div>
+    <div>物理防御 ${formatDefenseTip(stats.physicalDefense || 0, "物理")} ${formatPhysicalDefense(stats)}</div>
+    <div>魔法防御 ${formatDefenseTip(stats.magicDefense || 0, "魔法")} ${formatMagicDefense(stats)}</div>
+    <div>移动速度 ${stats.moveSpeed}</div>
+    <div>攻击距离 ${stats.attackRange}</div>
+    <div>攻击速度 ${stats.attackSpeed}</div>
+    <div>暴击率 ${Math.round((stats.critChance || 0) * 1000) / 10}%</div>
   `;
 }

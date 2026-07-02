@@ -128,6 +128,22 @@ function drawEffects(frame) {
       drawMageLightBindingEffect(effect, frame);
       continue;
     }
+    if (effect.kind === "mage_prismatic_barrier") {
+      drawMagePrismaticBarrierEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "mage_lucent_singularity_orb") {
+      drawMageLucentSingularityOrbEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "mage_lucent_singularity") {
+      drawMageLucentSingularityEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "mage_final_spark") {
+      drawMageFinalSparkEffect(effect, frame);
+      continue;
+    }
     if (effect.kind !== "wind_wall") {
       continue;
     }
@@ -211,11 +227,33 @@ function drawTankImpactEffect(effect, frame) {
 }
 
 function drawBasicArrowEffect(effect, frame) {
+  if (effect.sourceHeroId === "mage") {
+    drawMageBasicStarEffect(effect, frame);
+    return;
+  }
   if ((effect.count || 1) >= 3) {
     drawTripleArrowProjectile(effect, frame, 0xf8d36a, 0xf59e0b);
     return;
   }
   drawArrowProjectile(effect, frame, 0xf8d36a, 0xf59e0b);
+}
+
+function drawMageBasicStarEffect(effect, frame) {
+  const position = projectileDrawPosition(effect);
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  drawStarPath(gridLayer, x, y, 10, 4.5);
+  gridLayer.fill({ color: 0xfacc15, alpha: 0.95 });
+}
+
+function drawStarPath(graphics, x, y, outer, inner) {
+  graphics.moveTo(x, y - outer);
+  for (let i = 1; i < 10; i++) {
+    const angle = -Math.PI / 2 + (Math.PI * i) / 5;
+    const radius = i % 2 ? inner : outer;
+    graphics.lineTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+  }
+  graphics.closePath();
 }
 
 function drawVolleyArrowEffect(effect, frame) {
@@ -258,6 +296,69 @@ function drawMageLightBindingEffect(effect, frame) {
     y + (effect.dirY || 0) * radius * 1.2,
   );
   gridLayer.stroke({ color: 0xfbbf24, width: 4, alpha: 0.8 });
+}
+
+function drawMagePrismaticBarrierEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const length = 32;
+  gridLayer.moveTo(
+    x - Math.cos(angle) * length * 0.5,
+    y - Math.sin(angle) * length * 0.5,
+  );
+  gridLayer.lineTo(
+    x + Math.cos(angle) * length * 0.5,
+    y + Math.sin(angle) * length * 0.5,
+  );
+  gridLayer.stroke({ color: 0xfacc15, width: 5, alpha: 0.9 });
+  gridLayer.circle(x + Math.cos(angle) * length * 0.55, y + Math.sin(angle) * length * 0.55, 7);
+  gridLayer.fill({ color: 0xfef3c7, alpha: 0.95 });
+  gridLayer.circle(x, y, Math.max(10, (effect.radius || 55) * frame.scale * 0.35));
+  gridLayer.stroke({ color: 0xfbbf24, width: 2, alpha: 0.55 });
+}
+
+function drawMageLucentSingularityOrbEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(10, (effect.radius || 34) * frame.scale);
+  gridLayer.circle(x, y, radius);
+  gridLayer.fill({ color: 0xfef08a, alpha: 0.42 });
+  gridLayer.circle(x, y, radius * 0.45);
+  gridLayer.fill({ color: 0xffffff, alpha: 0.82 });
+}
+
+function drawMageLucentSingularityEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = (effect.radius || 300) * frame.scale;
+  const alpha = effectAlpha(effect);
+  gridLayer.circle(x, y, radius);
+  gridLayer.fill({ color: 0xfef08a, alpha: 0.12 * alpha });
+  gridLayer.circle(x, y, radius);
+  gridLayer.stroke({ color: 0xfacc15, width: 3, alpha: 0.8 * alpha });
+  gridLayer.circle(x, y, Math.max(8, radius * 0.08));
+  gridLayer.fill({ color: 0xfef3c7, alpha: 0.35 * alpha });
+}
+
+function drawMageFinalSparkEffect(effect, frame) {
+  const startX = frame.offsetX + effect.x * frame.scale;
+  const startY = frame.offsetY + effect.y * frame.scale;
+  const endX = frame.offsetX + (effect.endX || effect.x) * frame.scale;
+  const endY = frame.offsetY + (effect.endY || effect.y) * frame.scale;
+  const width = Math.max(8, (effect.width || 200) * frame.scale);
+  const alpha = effectAlpha(effect);
+  gridLayer.moveTo(startX, startY);
+  gridLayer.lineTo(endX, endY);
+  gridLayer.stroke({ color: 0xfef3c7, width, alpha: 0.22 * alpha });
+  gridLayer.moveTo(startX, startY);
+  gridLayer.lineTo(endX, endY);
+  gridLayer.stroke({ color: 0xfacc15, width: Math.max(3, width * 0.28), alpha: 0.75 * alpha });
+  gridLayer.moveTo(startX, startY);
+  gridLayer.lineTo(endX, endY);
+  gridLayer.stroke({ color: 0xffffff, width: Math.max(2, width * 0.08), alpha: 0.9 * alpha });
 }
 
 function drawProjectileSweepArea(effect, frame, position, radius, fillColor, strokeColor) {
@@ -623,6 +724,10 @@ function drawCastWindup(windup, frame, now) {
   }
   if (windup.skillId === "arrow_rain") {
     drawDirectionalWindup(windup, frame, color, alpha, 10);
+    return;
+  }
+  if (windup.skillId === "mage_r") {
+    drawMageFinalSparkWindup(windup, frame, alpha);
   }
 }
 
@@ -644,6 +749,26 @@ function drawDirectionalWindup(windup, frame, color, alpha, width) {
   gridLayer.moveTo(x, y);
   gridLayer.lineTo(endX, endY);
   gridLayer.stroke({ color, width: 2, alpha: 0.72 * alpha });
+}
+
+function drawMageFinalSparkWindup(windup, frame, alpha) {
+  const range = windup.range || 3400;
+  const startX = frame.offsetX + windup.x * frame.scale;
+  const startY = frame.offsetY + windup.y * frame.scale;
+  const endX =
+    frame.offsetX + (windup.x + (windup.dirX || 1) * range) * frame.scale;
+  const endY =
+    frame.offsetY + (windup.y + (windup.dirY || 0) * range) * frame.scale;
+  const width = Math.max(4, 36 * frame.scale);
+  gridLayer.moveTo(startX, startY);
+  gridLayer.lineTo(endX, endY);
+  gridLayer.stroke({ color: 0xfef3c7, width, alpha: 0.2 * alpha });
+  gridLayer.moveTo(startX, startY);
+  gridLayer.lineTo(endX, endY);
+  gridLayer.stroke({ color: 0xfacc15, width: Math.max(2, width * 0.35), alpha: 0.7 * alpha });
+  gridLayer.moveTo(startX, startY);
+  gridLayer.lineTo(endX, endY);
+  gridLayer.stroke({ color: 0xffffff, width: 1, alpha: 0.85 * alpha });
 }
 
 function drawCircleWindup(windup, frame, color, alpha, range) {
@@ -905,14 +1030,14 @@ function createPlayer(player) {
   });
 
   redrawPlayerBody({ body }, player);
-  drawBar(hpBack, 0x24312b, 1, -29);
-  drawBar(hpFill, 0xd94948, 1, -29);
-  drawBar(resourceBack, 0x24312b, 1, -23);
+  drawBar(hpBack, 0x24312b, 1, -34);
+  drawHealthBar(hpFill, player, -34);
+  drawBar(resourceBack, 0x24312b, 1, -28);
   drawBar(
     resourceFill,
     playerResourceColor(player),
     playerResourceRatio(player),
-    -23,
+    -28,
   );
   label.anchor.set(0.5, 0);
   label.y = 16;
@@ -977,7 +1102,7 @@ function redrawPlayerBody(sprite, player) {
     sprite.body.circle(0, 0, radius);
   }
   sprite.body.fill(player.dead ? 0x6b7280 : colorForTeam(player.team));
-  if (shape !== "archer") {
+  if (shape !== "archer" && shape !== "mage") {
     sprite.body.stroke({
       color: player.dead ? 0x111827 : isSelf ? 0xffffff : 0x172026,
       width: isSelf ? 2 : 1,
@@ -1006,7 +1131,7 @@ function createUnit(unit) {
   const modelRadius = unitModelDisplayRadius(unit);
   drawUnitBody(body, visual, modelRadius);
   body.stroke({ color: 0xf2f7f3, width: 2 });
-  drawBar(hpFill, 0xd94948, 1, -(modelRadius + 16));
+  drawHealthBar(hpFill, unit, -(modelRadius + 16));
   label.anchor.set(0.5, 0);
   label.y = modelRadius + 6;
   node.addChild(statusLabel, hpFill, collision, body, label);
@@ -1051,25 +1176,25 @@ function abnormalStatuses(target) {
   const tick = Number(els.tick.textContent || 0);
   const statuses = [];
   if ((target.control?.airborneUntilTick || 0) > tick) {
-    statuses.push("Airborne");
+    statuses.push("击飞");
   }
   if ((target.control?.actionLockedUntilTick || 0) > tick) {
-    statuses.push("Locked");
+    statuses.push("Lock");
   }
   if ((target.control?.stunnedUntilTick || 0) > tick) {
-    statuses.push("Stun");
+    statuses.push("眩晕");
   }
   if ((target.control?.silencedUntilTick || 0) > tick) {
-    statuses.push("Silence");
+    statuses.push("沉默");
   }
   if ((target.control?.rootedUntilTick || 0) > tick) {
-    statuses.push("Root");
+    statuses.push("禁锢");
   }
   if ((target.control?.tenacityUntilTick || 0) > tick) {
-    statuses.push("Tenacity");
+    statuses.push("韧性");
   }
   if ((target.control?.moveSpeedSlowUntil || 0) > tick) {
-    statuses.push("Slow");
+    statuses.push("减速");
   }
   if ((target.control?.mageIlluminationUntil || 0) > tick) {
     statuses.push("启明");
@@ -1089,10 +1214,7 @@ function visibleUnits(snapshot) {
   const units = snapshot.units || snapshot.dummies || [];
   return units.filter((unit) => {
     const kind = unit.kind || "dummy";
-    if (kind === "dummy") {
-      return state.showDummies || String(unit.id || "").startsWith("spawn:");
-    }
-    return String(unit.id || "").startsWith("spawn:");
+    return kind !== "dummy" && String(unit.id || "").startsWith("spawn:");
   });
 }
 
@@ -1152,6 +1274,9 @@ function spawnDamageText(target, damage, damageType) {
   if (!damage) {
     return;
   }
+  const sameFrameOffset = state.damageTexts.filter(
+    (effect) => effect.targetId === (target.id || target.playerId),
+  ).length;
   const text = new PIXI.Text({
     text: `-${damage}`,
     style: {
@@ -1166,8 +1291,9 @@ function spawnDamageText(target, damage, damageType) {
   effectLayer.addChild(text);
   state.damageTexts.push({
     node: text,
+    targetId: target.id || target.playerId,
     x: target.x,
-    y: target.y - 42,
+    y: target.y - 42 - sameFrameOffset * 100,
     age: 0,
     lifetime: 720,
   });
@@ -1204,24 +1330,19 @@ function updateBars(sprite, target) {
   if (!stats) {
     return;
   }
-  drawBar(sprite.hpFill, 0xd94948, hpShieldRatio(target), -29);
+  drawHealthBar(sprite.hpFill, target, -34);
   if (sprite.resourceFill) {
     drawBar(
       sprite.resourceFill,
       playerResourceColor(target),
       playerResourceRatio(target),
-      -23,
+      -28,
     );
   }
 }
 
 function updateUnitBars(sprite, unit) {
-  drawBar(
-    sprite.hpFill,
-    0xd94948,
-    hpShieldRatio(unit),
-    -(unitModelDisplayRadius(unit) + 16),
-  );
+  drawHealthBar(sprite.hpFill, unit, -(unitModelDisplayRadius(unit) + 16));
 }
 
 function playerResourceRatio(player) {
@@ -1251,6 +1372,31 @@ function colorForTeam(team) {
 
 function drawBar(graphics, color, value, y) {
   graphics.clear();
-  graphics.roundRect(-18, y, 36 * value, 4, 1);
+  const width = 36 * value;
+  graphics.roundRect(-18, y, width, 4, 1);
   graphics.fill(color);
+  graphics.roundRect(-18, y, 36, 4, 1);
+  graphics.stroke({ color: 0x172026, width: 1, alpha: 0.85 });
+}
+
+function drawHealthBar(graphics, entity, y) {
+  const stats = entity?.stats || entity || {};
+  const maxHp = stats.maxHp || 0;
+  const hp = Math.max(0, stats.hp || 0);
+  const shield = shieldValue(entity);
+  const total = hp + shield;
+  const scale = maxHp > 0 ? 36 / Math.max(maxHp, total) : 0;
+  const hpWidth = Math.min(36, hp * scale);
+  const shieldWidth = Math.min(36 - hpWidth, shield * scale);
+  graphics.clear();
+  if (hpWidth > 0) {
+    graphics.rect(-18, y, hpWidth, 4);
+    graphics.fill(0xd94948);
+  }
+  if (shieldWidth > 0) {
+    graphics.rect(-18 + hpWidth, y, shieldWidth, 4);
+    graphics.fill(0xf8fafc);
+  }
+  graphics.roundRect(-18, y, 36, 4, 1);
+  graphics.stroke({ color: 0x172026, width: 1, alpha: 0.85 });
 }

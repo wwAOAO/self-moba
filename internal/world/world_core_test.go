@@ -187,7 +187,9 @@ func testWorld(t *testing.T) *World {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return NewWorld(heroes, skills, levels, rewards, equipment)
+	w := NewWorld(heroes, skills, levels, rewards, equipment)
+	w.SpawnTrainingDummy()
+	return w
 }
 
 func testHeroConfig() config.HeroConfig {

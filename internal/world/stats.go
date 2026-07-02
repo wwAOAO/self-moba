@@ -143,6 +143,7 @@ func (w *World) chargeSwordIntent(entity *Entity, moved float64) {
 }
 
 func (w *World) tickSwordShield(entity *Entity, tick uint64) {
+	tickShieldLayers(entity, tick)
 	if entity == nil || entity.Passive.Shield <= 0 || entity.Passive.ShieldExpireTick == 0 {
 		return
 	}
@@ -152,6 +153,29 @@ func (w *World) tickSwordShield(entity *Entity, tick uint64) {
 	entity.Passive.Shield = 0
 	entity.Passive.MaxShield = 0
 	entity.Passive.ShieldExpireTick = 0
+}
+
+func tickShieldLayers(entity *Entity, tick uint64) {
+	if entity == nil || len(entity.Passive.ShieldLayers) == 0 {
+		return
+	}
+	layers := entity.Passive.ShieldLayers[:0]
+	total := 0
+	for _, layer := range entity.Passive.ShieldLayers {
+		if layer.Amount <= 0 || tick >= layer.ExpiresAt {
+			continue
+		}
+		layers = append(layers, layer)
+		total += layer.Amount
+	}
+	entity.Passive.ShieldLayers = layers
+	if total == 0 {
+		entity.Passive.Shield = 0
+		entity.Passive.MaxShield = 0
+		return
+	}
+	entity.Passive.Shield = total
+	entity.Passive.MaxShield = total
 }
 
 func (w *World) tickTankGraniteShield(entity *Entity, tick uint64, tickRate int) {

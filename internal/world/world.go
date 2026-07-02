@@ -59,6 +59,7 @@ type World struct {
 	projectiles      map[string]*Projectile
 	projectileHits   map[string]map[string]bool
 	skillEffects     map[string]SkillEffect
+	equipmentBurns   map[string]EquipmentBurn
 }
 
 func NewWorld(heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig, equipment *config.EquipmentStore) *World {
@@ -75,9 +76,9 @@ func NewWorld(heroes *config.HeroStore, skills *config.SkillStore, levels *confi
 		projectiles:    make(map[string]*Projectile),
 		projectileHits: make(map[string]map[string]bool),
 		skillEffects:   make(map[string]SkillEffect),
+		equipmentBurns: make(map[string]EquipmentBurn),
 	}
 	w.SpawnBattleUnits()
-	w.SpawnTrainingDummy()
 	return w
 }
 
@@ -85,19 +86,27 @@ func (w *World) Tick(tick uint64, tickRate int) {
 	w.expireWindWalls(tick)
 	w.expireSkillEffects(tick)
 	w.tickProjectiles(tick, tickRate)
+	w.tickEquipmentBurns(tick, tickRate)
 	for _, entity := range w.entities {
 		w.tickPhysicalDefenseShred(entity, tick)
 		w.tickSwordShield(entity, tick)
+		w.tickStoneplateShield(entity, tick)
+		w.tickSunfire(entity, tick, tickRate)
 		w.tickTankGraniteShield(entity, tick, tickRate)
 		w.refreshTankWPassive(entity)
 		if entity.Kind != EntityKindPlayer {
 			continue
 		}
 		w.expireArcherFocus(entity, tick)
+		w.tickEquipmentStacks(entity, tick)
 		w.expireSwordQStacks(entity, tick)
 		w.tickArcherHawkCharges(entity, tick, tickRate)
 		w.releaseArcherCrystalArrow(entity, tick, tickRate)
 		w.releaseMageQ(entity, tick, tickRate)
+		w.releaseMageW(entity, tick, tickRate)
+		w.releaseMageE(entity, tick, tickRate)
+		w.releaseMageR(entity, tick, tickRate)
+		w.tickMageE(entity, tick, tickRate)
 		if entity.HeroID == swordHeroID && entity.Sword.QPending {
 			w.tickDashMovement(entity, tick, tickRate)
 		}
@@ -112,6 +121,7 @@ func (w *World) Tick(tick uint64, tickRate int) {
 			continue
 		}
 		tickBaseRegen(entity, tickRate)
+		w.tickEquipmentPercentRegen(entity, tick, tickRate)
 		w.tickWarriorToughness(entity, tick, tickRate)
 		w.tickPlayer(entity, tick, tickRate)
 		w.tickWarriorJudgment(entity, tick, tickRate)

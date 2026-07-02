@@ -49,7 +49,6 @@ function applySnapshot(snapshot) {
       normalizePlayer(player),
     ]),
   );
-  state.showDummies = els.showDummies.checked;
   const units = visibleUnits(snapshot);
   state.units = new Map(units.map((unit) => [unit.id, normalizeUnit(unit)]));
   updateEffectFlashes(snapshot.effects || []);
@@ -77,7 +76,7 @@ function applySnapshot(snapshot) {
   els.playerCount.textContent = snapshot.players.length;
   const self = state.players.get(state.playerId);
   if (self?.message && self.messageTick === snapshot.tick) {
-    setStatus(self.message);
+    setShopStatus(self.message);
   }
   updatePositionLabel();
 }
@@ -134,11 +133,12 @@ function updateDamageEffects(previousTargets, currentTargets) {
         until: performance.now() + 180,
       };
     }
-    spawnDamageText(
-      current,
-      current.lastDamage || 0,
-      current.lastDamageType || "physical",
-    );
+    const damageEvents = current.damageEvents?.length
+      ? current.damageEvents
+      : [{ damage: current.lastDamage || 0, damageType: current.lastDamageType || "physical" }];
+    for (const event of damageEvents) {
+      spawnDamageText(current, event.damage || 0, event.damageType || "physical");
+    }
   }
 }
 
@@ -172,8 +172,10 @@ function resetClientState() {
 
   els.tick.textContent = "0";
   els.playerCount.textContent = "0";
+  setShopStatus("-");
   els.position.textContent = "-";
   els.teamLabel.textContent = "-";
+  els.buffs.innerHTML = "-";
   els.skills.innerHTML = "-";
   setStatsCard(null);
   setTargetCard(null);
@@ -196,6 +198,7 @@ function castSkill(slot) {
   }
   const selected = currentTarget();
   const useAimPointFirst =
+    skillId.startsWith("mage_") ||
     skillId === "sword_cut" ||
     skillId === "sword_sweeping_blade" ||
     skillId === "trap" ||
@@ -295,7 +298,9 @@ function toggleDebugAbilityHaste() {
   if (!self || self.dead) {
     return;
   }
-  const enabled = (self.stats?.abilityHaste || 0) >= 200;
+  const enabled = (self.buffs || []).some(
+    (buff) => buff.id === "debug_ability_haste",
+  );
   sendPacket("input", {
     debugAbilityHaste: enabled ? 0 : 200,
     clientSeq: state.seq,
@@ -318,6 +323,7 @@ function buyEquipment() {
   if (!equipmentId) {
     return;
   }
+  setShopStatus("-");
   sendPacket("input", {
     buyEquipment: {
       equipmentId,
@@ -330,6 +336,7 @@ function sellSelectedEquipment() {
   if (!state.selectedEquipmentSlot) {
     return;
   }
+  setShopStatus("-");
   sendPacket("input", {
     sellEquipment: {
       slot: state.selectedEquipmentSlot,

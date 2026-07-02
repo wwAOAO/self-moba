@@ -231,6 +231,41 @@ func TestTankQPicksNearestTargetToCursorAndTracksIt(t *testing.T) {
 	}
 }
 
+func TestTankQAlwaysHitsLockedTargetAtEnd(t *testing.T) {
+	w := testWorld(t)
+	heroes, err := config.LoadHeroes("../../configs/heroes.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hero, ok := heroes.Get(tankHeroID)
+	if !ok {
+		t.Fatal("tank hero not found")
+	}
+	w.SpawnHero("tank", hero, TeamBlue)
+	player := w.entities[playerEntityID("tank")]
+	learnSkill(player, tankQSkillID, 1)
+	target := w.entities["enemy:hero-1"]
+	target.Position = Vector2{X: player.Position.X + 500, Y: player.Position.Y}
+	target.Stats.MagicDefense = 0
+
+	w.ApplyInput("tank", protocolPlayerInputCastTarget(tankQSkillID, target.ID, target.Position.X, target.Position.Y), 10, w.skills, 20)
+	w.Tick(15, 20)
+	target.Position = Vector2{X: player.Position.X + 2000, Y: player.Position.Y + 2000}
+	for tick := uint64(16); tick <= 30; tick++ {
+		w.Tick(tick, 20)
+		if len(w.projectiles) == 0 {
+			break
+		}
+	}
+
+	if target.Combat.LastHitTick == 0 {
+		t.Fatal("tank q should hit locked target at end")
+	}
+	if len(w.projectiles) != 0 {
+		t.Fatalf("projectiles = %d, want 0 after forced hit", len(w.projectiles))
+	}
+}
+
 func TestTankWPassiveArmorScalesWithShield(t *testing.T) {
 	w := testWorld(t)
 	heroes, err := config.LoadHeroes("../../configs/heroes.json")

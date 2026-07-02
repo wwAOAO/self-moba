@@ -105,12 +105,54 @@ function renderEquipmentOptions(equipment) {
   if (!equipment.length) {
     return;
   }
-  els.shopItem.innerHTML = equipment
-    .map(
-      (item) =>
-        `<option value="${escapeHtml(item.equipmentId)}">${escapeHtml(item.name || item.equipmentId)} ${item.price || 0}G</option>`,
-    )
+  const groups = [
+    ["物理装备", "physical"],
+    ["魔法装备", "magic"],
+    ["防护装备", "defense"],
+    ["鞋子", "shoes"],
+  ];
+  els.shopItem.innerHTML = groups
+    .flatMap(([label, category]) => renderEquipmentTierGroups(label, category, equipment))
     .join("");
+}
+
+function renderEquipmentTierGroups(label, category, equipment) {
+  return [1, 2, 3]
+    .map((tier) => [
+      `${label} - ${["", "一级装备", "二级装备", "三级装备"][tier]}`,
+      equipment.filter(
+        (item) => equipmentCategory(item) === category && equipmentTier(item) === tier,
+      ),
+    ])
+    .filter(([, items]) => items.length)
+    .map(
+      ([groupLabel, items]) =>
+        `<optgroup label="${groupLabel}">${items.map(renderEquipmentOption).join("")}</optgroup>`,
+    );
+}
+
+function renderEquipmentOption(item) {
+  const tip = typeof formatEquipmentTip === "function" ? formatEquipmentTip(item) : "";
+  const summary = tip ? ` - ${tip.replaceAll("\n", "；")}` : "";
+  return `<option value="${escapeHtml(item.equipmentId)}">${escapeHtml(item.name || item.equipmentId)} ${item.price || 0}G${escapeHtml(summary)}</option>`;
+}
+
+function equipmentTier(item) {
+  return item.tier || (item.components?.length ? 2 : 1);
+}
+
+function equipmentCategory(item) {
+  if (item.category) {
+    return item.category;
+  }
+  const stats = item.stats || {};
+  if (stats.attack || stats.attackSpeedBonus || stats.critChance) {
+    return "physical";
+  }
+  if (stats.abilityPower || stats.mp || stats.mpRegen5) {
+    return "magic";
+  }
+  return "defense";
 }
 
 function renderHeroOptions(heroes) {

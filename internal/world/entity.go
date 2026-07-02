@@ -14,21 +14,32 @@ type WindWall struct {
 	ExpiresAt uint64
 }
 
+type EquipmentBurn struct {
+	SourceID           string
+	TargetID           string
+	NextTick           uint64
+	ExpiresAt          uint64
+	FlatDamage         float64
+	BaseMaxHPRatio     float64
+	APMaxHPRatioPer100 float64
+}
+
 type SkillEffect struct {
-	ID        string
-	Kind      string
-	Team      Team
-	Start     Vector2
-	End       Vector2
-	Dir       Vector2
-	Range     float64
-	Radius    float64
-	Width     float64
-	Height    float64
-	Count     int
-	Speed     float64
-	CreatedAt uint64
-	ExpiresAt uint64
+	ID           string
+	Kind         string
+	Team         Team
+	SourceHeroID string
+	Start        Vector2
+	End          Vector2
+	Dir          Vector2
+	Range        float64
+	Radius       float64
+	Width        float64
+	Height       float64
+	Count        int
+	Speed        float64
+	CreatedAt    uint64
+	ExpiresAt    uint64
 }
 
 type Projectile struct {
@@ -54,6 +65,7 @@ type Projectile struct {
 	KnockupTicks uint64
 	EffectRatio  float64
 	EffectTicks  uint64
+	Returning    bool
 	CreatedAt    uint64
 	ExpiresAt    uint64
 	HitIDs       map[string]bool
@@ -69,6 +81,7 @@ type Entity struct {
 	SkillPoints  int
 	Gold         float64
 	Equipment    []EquipmentSlot
+	Buffs        []BuffState
 	Exp          float64
 	TotalExp     float64
 	NextLevelExp float64
@@ -91,6 +104,14 @@ type Entity struct {
 	Regen        RegenState
 }
 
+type BuffState struct {
+	ID            string
+	Name          string
+	AbilityHaste  float64
+	ExpiresAtTick uint64
+	Negative      bool
+}
+
 type RegenState struct {
 	HPRemainder float64
 	MPRemainder float64
@@ -107,6 +128,19 @@ type EquipmentSlot struct {
 	LowHealthShieldMax       int
 	OutOfCombatMoveSpeed     float64
 	OutOfCombatRequiredTicks uint64
+	ManaShieldCooldownUntil  uint64
+	RagebladeHitCount        int
+	StackExpireTick          uint64
+	SunfireActiveUntil       uint64
+	SunfireNextTick          uint64
+	SunfireStackExpireTick   uint64
+	StoneplateShieldRatio    float64
+	StoneplateResistPercent  float64
+	StoneplateCooldownTicks  uint64
+	StoneplateCooldownUntil  uint64
+	StoneplateBreakTick      uint64
+	StoneplateShieldActive   bool
+	StoneplateShieldAmount   int
 }
 
 type EntityKind string
@@ -162,6 +196,10 @@ type Stats struct {
 	MagicPenPercent      float64
 	MagicPenFlat         float64
 	MagicDamageReduce    float64
+	Tenacity             float64
+	SlowResist           float64
+	BasicAttackBlock     float64
+	CritDamageReduce     float64
 	MoveSpeed            float64
 	AttackRange          float64
 	AttackSpeed          float64
@@ -192,8 +230,17 @@ type CombatState struct {
 	LastHitTick                uint64
 	LastDamage                 int
 	LastDamageType             string
+	DamageEvents               []DamageEvent
+	DamageEventsTick           uint64
 	PhysicalDefenseShredUntil  uint64
 	PhysicalDefenseShredAmount float64
+	BlackCleaverStacks         int
+	BlackCleaverUntil          uint64
+}
+
+type DamageEvent struct {
+	Damage     int
+	DamageType string
 }
 
 type ControlState struct {
@@ -215,6 +262,9 @@ type ControlState struct {
 	AttackSpeedSlowUntil  uint64
 	MageIlluminationUntil uint64
 	MageIlluminationBy    string
+	MageFinalSparkBy      string
+	MageFinalSparkUntil   uint64
+	MageFinalSparkRefund  float64
 }
 
 type SwordState struct {
@@ -265,10 +315,27 @@ type ArcherState struct {
 }
 
 type MageState struct {
-	LightBindingPending     bool
-	LightBindingReleaseTick uint64
-	LightBindingTarget      Vector2
-	LightBindingLevel       int
+	LightBindingPending           bool
+	LightBindingReleaseTick       uint64
+	LightBindingTarget            Vector2
+	LightBindingLevel             int
+	PrismaticBarrierPending       bool
+	PrismaticBarrierReleaseTick   uint64
+	PrismaticBarrierTarget        Vector2
+	PrismaticBarrierLevel         int
+	LucentSingularityPending      bool
+	LucentSingularityReleaseTick  uint64
+	LucentSingularityTarget       Vector2
+	LucentSingularityActive       bool
+	LucentSingularityCenter       Vector2
+	LucentSingularityExpireTick   uint64
+	LucentSingularityLevel        int
+	LucentSingularityEffectID     string
+	LucentSingularityProjectileID string
+	FinalSparkPending             bool
+	FinalSparkReleaseTick         uint64
+	FinalSparkTarget              Vector2
+	FinalSparkLevel               int
 }
 
 type TankState struct {
@@ -299,8 +366,14 @@ type PassiveState struct {
 	Shield             int
 	MaxShield          int
 	ShieldExpireTick   uint64
+	ShieldLayers       []ShieldLayer
 	LastRegenBreakTick uint64
 	NextRegenTick      uint64
+}
+
+type ShieldLayer struct {
+	Amount    int
+	ExpiresAt uint64
 }
 
 type DeathState struct {

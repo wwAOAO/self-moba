@@ -1,7 +1,11 @@
 package world
 
 func (w *World) applyKillReward(killer *Entity, target *Entity) {
-	if killer == nil || target == nil || w.rewards == nil {
+	if target == nil {
+		return
+	}
+	w.applyMageFinalSparkRefund(target)
+	if killer == nil || w.rewards == nil {
 		return
 	}
 	w.applyWarriorWPassiveKill(killer, target)
@@ -123,6 +127,7 @@ func (w *World) levelUp(entity *Entity) {
 	nextStats := heroStatsAtLevel(hero, entity.Level)
 	w.applyEquipmentStats(entity, &nextStats)
 	w.applySwordCritOverflowStats(entity, &nextStats)
+	nextStats.AbilityHaste += abilityHasteFromBuffs(entity)
 	hpGain := nextStats.MaxHP - oldMaxHP
 	mpGain := nextStats.MaxMP - oldMaxMP
 	nextStats.HP = entity.Stats.HP + hpGain

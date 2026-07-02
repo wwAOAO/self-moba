@@ -379,18 +379,47 @@ function drawBowArrowIcon(graphics, radius) {
 }
 
 function drawMageIcon(graphics, radius) {
-  graphics.moveTo(0, -radius * 1.35);
-  graphics.lineTo(radius * 0.34, -radius * 0.34);
-  graphics.lineTo(radius * 1.28, -radius * 0.34);
-  graphics.lineTo(radius * 0.5, radius * 0.22);
-  graphics.lineTo(radius * 0.78, radius * 1.18);
-  graphics.lineTo(0, radius * 0.58);
-  graphics.lineTo(-radius * 0.78, radius * 1.18);
-  graphics.lineTo(-radius * 0.5, radius * 0.22);
-  graphics.lineTo(-radius * 1.28, -radius * 0.34);
-  graphics.lineTo(-radius * 0.34, -radius * 0.34);
+  graphics.circle(0, -radius * 0.38, radius * 0.48);
+  graphics.circle(0, -radius * 0.38, radius * 0.24);
+
+  graphics.rect(-radius * 0.13, -radius * 0.2, radius * 0.26, radius * 1.45);
+  graphics.moveTo(-radius * 0.26, -radius * 0.02);
+  graphics.lineTo(radius * 0.26, -radius * 0.02);
+  graphics.lineTo(radius * 0.2, radius * 0.18);
+  graphics.lineTo(-radius * 0.2, radius * 0.18);
   graphics.closePath();
-  graphics.circle(0, 0, radius * 0.34);
+  graphics.moveTo(0, radius * 1.35);
+  graphics.lineTo(radius * 0.16, radius * 1.12);
+  graphics.lineTo(-radius * 0.16, radius * 1.12);
+  graphics.closePath();
+
+  drawMageWing(graphics, radius, -1);
+  drawMageWing(graphics, radius, 1);
+  drawMageStar(graphics, 0, -radius * 1.34, radius * 0.25);
+  drawMageStar(graphics, -radius * 0.48, -radius * 1.05, radius * 0.14);
+  drawMageStar(graphics, radius * 0.5, -radius * 1.04, radius * 0.13);
+}
+
+function drawMageWing(graphics, radius, side) {
+  graphics.moveTo(side * radius * 0.34, -radius * 0.44);
+  graphics.quadraticCurveTo(side * radius * 0.96, -radius * 0.94, side * radius * 1.45, -radius * 1.02);
+  graphics.quadraticCurveTo(side * radius * 1.18, -radius * 0.66, side * radius * 0.74, -radius * 0.44);
+  graphics.quadraticCurveTo(side * radius * 1.2, -radius * 0.36, side * radius * 1.38, -radius * 0.12);
+  graphics.quadraticCurveTo(side * radius * 0.9, -radius * 0.12, side * radius * 0.52, -radius * 0.28);
+  graphics.quadraticCurveTo(side * radius * 0.88, -radius * 0.02, side * radius * 0.98, radius * 0.24);
+  graphics.quadraticCurveTo(side * radius * 0.52, radius * 0.08, side * radius * 0.3, -radius * 0.2);
+  graphics.closePath();
+}
+
+function drawMageStar(graphics, x, y, size) {
+  const points = 5;
+  graphics.moveTo(x, y - size);
+  for (let i = 1; i < points * 2; i++) {
+    const angle = -Math.PI / 2 + (Math.PI * i) / points;
+    const r = i % 2 ? size * 0.42 : size;
+    graphics.lineTo(x + Math.cos(angle) * r, y + Math.sin(angle) * r);
+  }
+  graphics.closePath();
 }
 
 function drawChamferedOctagon(graphics, radius) {
@@ -453,6 +482,10 @@ function formatNumber(value) {
     : String(Math.round(value * 1000) / 1000);
 }
 
+function formatInteger(value) {
+  return String(Math.floor(value || 0));
+}
+
 function shieldValue(entity) {
   return Math.max(0, entity?.passive?.shield || 0);
 }
@@ -461,19 +494,35 @@ function formatHpWithShield(entity) {
   const stats = entity?.stats || {};
   const shield = shieldValue(entity);
   if (shield <= 0) {
-    return `${formatNumber(stats.hp || 0)}/${formatNumber(stats.maxHp || 0)}`;
+    return `${formatInteger(stats.hp)}/${formatInteger(stats.maxHp)}`;
   }
-  return `${formatNumber(stats.hp || 0)} + ${formatNumber(shield)}/${formatNumber(stats.maxHp || 0)}`;
+  return `${formatInteger(stats.hp)} + ${formatInteger(shield)}/${formatInteger(stats.maxHp)}`;
 }
 
 function formatHpRegen5(entity) {
   const stats = entity?.stats || {};
-  const base = stats.hpRegen5 || 0;
+  const base = (stats.hpRegen5 || 0) + equipmentPercentRegen5(entity, "hp");
   const passive = warriorToughnessRegen5(entity);
   if (passive <= 0) {
     return formatNumber(base);
   }
   return `${formatNumber(base)} + ${formatNumber(passive)}`;
+}
+
+function equipmentPercentRegen5(entity, resource) {
+  if (!entity?.equipment || !entity?.stats) {
+    return 0;
+  }
+  const outOfCombat =
+    (state.snapshotTick || 0) >=
+    (entity.lastHitTick || 0) + 5 * (state.tickRate || 20);
+  return entity.equipment.reduce((total, equipment) => {
+    const effects = equipmentConfig(equipment)?.effects || {};
+    const ratio = outOfCombat
+      ? effects[`outOfCombat${resource === "hp" ? "Hp" : "Mp"}RegenMax${resource === "hp" ? "Hp" : "Mp"}Ratio5`]
+      : effects[`combat${resource === "hp" ? "Hp" : "Mp"}RegenMax${resource === "hp" ? "Hp" : "Mp"}Ratio5`];
+    return total + (entity.stats[resource === "hp" ? "maxHp" : "maxMp"] || 0) * (ratio || 0);
+  }, 0);
 }
 
 function warriorToughnessRegen5(entity) {
@@ -545,28 +594,29 @@ function formatSwordIntent(passive) {
 
 function formatTargetResource(target) {
   if (target?.heroId === "sword") {
-    return `<div>Sword Intent ${formatSwordIntent(target.passive || {})}</div>`;
+    return `<div>剑意 ${formatSwordIntent(target.passive || {})}</div>`;
   }
   const stats = target?.stats || {};
   if (!stats.maxMp || stats.maxMp <= 0) {
     return "";
   }
-  return `<div>MP ${formatNumber(stats.mp)}/${formatNumber(stats.maxMp)}</div>`;
+  return `<div>法力 ${formatInteger(stats.mp)}/${formatInteger(stats.maxMp)}</div>`;
 }
 
-function formatTargetMpRegen(stats) {
+function formatTargetMpRegen(target) {
+  const stats = target?.stats || {};
   if (!stats?.maxMp || stats.maxMp <= 0) {
     return "";
   }
-  return `<div>MP/5s ${formatNumber(stats.mpRegen5 || 0)}</div>`;
+  return `<div>法力/5秒 ${formatNumber((stats.mpRegen5 || 0) + equipmentPercentRegen5(target, "mp"))}</div>`;
 }
 
 function formatResource(resource) {
   if (resource === "sword_intent") {
-    return "Sword Intent";
+    return "剑意";
   }
   if (!resource || resource === "mp") {
-    return "MP";
+    return "法力";
   }
   if (resource === "none") {
     return "";
