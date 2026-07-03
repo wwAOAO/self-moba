@@ -1,0 +1,37 @@
+[
+  {
+    "skillId": "berserker_passive",
+    "name": "狂战士被动",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive"
+  },
+  {
+    "skillId": "berserker_q",
+    "name": "狂战士Q",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "berserker_w",
+    "name": "狂战士W",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "berserker_e",
+    "name": "狂战士E",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "berserker_r",
+    "name": "狂战士R",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  }
+]

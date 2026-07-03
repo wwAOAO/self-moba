@@ -1,0 +1,37 @@
+[
+  {
+    "skillId": "gunner_passive",
+    "name": "枪手被动",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive"
+  },
+  {
+    "skillId": "gunner_q",
+    "name": "枪手Q",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "gunner_w",
+    "name": "枪手W",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "gunner_e",
+    "name": "枪手E",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "gunner_r",
+    "name": "枪手R",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  }
+]

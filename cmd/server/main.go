@@ -27,10 +27,10 @@ func main() {
 	addr := env("BATTLE_ADDR", ":6969")
 	natsURL := env("NATS_URL", natsgo.DefaultURL)
 	heroConfigPath := env("HERO_CONFIG", "configs/heroes.json")
-	skillConfigPath := env("SKILL_CONFIG", "configs/skills.json")
+	skillConfigPath := env("SKILL_CONFIG", "configs/skills")
 	levelConfigPath := env("LEVEL_CONFIG", "configs/levels.json")
 	rewardConfigPath := env("REWARD_CONFIG", "configs/rewards.json")
-	equipmentConfigPath := env("EQUIPMENT_CONFIG", "configs/equipment.json")
+	equipmentConfigPath := env("EQUIPMENT_CONFIG", "configs/equipment")
 
 	heroes, err := config.LoadHeroes(heroConfigPath)
 	if err != nil {

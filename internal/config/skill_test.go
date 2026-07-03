@@ -88,3 +88,16 @@ func TestSkillConfigLoadsWarriorJudgment(t *testing.T) {
 		t.Fatalf("justice cooldowns = %#v", justice.MetaLists["cooldownMs"])
 	}
 }
+
+func TestSkillConfigLoadsFromDirectory(t *testing.T) {
+	skills, err := LoadSkills("../../configs/skills")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := skills.Get("sword_cut"); !ok {
+		t.Fatal("sword_cut skill not found from directory")
+	}
+	if _, ok := skills.Get("mage_r"); !ok {
+		t.Fatal("mage_r skill not found from directory")
+	}
+}

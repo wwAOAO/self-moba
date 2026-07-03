@@ -1,0 +1,322 @@
+[
+  {
+    "equipmentId": "small_blade",
+    "name": "小刃",
+    "category": "physical",
+    "tier": 1,
+    "price": 475,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 8,
+      "hp": 80,
+      "omnivamp": 0.025
+    },
+    "effects": {
+      "minionBasicAttackBonusDamage": 5,
+      "minionBasicAttackBonusDamageType": "physical"
+    },
+    "description": [
+      "攻击力 +8",
+      "生命 +80",
+      "全能吸血 +2.5%",
+      "普攻小兵 +5 物理伤害"
+    ]
+  },
+  {
+    "equipmentId": "iron_bow",
+    "name": "铁弓",
+    "category": "physical",
+    "tier": 1,
+    "price": 400,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 6,
+      "attackSpeedBonus": 0.15,
+      "omnivamp": 0.015
+    },
+    "effects": {
+      "minionBasicAttackBonusDamage": 5,
+      "minionBasicAttackBonusDamageType": "physical"
+    },
+    "description": [
+      "攻击力 +6",
+      "攻击速度 +15%",
+      "全能吸血 +1.5%",
+      "普攻小兵 +5 物理伤害"
+    ]
+  },
+  {
+    "equipmentId": "short_sword",
+    "name": "小剑",
+    "category": "physical",
+    "tier": 1,
+    "price": 350,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 10
+    },
+    "description": [
+      "攻击力 +10"
+    ]
+  },
+  {
+    "equipmentId": "pickaxe",
+    "name": "镐子",
+    "category": "physical",
+    "tier": 1,
+    "price": 875,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 25
+    },
+    "description": [
+      "攻击力 +25"
+    ]
+  },
+  {
+    "equipmentId": "bf_sword",
+    "name": "大剑",
+    "category": "physical",
+    "tier": 1,
+    "price": 1300,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 40
+    },
+    "description": [
+      "攻击力 +40"
+    ]
+  },
+  {
+    "equipmentId": "caulfields_warhammer",
+    "name": "考尔菲德的战锤",
+    "category": "physical",
+    "tier": 2,
+    "price": 1100,
+    "sellRatio": 0.5,
+    "components": [
+      "short_sword"
+    ],
+    "stats": {
+      "attack": 25,
+      "abilityHaste": 10
+    },
+    "description": [
+      "攻击力 +25",
+      "技能急速 +10"
+    ]
+  },
+  {
+    "equipmentId": "infinity_edge",
+    "name": "无尽之刃",
+    "category": "physical",
+    "tier": 3,
+    "price": 3500,
+    "sellRatio": 0.5,
+    "components": [
+      "bf_sword",
+      "pickaxe",
+      "cloak_of_agility"
+    ],
+    "stats": {
+      "attack": 70,
+      "critChance": 0.2
+    },
+    "effects": {
+      "critDamageBonus": 0.5
+    },
+    "description": [
+      "攻击力 +70",
+      "暴击率 +20%",
+      "暴击伤害 +50%"
+    ]
+  },
+  {
+    "equipmentId": "phantom_dancer",
+    "name": "幻影之舞",
+    "category": "physical",
+    "tier": 3,
+    "price": 2800,
+    "sellRatio": 0.5,
+    "components": [
+      "recurve_bow",
+      "cloak_of_agility",
+      "recurve_bow"
+    ],
+    "stats": {
+      "attackSpeedBonus": 0.3,
+      "critChance": 0.3,
+      "moveSpeedPercent": 0.07
+    },
+    "effects": {
+      "lowHealthShieldMin": 200,
+      "lowHealthShieldMax": 500,
+      "lowHealthShieldThreshold": 0.3,
+      "lowHealthDamageReduce": 0.1
+    },
+    "description": [
+      "攻击速度 +30%",
+      "暴击率 +30%",
+      "移动速度 +7%",
+      "低生命护盾 200-500 / 减伤 10%"
+    ]
+  },
+  {
+    "equipmentId": "black_cleaver",
+    "name": "黑色切割者",
+    "category": "physical",
+    "tier": 3,
+    "price": 3300,
+    "sellRatio": 0.5,
+    "components": [
+      "caulfields_warhammer",
+      "kindlegem"
+    ],
+    "stats": {
+      "attack": 55,
+      "hp": 400,
+      "abilityHaste": 25
+    },
+    "effects": {
+      "physicalHitArmorShredPerStack": 0.05,
+      "physicalHitArmorShredMaxStacks": 6,
+      "physicalHitArmorShredSeconds": 6,
+      "physicalHitMoveSpeed": 20,
+      "physicalHitMoveSpeedSeconds": 2
+    },
+    "description": [
+      "攻击力 +55",
+      "生命 +400",
+      "技能急速 +25",
+      "物理伤害对英雄叠加切割：每层降低5%护甲，最多6层，持续6秒",
+      "造成物理伤害后移动速度 +20，远程减半"
+    ]
+  },
+  {
+    "equipmentId": "guinsoos_rageblade",
+    "name": "鬼索的狂暴之刃",
+    "category": "physical",
+    "tier": 3,
+    "price": 3200,
+    "sellRatio": 0.5,
+    "components": [
+      "amplifying_tome",
+      "recurve_bow",
+      "pickaxe"
+    ],
+    "stats": {
+      "attack": 30,
+      "abilityPower": 30,
+      "attackSpeedBonus": 0.45
+    },
+    "effects": {
+      "basicAttackBonusDamage": 30,
+      "basicAttackBonusDamageType": "magic",
+      "basicAttackBonusByCritMax": 200,
+      "zeroCritChance": true,
+      "basicAttackAttackSpeedPerStack": 0.08,
+      "basicAttackAttackSpeedMaxStacks": 4,
+      "everyNthBasicAttackBonusHit": 3
+    },
+    "description": [
+      "攻击力 +30",
+      "法术强度 +30",
+      "攻击速度 +45%",
+      "暴击率转为攻击特效伤害，面板暴击率变为0",
+      "普攻叠加攻速，最多4层；满层后每第3次普攻触发两次怨怒"
+    ]
+  },
+  {
+    "equipmentId": "sunfire_blade",
+    "name": "日炎锋刃",
+    "category": "physical",
+    "tier": 3,
+    "price": 3200,
+    "sellRatio": 0.5,
+    "components": [
+      "bf_sword",
+      "recurve_bow",
+      "recurve_bow"
+    ],
+    "stats": {
+      "attack": 50,
+      "attackSpeedBonus": 0.2,
+      "omnivamp": 0.04
+    },
+    "effects": {
+      "physicalDamageShieldRatio": 0.1,
+      "physicalDamageShieldDecaySeconds": 3
+    },
+    "description": [
+      "攻击力 +50",
+      "攻击速度 +20%",
+      "全能吸血 +4%",
+      "造成的10%物理伤害转化为临时护盾"
+    ]
+  },
+  {
+    "equipmentId": "dagger",
+    "name": "短剑",
+    "category": "physical",
+    "tier": 1,
+    "price": 300,
+    "sellRatio": 0.5,
+    "stats": {
+      "attackSpeedBonus": 0.15
+    },
+    "description": [
+      "攻击速度 +15%"
+    ]
+  },
+  {
+    "equipmentId": "recurve_bow",
+    "name": "曲弓",
+    "category": "physical",
+    "tier": 2,
+    "price": 700,
+    "sellRatio": 0.5,
+    "components": [
+      "dagger",
+      "dagger"
+    ],
+    "stats": {
+      "attackSpeedBonus": 0.3
+    },
+    "effects": {
+      "basicAttackBonusDamage": 15,
+      "basicAttackBonusDamageType": "magic"
+    },
+    "description": [
+      "攻击速度 +30%",
+      "普攻命中 +15 魔法伤害"
+    ]
+  },
+  {
+    "equipmentId": "brawlers_gloves",
+    "name": "手套",
+    "category": "physical",
+    "tier": 1,
+    "price": 400,
+    "sellRatio": 0.5,
+    "stats": {
+      "critChance": 0.1
+    },
+    "description": [
+      "暴击率 +10%"
+    ]
+  },
+  {
+    "equipmentId": "cloak_of_agility",
+    "name": "披风",
+    "category": "physical",
+    "tier": 1,
+    "price": 800,
+    "sellRatio": 0.5,
+    "stats": {
+      "critChance": 0.2
+    },
+    "description": [
+      "暴击率 +20%"
+    ]
+  }
+]

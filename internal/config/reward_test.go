@@ -62,6 +62,19 @@ func TestEquipmentConfig(t *testing.T) {
 	}
 }
 
+func TestEquipmentConfigLoadsFromDirectory(t *testing.T) {
+	equipment, err := LoadEquipment("../../configs/equipment")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := equipment.Get("small_blade"); !ok {
+		t.Fatal("small_blade not found from directory")
+	}
+	if _, ok := equipment.Get("liandrys_anguish"); !ok {
+		t.Fatal("liandrys_anguish not found from directory")
+	}
+}
+
 func TestRewardConfigJungleExp(t *testing.T) {
 	rewards, err := LoadRewards("../../configs/rewards.json")
 	if err != nil {

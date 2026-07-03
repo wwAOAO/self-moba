@@ -40,6 +40,21 @@ async function fetchConfig(path) {
   return response.json();
 }
 
+async function fetchConfigList(path, fallbackPath) {
+  try {
+    const manifest = await fetchConfig(`${path}/manifest.json`);
+    const parts = await Promise.all(
+      manifest.map((file) => fetchConfig(`${path}/${file}`)),
+    );
+    return parts.flat();
+  } catch (error) {
+    if (!fallbackPath) {
+      throw error;
+    }
+    return fetchConfig(fallbackPath);
+  }
+}
+
 async function loadHeroConfig() {
   try {
     const heroes = await fetchConfig("/configs/heroes.json");
@@ -57,7 +72,7 @@ async function loadHeroConfig() {
 
 async function loadSkillConfig() {
   try {
-    const skills = await fetchConfig("/configs/skills.json");
+    const skills = await fetchConfigList("/configs/skills", "/configs/skills.json");
     skillClientConfig = Object.fromEntries(
       skills.map((skill) => [
         skill.skillId,
@@ -92,7 +107,7 @@ async function loadRewardConfig() {
 
 async function loadEquipmentConfig() {
   try {
-    const equipment = await fetchConfig("/configs/equipment.json");
+    const equipment = await fetchConfigList("/configs/equipment", "/configs/equipment.json");
     equipmentClientConfig = Object.fromEntries(
       equipment.map((item) => [item.equipmentId, item]),
     );

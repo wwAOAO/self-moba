@@ -1,0 +1,168 @@
+[
+  {
+    "equipmentId": "boots",
+    "name": "草鞋",
+    "category": "shoes",
+    "tier": 1,
+    "price": 350,
+    "sellRatio": 0.5,
+    "uniqueGroup": "boots",
+    "stats": {
+      "moveSpeed": 25
+    },
+    "description": [
+      "移动速度 +25"
+    ]
+  },
+  {
+    "equipmentId": "berserkers_greaves",
+    "name": "狂战士胫甲",
+    "category": "shoes",
+    "tier": 2,
+    "price": 1100,
+    "sellRatio": 0.5,
+    "uniqueGroup": "boots",
+    "components": [
+      "boots",
+      "dagger"
+    ],
+    "stats": {
+      "attackSpeedBonus": 0.35,
+      "moveSpeed": 45
+    },
+    "description": [
+      "攻击速度 +35%",
+      "移动速度 +45"
+    ]
+  },
+  {
+    "equipmentId": "ionian_boots",
+    "name": "明朗之靴",
+    "category": "shoes",
+    "tier": 2,
+    "price": 900,
+    "sellRatio": 0.5,
+    "uniqueGroup": "boots",
+    "components": [
+      "boots"
+    ],
+    "stats": {
+      "abilityHaste": 20,
+      "moveSpeed": 45
+    },
+    "description": [
+      "技能急速 +20",
+      "移动速度 +45"
+    ]
+  },
+  {
+    "equipmentId": "sorcerers_shoes",
+    "name": "法师之靴",
+    "category": "shoes",
+    "tier": 2,
+    "price": 1100,
+    "sellRatio": 0.5,
+    "uniqueGroup": "boots",
+    "components": [
+      "boots",
+      "amplifying_tome"
+    ],
+    "stats": {
+      "magicPenFlat": 18,
+      "moveSpeed": 45
+    },
+    "description": [
+      "法术穿透 +18",
+      "移动速度 +45"
+    ]
+  },
+  {
+    "equipmentId": "plated_steelcaps",
+    "name": "铁板靴",
+    "category": "shoes",
+    "tier": 2,
+    "price": 1100,
+    "sellRatio": 0.5,
+    "uniqueGroup": "boots",
+    "components": [
+      "boots",
+      "cloth_armor"
+    ],
+    "stats": {
+      "physicalDefense": 20,
+      "basicAttackBlock": 0.12,
+      "moveSpeed": 45
+    },
+    "description": [
+      "物理防御 +20",
+      "普攻伤害减少 12%",
+      "移动速度 +45"
+    ]
+  },
+  {
+    "equipmentId": "mercurys_treads",
+    "name": "水银之靴",
+    "category": "shoes",
+    "tier": 2,
+    "price": 1100,
+    "sellRatio": 0.5,
+    "uniqueGroup": "boots",
+    "components": [
+      "boots",
+      "null_magic_mantle"
+    ],
+    "stats": {
+      "magicDefense": 30,
+      "tenacity": 0.3,
+      "moveSpeed": 45
+    },
+    "description": [
+      "魔法防御 +30",
+      "韧性 +30%",
+      "移动速度 +45"
+    ]
+  },
+  {
+    "equipmentId": "boots_of_mobility",
+    "name": "疾行之靴",
+    "category": "shoes",
+    "tier": 2,
+    "price": 1000,
+    "sellRatio": 0.5,
+    "uniqueGroup": "boots",
+    "components": [
+      "boots"
+    ],
+    "stats": {
+      "moveSpeed": 45
+    },
+    "effects": {
+      "outOfCombatMoveSpeed": 70,
+      "outOfCombatSeconds": 5
+    },
+    "description": [
+      "移动速度 +45",
+      "脱战移动速度额外 +70"
+    ]
+  },
+  {
+    "equipmentId": "boots_of_swiftness",
+    "name": "轻灵之靴",
+    "category": "shoes",
+    "tier": 2,
+    "price": 1000,
+    "sellRatio": 0.5,
+    "uniqueGroup": "boots",
+    "components": [
+      "boots"
+    ],
+    "stats": {
+      "moveSpeed": 60,
+      "slowResist": 0.25
+    },
+    "description": [
+      "移动速度 +60",
+      "减速抗性 +25%"
+    ]
+  }
+]

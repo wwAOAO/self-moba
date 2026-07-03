@@ -1,0 +1,172 @@
+[
+  {
+    "skillId": "sword_cut",
+    "name": "Sword Cut",
+    "cooldownMs": 6000,
+    "range": 475,
+    "type": "damage",
+    "meta": {
+      "whirlwindRange": 900,
+      "eqRadius": 375,
+      "eqWindowSeconds": 0.15,
+      "adRatio": 1,
+      "stackDurationSeconds": 6,
+      "knockupSeconds": 1,
+      "minCooldownSeconds": 1.33,
+      "lineWidth": 55,
+      "whirlwindRadius": 80,
+      "whirlwindSpeed": 1400,
+      "castWindupSeconds": 0.328,
+      "minCastWindupSeconds": 0.09
+    },
+    "metaLists": {
+      "baseDamage": [
+        20,
+        45,
+        70,
+        95,
+        120
+      ],
+      "cooldownMs": [
+        4000,
+        4000,
+        4000,
+        4000,
+        4000
+      ]
+    }
+  },
+  {
+    "skillId": "sword_wind_wall",
+    "name": "Wind Wall",
+    "cooldownMs": 26000,
+    "range": 180,
+    "type": "wall",
+    "meta": {
+      "durationSeconds": 4,
+      "placeDistance": 180
+    },
+    "metaLists": {
+      "width": [
+        300,
+        350,
+        400,
+        450,
+        500
+      ],
+      "cooldownMs": [
+        26000,
+        24000,
+        22000,
+        20000,
+        18000
+      ]
+    }
+  },
+  {
+    "skillId": "sword_sweeping_blade",
+    "name": "Sweeping Blade",
+    "cooldownMs": 500,
+    "range": 475,
+    "type": "dash",
+    "meta": {
+      "bonusAdRatio": 0.2,
+      "apRatio": 0.6,
+      "stackDamageBonus": 0.25,
+      "maxStacks": 4,
+      "dashDurationSeconds": 0.35,
+      "dashThroughDistance": 34,
+      "targetPickPadding": 48
+    },
+    "metaLists": {
+      "baseDamage": [
+        60,
+        70,
+        80,
+        90,
+        100
+      ],
+      "cooldownMs": [
+        500,
+        400,
+        300,
+        200,
+        100
+      ],
+      "targetCooldownMs": [
+        10000,
+        9000,
+        8000,
+        7000,
+        6000
+      ]
+    }
+  },
+  {
+    "skillId": "sword_storm",
+    "name": "Last Breath",
+    "cooldownMs": 80000,
+    "range": 1200,
+    "type": "damage",
+    "meta": {
+      "bonusAdRatio": 1.5,
+      "airborneExtendSeconds": 1,
+      "lastBreathDurationSeconds": 15,
+      "selfActionLockSeconds": 1,
+      "qStacksAfterCast": 0,
+      "qStackDurationSeconds": 6,
+      "hitRadius": 450,
+      "targetPickPadding": 80
+    },
+    "metaLists": {
+      "baseDamage": [
+        200,
+        300,
+        400
+      ],
+      "cooldownMs": [
+        80000,
+        55000,
+        30000
+      ]
+    }
+  },
+  {
+    "skillId": "sword_edge",
+    "name": "Sword Edge",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive",
+    "meta": {
+      "intentMax": 100,
+      "shieldDurationSeconds": 1,
+      "critChanceMultiplier": 2,
+      "critOverflowAttackPerPercent": 0.5,
+      "critFinalDamageMultiplier": 0.9
+    },
+    "metaLists": {
+      "intentMoveUnitsPerPercent": [
+        59,
+        52.5,
+        46
+      ],
+      "intentMoveUnitLevels": [
+        1,
+        7,
+        13
+      ],
+      "shieldValue": [
+        125,
+        160,
+        275,
+        600
+      ],
+      "shieldValueLevels": [
+        1,
+        6,
+        12,
+        18
+      ]
+    }
+  }
+]

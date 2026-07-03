@@ -1,0 +1,142 @@
+[
+  {
+    "skillId": "shot",
+    "name": "Ranger's Focus",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "self_buff",
+    "meta": {
+      "manaCost": 50,
+      "maxStacks": 4,
+      "stackDurationSeconds": 4,
+      "activeDurationSeconds": 5
+    },
+    "metaLists": {
+      "attackSpeedBonus": [
+        0.2,
+        0.25,
+        0.3,
+        0.35,
+        0.4
+      ],
+      "bonusAdDamageRatio": [
+        1.05,
+        1.1,
+        1.15,
+        1.2,
+        1.25
+      ]
+    }
+  },
+  {
+    "skillId": "roll",
+    "name": "Volley",
+    "cooldownMs": 14000,
+    "range": 1200,
+    "type": "projectile_cone",
+    "meta": {
+      "coneAngleDegrees": 48,
+      "projectileRadius": 16,
+      "projectileSpeed": 1500,
+      "adRatio": 1
+    },
+    "metaLists": {
+      "manaCost": [
+        70,
+        65,
+        60,
+        55,
+        50
+      ],
+      "cooldownMs": [
+        14000,
+        11500,
+        9000,
+        6500,
+        4000
+      ],
+      "arrowCount": [
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "baseDamage": [
+        20,
+        35,
+        50,
+        65,
+        80
+      ]
+    }
+  },
+  {
+    "skillId": "trap",
+    "name": "Hawkshot",
+    "cooldownMs": 5000,
+    "range": 6000,
+    "type": "scout",
+    "meta": {
+      "maxCharges": 2,
+      "lingerSeconds": 5,
+      "projectileSpeed": 1800
+    },
+    "metaLists": {
+      "rechargeMs": [
+        90000,
+        80000,
+        70000,
+        60000,
+        50000
+      ]
+    }
+  },
+  {
+    "skillId": "arrow_rain",
+    "name": "Enchanted Crystal Arrow",
+    "cooldownMs": 100000,
+    "range": 6000,
+    "type": "global_projectile",
+    "meta": {
+      "manaCost": 100,
+      "projectileMinSpeed": 1500,
+      "projectileMaxSpeed": 2100,
+      "projectileRadius": 130,
+      "apRatio": 1,
+      "minStunSeconds": 1,
+      "maxStunSeconds": 3.5,
+      "maxStunDistance": 1400,
+      "splashRadius": 400,
+      "splashDamageMultiplier": 0.5,
+      "castDelaySeconds": 0.25
+    },
+    "metaLists": {
+      "cooldownMs": [
+        100000,
+        90000,
+        80000
+      ],
+      "baseDamage": [
+        200,
+        400,
+        600
+      ]
+    }
+  },
+  {
+    "skillId": "archer_focus",
+    "name": "Frost Shot",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive",
+    "meta": {
+      "slowMin": 0.2,
+      "slowMax": 0.3,
+      "slowSeconds": 2,
+      "critSlowMultiplier": 2,
+      "slowedTargetDamageMultiplier": 1.1,
+      "critChanceDamageRatio": 1
+    }
+  }
+]

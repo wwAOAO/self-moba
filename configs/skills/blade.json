@@ -1,0 +1,46 @@
+[
+  {
+    "skillId": "blade_passive",
+    "name": "刀客被动",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive",
+    "meta": {
+      "basicAttackRage": 5,
+      "critAttackRage": 5,
+      "killRage": 10,
+      "skillHitRage": 5,
+      "outOfCombatSeconds": 5,
+      "rageDecayPerSecond": 5,
+      "critChancePerRage": 0.0035
+    }
+  },
+  {
+    "skillId": "blade_q",
+    "name": "刀客Q",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "blade_w",
+    "name": "刀客W",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "blade_e",
+    "name": "刀客E",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "blade_r",
+    "name": "刀客R",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  }
+]

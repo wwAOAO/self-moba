@@ -1,0 +1,299 @@
+[
+  {
+    "equipmentId": "spell_ring",
+    "name": "法戒",
+    "category": "magic",
+    "tier": 1,
+    "price": 475,
+    "sellRatio": 0.5,
+    "stats": {
+      "abilityPower": 15,
+      "hp": 80,
+      "mpRegen5": 5
+    },
+    "effects": {
+      "minionBasicAttackBonusDamage": 5,
+      "minionBasicAttackBonusDamageType": "magic"
+    },
+    "description": [
+      "法术强度 +15",
+      "生命 +80",
+      "法力/5秒 +5",
+      "普攻小兵 +5 魔法伤害"
+    ]
+  },
+  {
+    "equipmentId": "amplifying_tome",
+    "name": "典籍",
+    "category": "magic",
+    "tier": 1,
+    "price": 435,
+    "sellRatio": 0.5,
+    "stats": {
+      "abilityPower": 20
+    },
+    "description": [
+      "法术强度 +20"
+    ]
+  },
+  {
+    "equipmentId": "blasting_wand",
+    "name": "魔杖",
+    "category": "magic",
+    "tier": 1,
+    "price": 850,
+    "sellRatio": 0.5,
+    "stats": {
+      "abilityPower": 40
+    },
+    "description": [
+      "法术强度 +40"
+    ]
+  },
+  {
+    "equipmentId": "needlessly_large_rod",
+    "name": "大棒",
+    "category": "magic",
+    "tier": 1,
+    "price": 1250,
+    "sellRatio": 0.5,
+    "stats": {
+      "abilityPower": 60
+    },
+    "description": [
+      "法术强度 +60"
+    ]
+  },
+  {
+    "equipmentId": "rabadons_deathcap",
+    "name": "灭世者的死亡之帽",
+    "category": "magic",
+    "tier": 3,
+    "price": 3600,
+    "sellRatio": 0.5,
+    "components": [
+      "needlessly_large_rod",
+      "needlessly_large_rod"
+    ],
+    "stats": {
+      "abilityPower": 120
+    },
+    "effects": {
+      "abilityPowerMultiplier": 0.35
+    },
+    "description": [
+      "法术强度 +120",
+      "总法术强度 +35%"
+    ]
+  },
+  {
+    "equipmentId": "faerie_charm",
+    "name": "仙女护符",
+    "category": "magic",
+    "tier": 1,
+    "price": 180,
+    "sellRatio": 0.5,
+    "stats": {
+      "mpRegen5": 3
+    },
+    "description": [
+      "法力/5秒 +3"
+    ]
+  },
+  {
+    "equipmentId": "sapphire_crystal",
+    "name": "蓝水晶",
+    "category": "magic",
+    "tier": 1,
+    "price": 350,
+    "sellRatio": 0.5,
+    "stats": {
+      "mp": 300
+    },
+    "description": [
+      "法力 +300"
+    ]
+  },
+  {
+    "equipmentId": "fiendish_codex",
+    "name": "恶魔法典",
+    "category": "magic",
+    "tier": 2,
+    "price": 930,
+    "sellRatio": 0.5,
+    "components": [
+      "amplifying_tome",
+      "faerie_charm"
+    ],
+    "stats": {
+      "abilityPower": 35,
+      "abilityHaste": 10,
+      "mpRegen5": 5
+    },
+    "description": [
+      "法术强度 +35",
+      "技能急速 +10",
+      "法力/5秒 +5"
+    ]
+  },
+  {
+    "equipmentId": "lost_chapter",
+    "name": "遗失的章节",
+    "category": "magic",
+    "tier": 2,
+    "price": 1450,
+    "sellRatio": 0.5,
+    "components": [
+      "blasting_wand",
+      "sapphire_crystal"
+    ],
+    "stats": {
+      "abilityPower": 60,
+      "mp": 300,
+      "abilityHaste": 10
+    },
+    "effects": {
+      "levelUpRestoreHpRatio": 0.15,
+      "levelUpRestoreMpRatio": 0.15
+    },
+    "description": [
+      "法术强度 +60",
+      "法力 +300",
+      "技能急速 +10",
+      "升级回复生命 15% / 法力 15%"
+    ]
+  },
+  {
+    "equipmentId": "bandle_glass_mirror",
+    "name": "班德尔玻璃镜",
+    "category": "magic",
+    "tier": 2,
+    "price": 980,
+    "sellRatio": 0.5,
+    "components": [
+      "amplifying_tome",
+      "faerie_charm"
+    ],
+    "stats": {
+      "abilityPower": 30,
+      "abilityHaste": 15
+    },
+    "description": [
+      "法术强度 +30",
+      "技能急速 +15"
+    ]
+  },
+  {
+    "equipmentId": "chalice_of_harmony",
+    "name": "和谐圣杯",
+    "category": "magic",
+    "tier": 2,
+    "price": 980,
+    "sellRatio": 0.5,
+    "components": [
+      "null_magic_mantle",
+      "faerie_charm"
+    ],
+    "stats": {
+      "magicDefense": 30,
+      "mpRegen5": 5
+    },
+    "effects": {
+      "heroDamageManaShieldRatio": 0.2,
+      "heroDamageManaShieldCooldownMs": 90000
+    },
+    "description": [
+      "魔法防御 +30",
+      "法力/5秒 +5",
+      "受到英雄单位伤害时，将20%当前法力值转为护盾（冷却90秒）"
+    ]
+  },
+  {
+    "equipmentId": "athenes_unholy_grail",
+    "name": "雅典娜的邪恶圣杯",
+    "category": "magic",
+    "tier": 3,
+    "price": 2250,
+    "sellRatio": 0.5,
+    "components": [
+      "fiendish_codex",
+      "negatron_cloak",
+      "chalice_of_harmony"
+    ],
+    "stats": {
+      "abilityPower": 30,
+      "magicDefense": 30,
+      "abilityHaste": 10,
+      "baseMpRegenBonus": 1
+    },
+    "effects": {
+      "combatHpRegenMaxHpRatio5": 0.01,
+      "combatMpRegenMaxMpRatio5": 0.01,
+      "outOfCombatHpRegenMaxHpRatio5": 0.05,
+      "outOfCombatMpRegenMaxMpRatio5": 0.05
+    },
+    "description": [
+      "法术强度 +30",
+      "魔法防御 +30",
+      "技能急速 +10",
+      "基础法力回复 +100%",
+      "战斗中每5秒回复1%生命/法力；脱战后每5秒回复5%生命/法力"
+    ]
+  },
+  {
+    "equipmentId": "liandrys_anguish",
+    "name": "兰德里的苦楚",
+    "category": "magic",
+    "tier": 3,
+    "price": 3100,
+    "sellRatio": 0.5,
+    "components": [
+      "lost_chapter",
+      "kindlegem"
+    ],
+    "stats": {
+      "abilityPower": 80,
+      "hp": 300,
+      "abilityHaste": 20
+    },
+    "effects": {
+      "skillBurnSeconds": 3,
+      "skillBurnTickSeconds": 1,
+      "skillBurnFlatDamage": 12,
+      "skillBurnBaseMaxHpRatio": 0.012,
+      "skillBurnApMaxHpRatioPer100Ap": 0.02
+    },
+    "description": [
+      "法术强度 +80",
+      "生命 +300",
+      "技能急速 +20",
+      "技能灼烧3秒：每秒造成 12 + (1.2% + 每100法强2%) 目标最大生命值魔法伤害"
+    ]
+  },
+  {
+    "equipmentId": "seekers_armguard",
+    "name": "探索者护臂",
+    "category": "magic",
+    "tier": 2,
+    "price": 950,
+    "sellRatio": 0.5,
+    "components": [
+      "cloth_armor",
+      "amplifying_tome"
+    ],
+    "stats": {
+      "physicalDefense": 20,
+      "abilityPower": 30
+    },
+    "effects": {
+      "unitKillPhysicalDefenseGain": 0.2,
+      "unitKillAbilityPowerGain": 0.2,
+      "unitKillMaxGain": 10
+    },
+    "description": [
+      "法术强度 +30",
+      "物理防御 +20",
+      "击杀单位 +0.2 物理防御 / +0.2 法术强度，最多 +10"
+    ]
+  }
+]
