@@ -134,7 +134,7 @@
       "physicalDefense": 40,
       "magicDefense": 32.1,
       "moveSpeed": 335,
-      "attackRange": 125,
+      "attackRange": 175,
       "attackSpeed": 0.638,
       "attackWindupSeconds": 0.25,
       "attackSpeedRatio": 0.638,
@@ -202,6 +202,174 @@
       "w": "mage_w",
       "e": "mage_e",
       "r": "mage_r"
+    }
+  },
+  {
+    "heroId": "gunner",
+    "name": "Gunner",
+    "resource": "mp",
+    "base": {
+      "hp": 640,
+      "mp": 300,
+      "hpRegen5": 3.75,
+      "mpRegen5": 8,
+      "attack": 53,
+      "abilityHaste": 0,
+      "physicalDefense": 28,
+      "magicDefense": 30,
+      "moveSpeed": 325,
+      "attackRange": 550,
+      "attackSpeed": 0.656,
+      "attackWindupSeconds": 0.25,
+      "attackSpeedRatio": 0.625,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 103,
+      "mp": 40,
+      "hpRegen5": 0.65,
+      "mpRegen5": 0.8,
+      "attack": 2.4,
+      "physicalDefense": 4.2,
+      "magicDefense": 1.3,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.03,
+      "critChance": 0
+    },
+    "radius": 16,
+    "skills": {
+      "passive": "gunner_passive",
+      "q": "gunner_q",
+      "w": "gunner_w",
+      "e": "gunner_e",
+      "r": "gunner_r"
+    }
+  },
+  {
+    "heroId": "blade",
+    "name": "Blade",
+    "resource": "rage",
+    "base": {
+      "hp": 696,
+      "mp": 100,
+      "hpRegen5": 8.5,
+      "mpRegen5": 0,
+      "attack": 69,
+      "abilityHaste": 0,
+      "physicalDefense": 33,
+      "magicDefense": 32,
+      "moveSpeed": 345,
+      "attackRange": 175,
+      "attackSpeed": 0.64,
+      "attackWindupSeconds": 0.25,
+      "attackSpeedRatio": 0.625,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 82,
+      "mp": 0,
+      "hpRegen5": 0.18,
+      "mpRegen5": 0,
+      "attack": 3.7,
+      "physicalDefense": 4.3,
+      "magicDefense": 2.05,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.034,
+      "critChance": 0
+    },
+    "radius": 17,
+    "skills": {
+      "passive": "blade_passive",
+      "q": "blade_q",
+      "w": "blade_w",
+      "e": "blade_e",
+      "r": "blade_r"
+    }
+  },
+  {
+    "heroId": "berserker",
+    "name": "Berserker",
+    "resource": "mp",
+    "base": {
+      "hp": 652,
+      "mp": 263,
+      "hpRegen5": 10,
+      "mpRegen5": 6.6,
+      "attack": 64,
+      "abilityHaste": 0,
+      "physicalDefense": 39,
+      "magicDefense": 32.1,
+      "moveSpeed": 340,
+      "attackRange": 175,
+      "attackSpeed": 0.625,
+      "attackWindupSeconds": 0.25,
+      "attackSpeedRatio": 0.625,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 114,
+      "mp": 57.5,
+      "hpRegen5": 0.95,
+      "mpRegen5": 0.35,
+      "attack": 5,
+      "physicalDefense": 5.2,
+      "magicDefense": 2.05,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.01,
+      "critChance": 0
+    },
+    "radius": 18,
+    "skills": {
+      "passive": "berserker_passive",
+      "q": "berserker_q",
+      "w": "berserker_w",
+      "e": "berserker_e",
+      "r": "berserker_r"
+    }
+  },
+  {
+    "heroId": "ninja",
+    "name": "Ninja",
+    "resource": "energy",
+    "base": {
+      "hp": 654,
+      "mp": 200,
+      "hpRegen5": 7.09,
+      "mpRegen5": 50,
+      "attack": 63,
+      "abilityHaste": 0,
+      "physicalDefense": 32,
+      "magicDefense": 32.1,
+      "moveSpeed": 345,
+      "attackRange": 125,
+      "attackSpeed": 0.651,
+      "attackWindupSeconds": 0.25,
+      "attackSpeedRatio": 0.625,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 99,
+      "mp": 0,
+      "hpRegen5": 0.65,
+      "mpRegen5": 0,
+      "attack": 3.4,
+      "physicalDefense": 4.7,
+      "magicDefense": 2.05,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.033,
+      "critChance": 0
+    },
+    "radius": 16,
+    "skills": {
+      "passive": "ninja_passive",
+      "q": "ninja_q",
+      "w": "ninja_w",
+      "e": "ninja_e",
+      "r": "ninja_r"
     }
   }
 ]

@@ -239,7 +239,8 @@
             "omnivamp": 0.04
         },
         "effects": {
-            "physicalDamageShieldRatio": 0.1
+            "physicalDamageShieldRatio": 0.1,
+            "physicalDamageShieldDecaySeconds": 3
         },
         "description": ["攻击力 +50", "攻击速度 +20%", "全能吸血 +4%", "造成的10%物理伤害转化为临时护盾"]
     },

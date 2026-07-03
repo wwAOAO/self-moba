@@ -156,7 +156,12 @@ function screenDistanceToTarget(point, unit) {
 }
 
 function targetMap() {
-  const targets = new Map(state.units);
+  const targets = new Map();
+  for (const [id, unit] of state.units) {
+    if (unit.kind !== "fountain") {
+      targets.set(id, unit);
+    }
+  }
   for (const player of state.players.values()) {
     targets.set(player.id, player);
   }
@@ -196,6 +201,18 @@ function playerModelRadius(player) {
   if (player.heroId === "mage") {
     return player.playerId === state.playerId ? 13 : 11;
   }
+  if (player.heroId === "gunner") {
+    return player.playerId === state.playerId ? 13 : 11;
+  }
+  if (player.heroId === "blade") {
+    return player.playerId === state.playerId ? 13 : 11;
+  }
+  if (player.heroId === "berserker") {
+    return player.playerId === state.playerId ? 13 : 11;
+  }
+  if (player.heroId === "ninja") {
+    return player.playerId === state.playerId ? 13 : 11;
+  }
   return player.playerId === state.playerId ? 10 : 8;
 }
 
@@ -214,6 +231,18 @@ function playerModelShape(player) {
   }
   if (player.heroId === "mage") {
     return "mage";
+  }
+  if (player.heroId === "gunner") {
+    return "gunner";
+  }
+  if (player.heroId === "blade") {
+    return "blade";
+  }
+  if (player.heroId === "berserker") {
+    return "berserker";
+  }
+  if (player.heroId === "ninja") {
+    return "ninja";
   }
   return "circle";
 }
@@ -378,6 +407,201 @@ function drawBowArrowIcon(graphics, radius) {
   graphics.closePath();
 }
 
+function drawGunnerIcon(graphics, radius) {
+  graphics.roundRect(
+    -radius * 1.5,
+    -radius * 0.95,
+    radius * 3.15,
+    radius * 0.7,
+    radius * 0.08,
+  );
+
+  graphics.rect(-radius * 1.42, -radius * 0.28, radius * 2.95, radius * 0.26);
+
+  graphics.moveTo(-radius * 1.12, -radius * 1.06);
+  graphics.lineTo(-radius * 1.02, -radius * 1.24);
+  graphics.lineTo(-radius * 0.88, -radius * 1.24);
+  graphics.lineTo(-radius * 0.82, -radius * 1.06);
+  graphics.closePath();
+
+  graphics.moveTo(radius * 1.42, -radius * 1.08);
+  graphics.lineTo(radius * 1.6, -radius * 1.08);
+  graphics.lineTo(radius * 1.6, -radius * 0.18);
+  graphics.lineTo(radius * 1.42, -radius * 0.18);
+  graphics.closePath();
+
+  graphics.moveTo(-radius * 0.52, -radius * 0.02);
+  graphics.lineTo(radius * 0.42, -radius * 0.02);
+  graphics.quadraticCurveTo(radius * 0.22, radius * 0.58, -radius * 0.38, radius * 0.58);
+  graphics.lineTo(-radius * 0.66, radius * 0.58);
+  graphics.quadraticCurveTo(-radius * 0.98, radius * 0.32, -radius * 0.86, radius * 0.02);
+  graphics.closePath();
+
+  graphics.moveTo(-radius * 0.68, -radius * 0.02);
+  graphics.lineTo(-radius * 0.18, -radius * 0.02);
+  graphics.lineTo(-radius * 0.56, radius * 1.48);
+  graphics.lineTo(-radius * 1.34, radius * 1.48);
+  graphics.lineTo(-radius * 1.16, radius * 0.74);
+  graphics.quadraticCurveTo(-radius * 1.02, radius * 0.34, -radius * 1.28, radius * 0.12);
+  graphics.lineTo(-radius * 1.44, -radius * 0.02);
+  graphics.closePath();
+
+  graphics.moveTo(-radius * 0.58, radius * 0.1);
+  graphics.quadraticCurveTo(-radius * 0.2, radius * 0.18, -radius * 0.36, radius * 0.46);
+  graphics.quadraticCurveTo(-radius * 0.64, radius * 0.38, -radius * 0.58, radius * 0.1);
+  graphics.closePath();
+
+  graphics.moveTo(-radius * 0.18, -radius * 1.02);
+  graphics.lineTo(-radius * 0.02, -radius * 0.82);
+  graphics.lineTo(radius * 0.54, -radius * 0.82);
+  graphics.lineTo(radius * 0.7, -radius * 1.02);
+  graphics.closePath();
+}
+
+function drawNinjaIcon(graphics, radius) {
+  const iconRadius = radius * 0.9;
+  drawShurikenBlade(graphics, iconRadius, -Math.PI / 2);
+  drawShurikenBlade(graphics, iconRadius, 0);
+  drawShurikenBlade(graphics, iconRadius, Math.PI / 2);
+  drawShurikenBlade(graphics, iconRadius, Math.PI);
+  graphics.circle(0, 0, iconRadius * 0.3);
+}
+
+function drawShurikenBlade(graphics, radius, angle) {
+  const tip = pointAt(angle, radius * 1.65);
+  const leftWing = pointAt(angle - 0.55, radius * 0.88);
+  const leftInner = pointAt(angle - 1.15, radius * 0.42);
+  const rightInner = pointAt(angle + 1.15, radius * 0.42);
+  const rightWing = pointAt(angle + 0.55, radius * 0.88);
+  graphics.moveTo(tip.x, tip.y);
+  graphics.lineTo(leftWing.x, leftWing.y);
+  graphics.quadraticCurveTo(
+    leftInner.x,
+    leftInner.y,
+    pointAt(angle, radius * 0.5).x,
+    pointAt(angle, radius * 0.5).y,
+  );
+  graphics.quadraticCurveTo(rightInner.x, rightInner.y, rightWing.x, rightWing.y);
+  graphics.closePath();
+}
+
+function pointAt(angle, length) {
+  return {
+    x: Math.cos(angle) * length,
+    y: Math.sin(angle) * length,
+  };
+}
+
+function drawBladeIcon(graphics, radius) {
+  const scale = radius * 1.2;
+  const paths = [
+    [
+      [0.896, -1],
+      [0.857, -0.826],
+      [0.796, -0.664],
+      [0.465, -0.193],
+      [0.224, 0.098],
+      [-0.034, 0.361],
+      [-0.347, 0.613],
+      [-0.291, 0.765],
+      [-0.05, 0.546],
+      [0.101, 0.395],
+      [0.353, 0.143],
+      [0.633, -0.249],
+      [0.891, -0.664],
+      [0.963, -0.854],
+      [1, -1],
+      [0.963, -0.955],
+      [0.935, -0.955],
+      [0.913, -0.983],
+    ],
+    [
+      [0.146, 0.249],
+      [0.448, 0.507],
+      [0.538, 0.462],
+      [0.616, 0.445],
+      [0.599, 0.524],
+      [0.549, 0.613],
+      [0.487, 0.681],
+      [0.403, 0.737],
+      [0.314, 0.765],
+      [0.101, 0.574],
+      [-0.028, 0.439],
+    ],
+    [
+      [-0.616, 0.647],
+      [-0.532, 0.737],
+      [-0.476, 0.77],
+      [-0.751, 0.983],
+      [-0.796, 1],
+      [-0.868, 0.983],
+      [-0.902, 0.938],
+      [-0.891, 0.86],
+    ],
+    [
+      [0.611, 0.647],
+      [0.891, 0.86],
+      [0.902, 0.938],
+      [0.868, 0.983],
+      [0.824, 1],
+      [0.751, 0.983],
+      [0.476, 0.77],
+      [0.538, 0.731],
+    ],
+    [
+      [-0.902, -1],
+      [-0.667, -0.737],
+      [-0.291, -0.216],
+      [-0.039, 0.059],
+      [-0.14, 0.176],
+      [-0.426, -0.143],
+      [-0.796, -0.664],
+    ],
+  ];
+  for (const path of paths) {
+    for (let i = 0; i < path.length; i++) {
+      const x = path[i][0] * scale;
+      const y = path[i][1] * scale;
+      if (i === 0) {
+        graphics.moveTo(x, y);
+      } else {
+        graphics.lineTo(x, y);
+      }
+    }
+    graphics.closePath();
+  }
+}
+
+function drawBerserkerIcon(graphics, radius) {
+  graphics.rect(-radius * 0.12, -radius * 1.18, radius * 0.24, radius * 3.05);
+
+  graphics.moveTo(-radius * 0.12, -radius * 1.28);
+  graphics.lineTo(radius * 0.78, -radius * 1.42);
+  graphics.quadraticCurveTo(
+    radius * 1.28,
+    -radius * 0.9,
+    radius * 1.16,
+    -radius * 0.12,
+  );
+  graphics.lineTo(radius * 0.52, -radius * 0.22);
+  graphics.lineTo(radius * 0.2, -radius * 0.54);
+  graphics.lineTo(-radius * 0.12, -radius * 0.54);
+  graphics.closePath();
+
+  graphics.moveTo(-radius * 0.12, -radius * 1.26);
+  graphics.lineTo(-radius * 0.62, -radius * 1.08);
+  graphics.lineTo(-radius * 0.48, -radius * 0.54);
+  graphics.lineTo(-radius * 0.12, -radius * 0.54);
+  graphics.closePath();
+
+  graphics.rect(-radius * 0.46, -radius * 0.56, radius * 0.92, radius * 0.22);
+  graphics.moveTo(-radius * 0.34, radius * 1.68);
+  graphics.lineTo(radius * 0.34, radius * 1.68);
+  graphics.lineTo(radius * 0.22, radius * 2.04);
+  graphics.lineTo(-radius * 0.22, radius * 2.04);
+  graphics.closePath();
+}
+
 function drawMageIcon(graphics, radius) {
   graphics.circle(0, -radius * 0.38, radius * 0.48);
   graphics.circle(0, -radius * 0.38, radius * 0.24);
@@ -445,6 +669,9 @@ function unitModelRadius(unit) {
 }
 
 function unitModelDisplayRadius(unit) {
+  if (isMinionKind(unit?.kind)) {
+    return Math.max(8, (unit.radius || 0) * 0.5);
+  }
   return Math.max(18, unit.radius || 0);
 }
 
@@ -614,6 +841,12 @@ function formatTargetMpRegen(target) {
 function formatResource(resource) {
   if (resource === "sword_intent") {
     return "剑意";
+  }
+  if (resource === "rage") {
+    return "怒气";
+  }
+  if (resource === "energy") {
+    return "能量";
   }
   if (!resource || resource === "mp") {
     return "法力";

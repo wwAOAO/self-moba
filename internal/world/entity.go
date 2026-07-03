@@ -62,6 +62,7 @@ type Projectile struct {
 	DisplayCount int
 	Traveled     float64
 	Damage       int
+	MagicDamage  int
 	KnockupTicks uint64
 	EffectRatio  float64
 	EffectTicks  uint64
@@ -101,6 +102,7 @@ type Entity struct {
 	Tank         TankState
 	Death        DeathState
 	Intent       IntentState
+	Lane         LaneState
 	Regen        RegenState
 }
 
@@ -134,6 +136,10 @@ type EquipmentSlot struct {
 	SunfireActiveUntil       uint64
 	SunfireNextTick          uint64
 	SunfireStackExpireTick   uint64
+	PhysicalShieldMaxAmount  int
+	PhysicalShieldAmount     int
+	PhysicalShieldStartTick  uint64
+	PhysicalShieldExpireTick uint64
 	StoneplateShieldRatio    float64
 	StoneplateResistPercent  float64
 	StoneplateCooldownTicks  uint64
@@ -162,6 +168,7 @@ const (
 	EntityKindTower        EntityKind = "tower"
 	EntityKindCrystal      EntityKind = "crystal"
 	EntityKindBarracks     EntityKind = "barracks"
+	EntityKindFountain     EntityKind = "fountain"
 	EntityKindDummy        EntityKind = "dummy"
 )
 
@@ -369,6 +376,7 @@ type PassiveState struct {
 	ShieldLayers       []ShieldLayer
 	LastRegenBreakTick uint64
 	NextRegenTick      uint64
+	NextFountainTick   uint64
 }
 
 type ShieldLayer struct {
@@ -388,4 +396,18 @@ type IntentState struct {
 	MoveTarget       *Vector2
 	AttackTargetID   string
 	AttackPausedTill uint64
+}
+
+type LaneState struct {
+	Active         bool
+	RouteTarget    Vector2
+	LastOnLaneTick uint64
+}
+
+type PendingMinionSpawn struct {
+	Team       Team
+	Kind       EntityKind
+	Index      int
+	WaveNumber int
+	SpawnTick  uint64
 }

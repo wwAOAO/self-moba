@@ -9,6 +9,7 @@ async function bootPixi() {
   worldLayer.addChild(gridLayer);
   worldLayer.addChild(unitLayer);
   worldLayer.addChild(playerLayer);
+  worldLayer.addChild(skillLayer);
   worldLayer.addChild(effectLayer);
   app.ticker.add(draw);
   app.canvas.addEventListener("contextmenu", (event) => {
@@ -163,10 +164,26 @@ function renderHeroOptions(heroes) {
   els.heroId.innerHTML = heroes
     .map(
       (hero) =>
-        `<option value="${escapeHtml(hero.heroId)}">${escapeHtml(hero.name || hero.heroId)}</option>`,
+        `<option value="${escapeHtml(hero.heroId)}">${escapeHtml(heroDisplayName(hero))}</option>`,
     )
     .join("");
   if (heroClientConfig[selected]) {
     els.heroId.value = selected;
   }
+}
+
+function heroDisplayName(hero) {
+  const names = {
+    sword: "剑客",
+    warrior: "战士",
+    warriors: "战士",
+    archer: "弓手",
+    mage: "法师",
+    tank: "坦克",
+    gunner: "枪手",
+    blade: "刀客",
+    berserker: "狂战士",
+    ninja: "忍者",
+  };
+  return names[hero.heroId] || hero.name || hero.heroId;
 }

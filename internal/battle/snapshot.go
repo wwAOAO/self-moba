@@ -48,7 +48,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Y:              entity.Position.Y,
 			Stats:          stats,
 			Skills:         buildSkillSnapshots(entity.Skills),
-			Buffs:          buildBuffSnapshots(entity.Buffs),
+			Buffs:          buildBuffSnapshots(w.ActiveBuffs(&entity, tick)),
 			Passive:        buildPassiveSnapshot(entity.Passive),
 			LastHitTick:    entity.Combat.LastHitTick,
 			LastDamage:     entity.Combat.LastDamage,

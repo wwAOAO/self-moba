@@ -16,6 +16,8 @@ const (
 	archerHeroID       = "archer"
 	tankHeroID         = "tank"
 	mageHeroID         = "mage"
+	gunnerHeroID       = "gunner"
+	bladeHeroID        = "blade"
 	critRollModulo     = 10000
 	respawnSeconds     = 20
 	swordQSkillID      = "sword_cut"
@@ -43,23 +45,26 @@ const (
 )
 
 type World struct {
-	width            float64
-	height           float64
-	entities         map[string]*Entity
-	heroes           *config.HeroStore
-	skills           *config.SkillStore
-	levels           *config.LevelConfig
-	rewards          *config.RewardConfig
-	equipment        *config.EquipmentStore
-	nextObjectID     int
-	nextWallID       int
-	nextProjectileID int
-	nextEffectID     int
-	windWalls        map[string]WindWall
-	projectiles      map[string]*Projectile
-	projectileHits   map[string]map[string]bool
-	skillEffects     map[string]SkillEffect
-	equipmentBurns   map[string]EquipmentBurn
+	width               float64
+	height              float64
+	entities            map[string]*Entity
+	heroes              *config.HeroStore
+	skills              *config.SkillStore
+	levels              *config.LevelConfig
+	rewards             *config.RewardConfig
+	equipment           *config.EquipmentStore
+	nextObjectID        int
+	nextWallID          int
+	nextProjectileID    int
+	nextEffectID        int
+	windWalls           map[string]WindWall
+	projectiles         map[string]*Projectile
+	projectileHits      map[string]map[string]bool
+	skillEffects        map[string]SkillEffect
+	equipmentBurns      map[string]EquipmentBurn
+	nextMinionWaveTick  uint64
+	minionWaveNumber    int
+	pendingMinionSpawns []PendingMinionSpawn
 }
 
 func NewWorld(heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig, equipment *config.EquipmentStore) *World {
@@ -85,15 +90,23 @@ func NewWorld(heroes *config.HeroStore, skills *config.SkillStore, levels *confi
 func (w *World) Tick(tick uint64, tickRate int) {
 	w.expireWindWalls(tick)
 	w.expireSkillEffects(tick)
+	w.tickMinionWaves(tick, tickRate)
 	w.tickProjectiles(tick, tickRate)
 	w.tickEquipmentBurns(tick, tickRate)
 	for _, entity := range w.entities {
 		w.tickPhysicalDefenseShred(entity, tick)
 		w.tickSwordShield(entity, tick)
+		tickEquipmentPhysicalDamageShield(entity, tick)
 		w.tickStoneplateShield(entity, tick)
 		w.tickSunfire(entity, tick, tickRate)
 		w.tickTankGraniteShield(entity, tick, tickRate)
 		w.refreshTankWPassive(entity)
+		w.tickFountainForTarget(entity, tick, tickRate)
+		if entity.Lane.Active {
+			w.releasePendingAttack(entity, tick, tickRate)
+			w.tickLaneMinion(entity, tick, tickRate)
+			continue
+		}
 		if entity.Kind != EntityKindPlayer {
 			continue
 		}
@@ -123,6 +136,7 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		tickBaseRegen(entity, tickRate)
 		w.tickEquipmentPercentRegen(entity, tick, tickRate)
 		w.tickWarriorToughness(entity, tick, tickRate)
+		w.tickBladeRageDecay(entity, tick, tickRate)
 		w.tickPlayer(entity, tick, tickRate)
 		w.tickWarriorJudgment(entity, tick, tickRate)
 	}
@@ -168,7 +182,11 @@ func (w *World) tickRespawn(entity *Entity, tick uint64) {
 	entity.Death = DeathState{}
 	entity.Position = w.spawnPosition(entity.Team)
 	entity.Stats.HP = entity.Stats.MaxHP
-	entity.Stats.MP = entity.Stats.MaxMP
+	if entity.HeroID == bladeHeroID {
+		entity.Stats.MP = 0
+	} else {
+		entity.Stats.MP = entity.Stats.MaxMP
+	}
 	entity.Intent = IntentState{}
 	entity.Control = ControlState{}
 	entity.Sword = swordStateForHero(entity.HeroID)

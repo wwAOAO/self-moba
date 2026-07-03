@@ -2,7 +2,22 @@ package world
 
 import (
 	"l-battle/internal/config"
+	"math"
 	"strconv"
+)
+
+const (
+	fountainRange          = 900
+	fountainRegenRatio     = 0.02
+	fountainShotTrueBase   = 100
+	fountainShotTrueRate   = 0.02
+	fountainShotMagicBase  = 50
+	fountainShotMagicRate  = 0.015
+	fountainShotPhysBase   = 50
+	fountainShotPhysRate   = 0.015
+	fountainShotSpeed      = 1800
+	fountainShotIntervalS  = 0.25
+	fountainShotExpireSecs = 2
 )
 
 func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
@@ -18,6 +33,9 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 	position := w.spawnPosition(team)
 	level := MinHeroLevel
 	stats := heroStatsAtLevel(hero, level)
+	if hero.HeroID == bladeHeroID {
+		stats.MP = 0
+	}
 	w.applySwordCritOverflowStats(&Entity{HeroID: hero.HeroID}, &stats)
 	nextLevelExp := w.nextLevelExp(level)
 	startingSkillPoints := 1
@@ -68,6 +86,14 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 }
 
 func (w *World) SpawnBattleUnits() {
+	w.spawnUnit("spawn:fountain:blue", EntityKindFountain, TeamBlue, w.spawnPosition(TeamBlue).X, w.spawnPosition(TeamBlue).Y, 90, Stats{
+		HP:    99999,
+		MaxHP: 99999,
+	})
+	w.spawnUnit("spawn:fountain:red", EntityKindFountain, TeamRed, w.spawnPosition(TeamRed).X, w.spawnPosition(TeamRed).Y, 90, Stats{
+		HP:    99999,
+		MaxHP: 99999,
+	})
 	w.spawnUnit("enemy:blue-hero-1", EntityKindEnemyHero, TeamBlue, w.width/2-420, w.height/2+220, 18, Stats{
 		HP:              1200,
 		MaxHP:           1200,
@@ -80,35 +106,35 @@ func (w *World) SpawnBattleUnits() {
 		AttackRange:     150,
 		AttackSpeed:     1,
 	})
-	w.spawnUnit("minion:blue-melee-1", EntityKindMeleeMinion, TeamBlue, w.width/2-360, w.height/2+70, 14, Stats{
+	w.spawnUnit("minion:blue-melee-1", EntityKindMeleeMinion, TeamBlue, w.width/2-360, w.height/2+70, 20, Stats{
 		HP:              420,
 		MaxHP:           420,
 		Attack:          32,
 		PhysicalDefense: 8,
 		MagicDefense:    4,
 		MoveSpeed:       3,
-		AttackRange:     70,
-		AttackSpeed:     0.8,
+		AttackRange:     125,
+		AttackSpeed:     1.25,
 	})
-	w.spawnUnit("minion:blue-ranged-1", EntityKindRangedMinion, TeamBlue, w.width/2-430, w.height/2, 13, Stats{
+	w.spawnUnit("minion:blue-ranged-1", EntityKindRangedMinion, TeamBlue, w.width/2-430, w.height/2, 18, Stats{
 		HP:              300,
 		MaxHP:           300,
 		Attack:          38,
 		PhysicalDefense: 5,
 		MagicDefense:    5,
 		MoveSpeed:       3,
-		AttackRange:     360,
-		AttackSpeed:     0.7,
+		AttackRange:     550,
+		AttackSpeed:     0.67,
 	})
-	w.spawnUnit("minion:blue-siege-1", EntityKindSiegeMinion, TeamBlue, w.width/2-500, w.height/2-80, 18, Stats{
+	w.spawnUnit("minion:blue-siege-1", EntityKindSiegeMinion, TeamBlue, w.width/2-500, w.height/2-80, 26, Stats{
 		HP:              680,
 		MaxHP:           680,
 		Attack:          62,
 		PhysicalDefense: 14,
 		MagicDefense:    8,
 		MoveSpeed:       2.4,
-		AttackRange:     430,
-		AttackSpeed:     0.55,
+		AttackRange:     280,
+		AttackSpeed:     1,
 	})
 	w.spawnUnit("structure:blue-tower-1", EntityKindTower, TeamBlue, w.width/2-700, w.height/2+240, 34, Stats{
 		HP:              2600,
@@ -143,7 +169,7 @@ func (w *World) SpawnBattleUnits() {
 		AttackRange:     150,
 		AttackSpeed:     1,
 	})
-	w.spawnUnit("minion:red-melee-1", EntityKindMeleeMinion, TeamRed, w.width/2+360, w.height/2-70, 14, Stats{
+	w.spawnUnit("minion:red-melee-1", EntityKindMeleeMinion, TeamRed, w.width/2+360, w.height/2-70, 20, Stats{
 		HP:              420,
 		MaxHP:           420,
 		Attack:          32,
@@ -153,7 +179,7 @@ func (w *World) SpawnBattleUnits() {
 		AttackRange:     70,
 		AttackSpeed:     0.8,
 	})
-	w.spawnUnit("minion:red-ranged-1", EntityKindRangedMinion, TeamRed, w.width/2+430, w.height/2, 13, Stats{
+	w.spawnUnit("minion:red-ranged-1", EntityKindRangedMinion, TeamRed, w.width/2+430, w.height/2, 18, Stats{
 		HP:              300,
 		MaxHP:           300,
 		Attack:          38,
@@ -163,7 +189,7 @@ func (w *World) SpawnBattleUnits() {
 		AttackRange:     360,
 		AttackSpeed:     0.7,
 	})
-	w.spawnUnit("minion:red-siege-1", EntityKindSiegeMinion, TeamRed, w.width/2+500, w.height/2+80, 18, Stats{
+	w.spawnUnit("minion:red-siege-1", EntityKindSiegeMinion, TeamRed, w.width/2+500, w.height/2+80, 26, Stats{
 		HP:              680,
 		MaxHP:           680,
 		Attack:          62,
@@ -256,17 +282,19 @@ func unitTemplate(kind EntityKind) (Stats, float64, bool) {
 	case EntityKindEnemyHero:
 		return Stats{HP: 1200, MaxHP: 1200, MP: 500, MaxMP: 500, Attack: 82, PhysicalDefense: 26, MagicDefense: 18, MoveSpeed: 4.2, AttackRange: 150, AttackSpeed: 1}, 18, true
 	case EntityKindMeleeMinion:
-		return Stats{HP: 420, MaxHP: 420, Attack: 32, PhysicalDefense: 8, MagicDefense: 4, MoveSpeed: 3, AttackRange: 70, AttackSpeed: 0.8}, 14, true
+		return Stats{HP: 445, MaxHP: 445, Attack: 12, MoveSpeed: 3, AttackRange: 125, AttackSpeed: 1.25}, 20, true
 	case EntityKindRangedMinion:
-		return Stats{HP: 300, MaxHP: 300, Attack: 38, PhysicalDefense: 5, MagicDefense: 5, MoveSpeed: 3, AttackRange: 360, AttackSpeed: 0.7}, 13, true
+		return Stats{HP: 315, MaxHP: 315, Attack: 24, MoveSpeed: 3, AttackRange: 550, AttackSpeed: 0.67}, 18, true
 	case EntityKindSiegeMinion:
-		return Stats{HP: 680, MaxHP: 680, Attack: 62, PhysicalDefense: 14, MagicDefense: 8, MoveSpeed: 2.4, AttackRange: 430, AttackSpeed: 0.55}, 18, true
+		return Stats{HP: 900, MaxHP: 900, Attack: 40, MoveSpeed: 2.4, AttackRange: 280, AttackSpeed: 1}, 26, true
 	case EntityKindTower:
 		return Stats{HP: 2600, MaxHP: 2600, Attack: 180, PhysicalDefense: 80, MagicDefense: 60, AttackRange: 620, AttackSpeed: 0.75}, 34, true
 	case EntityKindBarracks:
 		return Stats{HP: 3200, MaxHP: 3200, PhysicalDefense: 55, MagicDefense: 45}, 40, true
 	case EntityKindCrystal:
 		return Stats{HP: 4500, MaxHP: 4500, PhysicalDefense: 70, MagicDefense: 70}, 48, true
+	case EntityKindFountain:
+		return Stats{HP: 99999, MaxHP: 99999}, 90, true
 	default:
 		return Stats{}, 0, false
 	}
@@ -280,14 +308,72 @@ func (w *World) RemovePlayer(playerID string) {
 func (w *World) spawnPosition(team Team) Vector2 {
 	if team == TeamRed {
 		return Vector2{
-			X: w.width/2 + 160,
-			Y: w.height/2 - 160,
+			X: w.width - 420,
+			Y: 420,
 		}
 	}
 	return Vector2{
-		X: w.width/2 - 160,
-		Y: w.height/2 + 160,
+		X: 420,
+		Y: w.height - 420,
 	}
+}
+
+func (w *World) tickFountainForTarget(target *Entity, tick uint64, tickRate int) {
+	if target == nil || target.Kind == EntityKindFountain || target.Stats.HP <= 0 || tickRate <= 0 {
+		return
+	}
+	insideFriendly := false
+	for _, fountain := range w.entities {
+		if fountain.Kind != EntityKindFountain || distance(target.Position, fountain.Position) > fountainRange {
+			continue
+		}
+		if fountain.Team == target.Team {
+			insideFriendly = true
+			continue
+		}
+		w.fireFountainShot(fountain, target, tick, tickRate)
+	}
+	if target.Kind != EntityKindPlayer || !insideFriendly || tick < target.Passive.NextFountainTick {
+		return
+	}
+	target.Stats.HP += int(math.Floor(float64(target.Stats.MaxHP) * fountainRegenRatio))
+	if target.Stats.HP > target.Stats.MaxHP {
+		target.Stats.HP = target.Stats.MaxHP
+	}
+	target.Stats.MP += target.Stats.MaxMP * fountainRegenRatio
+	if target.Stats.MP > target.Stats.MaxMP {
+		target.Stats.MP = target.Stats.MaxMP
+	}
+	target.Passive.NextFountainTick = tick + uint64(tickRate)
+}
+
+func (w *World) fireFountainShot(fountain *Entity, target *Entity, tick uint64, tickRate int) {
+	if fountain == nil || target == nil || tick < fountain.Passive.NextFountainTick {
+		return
+	}
+	dx, dy := normalize(target.Position.X-fountain.Position.X, target.Position.Y-fountain.Position.Y)
+	if dx == 0 && dy == 0 {
+		dx = 1
+	}
+	w.nextProjectileID++
+	id := "projectile:fountain_shot:" + strconv.Itoa(w.nextProjectileID)
+	w.projectiles[id] = &Projectile{
+		ID:           id,
+		Kind:         "fountain_shot",
+		Team:         fountain.Team,
+		SourceID:     fountain.ID,
+		TargetID:     target.ID,
+		Position:     fountain.Position,
+		Start:        fountain.Position,
+		Dir:          Vector2{X: dx, Y: dy},
+		SpeedPerTick: fountainShotSpeed / float64(tickRate),
+		Range:        fountainRange + 200,
+		Radius:       18,
+		CreatedAt:    tick,
+		ExpiresAt:    tick + secondsToTicks(fountainShotExpireSecs, tickRate),
+		HitIDs:       make(map[string]bool),
+	}
+	fountain.Passive.NextFountainTick = tick + secondsToTicks(fountainShotIntervalS, tickRate)
 }
 
 func playerEntityID(playerID string) string {

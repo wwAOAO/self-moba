@@ -475,5 +475,154 @@
       "cooldownMs": [80000, 65000, 50000],
       "cooldownRefund": [0.3, 0.4, 0.5]
     }
+  },
+  {
+    "skillId": "gunner_passive",
+    "name": "枪手被动",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive"
+  },
+  {
+    "skillId": "gunner_q",
+    "name": "枪手Q",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "gunner_w",
+    "name": "枪手W",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "gunner_e",
+    "name": "枪手E",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "gunner_r",
+    "name": "枪手R",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "blade_passive",
+    "name": "刀客被动",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive",
+    "meta": {
+      "basicAttackRage": 5,
+      "critAttackRage": 5,
+      "killRage": 10,
+      "skillHitRage": 5,
+      "outOfCombatSeconds": 5,
+      "rageDecayPerSecond": 5,
+      "critChancePerRage": 0.0035
+    }
+  },
+  {
+    "skillId": "blade_q",
+    "name": "刀客Q",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "blade_w",
+    "name": "刀客W",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "blade_e",
+    "name": "刀客E",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "blade_r",
+    "name": "刀客R",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "berserker_passive",
+    "name": "狂战士被动",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive"
+  },
+  {
+    "skillId": "berserker_q",
+    "name": "狂战士Q",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "berserker_w",
+    "name": "狂战士W",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "berserker_e",
+    "name": "狂战士E",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "berserker_r",
+    "name": "狂战士R",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "ninja_passive",
+    "name": "忍者被动",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive"
+  },
+  {
+    "skillId": "ninja_q",
+    "name": "忍者Q",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "ninja_w",
+    "name": "忍者W",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "ninja_e",
+    "name": "忍者E",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "ninja_r",
+    "name": "忍者R",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
   }
 ]

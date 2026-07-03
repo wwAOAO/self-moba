@@ -135,7 +135,7 @@ function formatArcherSkillState(player, tick) {
     const remain = ((archer.focusActiveUntil - tick) / state.tickRate).toFixed(
       1,
     );
-    return `<div class="skill-list"><div class="skill-row"><strong>foc</strong><span>Active</span><span>${remain}s</span><span></span></div></div>`;
+    return `<div class="skill-list"><div class="skill-row"><strong>foc</strong><span>生效中</span><span>${remain}s</span><span></span></div></div>`;
   }
   const stacks = archer.focusStacks || 0;
   if (stacks <= 0) {
@@ -244,7 +244,7 @@ function setStatsCard(player) {
   els.statExp.textContent =
     player.nextLevelExp > 0
       ? `${Math.floor(player.exp || 0)}/${Math.floor(player.nextLevelExp)}`
-      : "MAX";
+      : "满级";
   els.statSkillPoints.textContent = player.skillPoints || 0;
   setEquipmentCard(player);
   const resourceLabel = formatResource(heroConfig.resource);

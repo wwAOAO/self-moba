@@ -58,10 +58,10 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 		dx, dy := normalize(input.MoveX, input.MoveY)
 		before := entity.Position
 		step := movementStepAtTick(entity, tickRate, tick)
-		entity.Position.X += dx * step
-		entity.Position.Y += dy * step
-		entity.Position.X = clamp(entity.Position.X, 0, w.width)
-		entity.Position.Y = clamp(entity.Position.Y, 0, w.height)
+		entity.Position = w.resolveCollisionPosition(entity, Vector2{
+			X: clamp(entity.Position.X+dx*step, 0, w.width),
+			Y: clamp(entity.Position.Y+dy*step, 0, w.height),
+		})
 		w.chargeSwordIntent(entity, distance(before, entity.Position))
 	}
 	if input.Attack != nil {
@@ -172,16 +172,53 @@ func (w *World) moveToward(entity *Entity, destination Vector2, step float64, st
 	if dist <= step+stopDistance {
 		ratio := math.Max(0, dist-stopDistance) / dist
 		before := entity.Position
-		entity.Position.X += dx * ratio
-		entity.Position.Y += dy * ratio
+		entity.Position = w.resolveCollisionPosition(entity, Vector2{
+			X: clamp(entity.Position.X+dx*ratio, 0, w.width),
+			Y: clamp(entity.Position.Y+dy*ratio, 0, w.height),
+		})
 		w.chargeSwordIntent(entity, distance(before, entity.Position))
 		return true
 	}
 	before := entity.Position
-	entity.Position.X += dx / dist * step
-	entity.Position.Y += dy / dist * step
-	entity.Position.X = clamp(entity.Position.X, 0, w.width)
-	entity.Position.Y = clamp(entity.Position.Y, 0, w.height)
+	entity.Position = w.resolveCollisionPosition(entity, Vector2{
+		X: clamp(entity.Position.X+dx/dist*step, 0, w.width),
+		Y: clamp(entity.Position.Y+dy/dist*step, 0, w.height),
+	})
 	w.chargeSwordIntent(entity, distance(before, entity.Position))
 	return false
+}
+
+func (w *World) resolveCollisionPosition(entity *Entity, candidate Vector2) Vector2 {
+	if !isCollisionEntity(entity) {
+		return candidate
+	}
+	for _, other := range w.entities {
+		if other == nil || other.ID == entity.ID || !isCollisionEntity(other) {
+			continue
+		}
+		minDistance := entity.Radius + other.Radius
+		if minDistance <= 0 {
+			continue
+		}
+		dx := candidate.X - other.Position.X
+		dy := candidate.Y - other.Position.Y
+		dist := math.Hypot(dx, dy)
+		if dist <= 0 || dist >= minDistance {
+			continue
+		}
+		push := minDistance - dist
+		candidate.X = clamp(candidate.X+dx/dist*push, 0, w.width)
+		candidate.Y = clamp(candidate.Y+dy/dist*push, 0, w.height)
+	}
+	return candidate
+}
+
+func isCollisionEntity(entity *Entity) bool {
+	if entity == nil || entity.Stats.HP <= 0 {
+		return false
+	}
+	if entity.Kind == EntityKindPlayer {
+		return !entity.Death.Dead
+	}
+	return entity.Kind == EntityKindEnemyHero || isMinion(entity)
 }

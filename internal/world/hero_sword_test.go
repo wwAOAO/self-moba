@@ -648,6 +648,36 @@ func TestWindWallBlocksEnemyProjectileOnly(t *testing.T) {
 	}
 }
 
+func TestWindWallRemovesEnemyProjectile(t *testing.T) {
+	w := testWorld(t)
+	w.windWalls["wall"] = WindWall{
+		ID:        "wall",
+		Team:      TeamBlue,
+		Center:    Vector2{X: 100, Y: 100},
+		Dir:       Vector2{X: 0, Y: 1},
+		Width:     300,
+		ExpiresAt: 100,
+	}
+	w.projectiles["p"] = &Projectile{
+		ID:           "p",
+		Kind:         "mage_q",
+		Team:         TeamRed,
+		SkillID:      mageQSkillID,
+		Position:     Vector2{X: 50, Y: 100},
+		Dir:          Vector2{X: 1, Y: 0},
+		SpeedPerTick: 100,
+		Range:        500,
+		ExpiresAt:    100,
+		HitIDs:       map[string]bool{},
+	}
+
+	w.tickProjectiles(1, 20)
+
+	if _, ok := w.projectiles["p"]; ok {
+		t.Fatal("enemy projectile crossing wind wall should be removed")
+	}
+}
+
 func TestSwordEDashesThroughTargetAndAppliesPerTargetCooldown(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()

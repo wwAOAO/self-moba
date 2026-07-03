@@ -39,7 +39,7 @@ func swordQCooldownTicksByBonus(attackSpeedBonus float64, skill config.SkillConf
 }
 
 func (w *World) applyAttack(attacker *Entity, target *Entity, tick uint64, tickRate int) {
-	if attacker.Kind != EntityKindPlayer || tick < attacker.Combat.NextAttackTick {
+	if !canBasicAttack(attacker) || tick < attacker.Combat.NextAttackTick {
 		return
 	}
 	if attacker.Combat.PendingAttackTargetID != "" {
@@ -129,13 +129,18 @@ func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64
 		target.Combat.LastDamage = damage
 		target.Combat.LastDamageType = "physical"
 	}
+	w.gainBladeBasicAttackRage(attacker, target, tick)
 	w.applyTankWAftershock(attacker, target, tick, tickRate)
 	w.consumeWarriorQ(attacker, target, tick, tickRate)
 	w.triggerMageIlluminationOnBasicAttack(attacker, target, tick, tickRate)
 }
 
 func isRangedBasicAttacker(attacker *Entity) bool {
-	return attacker != nil && (attacker.HeroID == archerHeroID || attacker.HeroID == mageHeroID)
+	return attacker != nil && (attacker.HeroID == archerHeroID || attacker.HeroID == mageHeroID || attacker.HeroID == gunnerHeroID || attacker.Kind == EntityKindRangedMinion || attacker.Kind == EntityKindSiegeMinion)
+}
+
+func canBasicAttack(entity *Entity) bool {
+	return entity != nil && (entity.Kind == EntityKindPlayer || isMinion(entity))
 }
 
 func (w *World) fireBasicAttackProjectile(attacker *Entity, target *Entity, tick uint64, tickRate int) {
@@ -186,6 +191,7 @@ func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64) int 
 		attack *= w.critDamageMultiplier(attacker)
 	}
 	rawPhysical := attack + w.warriorQBonusDamage(attacker, tick) + w.tankWBonusDamage(attacker, tick)
+	rawPhysical = minionBasicAttackRawDamage(attacker, target, rawPhysical)
 	if isMinion(target) {
 		rawPhysical += w.equipmentMinionBasicAttackBonus(attacker, "physical")
 	}
@@ -196,6 +202,32 @@ func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64) int 
 		damage += magicDamageAfterResistance(attacker, target, w.equipmentMinionBasicAttackBonus(attacker, "magic"), tick)
 	}
 	return damage
+}
+
+func minionBasicAttackRawDamage(attacker *Entity, target *Entity, rawPhysical float64) float64 {
+	if !isMinion(attacker) || target == nil {
+		return rawPhysical
+	}
+	if target.Kind == EntityKindPlayer || target.Kind == EntityKindEnemyHero {
+		rawPhysical *= 0.6
+	}
+	if target.Kind == EntityKindTower {
+		if attacker.Kind == EntityKindSiegeMinion {
+			rawPhysical *= 0.84
+		} else {
+			rawPhysical *= 0.6
+		}
+	}
+	if isMinion(target) {
+		ratio := 0.02
+		if attacker.Kind == EntityKindRangedMinion {
+			ratio = 0.04
+		} else if attacker.Kind == EntityKindSiegeMinion {
+			ratio = 0.05
+		}
+		rawPhysical += float64(target.Stats.HP) * ratio
+	}
+	return rawPhysical
 }
 
 func (w *World) archerBasicAttackMultiplier(attacker *Entity, target *Entity, tick uint64) float64 {
@@ -497,6 +529,9 @@ func (w *World) critChance(attacker *Entity) float64 {
 	if attacker.HeroID == swordHeroID {
 		chance *= skillMetaRange(w.heroPassiveSkill(attacker), "critChanceMultiplier", 2)
 	}
+	if attacker.HeroID == bladeHeroID {
+		chance += bladeRageCritChance(attacker, w.heroPassiveSkill(attacker))
+	}
 	if chance > 1 {
 		return 1
 	}
@@ -748,6 +783,7 @@ func (w *World) applyShield(source *Entity, target *Entity, damage int, tickRate
 		absorbed = target.Passive.Shield
 	}
 	consumeShieldLayers(target, absorbed)
+	consumeEquipmentPhysicalDamageShield(target, absorbed)
 	target.Passive.Shield -= absorbed
 	if absorbed > 0 {
 		w.triggerStoneplateCooldown(target, tickRate)

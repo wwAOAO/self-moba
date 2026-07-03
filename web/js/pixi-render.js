@@ -2,7 +2,7 @@ function draw(ticker) {
   const frame = calculateFrame();
   drawMap(frame);
   drawEffects(frame);
-  syncUnits(frame);
+  syncUnits(frame, ticker.deltaMS);
   syncSprites(frame, ticker.deltaMS);
   syncDamageTexts(frame, ticker.deltaMS);
 }
@@ -40,11 +40,6 @@ function drawMap(frame) {
     );
     gridLayer.fill(0x22c55e);
   }
-
-  drawActiveSkillRanges(frame);
-  drawSwordETargetCooldowns(frame);
-  drawCastWindups(frame);
-  drawSkillPreview(frame);
 
   const selectedTarget = state.selectedTargetId
     ? targetMap().get(state.selectedTargetId)
@@ -91,6 +86,12 @@ function drawAttackFlash(frame) {
 }
 
 function drawEffects(frame) {
+  skillLayer.clear();
+  drawActiveSkillRanges(frame);
+  drawSwordETargetCooldowns(frame);
+  drawCastWindups(frame);
+  drawSkillPreview(frame);
+
   for (const effect of state.effects) {
     if (effect.kind === "sword_whirlwind") {
       drawSwordWhirlwindEffect(effect, frame);
@@ -144,6 +145,10 @@ function drawEffects(frame) {
       drawMageFinalSparkEffect(effect, frame);
       continue;
     }
+    if (effect.kind === "fountain_shot") {
+      drawFountainShotEffect(effect, frame);
+      continue;
+    }
     if (effect.kind !== "wind_wall") {
       continue;
     }
@@ -154,12 +159,12 @@ function drawEffects(frame) {
       frame.offsetY + (effect.y - effect.dirY * half) * frame.scale;
     const endX = frame.offsetX + (effect.x + effect.dirX * half) * frame.scale;
     const endY = frame.offsetY + (effect.y + effect.dirY * half) * frame.scale;
-    gridLayer.moveTo(startX, startY);
-    gridLayer.lineTo(endX, endY);
-    gridLayer.stroke({ color: 0x67e8f9, width: 10, alpha: 0.45 });
-    gridLayer.moveTo(startX, startY);
-    gridLayer.lineTo(endX, endY);
-    gridLayer.stroke({ color: 0x0e7490, width: 2, alpha: 0.9 });
+    skillLayer.moveTo(startX, startY);
+    skillLayer.lineTo(endX, endY);
+    skillLayer.stroke({ color: 0x67e8f9, width: 10, alpha: 0.45 });
+    skillLayer.moveTo(startX, startY);
+    skillLayer.lineTo(endX, endY);
+    skillLayer.stroke({ color: 0x0e7490, width: 2, alpha: 0.9 });
   }
 }
 
@@ -185,12 +190,12 @@ function drawWarriorJudgmentRange(player, frame, tick) {
   const hitRadius = radius + unitCollisionRadius({ radius: 18 });
   const x = frame.offsetX + player.x * frame.scale;
   const y = frame.offsetY + player.y * frame.scale;
-  gridLayer.circle(x, y, radius * frame.scale);
-  gridLayer.fill({ color: 0xf59e0b, alpha: 0.08 });
-  gridLayer.circle(x, y, radius * frame.scale);
-  gridLayer.stroke({ color: 0xf97316, width: 3, alpha: 0.75 });
-  gridLayer.circle(x, y, hitRadius * frame.scale);
-  gridLayer.stroke({ color: 0xf97316, width: 1, alpha: 0.35 });
+  skillLayer.circle(x, y, radius * frame.scale);
+  skillLayer.fill({ color: 0xf59e0b, alpha: 0.08 });
+  skillLayer.circle(x, y, radius * frame.scale);
+  skillLayer.stroke({ color: 0xf97316, width: 3, alpha: 0.75 });
+  skillLayer.circle(x, y, hitRadius * frame.scale);
+  skillLayer.stroke({ color: 0xf97316, width: 1, alpha: 0.35 });
 }
 
 function drawTankAftershockEffect(effect, frame) {
@@ -203,14 +208,14 @@ function drawTankAftershockEffect(effect, frame) {
   const y = frame.offsetY + effect.y * frame.scale;
   const radius = range * frame.scale;
   const alpha = effectAlpha(effect);
-  gridLayer.moveTo(x, y);
-  gridLayer.arc(x, y, radius, startAngle, endAngle);
-  gridLayer.closePath();
-  gridLayer.fill({ color: 0xfacc15, alpha: 0.14 * alpha });
-  gridLayer.moveTo(x, y);
-  gridLayer.arc(x, y, radius, startAngle, endAngle);
-  gridLayer.closePath();
-  gridLayer.stroke({ color: 0xd97706, width: 2, alpha: 0.8 * alpha });
+  skillLayer.moveTo(x, y);
+  skillLayer.arc(x, y, radius, startAngle, endAngle);
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xfacc15, alpha: 0.14 * alpha });
+  skillLayer.moveTo(x, y);
+  skillLayer.arc(x, y, radius, startAngle, endAngle);
+  skillLayer.closePath();
+  skillLayer.stroke({ color: 0xd97706, width: 2, alpha: 0.8 * alpha });
 }
 
 function drawTankImpactEffect(effect, frame) {
@@ -218,12 +223,12 @@ function drawTankImpactEffect(effect, frame) {
   const y = frame.offsetY + effect.y * frame.scale;
   const radius = (effect.radius || 250) * frame.scale;
   const alpha = effectAlpha(effect);
-  gridLayer.circle(x, y, radius);
-  gridLayer.fill({ color: 0x94a3b8, alpha: 0.14 * alpha });
-  gridLayer.circle(x, y, radius);
-  gridLayer.stroke({ color: 0x475569, width: 3, alpha: 0.85 * alpha });
-  gridLayer.circle(x, y, Math.max(8, radius * 0.12));
-  gridLayer.fill({ color: 0xe2e8f0, alpha: 0.22 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x94a3b8, alpha: 0.14 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0x475569, width: 3, alpha: 0.85 * alpha });
+  skillLayer.circle(x, y, Math.max(8, radius * 0.12));
+  skillLayer.fill({ color: 0xe2e8f0, alpha: 0.22 * alpha });
 }
 
 function drawBasicArrowEffect(effect, frame) {
@@ -231,19 +236,39 @@ function drawBasicArrowEffect(effect, frame) {
     drawMageBasicStarEffect(effect, frame);
     return;
   }
-  if ((effect.count || 1) >= 3) {
-    drawTripleArrowProjectile(effect, frame, 0xf8d36a, 0xf59e0b);
+  if (!effect.sourceHeroId) {
+    drawMinionBasicProjectile(effect, frame);
     return;
   }
-  drawArrowProjectile(effect, frame, 0xf8d36a, 0xf59e0b);
+  if ((effect.count || 1) >= 3) {
+    drawTripleArrowProjectile(effect, frame, 0xf8d36a, 0xf59e0b, {
+      fromSnapshot: true,
+    });
+    return;
+  }
+  drawArrowProjectile(effect, frame, 0xf8d36a, 0xf59e0b, {
+    fromSnapshot: true,
+  });
+}
+
+function drawMinionBasicProjectile(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(2, (effect.radius || 10) * frame.scale * 0.325);
+  const color = colorForTeam(effect.team);
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color, alpha: 0.88 });
+  skillLayer.circle(x, y, radius + 2);
+  skillLayer.stroke({ color, width: 2, alpha: 0.55 });
 }
 
 function drawMageBasicStarEffect(effect, frame) {
-  const position = projectileDrawPosition(effect);
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
   const x = frame.offsetX + position.x * frame.scale;
   const y = frame.offsetY + position.y * frame.scale;
-  drawStarPath(gridLayer, x, y, 10, 4.5);
-  gridLayer.fill({ color: 0xfacc15, alpha: 0.95 });
+  drawStarPath(skillLayer, x, y, 10, 4.5);
+  skillLayer.fill({ color: 0xfacc15, alpha: 0.95 });
 }
 
 function drawStarPath(graphics, x, y, outer, inner) {
@@ -283,19 +308,19 @@ function drawMageLightBindingEffect(effect, frame) {
   const y = frame.offsetY + position.y * frame.scale;
   const radius = Math.max(8, (effect.radius || 45) * frame.scale);
   const alpha = 0.9;
-  gridLayer.circle(x, y, radius * 0.45);
-  gridLayer.fill({ color: 0xfef3c7, alpha: 0.9 });
-  gridLayer.circle(x, y, radius);
-  gridLayer.stroke({ color: 0xfacc15, width: 3, alpha: 0.72 * alpha });
-  gridLayer.moveTo(
+  skillLayer.circle(x, y, radius * 0.45);
+  skillLayer.fill({ color: 0xfef3c7, alpha: 0.9 });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0xfacc15, width: 3, alpha: 0.72 * alpha });
+  skillLayer.moveTo(
     x - (effect.dirX || 1) * radius * 0.9,
     y - (effect.dirY || 0) * radius * 0.9,
   );
-  gridLayer.lineTo(
+  skillLayer.lineTo(
     x + (effect.dirX || 1) * radius * 1.2,
     y + (effect.dirY || 0) * radius * 1.2,
   );
-  gridLayer.stroke({ color: 0xfbbf24, width: 4, alpha: 0.8 });
+  skillLayer.stroke({ color: 0xfbbf24, width: 4, alpha: 0.8 });
 }
 
 function drawMagePrismaticBarrierEffect(effect, frame) {
@@ -304,19 +329,19 @@ function drawMagePrismaticBarrierEffect(effect, frame) {
   const y = frame.offsetY + position.y * frame.scale;
   const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
   const length = 32;
-  gridLayer.moveTo(
+  skillLayer.moveTo(
     x - Math.cos(angle) * length * 0.5,
     y - Math.sin(angle) * length * 0.5,
   );
-  gridLayer.lineTo(
+  skillLayer.lineTo(
     x + Math.cos(angle) * length * 0.5,
     y + Math.sin(angle) * length * 0.5,
   );
-  gridLayer.stroke({ color: 0xfacc15, width: 5, alpha: 0.9 });
-  gridLayer.circle(x + Math.cos(angle) * length * 0.55, y + Math.sin(angle) * length * 0.55, 7);
-  gridLayer.fill({ color: 0xfef3c7, alpha: 0.95 });
-  gridLayer.circle(x, y, Math.max(10, (effect.radius || 55) * frame.scale * 0.35));
-  gridLayer.stroke({ color: 0xfbbf24, width: 2, alpha: 0.55 });
+  skillLayer.stroke({ color: 0xfacc15, width: 5, alpha: 0.9 });
+  skillLayer.circle(x + Math.cos(angle) * length * 0.55, y + Math.sin(angle) * length * 0.55, 7);
+  skillLayer.fill({ color: 0xfef3c7, alpha: 0.95 });
+  skillLayer.circle(x, y, Math.max(10, (effect.radius || 55) * frame.scale * 0.35));
+  skillLayer.stroke({ color: 0xfbbf24, width: 2, alpha: 0.55 });
 }
 
 function drawMageLucentSingularityOrbEffect(effect, frame) {
@@ -324,10 +349,10 @@ function drawMageLucentSingularityOrbEffect(effect, frame) {
   const x = frame.offsetX + position.x * frame.scale;
   const y = frame.offsetY + position.y * frame.scale;
   const radius = Math.max(10, (effect.radius || 34) * frame.scale);
-  gridLayer.circle(x, y, radius);
-  gridLayer.fill({ color: 0xfef08a, alpha: 0.42 });
-  gridLayer.circle(x, y, radius * 0.45);
-  gridLayer.fill({ color: 0xffffff, alpha: 0.82 });
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0xfef08a, alpha: 0.42 });
+  skillLayer.circle(x, y, radius * 0.45);
+  skillLayer.fill({ color: 0xffffff, alpha: 0.82 });
 }
 
 function drawMageLucentSingularityEffect(effect, frame) {
@@ -335,12 +360,12 @@ function drawMageLucentSingularityEffect(effect, frame) {
   const y = frame.offsetY + effect.y * frame.scale;
   const radius = (effect.radius || 300) * frame.scale;
   const alpha = effectAlpha(effect);
-  gridLayer.circle(x, y, radius);
-  gridLayer.fill({ color: 0xfef08a, alpha: 0.12 * alpha });
-  gridLayer.circle(x, y, radius);
-  gridLayer.stroke({ color: 0xfacc15, width: 3, alpha: 0.8 * alpha });
-  gridLayer.circle(x, y, Math.max(8, radius * 0.08));
-  gridLayer.fill({ color: 0xfef3c7, alpha: 0.35 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0xfef08a, alpha: 0.12 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0xfacc15, width: 3, alpha: 0.8 * alpha });
+  skillLayer.circle(x, y, Math.max(8, radius * 0.08));
+  skillLayer.fill({ color: 0xfef3c7, alpha: 0.35 * alpha });
 }
 
 function drawMageFinalSparkEffect(effect, frame) {
@@ -350,15 +375,31 @@ function drawMageFinalSparkEffect(effect, frame) {
   const endY = frame.offsetY + (effect.endY || effect.y) * frame.scale;
   const width = Math.max(8, (effect.width || 200) * frame.scale);
   const alpha = effectAlpha(effect);
-  gridLayer.moveTo(startX, startY);
-  gridLayer.lineTo(endX, endY);
-  gridLayer.stroke({ color: 0xfef3c7, width, alpha: 0.22 * alpha });
-  gridLayer.moveTo(startX, startY);
-  gridLayer.lineTo(endX, endY);
-  gridLayer.stroke({ color: 0xfacc15, width: Math.max(3, width * 0.28), alpha: 0.75 * alpha });
-  gridLayer.moveTo(startX, startY);
-  gridLayer.lineTo(endX, endY);
-  gridLayer.stroke({ color: 0xffffff, width: Math.max(2, width * 0.08), alpha: 0.9 * alpha });
+  skillLayer.moveTo(startX, startY);
+  skillLayer.lineTo(endX, endY);
+  skillLayer.stroke({ color: 0xfef3c7, width, alpha: 0.22 * alpha });
+  skillLayer.moveTo(startX, startY);
+  skillLayer.lineTo(endX, endY);
+  skillLayer.stroke({ color: 0xfacc15, width: Math.max(3, width * 0.28), alpha: 0.75 * alpha });
+  skillLayer.moveTo(startX, startY);
+  skillLayer.lineTo(endX, endY);
+  skillLayer.stroke({ color: 0xffffff, width: Math.max(2, width * 0.08), alpha: 0.9 * alpha });
+}
+
+function drawFountainShotEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(5, (effect.radius || 18) * frame.scale * 0.45);
+  const tailX = x - (effect.dirX || 0) * radius * 3.2;
+  const tailY = y - (effect.dirY || 0) * radius * 3.2;
+  skillLayer.moveTo(tailX, tailY);
+  skillLayer.lineTo(x, y);
+  skillLayer.stroke({ color: 0x7dd3fc, width: Math.max(2, radius * 0.75), alpha: 0.65 });
+  skillLayer.circle(x, y, radius * 1.8);
+  skillLayer.fill({ color: 0xbfdbfe, alpha: 0.22 });
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x7dd3fc, alpha: 0.95 });
 }
 
 function drawProjectileSweepArea(effect, frame, position, radius, fillColor, strokeColor) {
@@ -372,24 +413,24 @@ function drawProjectileSweepArea(effect, frame, position, radius, fillColor, str
   if (length > 0.5) {
     const nx = -dy / length;
     const ny = dx / length;
-    gridLayer
+    skillLayer
       .moveTo(startX + nx * radius, startY + ny * radius)
       .lineTo(endX + nx * radius, endY + ny * radius)
       .lineTo(endX - nx * radius, endY - ny * radius)
       .lineTo(startX - nx * radius, startY - ny * radius)
       .closePath();
-    gridLayer.fill({ color: fillColor, alpha: 0.06 });
+    skillLayer.fill({ color: fillColor, alpha: 0.06 });
   }
-  gridLayer.circle(endX, endY, radius);
-  gridLayer.fill({ color: fillColor, alpha: 0.08 });
+  skillLayer.circle(endX, endY, radius);
+  skillLayer.fill({ color: fillColor, alpha: 0.08 });
   if (length > 0.5) {
-    gridLayer
+    skillLayer
       .moveTo(startX, startY)
       .lineTo(endX, endY)
       .stroke({ color: strokeColor, width: Math.max(2, radius * 2), alpha: 0.16 });
   }
-  gridLayer.circle(endX, endY, radius);
-  gridLayer.stroke({ color: strokeColor, width: 2, alpha: 0.7 });
+  skillLayer.circle(endX, endY, radius);
+  skillLayer.stroke({ color: strokeColor, width: 2, alpha: 0.7 });
 }
 
 function drawArcherHawkEffect(effect, frame) {
@@ -415,14 +456,14 @@ function drawArcherHawkEffect(effect, frame) {
   const radius = Math.max(14, (effect.radius || 80) * frame.scale);
   if (arrived) {
     const alpha = effectAlpha(effect);
-    gridLayer.circle(x, y, radius);
-    gridLayer.fill({ color: 0x38bdf8, alpha: 0.08 * alpha });
-    gridLayer.circle(x, y, radius);
-    gridLayer.stroke({ color: 0x0284c7, width: 2, alpha: 0.7 * alpha });
+    skillLayer.circle(x, y, radius);
+    skillLayer.fill({ color: 0x38bdf8, alpha: 0.08 * alpha });
+    skillLayer.circle(x, y, radius);
+    skillLayer.stroke({ color: 0x0284c7, width: 2, alpha: 0.7 * alpha });
   }
   const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
   const size = arrived ? 10 : 14;
-  gridLayer
+  skillLayer
     .moveTo(x + Math.cos(angle) * size, y + Math.sin(angle) * size)
     .lineTo(
       x + Math.cos(angle + 2.45) * size,
@@ -437,7 +478,7 @@ function drawArcherHawkEffect(effect, frame) {
       y + Math.sin(angle - 2.45) * size,
     )
     .closePath();
-  gridLayer.fill({ color: 0x0ea5e9, alpha: arrived ? 0.8 : 0.95 });
+  skillLayer.fill({ color: 0x0ea5e9, alpha: arrived ? 0.8 : 0.95 });
 }
 
 function drawArrowProjectile(effect, frame, shaftColor, headColor, options = {}) {
@@ -451,7 +492,7 @@ function drawArrowProjectile(effect, frame, shaftColor, headColor, options = {})
     state.hiddenEffectIds.add(effect.id);
     return;
   }
-  gridLayer
+  skillLayer
     .moveTo(
       x + Math.cos(angle) * length * 0.5,
       y + Math.sin(angle) * length * 0.5,
@@ -460,8 +501,8 @@ function drawArrowProjectile(effect, frame, shaftColor, headColor, options = {})
       x - Math.cos(angle) * length * 0.5,
       y - Math.sin(angle) * length * 0.5,
     );
-  gridLayer.stroke({ color: shaftColor, width: 3, alpha: 0.95 });
-  gridLayer
+  skillLayer.stroke({ color: shaftColor, width: 3, alpha: 0.95 });
+  skillLayer
     .moveTo(
       x + Math.cos(angle) * length * 0.5,
       y + Math.sin(angle) * length * 0.5,
@@ -475,7 +516,7 @@ function drawArrowProjectile(effect, frame, shaftColor, headColor, options = {})
       y + Math.sin(angle - Math.PI * 0.82) * width,
     )
     .closePath();
-  gridLayer.fill({ color: headColor, alpha: 0.95 });
+  skillLayer.fill({ color: headColor, alpha: 0.95 });
 }
 
 function projectileDrawPosition(effect, options = {}) {
@@ -535,7 +576,7 @@ function targetScreenRadius(target, frame) {
   return (target.radius || 18) * frame.scale;
 }
 
-function drawTripleArrowProjectile(effect, frame, shaftColor, headColor) {
+function drawTripleArrowProjectile(effect, frame, shaftColor, headColor, options = {}) {
   const arrows = [
     { forward: -82, side: 0 },
     { forward: 0, side: -25 },
@@ -557,6 +598,7 @@ function drawTripleArrowProjectile(effect, frame, shaftColor, headColor) {
       frame,
       shaftColor,
       headColor,
+      options,
     );
   }
 }
@@ -594,11 +636,11 @@ function drawSwordETargetCooldowns(frame) {
     const endAngle = startAngle + Math.PI * 2 * progress;
     const startX = x + Math.cos(startAngle) * radius;
     const startY = y + Math.sin(startAngle) * radius;
-    gridLayer.circle(x, y, radius);
-    gridLayer.stroke({ color: 0x7dd3fc, width: 4, alpha: 0.25 });
-    gridLayer.moveTo(startX, startY);
-    gridLayer.arc(x, y, radius, startAngle, endAngle);
-    gridLayer.stroke({ color: 0x38bdf8, width: 4, alpha: 0.9 });
+    skillLayer.circle(x, y, radius);
+    skillLayer.stroke({ color: 0x7dd3fc, width: 4, alpha: 0.25 });
+    skillLayer.moveTo(startX, startY);
+    skillLayer.arc(x, y, radius, startAngle, endAngle);
+    skillLayer.stroke({ color: 0x38bdf8, width: 4, alpha: 0.9 });
   }
 }
 
@@ -611,13 +653,13 @@ function drawSwordWhirlwindEffect(effect, frame) {
   const sx = frame.offsetX + x * frame.scale;
   const sy = frame.offsetY + y * frame.scale;
   const radius = (effect.radius || 70) * frame.scale;
-  gridLayer.circle(sx, sy, radius);
-  gridLayer.stroke({ color: 0x0284c7, width: 3, alpha: 0.9 });
-  gridLayer.circle(sx, sy, Math.max(6, radius * 0.35));
-  gridLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.8 });
-  gridLayer.moveTo(sx - radius * 0.55, sy);
-  gridLayer.lineTo(sx + radius * 0.55, sy);
-  gridLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.45 });
+  skillLayer.circle(sx, sy, radius);
+  skillLayer.stroke({ color: 0x0284c7, width: 3, alpha: 0.9 });
+  skillLayer.circle(sx, sy, Math.max(6, radius * 0.35));
+  skillLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.8 });
+  skillLayer.moveTo(sx - radius * 0.55, sy);
+  skillLayer.lineTo(sx + radius * 0.55, sy);
+  skillLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.45 });
 }
 
 function drawTankShardEffect(effect, frame) {
@@ -633,10 +675,10 @@ function drawTankShardEffect(effect, frame) {
   const sx = frame.offsetX + smoothX * frame.scale;
   const sy = frame.offsetY + smoothY * frame.scale;
   const radius = Math.max(5, (effect.radius || 45) * frame.scale);
-  gridLayer.circle(sx, sy, radius * 0.65);
-  gridLayer.fill({ color: 0x8b5e34, alpha: 0.85 });
-  gridLayer.circle(sx, sy, radius);
-  gridLayer.stroke({ color: 0x5c4033, width: 2, alpha: 0.75 });
+  skillLayer.circle(sx, sy, radius * 0.65);
+  skillLayer.fill({ color: 0x8b5e34, alpha: 0.85 });
+  skillLayer.circle(sx, sy, radius);
+  skillLayer.stroke({ color: 0x5c4033, width: 2, alpha: 0.75 });
 }
 
 function drawCastWindups(frame) {
@@ -692,23 +734,23 @@ function drawCastWindup(windup, frame, now) {
   const y = frame.offsetY + windup.y * frame.scale;
   const pulseRadius = (20 + 18 * progress) * frame.scale;
   const color = castWindupColor(windup.skillId);
-  gridLayer.circle(x, y, pulseRadius);
-  gridLayer.stroke({ color, width: 3, alpha: 0.7 * alpha });
-  gridLayer.circle(x, y, Math.max(5, pulseRadius * 0.18));
-  gridLayer.fill({ color, alpha: 0.18 * alpha });
+  skillLayer.circle(x, y, pulseRadius);
+  skillLayer.stroke({ color, width: 3, alpha: 0.7 * alpha });
+  skillLayer.circle(x, y, Math.max(5, pulseRadius * 0.18));
+  skillLayer.fill({ color, alpha: 0.18 * alpha });
   const angleStart = -Math.PI / 2;
-  gridLayer.moveTo(
+  skillLayer.moveTo(
     x + Math.cos(angleStart) * (pulseRadius + 6),
     y + Math.sin(angleStart) * (pulseRadius + 6),
   );
-  gridLayer.arc(
+  skillLayer.arc(
     x,
     y,
     pulseRadius + 6,
     angleStart,
     angleStart + Math.PI * 2 * progress,
   );
-  gridLayer.stroke({ color, width: 4, alpha: 0.85 });
+  skillLayer.stroke({ color, width: 4, alpha: 0.85 });
 
   if (windup.skillId === "sword_cut") {
     drawSwordQWindup(windup, frame, color, alpha);
@@ -743,12 +785,12 @@ function drawDirectionalWindup(windup, frame, color, alpha, width) {
     frame.offsetX + (windup.x + (windup.dirX || 1) * range) * frame.scale;
   const endY =
     frame.offsetY + (windup.y + (windup.dirY || 0) * range) * frame.scale;
-  gridLayer.moveTo(x, y);
-  gridLayer.lineTo(endX, endY);
-  gridLayer.stroke({ color, width, alpha: 0.16 * alpha });
-  gridLayer.moveTo(x, y);
-  gridLayer.lineTo(endX, endY);
-  gridLayer.stroke({ color, width: 2, alpha: 0.72 * alpha });
+  skillLayer.moveTo(x, y);
+  skillLayer.lineTo(endX, endY);
+  skillLayer.stroke({ color, width, alpha: 0.16 * alpha });
+  skillLayer.moveTo(x, y);
+  skillLayer.lineTo(endX, endY);
+  skillLayer.stroke({ color, width: 2, alpha: 0.72 * alpha });
 }
 
 function drawMageFinalSparkWindup(windup, frame, alpha) {
@@ -760,24 +802,24 @@ function drawMageFinalSparkWindup(windup, frame, alpha) {
   const endY =
     frame.offsetY + (windup.y + (windup.dirY || 0) * range) * frame.scale;
   const width = Math.max(4, 36 * frame.scale);
-  gridLayer.moveTo(startX, startY);
-  gridLayer.lineTo(endX, endY);
-  gridLayer.stroke({ color: 0xfef3c7, width, alpha: 0.2 * alpha });
-  gridLayer.moveTo(startX, startY);
-  gridLayer.lineTo(endX, endY);
-  gridLayer.stroke({ color: 0xfacc15, width: Math.max(2, width * 0.35), alpha: 0.7 * alpha });
-  gridLayer.moveTo(startX, startY);
-  gridLayer.lineTo(endX, endY);
-  gridLayer.stroke({ color: 0xffffff, width: 1, alpha: 0.85 * alpha });
+  skillLayer.moveTo(startX, startY);
+  skillLayer.lineTo(endX, endY);
+  skillLayer.stroke({ color: 0xfef3c7, width, alpha: 0.2 * alpha });
+  skillLayer.moveTo(startX, startY);
+  skillLayer.lineTo(endX, endY);
+  skillLayer.stroke({ color: 0xfacc15, width: Math.max(2, width * 0.35), alpha: 0.7 * alpha });
+  skillLayer.moveTo(startX, startY);
+  skillLayer.lineTo(endX, endY);
+  skillLayer.stroke({ color: 0xffffff, width: 1, alpha: 0.85 * alpha });
 }
 
 function drawCircleWindup(windup, frame, color, alpha, range) {
   const x = frame.offsetX + windup.x * frame.scale;
   const y = frame.offsetY + windup.y * frame.scale;
-  gridLayer.circle(x, y, range * frame.scale);
-  gridLayer.fill({ color, alpha: 0.06 * alpha });
-  gridLayer.circle(x, y, range * frame.scale);
-  gridLayer.stroke({ color, width: 3, alpha: 0.55 * alpha });
+  skillLayer.circle(x, y, range * frame.scale);
+  skillLayer.fill({ color, alpha: 0.06 * alpha });
+  skillLayer.circle(x, y, range * frame.scale);
+  skillLayer.stroke({ color, width: 3, alpha: 0.55 * alpha });
 }
 
 function drawTargetLockWindup(windup, frame, color, alpha) {
@@ -785,13 +827,13 @@ function drawTargetLockWindup(windup, frame, color, alpha) {
   const y = frame.offsetY + windup.y * frame.scale;
   const tx = frame.offsetX + windup.targetX * frame.scale;
   const ty = frame.offsetY + windup.targetY * frame.scale;
-  gridLayer.moveTo(x, y);
-  gridLayer.lineTo(tx, ty);
-  gridLayer.stroke({ color, width: 3, alpha: 0.55 * alpha });
-  gridLayer.circle(tx, ty, 26);
-  gridLayer.stroke({ color, width: 3, alpha: 0.8 * alpha });
-  gridLayer.circle(tx, ty, 8);
-  gridLayer.fill({ color, alpha: 0.18 * alpha });
+  skillLayer.moveTo(x, y);
+  skillLayer.lineTo(tx, ty);
+  skillLayer.stroke({ color, width: 3, alpha: 0.55 * alpha });
+  skillLayer.circle(tx, ty, 26);
+  skillLayer.stroke({ color, width: 3, alpha: 0.8 * alpha });
+  skillLayer.circle(tx, ty, 8);
+  skillLayer.fill({ color, alpha: 0.18 * alpha });
 }
 
 function castWindupColor(skillId) {
@@ -908,10 +950,10 @@ function drawSkillPreview(frame) {
   const x = frame.offsetX + preview.x * frame.scale;
   const y = frame.offsetY + preview.y * frame.scale;
   if (preview.form === "circle") {
-    gridLayer.circle(x, y, preview.range * frame.scale);
-    gridLayer.stroke({ color: 0x38bdf8, width: 3, alpha: 0.65 * alpha });
-    gridLayer.circle(x, y, 12);
-    gridLayer.fill({ color: 0x38bdf8, alpha: 0.18 * alpha });
+    skillLayer.circle(x, y, preview.range * frame.scale);
+    skillLayer.stroke({ color: 0x38bdf8, width: 3, alpha: 0.65 * alpha });
+    skillLayer.circle(x, y, 12);
+    skillLayer.fill({ color: 0x38bdf8, alpha: 0.18 * alpha });
     return;
   }
   const endX =
@@ -919,26 +961,26 @@ function drawSkillPreview(frame) {
   const endY =
     frame.offsetY + (preview.y + preview.dirY * preview.range) * frame.scale;
   if (preview.form === "whirlwind") {
-    gridLayer.moveTo(x, y);
-    gridLayer.lineTo(endX, endY);
-    gridLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.55 * alpha });
-    gridLayer.circle(endX, endY, (preview.radius || 70) * frame.scale);
-    gridLayer.stroke({ color: 0x0284c7, width: 3, alpha: 0.85 * alpha });
-    gridLayer.circle(
+    skillLayer.moveTo(x, y);
+    skillLayer.lineTo(endX, endY);
+    skillLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.55 * alpha });
+    skillLayer.circle(endX, endY, (preview.radius || 70) * frame.scale);
+    skillLayer.stroke({ color: 0x0284c7, width: 3, alpha: 0.85 * alpha });
+    skillLayer.circle(
       endX,
       endY,
       Math.max(6, (preview.radius || 70) * frame.scale * 0.28),
     );
-    gridLayer.fill({ color: 0x38bdf8, alpha: 0.16 * alpha });
+    skillLayer.fill({ color: 0x38bdf8, alpha: 0.16 * alpha });
     return;
   }
   const width = preview.form === "whirlwind" ? 18 : 12;
-  gridLayer.moveTo(x, y);
-  gridLayer.lineTo(endX, endY);
-  gridLayer.stroke({ color: 0x38bdf8, width, alpha: 0.28 * alpha });
-  gridLayer.moveTo(x, y);
-  gridLayer.lineTo(endX, endY);
-  gridLayer.stroke({ color: 0x0284c7, width: 2, alpha: 0.8 * alpha });
+  skillLayer.moveTo(x, y);
+  skillLayer.lineTo(endX, endY);
+  skillLayer.stroke({ color: 0x38bdf8, width, alpha: 0.28 * alpha });
+  skillLayer.moveTo(x, y);
+  skillLayer.lineTo(endX, endY);
+  skillLayer.stroke({ color: 0x0284c7, width: 2, alpha: 0.8 * alpha });
 }
 
 function syncSprites(frame, deltaMS) {
@@ -972,7 +1014,9 @@ function syncSprites(frame, deltaMS) {
   }
 }
 
-function syncUnits(frame) {
+function syncUnits(frame, deltaMS) {
+  const smoothing = 1 - Math.exp(-deltaMS / 80);
+
   for (const [unitId, sprite] of state.unitSprites) {
     if (!state.units.has(unitId)) {
       unitLayer.removeChild(sprite.node);
@@ -987,11 +1031,15 @@ function syncUnits(frame) {
       state.unitSprites.set(unit.id, sprite);
       unitLayer.addChild(sprite.node);
     }
+    sprite.targetX = unit.x;
+    sprite.targetY = unit.y;
     updateUnitBars(sprite, unit);
     updateUnitCollisionCircle(sprite, unit, frame);
     updateStatusLabel(sprite, unit, -(unitModelDisplayRadius(unit) + 30));
-    sprite.node.x = frame.offsetX + unit.x * frame.scale;
-    sprite.node.y = frame.offsetY + unit.y * frame.scale;
+    sprite.x += (sprite.targetX - sprite.x) * smoothing;
+    sprite.y += (sprite.targetY - sprite.y) * smoothing;
+    sprite.node.x = frame.offsetX + sprite.x * frame.scale;
+    sprite.node.y = frame.offsetY + sprite.y * frame.scale;
   }
 }
 
@@ -1098,14 +1146,28 @@ function redrawPlayerBody(sprite, player) {
     drawSwordIcon(sprite.body, radius);
   } else if (shape === "mage") {
     drawMageIcon(sprite.body, radius);
+  } else if (shape === "gunner") {
+    drawGunnerIcon(sprite.body, radius);
+  } else if (shape === "ninja") {
+    drawNinjaIcon(sprite.body, radius);
+  } else if (shape === "blade") {
+    drawBladeIcon(sprite.body, radius);
+  } else if (shape === "berserker") {
+    drawBerserkerIcon(sprite.body, radius);
   } else {
     sprite.body.circle(0, 0, radius);
   }
   sprite.body.fill(player.dead ? 0x6b7280 : colorForTeam(player.team));
-  if (shape !== "archer" && shape !== "mage") {
+  if (shape !== "archer" && shape !== "mage" && shape !== "ninja") {
     sprite.body.stroke({
-      color: player.dead ? 0x111827 : isSelf ? 0xffffff : 0x172026,
-      width: isSelf ? 2 : 1,
+      color: player.dead
+        ? 0x111827
+        : shape === "gunner" || shape === "berserker" || shape === "blade"
+          ? 0x000000
+          : isSelf
+            ? 0xffffff
+            : 0x172026,
+      width: shape === "gunner" || shape === "berserker" || shape === "blade" ? 1 : isSelf ? 2 : 1,
       alpha: player.dead ? 0.45 : 1,
     });
   }
@@ -1116,7 +1178,10 @@ function createUnit(unit) {
   const body = new PIXI.Graphics();
   const collision = new PIXI.Graphics();
   const hpFill = new PIXI.Graphics();
-  const visual = unitVisual(unit.kind);
+  let visual = unitVisual(unit.kind);
+  if (unit.kind === "fountain" || isMinionKind(unit.kind)) {
+    visual = { ...visual, color: colorForTeam(unit.team) };
+  }
   const statusLabel = createStatusLabel();
   const label = new PIXI.Text({
     text: visual.label,
@@ -1130,12 +1195,30 @@ function createUnit(unit) {
 
   const modelRadius = unitModelDisplayRadius(unit);
   drawUnitBody(body, visual, modelRadius);
-  body.stroke({ color: 0xf2f7f3, width: 2 });
-  drawHealthBar(hpFill, unit, -(modelRadius + 16));
+  if (unit.kind !== "fountain") {
+    body.stroke({ color: 0xf2f7f3, width: 2 });
+  }
+  if (unit.kind !== "fountain") {
+    drawHealthBar(hpFill, unit, -(modelRadius + 16));
+  }
   label.anchor.set(0.5, 0);
   label.y = modelRadius + 6;
+  label.visible = unitLabelVisible(unit.kind);
   node.addChild(statusLabel, hpFill, collision, body, label);
-  return { node, hpFill, collision, statusLabel };
+  return { node, hpFill, collision, statusLabel, x: unit.x || 0, y: unit.y || 0 };
+}
+
+function unitLabelVisible(kind) {
+  return (
+    kind !== "fountain" &&
+    kind !== "tower" &&
+    kind !== "crystal" &&
+    !isMinionKind(kind)
+  );
+}
+
+function isMinionKind(kind) {
+  return kind === "melee_minion" || kind === "ranged_minion" || kind === "siege_minion" || kind === "super_minion";
 }
 
 function createStatusLabel() {
@@ -1232,12 +1315,13 @@ function normalizePlayer(player) {
 function unitVisual(kind) {
   const visuals = {
     enemy_hero: { label: "Enemy Hero", color: 0xdc2626, shape: "circle" },
-    siege_minion: { label: "Cannon", color: 0x6b7280, shape: "rect" },
-    melee_minion: { label: "Melee", color: 0xf97316, shape: "circle" },
-    ranged_minion: { label: "Ranged", color: 0xfacc15, shape: "diamond" },
+    siege_minion: { label: "Cannon", color: 0x6b7280, shape: "cannon_minion" },
+    melee_minion: { label: "Melee", color: 0xf97316, shape: "melee_minion" },
+    ranged_minion: { label: "Ranged", color: 0xfacc15, shape: "ranged_minion" },
     tower: { label: "Tower", color: 0x475569, shape: "tower" },
-    crystal: { label: "Crystal", color: 0xa855f7, shape: "diamond" },
+    crystal: { label: "Crystal", color: 0xa855f7, shape: "crystal" },
     barracks: { label: "Barracks", color: 0x7c2d12, shape: "rect" },
+    fountain: { label: "Fountain", color: 0x38bdf8, shape: "fountain" },
     dummy: { label: "Dummy", color: 0x8a5a32, shape: "rect" },
   };
   return visuals[kind] || { label: kind, color: 0x334155, shape: "circle" };
@@ -1254,11 +1338,46 @@ function drawUnitBody(body, visual, radius) {
     body.fill(visual.color);
     return;
   }
-  if (visual.shape === "tower") {
-    body.rect(-size * 0.75, -size, size * 1.5, size * 2);
-    body.fill(visual.color);
-    body.rect(-size, -size * 1.3, size * 2, size * 0.45);
+  if (visual.shape === "crystal") {
+    body.rect(-size * 0.9, size * 0.42, size * 1.8, size * 0.38);
+    body.fill(0x475569);
+    body.rect(-size * 0.62, size * 0.18, size * 1.24, size * 0.42);
     body.fill(0x64748b);
+    body.moveTo(0, -size * 1.05);
+    body.lineTo(size * 0.42, -size * 0.22);
+    body.lineTo(size * 0.22, size * 0.38);
+    body.lineTo(-size * 0.22, size * 0.38);
+    body.lineTo(-size * 0.42, -size * 0.22);
+    body.closePath();
+    body.fill(visual.color);
+    body.moveTo(0, -size * 0.78);
+    body.lineTo(size * 0.18, -size * 0.18);
+    body.lineTo(0, size * 0.18);
+    body.lineTo(-size * 0.18, -size * 0.18);
+    body.closePath();
+    body.fill({ color: 0xf5d0fe, alpha: 0.72 });
+    return;
+  }
+  if (visual.shape === "melee_minion") {
+    drawMeleeMinion(body, size, visual.color);
+    return;
+  }
+  if (visual.shape === "ranged_minion") {
+    drawRangedMinion(body, size, visual.color);
+    return;
+  }
+  if (visual.shape === "cannon_minion") {
+    drawCannonMinion(body, size, visual.color);
+    return;
+  }
+  if (visual.shape === "tower") {
+    drawTowerBuilding(body, size, visual.color);
+    return;
+  }
+  if (visual.shape === "fountain") {
+    body.circle(0, 0, size);
+    body.fill({ color: visual.color, alpha: 0.2 });
+    drawFountainCore(body, size, visual.color);
     return;
   }
   if (visual.shape === "rect") {
@@ -1268,6 +1387,169 @@ function drawUnitBody(body, visual, radius) {
   }
   body.circle(0, 0, size);
   body.fill(visual.color);
+}
+
+function drawTowerBuilding(body, size, color) {
+  body.rect(-size * 0.9, size * 0.58, size * 1.8, size * 0.38);
+  body.fill(0x334155);
+  body.rect(-size * 0.68, size * 0.28, size * 1.36, size * 0.42);
+  body.fill(0x475569);
+
+  body.moveTo(-size * 0.48, size * 0.32);
+  body.lineTo(-size * 0.34, -size * 0.78);
+  body.lineTo(size * 0.34, -size * 0.78);
+  body.lineTo(size * 0.48, size * 0.32);
+  body.closePath();
+  body.fill(visualTowerStone(color));
+
+  body.rect(-size * 0.56, -size * 0.92, size * 1.12, size * 0.3);
+  body.fill(0x64748b);
+  for (let i = -1; i <= 1; i++) {
+    body.rect(i * size * 0.36 - size * 0.1, -size * 1.14, size * 0.2, size * 0.28);
+    body.fill(0x475569);
+  }
+
+  body.moveTo(0, -size * 1.48);
+  body.lineTo(size * 0.34, -size * 0.92);
+  body.lineTo(-size * 0.34, -size * 0.92);
+  body.closePath();
+  body.fill(color);
+
+  body.circle(0, -size * 0.32, size * 0.16);
+  body.fill({ color: 0xf8fafc, alpha: 0.78 });
+  body.rect(-size * 0.1, size * 0.02, size * 0.2, size * 0.46);
+  body.fill({ color: 0x1f2937, alpha: 0.7 });
+}
+
+function visualTowerStone(color) {
+  if (color === 0xef4444) {
+    return 0x7f1d1d;
+  }
+  if (color === 0x2563eb) {
+    return 0x1e3a8a;
+  }
+  return 0x475569;
+}
+
+function drawMeleeMinion(body, size, color) {
+  const dark = 0x1f2937;
+  body.circle(-size * 0.12, -size * 0.45, size * 0.28);
+  body.fill(0x94a3b8);
+  body.roundRect(-size * 0.48, -size * 0.22, size * 0.7, size * 0.82, size * 0.12);
+  body.fill(color);
+  body.moveTo(size * 0.34, -size * 0.38);
+  body.lineTo(size * 0.86, -size * 0.12);
+  body.lineTo(size * 0.66, size * 0.44);
+  body.lineTo(size * 0.2, size * 0.18);
+  body.closePath();
+  body.fill(0x64748b);
+  body.moveTo(-size * 0.52, size * 0.1);
+  body.lineTo(-size * 0.92, size * 0.58);
+  body.lineTo(-size * 0.7, size * 0.68);
+  body.lineTo(-size * 0.32, size * 0.2);
+  body.closePath();
+  body.fill(dark);
+  body.circle(-size * 0.12, -size * 0.5, size * 0.12);
+  body.fill(0xe5e7eb);
+}
+
+function drawRangedMinion(body, size, color) {
+  body.moveTo(0, -size * 0.9);
+  body.lineTo(size * 0.5, -size * 0.42);
+  body.lineTo(size * 0.62, size * 0.62);
+  body.lineTo(-size * 0.62, size * 0.62);
+  body.lineTo(-size * 0.5, -size * 0.42);
+  body.closePath();
+  body.fill(color);
+  body.circle(0, -size * 0.48, size * 0.22);
+  body.fill(0x111827);
+  body.moveTo(-size * 0.52, -size * 0.18);
+  body.lineTo(-size * 0.94, size * 0.18);
+  body.lineTo(-size * 0.58, size * 0.38);
+  body.lineTo(-size * 0.24, size * 0.02);
+  body.closePath();
+  body.fill(0x8b5cf6);
+  body.moveTo(size * 0.35, size * 0.04);
+  body.lineTo(size * 0.9, -size * 0.18);
+  body.lineTo(size * 0.72, size * 0.3);
+  body.lineTo(size * 0.42, size * 0.38);
+  body.closePath();
+  body.fill({ color: 0xf59e0b, alpha: 0.9 });
+}
+
+function drawCannonMinion(body, size, color) {
+  const dark = 0x1f2937;
+  body.rect(-size * 0.92, -size * 0.46, size * 1.08, size * 0.28);
+  body.fill(0x475569);
+  body.circle(-size * 0.92, -size * 0.32, size * 0.2);
+  body.fill(0x94a3b8);
+  body.circle(-size * 0.92, -size * 0.32, size * 0.11);
+  body.fill(dark);
+  body.moveTo(-size * 0.24, -size * 0.38);
+  body.quadraticCurveTo(size * 0.16, -size * 0.92, size * 0.62, -size * 0.36);
+  body.lineTo(size * 0.78, size * 0.46);
+  body.lineTo(-size * 0.42, size * 0.46);
+  body.lineTo(-size * 0.42, -size * 0.08);
+  body.lineTo(-size * 0.24, -size * 0.08);
+  body.closePath();
+  body.fill(color);
+  body.rect(-size * 0.64, -size * 0.02, size * 0.28, size * 0.76);
+  body.fill(0x475569);
+  body.circle(-size * 0.28, size * 0.62, size * 0.27);
+  body.fill(dark);
+  body.circle(size * 0.48, size * 0.62, size * 0.27);
+  body.fill(dark);
+  body.circle(-size * 0.28, size * 0.62, size * 0.13);
+  body.fill(0xe5e7eb);
+  body.circle(size * 0.48, size * 0.62, size * 0.13);
+  body.fill(0xe5e7eb);
+}
+
+function drawFountainCore(body, size, color) {
+  const s = size / 90;
+  body.circle(0, 0, 62 * s);
+  body.fill({ color: 0x1f2937, alpha: 0.94 });
+  body.circle(0, 0, 52 * s);
+  body.fill({ color: 0x8b6a3a, alpha: 0.96 });
+  body.circle(0, 0, 40 * s);
+  body.fill({ color: 0x374151, alpha: 0.96 });
+  body.circle(0, 0, 30 * s);
+  body.fill({ color, alpha: 0.34 });
+
+  for (let i = 0; i < 8; i++) {
+    const angle = (Math.PI * 2 * i) / 8;
+    const cx = Math.cos(angle) * 57 * s;
+    const cy = Math.sin(angle) * 57 * s;
+    body.circle(cx, cy, 8 * s);
+    body.fill({ color: 0xa17842, alpha: 0.98 });
+  }
+
+  body.circle(0, 0, 24 * s);
+  body.fill({ color: 0x111827, alpha: 0.98 });
+  body.circle(0, 0, 18 * s);
+  body.fill({ color: 0xa17842, alpha: 0.98 });
+  body.circle(0, 0, 12 * s);
+  body.fill({ color, alpha: 0.9 });
+
+  const guards = [
+    [-45, -14, -28, -35, -15, -27, -31, -7],
+    [15, -27, 28, -35, 45, -14, 31, -7],
+    [-45, 14, -31, 7, -15, 27, -28, 35],
+    [15, 27, 31, 7, 45, 14, 28, 35],
+  ];
+  for (const g of guards) {
+    body.moveTo(g[0] * s, g[1] * s);
+    body.lineTo(g[2] * s, g[3] * s);
+    body.lineTo(g[4] * s, g[5] * s);
+    body.lineTo(g[6] * s, g[7] * s);
+    body.closePath();
+    body.fill({ color: 0x475569, alpha: 0.95 });
+  }
+
+  body.circle(0, -18 * s, 34 * s);
+  body.stroke({ color, width: Math.max(1, 2 * s), alpha: 0.45 });
+  body.rect(-8 * s, -78 * s, 16 * s, 48 * s);
+  body.fill({ color, alpha: 0.13 });
 }
 
 function spawnDamageText(target, damage, damageType) {
@@ -1284,7 +1566,7 @@ function spawnDamageText(target, damage, damageType) {
       fontFamily: "Arial",
       fontSize: 15,
       fontWeight: "900",
-      stroke: { color: 0xffffff, width: 2 },
+      stroke: { color: damageTextStrokeColor(damageType), width: 2 },
     },
   });
   text.anchor.set(0.5, 0.5);
@@ -1304,9 +1586,16 @@ function damageTextColor(damageType) {
     return 0x8b5cf6;
   }
   if (damageType === "true") {
-    return 0xffffff;
+    return 0xe5e7eb;
   }
   return 0xff3333;
+}
+
+function damageTextStrokeColor(damageType) {
+  if (damageType === "true") {
+    return 0x111827;
+  }
+  return 0xffffff;
 }
 
 function syncDamageTexts(frame, deltaMS) {
@@ -1342,6 +1631,10 @@ function updateBars(sprite, target) {
 }
 
 function updateUnitBars(sprite, unit) {
+  if (unit.kind === "fountain") {
+    sprite.hpFill.clear();
+    return;
+  }
   drawHealthBar(sprite.hpFill, unit, -(unitModelDisplayRadius(unit) + 16));
 }
 
@@ -1356,6 +1649,9 @@ function playerResourceRatio(player) {
 function playerResourceColor(player) {
   if ((player?.heroId || els.heroId.value) === "sword") {
     return 0xf8fafc;
+  }
+  if ((player?.heroId || els.heroId.value) === "blade") {
+    return 0xef4444;
   }
   return 0x3b82f6;
 }
@@ -1391,7 +1687,7 @@ function drawHealthBar(graphics, entity, y) {
   graphics.clear();
   if (hpWidth > 0) {
     graphics.rect(-18, y, hpWidth, 4);
-    graphics.fill(0xd94948);
+    graphics.fill(0x22c55e);
   }
   if (shieldWidth > 0) {
     graphics.rect(-18 + hpWidth, y, shieldWidth, 4);
@@ -1400,3 +1696,4 @@ function drawHealthBar(graphics, entity, y) {
   graphics.roundRect(-18, y, 36, 4, 1);
   graphics.stroke({ color: 0x172026, width: 1, alpha: 0.85 });
 }
+

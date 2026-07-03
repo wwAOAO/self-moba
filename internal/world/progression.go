@@ -5,7 +5,11 @@ func (w *World) applyKillReward(killer *Entity, target *Entity) {
 		return
 	}
 	w.applyMageFinalSparkRefund(target)
-	if killer == nil || w.rewards == nil {
+	if killer == nil {
+		return
+	}
+	w.gainBladeKillRage(killer)
+	if w.rewards == nil {
 		return
 	}
 	w.applyWarriorWPassiveKill(killer, target)
@@ -20,7 +24,7 @@ func (w *World) applyKillReward(killer *Entity, target *Entity) {
 		}
 	case EntityKindBlueBuff, EntityKindRedBuff, EntityKindGromp, EntityKindRaptor, EntityKindMurkWolf, EntityKindKrugCamp:
 		if exp, ok := w.rewards.JungleExp(string(target.Kind)); ok {
-			w.addExperience(killer, float64(exp))
+			w.addExperience(killer, exp)
 		}
 		if gold, ok := w.rewards.JungleGold(string(target.Kind)); ok {
 			w.addGold(killer, float64(gold))

@@ -90,6 +90,7 @@ type EquipmentEffects struct {
 	BasicAttackAttackSpeedMaxStacks  float64 `json:"basicAttackAttackSpeedMaxStacks,omitempty"`
 	EveryNthBasicAttackBonusHit      float64 `json:"everyNthBasicAttackBonusHit,omitempty"`
 	PhysicalDamageShieldRatio        float64 `json:"physicalDamageShieldRatio,omitempty"`
+	PhysicalDamageShieldDecaySeconds float64 `json:"physicalDamageShieldDecaySeconds,omitempty"`
 	BasicAttackAttackerSlow          float64 `json:"basicAttackAttackerSlow,omitempty"`
 	BasicAttackAttackerSlowSeconds   float64 `json:"basicAttackAttackerSlowSeconds,omitempty"`
 	MagicHitMoveSpeedPercentPerStack float64 `json:"magicHitMoveSpeedPercentPerStack,omitempty"`
@@ -177,6 +178,7 @@ func NewEquipmentStore(items []EquipmentConfig) (*EquipmentStore, error) {
 			item.Effects.PhysicalHitMoveSpeedSeconds < 0 || item.Effects.BasicAttackBonusByCritMax < 0 ||
 			item.Effects.BasicAttackAttackSpeedPerStack < 0 || item.Effects.BasicAttackAttackSpeedMaxStacks < 0 ||
 			item.Effects.EveryNthBasicAttackBonusHit < 0 || item.Effects.PhysicalDamageShieldRatio < 0 ||
+			item.Effects.PhysicalDamageShieldDecaySeconds < 0 ||
 			item.Effects.BasicAttackAttackerSlow < 0 || item.Effects.BasicAttackAttackerSlowSeconds < 0 ||
 			item.Effects.MagicHitMoveSpeedPercentPerStack < 0 || item.Effects.MagicHitMagicDefensePerStack < 0 ||
 			item.Effects.MagicHitMaxStacks < 0 || item.Effects.StoneplateShieldMaxHPRatio < 0 ||

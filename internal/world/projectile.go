@@ -47,13 +47,18 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 		if step > remaining {
 			step = remaining
 		}
-		if projectile.SkillID == tankQSkillID || projectile.Kind == "basic_arrow" {
+		if projectile.SkillID == tankQSkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" {
 			updateTrackingProjectileDir(projectile, w.entities[projectile.TargetID])
 		}
 		previousPosition := projectile.Position
 		projectile.Position.X = clamp(projectile.Position.X+projectile.Dir.X*step, 0, w.width)
 		projectile.Position.Y = clamp(projectile.Position.Y+projectile.Dir.Y*step, 0, w.height)
 		projectile.Traveled += step
+		if w.projectileBlockedByWindWall(projectile, previousPosition) {
+			delete(w.projectiles, id)
+			w.cleanupProjectileGroup(projectile)
+			continue
+		}
 		if projectile.SkillID == mageESkillID && projectile.Traveled >= projectile.Range {
 			w.finishMageEProjectile(source, projectile, tick, tickRate)
 			delete(w.projectiles, id)
@@ -81,7 +86,7 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 			if projectile.SkillID == archerRSkillID && target.Kind != EntityKindPlayer && target.Kind != EntityKindEnemyHero {
 				continue
 			}
-			if (projectile.SkillID == tankQSkillID || projectile.Kind == "basic_arrow") && target.ID != projectile.TargetID {
+			if (projectile.SkillID == tankQSkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot") && target.ID != projectile.TargetID {
 				continue
 			}
 			if projectile.HitIDs[target.ID] || !canAttackTarget(source, target) {
@@ -142,7 +147,9 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 					delete(w.projectiles, id)
 					removeProjectile = true
 				} else {
-					if projectile.Kind == "basic_arrow" {
+					if projectile.Kind == "fountain_shot" {
+						w.applyFountainShotDamage(source, target, projectile, tickRate)
+					} else if projectile.Kind == "basic_arrow" {
 						w.applyBasicAttackDamage(source, target, damage, tickRate)
 					} else if projectile.SkillID == archerWSkillID || projectile.SkillID == swordQSkillID {
 						w.applyAOEDamage(source, target, damage, "physical", tickRate)
@@ -154,8 +161,9 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 					}
 					if projectile.Kind == "basic_arrow" {
 						w.triggerMageIlluminationOnBasicAttack(source, target, tick, tickRate)
+						w.gainBladeBasicAttackRage(source, target, tick)
 					}
-					if projectile.Kind == "basic_arrow" || projectile.SkillID == archerWSkillID {
+					if projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" || projectile.SkillID == archerWSkillID {
 						delete(w.projectiles, id)
 						removeProjectile = true
 					}
@@ -174,6 +182,9 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 				if projectile.Kind == "basic_arrow" && source != nil && source.HeroID == archerHeroID {
 					w.applyArcherFocusOnBasicHit(source, target, tick, tickRate)
 				}
+				if projectile.Kind == "basic_arrow" {
+					w.gainBladeBasicAttackRage(source, target, tick)
+				}
 				if projectile.SkillID == tankQSkillID {
 					w.resolveTankQProjectileHit(source, projectile, tick, tickRate)
 					delete(w.projectiles, id)
@@ -188,7 +199,7 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 				} else if projectile.SkillID == archerRSkillID {
 					delete(w.projectiles, id)
 					removeProjectile = true
-				} else if projectile.Kind == "basic_arrow" || projectile.SkillID == archerWSkillID {
+				} else if projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" || projectile.SkillID == archerWSkillID {
 					delete(w.projectiles, id)
 					removeProjectile = true
 				}
@@ -212,6 +223,19 @@ func (w *World) tickProjectiles(tick uint64, tickRate int) {
 			w.cleanupProjectileGroup(projectile)
 		}
 	}
+}
+
+func (w *World) applyFountainShotDamage(source *Entity, target *Entity, projectile *Projectile, tickRate int) {
+	if source == nil || target == nil || projectile == nil {
+		return
+	}
+	maxHP := float64(target.Stats.MaxHP)
+	trueDamage := trueDamageAfterReduction(target, fountainShotTrueBase+maxHP*fountainShotTrueRate, target.Combat.LastHitTick)
+	magicDamage := magicDamageAfterResistance(source, target, fountainShotMagicBase+maxHP*fountainShotMagicRate, target.Combat.LastHitTick)
+	physicalDamage := physicalDamageAfterResistance(source, target, fountainShotPhysBase+maxHP*fountainShotPhysRate, target.Combat.LastHitTick)
+	w.applyResolvedDamage(source, target, trueDamage, "true", sustainSingleTargetSkill, tickRate)
+	w.applyResolvedDamage(source, target, magicDamage, "magic", sustainSingleTargetSkill, tickRate)
+	w.applyResolvedDamage(source, target, physicalDamage, "physical", sustainSingleTargetSkill, tickRate)
 }
 
 func (w *World) resolveTankQProjectileHit(source *Entity, projectile *Projectile, tick uint64, tickRate int) {
@@ -406,7 +430,7 @@ func (w *World) SkillEffects() []SkillEffect {
 		if source := w.entities[projectile.SourceID]; source != nil {
 			sourceHeroID = source.HeroID
 		}
-		if projectile.SkillID == tankQSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID {
+		if projectile.SkillID == tankQSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" {
 			start = projectile.Position
 		}
 		if projectile.SkillID == tankQSkillID {
@@ -461,4 +485,11 @@ func (w *World) BlocksProjectile(team Team, from Vector2, to Vector2) bool {
 		}
 	}
 	return false
+}
+
+func (w *World) projectileBlockedByWindWall(projectile *Projectile, previousPosition Vector2) bool {
+	if projectile == nil || projectile.SkillID == mageWSkillID {
+		return false
+	}
+	return w.BlocksProjectile(projectile.Team, previousPosition, projectile.Position)
 }

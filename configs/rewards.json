@@ -4,15 +4,15 @@
     "shareMinPlayers": 2,
     "shareRadius": 1500,
     "killExp": {
-      "melee_minion": 62,
+      "melee_minion": 58.88,
       "ranged_minion": 31,
       "siege_minion": 75,
       "super_minion": 75
     },
     "killGold": {
       "melee_minion": 20,
-      "ranged_minion": 17,
-      "siege_minion": 45,
+      "ranged_minion": 14,
+      "siege_minion": 50,
       "super_minion": 45
     }
   },

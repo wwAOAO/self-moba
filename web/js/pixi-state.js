@@ -10,6 +10,7 @@ const state = {
   effects: [],
   seenEffectIds: new Set(),
   hiddenEffectIds: new Set(),
+  lastDamageByTarget: new Map(),
   sprites: new Map(),
   unitSprites: new Map(),
   damageTexts: [],
@@ -137,6 +138,28 @@ let heroSkillSlots = {
     e: "mage_e",
     r: "mage_r",
   },
+  gunner: {},
+  blade: {
+    passive: "blade_passive",
+    q: "blade_q",
+    w: "blade_w",
+    e: "blade_e",
+    r: "blade_r",
+  },
+  berserker: {
+    passive: "berserker_passive",
+    q: "berserker_q",
+    w: "berserker_w",
+    e: "berserker_e",
+    r: "berserker_r",
+  },
+  ninja: {
+    passive: "ninja_passive",
+    q: "ninja_q",
+    w: "ninja_w",
+    e: "ninja_e",
+    r: "ninja_r",
+  },
 };
 
 let skillClientConfig = {
@@ -158,4 +181,5 @@ const worldLayer = new PIXI.Container();
 const gridLayer = new PIXI.Graphics();
 const unitLayer = new PIXI.Container();
 const playerLayer = new PIXI.Container();
+const skillLayer = new PIXI.Graphics();
 const effectLayer = new PIXI.Container();

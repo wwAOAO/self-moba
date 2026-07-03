@@ -11,10 +11,10 @@ function connect() {
 
   const socket = new WebSocket(els.serverUrl.value.trim());
   state.socket = socket;
-  setStatus("Connecting");
+  setStatus("连接中");
 
   socket.addEventListener("open", () => {
-    setStatus("Connected");
+    setStatus("已连接");
     sendPacket("join_room", {
       roomId: state.roomId,
       playerId: state.playerId,
@@ -29,15 +29,15 @@ function connect() {
       applySnapshot(packet.payload);
     }
     if (packet.type === "error") {
-      setStatus(packet.payload?.message || "Server error");
+      setStatus(packet.payload?.message || "服务器错误");
     }
   });
 
   socket.addEventListener("close", () => {
-    setStatus("Disconnected");
+    setStatus("未连接");
     resetClientState();
   });
-  socket.addEventListener("error", () => setStatus("Connection error"));
+  socket.addEventListener("error", () => setStatus("连接错误"));
 }
 
 function applySnapshot(snapshot) {
@@ -69,7 +69,7 @@ function applySnapshot(snapshot) {
   ) {
     state.attackTargetId = "";
   }
-  updateDamageEffects(previousTargets, currentTargets);
+  updateDamageEffects(previousTargets, currentTargets, snapshot.tick);
   state.snapshotTick = snapshot.tick;
   state.snapshotAtMs = performance.now();
   els.tick.textContent = snapshot.tick;
@@ -101,7 +101,7 @@ function updateEffectFlashes(effects) {
       continue;
     }
     state.seenEffectIds.add(effect.id);
-    if (effect.kind === "basic_arrow") {
+    if (effect.kind === "basic_arrow" && effect.sourceHeroId) {
       const self = state.players.get(state.playerId);
       state.attackFlash = {
         x: effect.x,
@@ -118,27 +118,59 @@ function updateEffectFlashes(effects) {
   }
 }
 
-function updateDamageEffects(previousTargets, currentTargets) {
+function updateDamageEffects(previousTargets, currentTargets, tick) {
+  const seenDamageIds = new Set();
   for (const [id, current] of currentTargets) {
     const previous = previousTargets.get(id);
     if (!previous || current.lastHitTick <= previous.lastHitTick) {
       continue;
     }
-    const self = state.players.get(state.playerId);
-    if (id === state.attackTargetId && self?.heroId !== "archer") {
-      state.attackFlash = {
-        x: self.x,
-        y: self.y,
-        radius: self.stats?.attackRange || 0,
-        until: performance.now() + 180,
-      };
+    seenDamageIds.add(id);
+    showTargetDamage(id, current);
+    rememberTargetDamage(id, current);
+  }
+  for (const [id, previous] of previousTargets) {
+    if (currentTargets.has(id) || seenDamageIds.has(id)) {
+      continue;
     }
-    const damageEvents = current.damageEvents?.length
-      ? current.damageEvents
-      : [{ damage: current.lastDamage || 0, damageType: current.lastDamageType || "physical" }];
-    for (const event of damageEvents) {
-      spawnDamageText(current, event.damage || 0, event.damageType || "physical");
+    const remembered = state.lastDamageByTarget.get(id);
+    if (!remembered || remembered.lastHitTick !== tick - 1) {
+      continue;
     }
+    showTargetDamage(id, remembered);
+    state.lastDamageByTarget.delete(id);
+  }
+}
+
+function showTargetDamage(id, target) {
+  const self = state.players.get(state.playerId);
+  if (id === state.attackTargetId && self?.heroId !== "archer") {
+    state.attackFlash = {
+      x: self.x,
+      y: self.y,
+      radius: self.stats?.attackRange || 0,
+      until: performance.now() + 180,
+    };
+  }
+  const damageEvents = target.damageEvents?.length
+    ? target.damageEvents
+    : [{ damage: target.lastDamage || 0, damageType: target.lastDamageType || "physical" }];
+  for (const event of damageEvents) {
+    spawnDamageText(target, event.damage || 0, event.damageType || "physical");
+  }
+}
+
+function rememberTargetDamage(id, target) {
+  state.lastDamageByTarget.set(id, {
+    x: target.x,
+    y: target.y,
+    lastHitTick: target.lastHitTick,
+    lastDamage: target.lastDamage,
+    lastDamageType: target.lastDamageType,
+    damageEvents: target.damageEvents || [],
+  });
+  if (state.lastDamageByTarget.size > 128) {
+    state.lastDamageByTarget.delete(state.lastDamageByTarget.keys().next().value);
   }
 }
 
@@ -154,6 +186,7 @@ function resetClientState() {
   state.effects = [];
   state.seenEffectIds.clear();
   state.hiddenEffectIds.clear();
+  state.lastDamageByTarget.clear();
   state.moveTarget = null;
   state.selectedTargetId = "";
   state.attackTargetId = "";
@@ -231,6 +264,9 @@ function addCastWindup(self, skillId, target, selectedTarget) {
     return;
   }
   const now = performance.now();
+  if (skillId === "mage_r" && hasActiveCastWindup(skillId, now)) {
+    return;
+  }
   const durationMs = windupSeconds * 1000;
   const dx = (target?.x ?? self.x + 1) - self.x;
   const dy = (target?.y ?? self.y) - self.y;
@@ -255,6 +291,12 @@ function addCastWindup(self, skillId, target, selectedTarget) {
     expiresAt: now + durationMs,
     durationMs,
   });
+}
+
+function hasActiveCastWindup(skillId, now) {
+  return state.castWindups.some(
+    (windup) => windup.skillId === skillId && now <= windup.expiresAt,
+  );
 }
 
 function upgradeSkill(slot) {

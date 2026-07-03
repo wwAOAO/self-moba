@@ -69,12 +69,13 @@ func TestMinionKillGrantsExperience(t *testing.T) {
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
 	target := w.entities["minion:red-melee-1"]
+	target.Position = Vector2{X: player.Position.X + 100, Y: player.Position.Y}
 
-	w.ApplyInput("p1", protocolPlayerInputAttack(target.ID), 1, nil, 20)
-	w.Tick(2, 20)
+	w.applyAttack(player, target, 1, 20)
+	w.releasePendingAttack(player, 6, 20)
 
-	if player.TotalExp != 62 {
-		t.Fatalf("total exp = %f, want 62", player.TotalExp)
+	if player.TotalExp != 58.88 {
+		t.Fatalf("total exp = %f, want 58.88", player.TotalExp)
 	}
 	if player.Gold != 20 {
 		t.Fatalf("gold = %f, want 20", player.Gold)
@@ -120,8 +121,8 @@ func TestMinionKillRewardGrantsGold(t *testing.T) {
 
 	w.applyKillReward(player, target)
 
-	if player.TotalExp != 62 {
-		t.Fatalf("total exp = %f, want 62", player.TotalExp)
+	if player.TotalExp != 58.88 {
+		t.Fatalf("total exp = %f, want 58.88", player.TotalExp)
 	}
 	if player.Gold != 20 {
 		t.Fatalf("gold = %f, want 20", player.Gold)

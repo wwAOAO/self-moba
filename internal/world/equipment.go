@@ -188,6 +188,7 @@ func (w *World) sellEquipment(entity *Entity, slot int) {
 	}
 	entity.Gold += math.Floor(float64(item.Price)*item.SellRatio + 0.000000001)
 	removeStoneplateShieldFromSlot(entity, index)
+	removePhysicalDamageShieldFromSlot(entity, index)
 	entity.Equipment = append(entity.Equipment[:index], entity.Equipment[index+1:]...)
 	w.recalculatePlayerStats(entity)
 	w.refreshStoneplateShield(entity)
@@ -695,7 +696,7 @@ func (w *World) triggerEquipmentPhysicalDamageEffects(source *Entity, target *En
 	if source == nil || target == nil || source.Kind != EntityKindPlayer || damage <= 0 || w.equipment == nil {
 		return
 	}
-	for _, equipped := range source.Equipment {
+	for index, equipped := range source.Equipment {
 		item, ok := w.equipment.Get(equipped.EquipmentID)
 		if !ok {
 			continue
@@ -716,9 +717,79 @@ func (w *World) triggerEquipmentPhysicalDamageEffects(source *Entity, target *En
 			source.Control.MoveSpeedBonusUntil = tick + secondsToTicks(item.Effects.PhysicalHitMoveSpeedSeconds, tickRate)
 		}
 		if item.Effects.PhysicalDamageShieldRatio > 0 {
-			source.Passive.Shield += int(math.Floor(float64(damage) * item.Effects.PhysicalDamageShieldRatio))
-			source.Passive.MaxShield = source.Passive.Shield
+			shield := int(math.Floor(float64(damage) * item.Effects.PhysicalDamageShieldRatio))
+			if shield <= 0 {
+				continue
+			}
+			seconds := item.Effects.PhysicalDamageShieldDecaySeconds
+			if seconds <= 0 {
+				seconds = 3
+			}
+			source.Passive.Shield += shield
+			source.Passive.MaxShield += shield
+			source.Equipment[index].PhysicalShieldMaxAmount += shield
+			source.Equipment[index].PhysicalShieldAmount += shield
+			source.Equipment[index].PhysicalShieldStartTick = tick
+			source.Equipment[index].PhysicalShieldExpireTick = tick + secondsToTicks(seconds, tickRate)
 		}
+	}
+}
+
+func tickEquipmentPhysicalDamageShield(entity *Entity, tick uint64) {
+	if entity == nil || entity.Kind != EntityKindPlayer || entity.Passive.Shield <= 0 {
+		return
+	}
+	decayed := 0
+	for index := range entity.Equipment {
+		equipped := &entity.Equipment[index]
+		if equipped.PhysicalShieldAmount <= 0 {
+			continue
+		}
+		if tick >= equipped.PhysicalShieldExpireTick || equipped.PhysicalShieldExpireTick <= equipped.PhysicalShieldStartTick {
+			decayed += equipped.PhysicalShieldAmount
+			equipped.PhysicalShieldMaxAmount = 0
+			equipped.PhysicalShieldAmount = 0
+			continue
+		}
+		remaining := float64(equipped.PhysicalShieldExpireTick - tick)
+		duration := float64(equipped.PhysicalShieldExpireTick - equipped.PhysicalShieldStartTick)
+		next := int(math.Ceil(float64(equipped.PhysicalShieldMaxAmount) * remaining / duration))
+		if next < equipped.PhysicalShieldAmount {
+			decayed += equipped.PhysicalShieldAmount - next
+			equipped.PhysicalShieldAmount = next
+		}
+	}
+	if decayed > entity.Passive.Shield {
+		decayed = entity.Passive.Shield
+	}
+	entity.Passive.Shield -= decayed
+	if entity.Passive.MaxShield > entity.Passive.Shield {
+		entity.Passive.MaxShield = entity.Passive.Shield
+	}
+}
+
+func consumeEquipmentPhysicalDamageShield(entity *Entity, absorbed int) {
+	if entity == nil || absorbed <= 0 {
+		return
+	}
+	remaining := absorbed
+	for index := range entity.Equipment {
+		if remaining <= 0 {
+			return
+		}
+		equipped := &entity.Equipment[index]
+		if equipped.PhysicalShieldAmount <= 0 {
+			continue
+		}
+		if equipped.PhysicalShieldAmount <= remaining {
+			remaining -= equipped.PhysicalShieldAmount
+			equipped.PhysicalShieldMaxAmount = 0
+			equipped.PhysicalShieldAmount = 0
+			continue
+		}
+		equipped.PhysicalShieldAmount -= remaining
+		equipped.PhysicalShieldMaxAmount -= remaining
+		return
 	}
 }
 
@@ -1043,6 +1114,28 @@ func removeStoneplateShieldFromSlot(entity *Entity, index int) {
 	equipped.StoneplateShieldActive = false
 	equipped.StoneplateShieldAmount = 0
 	equipped.StoneplateBreakTick = 0
+}
+
+func removePhysicalDamageShieldFromSlot(entity *Entity, index int) {
+	if entity == nil || index < 0 || index >= len(entity.Equipment) {
+		return
+	}
+	removed := entity.Equipment[index].PhysicalShieldAmount
+	if removed <= 0 {
+		return
+	}
+	if removed > entity.Passive.Shield {
+		removed = entity.Passive.Shield
+	}
+	entity.Passive.Shield -= removed
+	if entity.Passive.Shield < 0 {
+		entity.Passive.Shield = 0
+	}
+	if entity.Passive.MaxShield > entity.Passive.Shield {
+		entity.Passive.MaxShield = entity.Passive.Shield
+	}
+	entity.Equipment[index].PhysicalShieldAmount = 0
+	entity.Equipment[index].PhysicalShieldMaxAmount = 0
 }
 
 func (w *World) applyStoneplateResists(entity *Entity, stats *Stats) {

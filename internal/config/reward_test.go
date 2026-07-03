@@ -11,10 +11,10 @@ func TestRewardConfigMinionSharedExp(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assertFloat(t, rewards, "melee_minion", 2, 38.44)
+	assertFloat(t, rewards, "melee_minion", 2, 58.88*1.24/2)
 	assertFloat(t, rewards, "ranged_minion", 2, 19.22)
 	assertFloat(t, rewards, "siege_minion", 2, 46.5)
-	assertFloat(t, rewards, "melee_minion", 3, 62*1.24/3)
+	assertFloat(t, rewards, "melee_minion", 3, 58.88*1.24/3)
 	if rewards.Minion.ShareRadius != 1500 {
 		t.Fatalf("minion share radius = %f, want 1500", rewards.Minion.ShareRadius)
 	}
@@ -28,8 +28,8 @@ func TestRewardConfigMinionGold(t *testing.T) {
 
 	cases := map[string]int{
 		"melee_minion":  20,
-		"ranged_minion": 17,
-		"siege_minion":  45,
+		"ranged_minion": 14,
+		"siege_minion":  50,
 		"super_minion":  45,
 	}
 	for kind, want := range cases {
@@ -79,8 +79,8 @@ func TestRewardConfigJungleExp(t *testing.T) {
 	}
 	for kind, want := range cases {
 		got, ok := rewards.JungleExp(kind)
-		if !ok || got != want {
-			t.Fatalf("%s exp = %d, ok=%v, want %d", kind, got, ok, want)
+		if !ok || got != float64(want) {
+			t.Fatalf("%s exp = %.2f, ok=%v, want %d", kind, got, ok, want)
 		}
 	}
 	if rewards.JungleScaling.StartAverageLevel != 3 {

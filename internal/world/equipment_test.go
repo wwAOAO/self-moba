@@ -845,3 +845,29 @@ func TestSunfireAegisBurnsNearbyEnemies(t *testing.T) {
 		t.Fatalf("target hp = %d, want sunfire damage", target.Stats.HP)
 	}
 }
+
+func TestSunfireBladePhysicalDamageShieldDecays(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3200
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("sunfire_blade"), 1, nil, 20)
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+
+	target.Combat.LastHitTick = 1
+	w.applyDamage(player, target, 100, 20)
+	if player.Passive.Shield != 10 {
+		t.Fatalf("shield after physical damage = %d, want 10", player.Passive.Shield)
+	}
+
+	tickEquipmentPhysicalDamageShield(player, 31)
+	if player.Passive.Shield != 5 {
+		t.Fatalf("shield halfway = %d, want 5", player.Passive.Shield)
+	}
+
+	tickEquipmentPhysicalDamageShield(player, 61)
+	if player.Passive.Shield != 0 {
+		t.Fatalf("shield after decay = %d, want 0", player.Passive.Shield)
+	}
+}

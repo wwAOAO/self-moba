@@ -11,6 +11,9 @@ func canAttackTarget(attacker *Entity, target *Entity) bool {
 	if target.Stats.HP <= 0 {
 		return false
 	}
+	if target.Kind == EntityKindFountain {
+		return false
+	}
 	if target.Kind == EntityKindPlayer && target.Death.Dead {
 		return false
 	}
@@ -48,19 +51,22 @@ func distance(a Vector2, b Vector2) float64 {
 }
 
 func distancePointToSegment(point Vector2, start Vector2, end Vector2) float64 {
+	return distance(point, closestPointOnSegment(point, start, end))
+}
+
+func closestPointOnSegment(point Vector2, start Vector2, end Vector2) Vector2 {
 	dx := end.X - start.X
 	dy := end.Y - start.Y
 	lengthSquared := dx*dx + dy*dy
 	if lengthSquared <= 0 {
-		return distance(point, start)
+		return start
 	}
 	t := ((point.X-start.X)*dx + (point.Y-start.Y)*dy) / lengthSquared
 	t = clamp(t, 0, 1)
-	closest := Vector2{
+	return Vector2{
 		X: start.X + dx*t,
 		Y: start.Y + dy*t,
 	}
-	return distance(point, closest)
 }
 
 func projectPoint(origin Vector2, direction Vector2, point Vector2) (float64, float64) {

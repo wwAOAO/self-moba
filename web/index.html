@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Battle Room PixiJS Test</title>
+    <title>Battle Room</title>
     <style>
       * {
         box-sizing: border-box;
@@ -408,78 +408,78 @@
   <body>
     <div class="app-shell">
       <aside class="panel">
-        <h1>2D Battle Room</h1>
+        <h1>2D 战斗房间</h1>
 
-        <label for="serverUrl">WebSocket</label>
+        <label for="serverUrl">WebSocket 地址</label>
         <input id="serverUrl" readonly />
 
-        <label for="roomId">Room ID</label>
+        <label for="roomId">房间 ID</label>
         <input id="roomId" value="demo-room" readonly />
 
-        <label for="playerId">Player ID</label>
+        <label for="playerId">玩家 ID</label>
         <input id="playerId" />
 
         <div class="form-row">
           <div>
-            <label for="heroId">Hero</label>
+            <label for="heroId">英雄</label>
             <select id="heroId">
-              <option value="sword">Sword</option>
-              <option value="warrior">Warrior</option>
-              <option value="archer">Archer</option>
-              <option value="tank">Tank</option>
-              <option value="mage">Mage</option>
+              <option value="sword">剑客</option>
+              <option value="warrior">战士</option>
+              <option value="archer">弓手</option>
+              <option value="tank">坦克</option>
+              <option value="mage">法师</option>
             </select>
           </div>
           <div>
-            <label for="team">Team</label>
+            <label for="team">阵营</label>
             <select id="team">
-              <option value="blue">Blue</option>
-              <option value="red">Red</option>
+              <option value="blue">蓝色</option>
+              <option value="red">红色</option>
             </select>
           </div>
         </div>
 
         <div class="form-row">
           <div>
-            <label for="spawnKind">Spawn Object</label>
+            <label for="spawnKind">生成物体</label>
             <select id="spawnKind">
-              <option value="enemy_hero">Enemy Hero</option>
-              <option value="melee_minion">Melee Minion</option>
-              <option value="ranged_minion">Ranged Minion</option>
-              <option value="siege_minion">Cannon Minion</option>
-              <option value="tower">Tower</option>
-              <option value="barracks">Barracks</option>
-              <option value="crystal">Crystal</option>
+              <option value="enemy_hero">敌方英雄</option>
+              <option value="melee_minion">近战小兵</option>
+              <option value="ranged_minion">远程小兵</option>
+              <option value="siege_minion">炮车小兵</option>
+              <option value="tower">防御塔</option>
+              <option value="barracks">兵营</option>
+              <option value="crystal">水晶</option>
             </select>
           </div>
           <div>
-            <label for="spawnTeam">Spawn Team</label>
+            <label for="spawnTeam">生成阵营</label>
             <select id="spawnTeam">
-              <option value="red">Red</option>
-              <option value="blue">Blue</option>
-              <option value="neutral">Neutral</option>
+              <option value="red">红色</option>
+              <option value="blue">蓝色</option>
+              <option value="neutral">中立</option>
             </select>
           </div>
         </div>
 
         <div class="actions">
-          <button id="spawnBtn">Spawn</button>
-          <button id="levelUpBtn" class="secondary">Level +1</button>
-          <button id="abilityHasteBtn" class="secondary">+200 Haste</button>
-          <button id="goldBtn" class="secondary">+10000 Gold</button>
+          <button id="spawnBtn">生成</button>
+          <button id="levelUpBtn" class="secondary">等级 +1</button>
+          <button id="abilityHasteBtn" class="secondary">+200 急速</button>
+          <button id="goldBtn" class="secondary">+10000 金币</button>
         </div>
 
         <div class="actions connection-actions">
-          <button id="connectBtn">Connect</button>
-          <button id="leaveBtn" class="secondary">Leave</button>
+          <button id="connectBtn">连接</button>
+          <button id="leaveBtn" class="secondary">离开</button>
         </div>
 
         <div class="status">
           <div>
-            <strong>Status</strong><span id="status">Disconnected</span>
+            <strong>状态</strong><span id="status">未连接</span>
           </div>
           <span id="tick" hidden>0</span>
-          <div><strong>Players</strong><span id="playerCount">0</span></div>
+          <div><strong>玩家数</strong><span id="playerCount">0</span></div>
         </div>
 
       </aside>
@@ -527,7 +527,7 @@
             </div>
           </div>
           <div class="player-card">
-            <strong>Buff</strong>
+            <strong>状态效果</strong>
             <div id="buffs">-</div>
           </div>
         </div>
@@ -567,11 +567,11 @@
             </div>
           </div>
           <div class="shop-card">
-            <label for="shopItem">Shop</label>
+            <label for="shopItem">商店</label>
             <select id="shopItem"></select>
             <div class="actions">
-              <button id="buyEquipmentBtn">Buy</button>
-              <button id="sellEquipmentBtn" class="secondary">Sell Selected</button>
+              <button id="buyEquipmentBtn">购买</button>
+              <button id="sellEquipmentBtn" class="secondary">出售选中</button>
             </div>
             <div class="status">
               <div><strong>提示</strong><span id="shopStatus">-</span></div>

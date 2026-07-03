@@ -12,11 +12,11 @@ type RewardConfig struct {
 }
 
 type RewardGroup struct {
-	ShareMultiplier float64        `json:"shareMultiplier,omitempty"`
-	ShareMinPlayers int            `json:"shareMinPlayers,omitempty"`
-	ShareRadius     float64        `json:"shareRadius,omitempty"`
-	KillExp         map[string]int `json:"killExp"`
-	KillGold        map[string]int `json:"killGold,omitempty"`
+	ShareMultiplier float64            `json:"shareMultiplier,omitempty"`
+	ShareMinPlayers int                `json:"shareMinPlayers,omitempty"`
+	ShareRadius     float64            `json:"shareRadius,omitempty"`
+	KillExp         map[string]float64 `json:"killExp"`
+	KillGold        map[string]int     `json:"killGold,omitempty"`
 }
 
 type StructureReward struct {
@@ -90,7 +90,7 @@ func (c *RewardConfig) MinionExp(kind string, players int) (float64, bool) {
 	if !ok {
 		return 0, false
 	}
-	return sharedExp(float64(base), players, c.Minion.ShareMultiplier, c.Minion.ShareMinPlayers), true
+	return sharedExp(base, players, c.Minion.ShareMultiplier, c.Minion.ShareMinPlayers), true
 }
 
 func (c *RewardConfig) MinionGold(kind string) (int, bool) {
@@ -101,7 +101,7 @@ func (c *RewardConfig) MinionGold(kind string) (int, bool) {
 	return gold, ok
 }
 
-func (c *RewardConfig) JungleExp(kind string) (int, bool) {
+func (c *RewardConfig) JungleExp(kind string) (float64, bool) {
 	if c == nil {
 		return 0, false
 	}
