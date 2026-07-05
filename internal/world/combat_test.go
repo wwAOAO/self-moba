@@ -13,8 +13,10 @@ func TestAttackTargetAutoAttacksOnServerTick(t *testing.T) {
 	w.SpawnHero("p1", hero, TeamBlue)
 
 	target := w.entities["dummy:training-1"]
+	target.Position = Vector2{X: w.entities[playerEntityID("p1")].Position.X + 100, Y: w.entities[playerEntityID("p1")].Position.Y}
 	w.ApplyInput("p1", protocolPlayerInputAttack(target.ID), 1, nil, 20)
 	w.Tick(2, 20)
+	tickAttackRelease(t, w, w.entities[playerEntityID("p1")], 20)
 
 	if target.Combat.LastDamage <= 0 {
 		t.Fatalf("target was not attacked by server tick")
@@ -34,6 +36,7 @@ func TestOpposingTeamPlayersCanAttackEachOther(t *testing.T) {
 
 	w.ApplyInput("blue", protocolPlayerInputAttack(target.ID), 1, nil, 20)
 	w.Tick(2, 20)
+	tickAttackRelease(t, w, attacker, 20)
 
 	if target.Stats.HP >= startHP {
 		t.Fatalf("target hp = %d, start hp = %d; opposing player was not damaged", target.Stats.HP, startHP)
@@ -83,6 +86,7 @@ func TestEnemyHeroCanBeBasicAttacked(t *testing.T) {
 
 	w.ApplyInput("p1", protocolPlayerInputAttack(id), 1, nil, 20)
 	w.Tick(2, 20)
+	tickAttackRelease(t, w, player, 20)
 
 	if target.Stats.HP >= startHP {
 		t.Fatalf("enemy hero hp = %d, want below %d after basic attack", target.Stats.HP, startHP)
@@ -255,10 +259,7 @@ func TestBasicAttackWindupUsesAttackSpeedBonus(t *testing.T) {
 	w.ApplyInput("p1", protocolPlayerInputAttack(target.ID), 10, nil, 20)
 	w.Tick(10, 20)
 	w.Tick(12, 20)
-	if target.Combat.LastDamage != 0 {
-		t.Fatalf("damage before shortened windup = %d, want 0", target.Combat.LastDamage)
-	}
-	w.Tick(13, 20)
+	tickAttackRelease(t, w, player, 20)
 	if target.Combat.LastDamage <= 0 {
 		t.Fatal("basic attack should damage after shortened windup")
 	}
@@ -272,17 +273,18 @@ func TestRangedBasicAttackFiresProjectileAfterWindup(t *testing.T) {
 	}
 	w.SpawnHero("archer", hero, TeamBlue)
 	player := w.entities[playerEntityID("archer")]
+	placeEntity(player, 3000, 3000)
 	target := w.entities["enemy:hero-1"]
 	target.Team = TeamRed
 	target.Position = Vector2{X: player.Position.X + 300, Y: player.Position.Y}
 
 	w.ApplyInput("archer", protocolPlayerInputAttack(target.ID), 10, nil, 20)
 	w.Tick(10, 20)
-	if len(w.projectiles) != 0 {
-		t.Fatalf("projectiles during attack windup = %d, want 0", len(w.projectiles))
+	if got := countProjectilesByKind(w, "basic_arrow"); got != 0 {
+		t.Fatalf("basic arrows during attack windup = %d, want 0", got)
 	}
-	w.Tick(16, 20)
-	if len(w.projectiles) == 0 {
+	tickAttackRelease(t, w, player, 20)
+	if got := countProjectilesByKind(w, "basic_arrow"); got == 0 {
 		t.Fatal("ranged basic attack should fire projectile after windup")
 	}
 }

@@ -41,7 +41,7 @@ func TestRewardConfigMinionGold(t *testing.T) {
 }
 
 func TestEquipmentConfig(t *testing.T) {
-	equipment, err := LoadEquipment("../../configs/equipment.json")
+	equipment, err := LoadEquipment("../../configs/equipment")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -331,6 +331,7 @@ func TestSwordQDamagesTargetAndAddsStack(t *testing.T) {
 	hero.Skills.Q = swordQSkillID
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, swordQSkillID, 1)
 	target := w.entities["dummy:training-1"]
 	target.Position = Vector2{X: player.Position.X + 200, Y: player.Position.Y}
@@ -358,8 +359,8 @@ func TestSwordQCooldownUsesSkillLevelAndAttackSpeedPercent(t *testing.T) {
 	w := testWorld(t)
 	skill := w.skillConfig(swordQSkillID)
 
-	if got := swordQCooldownTicksByBonus(0, skill, 1, 20); got != 120 {
-		t.Fatalf("level 1 q cooldown ticks = %d, want 120", got)
+	if got := swordQCooldownTicksByBonus(0, skill, 1, 20); got != 80 {
+		t.Fatalf("level 1 q cooldown ticks = %d, want 80", got)
 	}
 	if got := swordQCooldownTicksByBonus(1, skill, MaxBasicSkillLevel, 20); got != 32 {
 		t.Fatalf("level 5 q cooldown ticks = %d, want 32", got)
@@ -381,13 +382,13 @@ func TestSwordQCooldownUsesAttackSpeedBonusNotPanelAttackSpeed(t *testing.T) {
 	player.Stats.AttackSpeed = 0.697
 	player.Stats.AttackSpeedBonus = 0
 
-	if got := w.swordQCooldownTicks(player, w.skillConfig(swordQSkillID), 1, 20); got != 120 {
-		t.Fatalf("base attack speed q cooldown ticks = %d, want 120", got)
+	if got := w.swordQCooldownTicks(player, w.skillConfig(swordQSkillID), 1, 20); got != 80 {
+		t.Fatalf("base attack speed q cooldown ticks = %d, want 80", got)
 	}
 	player.Stats.AttackSpeed = 0.697 * 2
 	player.Stats.AttackSpeedBonus = 1
-	if got := w.swordQCooldownTicks(player, w.skillConfig(swordQSkillID), 1, 20); got != 48 {
-		t.Fatalf("100%% bonus attack speed q cooldown ticks = %d, want 48", got)
+	if got := w.swordQCooldownTicks(player, w.skillConfig(swordQSkillID), 1, 20); got != 32 {
+		t.Fatalf("100%% bonus attack speed q cooldown ticks = %d, want 32", got)
 	}
 }
 
@@ -417,6 +418,7 @@ func TestSwordQIgnoresAbilityHaste(t *testing.T) {
 	hero.Skills.Q = swordQSkillID
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, swordQSkillID, 1)
 	player.Stats.AbilityHaste = 100
 
@@ -468,6 +470,7 @@ func TestSwordQThirdHitBecomesWhirlwindAndKnocksUp(t *testing.T) {
 	hero.Skills.Q = swordQSkillID
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, swordQSkillID, 1)
 	target := w.entities["enemy:hero-1"]
 	target.Position = Vector2{X: player.Position.X + 500, Y: player.Position.Y}
@@ -510,13 +513,14 @@ func TestSwordWhirlwindQProjectileHitsOnlyAfterCollision(t *testing.T) {
 	hero.Skills.Q = swordQSkillID
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, swordQSkillID, 1)
 	nearPath := w.entities["dummy:training-1"]
 	nearWhirlwindEdge := w.entities["dummy:training-2"]
 	outsideWhirlwind := w.entities["enemy:hero-1"]
 	nearPath.Position = Vector2{X: player.Position.X + 300, Y: player.Position.Y + 20}
-	nearWhirlwindEdge.Position = Vector2{X: player.Position.X + 600, Y: player.Position.Y + 20}
-	outsideWhirlwind.Position = Vector2{X: player.Position.X + 600, Y: player.Position.Y + 180}
+	nearWhirlwindEdge.Position = Vector2{X: player.Position.X + 900, Y: player.Position.Y + 20}
+	outsideWhirlwind.Position = Vector2{X: player.Position.X + 900, Y: player.Position.Y + 180}
 	player.Skills[swordQSkillID] = SkillState{SkillID: swordQSkillID, Level: 1, Stacks: 2, StacksExpireTick: 200}
 
 	w.ApplyInput("p1", protocolPlayerInputCast(swordQSkillID, player.Position.X+900, player.Position.Y), 100, nil, 20)
@@ -536,7 +540,7 @@ func TestSwordWhirlwindQProjectileHitsOnlyAfterCollision(t *testing.T) {
 	if nearWhirlwindEdge.Combat.LastDamage != 0 {
 		t.Fatal("farther target should not be hit before projectile reaches it")
 	}
-	for tick := uint64(118); tick <= 126; tick++ {
+	for tick := uint64(111); tick <= 132; tick++ {
 		w.Tick(tick, 20)
 		if nearWhirlwindEdge.Combat.LastDamage > 0 {
 			break
@@ -558,6 +562,7 @@ func TestSwordWhirlwindQCanComboIntoLastBreathAfterHit(t *testing.T) {
 	hero.Skills.R = swordRSkillID
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, swordQSkillID, 1)
 	learnSkill(player, swordRSkillID, 1)
 	target := w.entities["enemy:hero-1"]

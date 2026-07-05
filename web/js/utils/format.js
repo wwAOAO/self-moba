@@ -140,15 +140,44 @@ function formatSwordIntent(passive) {
     : "-";
 }
 
-function formatTargetResource(target) {
-  if (target?.heroId === "sword") {
-    return `<div>剑意 ${formatSwordIntent(target.passive || {})}</div>`;
+function entityResourceKind(entity, heroConfig) {
+  if (heroConfig?.resource) {
+    return heroConfig.resource;
   }
-  const stats = target?.stats || {};
-  if (!stats.maxMp || stats.maxMp <= 0) {
+  if (entity?.heroId === "sword") {
+    return "sword_intent";
+  }
+  if (entity?.heroId === "blade") {
+    return "rage";
+  }
+  if (entity?.heroId === "ninja") {
+    return "energy";
+  }
+  if (entity?.stats?.maxMp > 0) {
+    return "mp";
+  }
+  return "none";
+}
+
+function formatEntityResourceValue(entity, heroConfig) {
+  const kind = entityResourceKind(entity, heroConfig);
+  const stats = entity?.stats || {};
+  if (kind === "none") {
+    return "-";
+  }
+  if (kind === "sword_intent") {
+    return formatSwordIntent(entity?.passive || {});
+  }
+  return `${formatInteger(stats.mp)}/${formatInteger(stats.maxMp)}`;
+}
+
+function formatTargetResource(target) {
+  const heroConfig = heroClientConfig[target?.heroId] || {};
+  const kind = entityResourceKind(target, heroConfig);
+  if (kind === "none") {
     return "";
   }
-  return `<div>法力 ${formatInteger(stats.mp)}/${formatInteger(stats.maxMp)}</div>`;
+  return `<div>${formatResource(kind)} ${formatEntityResourceValue(target, heroConfig)}</div>`;
 }
 
 function formatTargetMpRegen(target) {

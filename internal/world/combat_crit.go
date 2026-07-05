@@ -1,8 +1,8 @@
 package world
 
 import (
+	"l-battle/internal/world/formula"
 	"math"
-	"strconv"
 )
 
 func (w *World) attackCrits(attacker *Entity, target *Entity, tick uint64) bool {
@@ -55,12 +55,5 @@ func (w *World) applyCritFinalDamageMultiplier(attacker *Entity, damage int, cri
 }
 
 func deterministicCritRoll(attackerID string, targetID string, tick uint64) float64 {
-	hash := uint64(1469598103934665603)
-	for _, value := range []string{attackerID, targetID, strconv.FormatUint(tick, 10)} {
-		for i := 0; i < len(value); i++ {
-			hash ^= uint64(value[i])
-			hash *= 1099511628211
-		}
-	}
-	return float64(hash%critRollModulo) / critRollModulo
+	return formula.DeterministicCritRoll(attackerID, targetID, tick)
 }

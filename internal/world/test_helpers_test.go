@@ -113,3 +113,32 @@ func tickSwordQRelease(t *testing.T, w *World, entity *Entity, tickRate int) uin
 	}
 	return releaseTick
 }
+
+func tickAttackRelease(t *testing.T, w *World, entity *Entity, tickRate int) uint64 {
+	t.Helper()
+	if entity == nil || entity.Combat.PendingAttackTargetID == "" {
+		t.Fatal("basic attack is not pending")
+	}
+	releaseTick := entity.Combat.AttackReleaseTick
+	w.Tick(releaseTick, tickRate)
+	if entity.Combat.PendingAttackTargetID != "" {
+		t.Fatalf("basic attack still pending after release tick %d", releaseTick)
+	}
+	return releaseTick
+}
+
+func countProjectilesByKind(w *World, kind string) int {
+	count := 0
+	for _, projectile := range w.projectiles {
+		if projectile.Kind == kind {
+			count++
+		}
+	}
+	return count
+}
+
+func placeEntity(entity *Entity, x float64, y float64) {
+	if entity != nil {
+		entity.Position = Vector2{X: x, Y: y}
+	}
+}

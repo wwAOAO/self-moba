@@ -29,9 +29,8 @@
     return;
   }
   const stats = player.stats;
-  const passive = player.passive || {};
   const heroConfig = heroClientConfig[player.heroId || els.heroId.value] || {};
-  const isSword = (player.heroId || els.heroId.value) === "sword";
+  const resourceKind = entityResourceKind(player, heroConfig);
   els.statLevel.textContent = `${player.level || 1}/${player.maxLevel || levelClientConfig.maxLevel || 18}`;
   els.statExp.textContent =
     player.nextLevelExp > 0
@@ -39,19 +38,15 @@
       : "满级";
   els.statSkillPoints.textContent = player.skillPoints || 0;
   setEquipmentCard(player);
-  const resourceLabel = formatResource(heroConfig.resource);
+  const resourceLabel = formatResource(resourceKind);
   const hasResource = resourceLabel !== "";
   setStatPairVisible(els.statResourceLabel, els.statResource, hasResource);
   els.statResource.textContent = hasResource ? resourceLabel : "-";
   els.statHp.textContent = formatHpWithShield(player);
-  els.statMpLabel.textContent = isSword ? "剑意" : "法力";
-  els.statMp.textContent = isSword
-    ? formatSwordIntent(passive)
-    : stats.maxMp > 0
-      ? `${formatInteger(stats.mp)}/${formatInteger(stats.maxMp)}`
-      : "-";
+  els.statMpLabel.textContent = resourceLabel || "资源";
+  els.statMp.textContent = formatEntityResourceValue(player, heroConfig);
   els.statHpRegen5.textContent = formatHpRegen5(player);
-  const showMpRegen = !isSword && stats.maxMp > 0;
+  const showMpRegen = resourceKind === "mp" && stats.maxMp > 0;
   setStatPairVisible(els.statMpRegen5Label, els.statMpRegen5, showMpRegen);
   els.statMpRegen5.textContent = showMpRegen
     ? formatNumber((stats.mpRegen5 || 0) + equipmentPercentRegen5(player, "mp"))
@@ -85,11 +80,11 @@
       : "+200急速";
 }
 
-function formatPercent(value) {
+function formatAbilityPercent(value) {
   return `${Math.round(value * 1000) / 10}%`;
 }
 
 function formatAbilityHasteTip(abilityHaste) {
   const reduction = abilityHaste / (100 + abilityHaste);
-  return `<span class="stat-tip" data-tip="实际减少 ${formatPercent(reduction)} 冷却">?</span>`;
+  return `<span class="stat-tip" data-tip="实际减少 ${formatAbilityPercent(reduction)} 冷却">?</span>`;
 }

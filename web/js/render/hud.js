@@ -85,19 +85,25 @@ function updateUnitBars(sprite, unit) {
 }
 
 function playerResourceRatio(player) {
-  const passive = player?.passive || {};
-  if ((player?.heroId || els.heroId.value) === "sword") {
-    return ratio(passive.swordIntent || 0, passive.maxSwordIntent || 0);
+  const heroConfig = heroClientConfig[player?.heroId || els.heroId.value] || {};
+  const kind = entityResourceKind(player, heroConfig);
+  if (kind === "sword_intent") {
+    return ratio(player?.passive?.swordIntent || 0, player?.passive?.maxSwordIntent || 0);
   }
   return ratio(player?.stats?.mp || 0, player?.stats?.maxMp || 0);
 }
 
 function playerResourceColor(player) {
-  if ((player?.heroId || els.heroId.value) === "sword") {
+  const heroConfig = heroClientConfig[player?.heroId || els.heroId.value] || {};
+  const kind = entityResourceKind(player, heroConfig);
+  if (kind === "sword_intent") {
     return 0xf8fafc;
   }
-  if ((player?.heroId || els.heroId.value) === "blade") {
+  if (kind === "rage") {
     return 0xef4444;
+  }
+  if (kind === "energy") {
+    return 0xfacc15;
   }
   return 0x3b82f6;
 }
@@ -142,4 +148,3 @@ function drawHealthBar(graphics, entity, y) {
   graphics.roundRect(-18, y, 36, 4, 1);
   graphics.stroke({ color: 0x172026, width: 1, alpha: 0.85 });
 }
-

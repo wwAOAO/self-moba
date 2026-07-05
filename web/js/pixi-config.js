@@ -72,7 +72,7 @@ async function loadHeroConfig() {
 
 async function loadSkillConfig() {
   try {
-    const skills = await fetchConfigList("/configs/skills", "/configs/skills.json");
+    const skills = await fetchConfigList("/configs/skills");
     skillClientConfig = Object.fromEntries(
       skills.map((skill) => [
         skill.skillId,
@@ -107,7 +107,7 @@ async function loadRewardConfig() {
 
 async function loadEquipmentConfig() {
   try {
-    const equipment = await fetchConfigList("/configs/equipment", "/configs/equipment.json");
+    const equipment = await fetchConfigList("/configs/equipment");
     equipmentClientConfig = Object.fromEntries(
       equipment.map((item) => [item.equipmentId, item]),
     );

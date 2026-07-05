@@ -1,6 +1,8 @@
 package world
 
 import (
+	"l-battle/internal/world/formula"
+	"l-battle/internal/world/geom"
 	"math"
 )
 
@@ -36,72 +38,39 @@ func (w *World) attackReachAtTick(attacker *Entity, target *Entity, tick uint64)
 }
 
 func attackCooldownTicks(attackSpeed float64, tickRate int) uint64 {
-	if attackSpeed <= 0 {
-		return uint64(tickRate)
-	}
-	ticks := math.Ceil(float64(tickRate) / attackSpeed)
-	if ticks < 1 {
-		return 1
-	}
-	return uint64(ticks)
+	return formula.AttackCooldownTicks(attackSpeed, tickRate)
 }
 
 func distance(a Vector2, b Vector2) float64 {
-	return math.Hypot(a.X-b.X, a.Y-b.Y)
+	return geom.Distance(a, b)
 }
 
 func distancePointToSegment(point Vector2, start Vector2, end Vector2) float64 {
-	return distance(point, closestPointOnSegment(point, start, end))
+	return geom.DistancePointToSegment(point, start, end)
 }
 
 func closestPointOnSegment(point Vector2, start Vector2, end Vector2) Vector2 {
-	dx := end.X - start.X
-	dy := end.Y - start.Y
-	lengthSquared := dx*dx + dy*dy
-	if lengthSquared <= 0 {
-		return start
-	}
-	t := ((point.X-start.X)*dx + (point.Y-start.Y)*dy) / lengthSquared
-	t = clamp(t, 0, 1)
-	return Vector2{
-		X: start.X + dx*t,
-		Y: start.Y + dy*t,
-	}
+	return geom.ClosestPointOnSegment(point, start, end)
 }
 
 func projectPoint(origin Vector2, direction Vector2, point Vector2) (float64, float64) {
-	dx := point.X - origin.X
-	dy := point.Y - origin.Y
-	along := dx*direction.X + dy*direction.Y
-	perpX := dx - along*direction.X
-	perpY := dy - along*direction.Y
-	return along, math.Hypot(perpX, perpY)
+	return geom.ProjectPoint(origin, direction, point)
 }
 
 func windWallStart(wall WindWall) Vector2 {
-	half := wall.Width / 2
-	return Vector2{
-		X: wall.Center.X - wall.Dir.X*half,
-		Y: wall.Center.Y - wall.Dir.Y*half,
-	}
+	start, _ := geom.SegmentEndpoints(wall.Center, wall.Dir, wall.Width)
+	return start
 }
 
 func windWallEnd(wall WindWall) Vector2 {
-	half := wall.Width / 2
-	return Vector2{
-		X: wall.Center.X + wall.Dir.X*half,
-		Y: wall.Center.Y + wall.Dir.Y*half,
-	}
+	_, end := geom.SegmentEndpoints(wall.Center, wall.Dir, wall.Width)
+	return end
 }
 
 func segmentsIntersect(a Vector2, b Vector2, c Vector2, d Vector2) bool {
-	ab1 := orientation(a, b, c)
-	ab2 := orientation(a, b, d)
-	cd1 := orientation(c, d, a)
-	cd2 := orientation(c, d, b)
-	return ab1*ab2 <= 0 && cd1*cd2 <= 0
+	return geom.SegmentsIntersect(a, b, c, d)
 }
 
 func orientation(a Vector2, b Vector2, c Vector2) float64 {
-	return (b.X-a.X)*(c.Y-a.Y) - (b.Y-a.Y)*(c.X-a.X)
+	return geom.Orientation(a, b, c)
 }

@@ -18,6 +18,7 @@ func TestWarriorToughnessRegeneratesAfterOutOfCombat(t *testing.T) {
 	}
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	player.Stats.HP = 500
 	player.Passive.LastRegenBreakTick = 0
 
@@ -55,6 +56,7 @@ func TestWarriorToughnessHeroDamageBreaksRegen(t *testing.T) {
 	}
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	player.Stats.HP = 500
 	source := w.entities["enemy:hero-1"]
 	player.Combat.LastHitTick = 100
@@ -83,6 +85,7 @@ func TestWarriorToughnessMinionDamageDoesNotBreakRegen(t *testing.T) {
 	}
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	player.Stats.HP = 500
 	source := w.entities["minion:red-melee-1"]
 	player.Combat.LastHitTick = 100
@@ -107,6 +110,7 @@ func TestWarriorQEmpowersNextAttack(t *testing.T) {
 	}
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, warriorQSkillID, 1)
 	target := w.entities["enemy:hero-1"]
 	target.Position = Vector2{X: player.Position.X + 300 + player.Radius + target.Radius, Y: player.Position.Y}
@@ -136,12 +140,14 @@ func TestWarriorQEmpowersNextAttack(t *testing.T) {
 
 	w.ApplyInput("p1", protocolPlayerInputAttack(target.ID), 11, nil, 20)
 	w.Tick(12, 20)
+	releaseTick := tickAttackRelease(t, w, player, 20)
 
 	if got := startHP - target.Stats.HP; got != 146 {
 		t.Fatalf("warrior q damage = %d, want 146", got)
 	}
-	if target.Control.SilencedUntilTick != 42 {
-		t.Fatalf("silenced until = %d, want 42", target.Control.SilencedUntilTick)
+	wantSilencedUntil := releaseTick + secondsToTicks(1.5, 20)
+	if target.Control.SilencedUntilTick != wantSilencedUntil {
+		t.Fatalf("silenced until = %d, want %d", target.Control.SilencedUntilTick, wantSilencedUntil)
 	}
 	if player.Warrior.DecisiveStrikeUntilTick != 0 {
 		t.Fatalf("warrior q empower should be consumed, got %d", player.Warrior.DecisiveStrikeUntilTick)
@@ -267,6 +273,7 @@ func TestWarriorESpinsDamageNearestAndShredsArmor(t *testing.T) {
 	}
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, warriorESkillID, 1)
 	near := w.entities["enemy:hero-1"]
 	far := w.entities["enemy:blue-hero-1"]
@@ -307,6 +314,7 @@ func TestWarriorESecondCastEndsEarlyAndRefundsRemainingDuration(t *testing.T) {
 	}
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, warriorESkillID, 1)
 
 	w.ApplyInput("p1", protocolPlayerInputCast(warriorESkillID, player.Position.X, player.Position.Y), 10, w.skills, 20)
@@ -396,10 +404,12 @@ func TestWarriorECannotAutoAttackWhileSpinning(t *testing.T) {
 	w.Tick(10, 20)
 	hpAfterFirstSpin := target.Stats.HP
 	w.ApplyInput("p1", protocolPlayerInputAttack(target.ID), 11, nil, 20)
-	w.Tick(11, 20)
 
+	if player.Combat.PendingAttackTargetID != "" {
+		t.Fatalf("pending attack target = %q, want empty while spinning", player.Combat.PendingAttackTargetID)
+	}
 	if target.Stats.HP != hpAfterFirstSpin {
-		t.Fatalf("target hp = %d, want unchanged %d from blocked auto attack", target.Stats.HP, hpAfterFirstSpin)
+		t.Fatalf("target hp = %d, want unchanged %d immediately after blocked auto input", target.Stats.HP, hpAfterFirstSpin)
 	}
 	if startHP-hpAfterFirstSpin <= 0 {
 		t.Fatal("judgment spin should still damage target")

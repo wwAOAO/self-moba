@@ -18,7 +18,6 @@ const (
 	mageHeroID         = "mage"
 	gunnerHeroID       = "gunner"
 	bladeHeroID        = "blade"
-	critRollModulo     = 10000
 	respawnSeconds     = 20
 	swordQSkillID      = "sword_cut"
 	swordQStackTicks   = 6

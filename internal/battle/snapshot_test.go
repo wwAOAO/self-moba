@@ -35,7 +35,7 @@ func testSnapshotWorld(t *testing.T) (*world.World, *config.HeroStore) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	skills, err := config.LoadSkills("../../configs/skills.json")
+	skills, err := config.LoadSkills("../../configs/skills")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func testSnapshotWorld(t *testing.T) (*world.World, *config.HeroStore) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	equipment, err := config.LoadEquipment("../../configs/equipment.json")
+	equipment, err := config.LoadEquipment("../../configs/equipment")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -86,6 +86,7 @@ message MapSnapshot {
 }
 
 message PlayerSnapshot {
+  // Identity and progression.
   string player_id = 1;
   string hero_id = 2;
   string team = 3;
@@ -99,6 +100,7 @@ message PlayerSnapshot {
   double next_level_exp = 11;
   string message = 12;
   uint64 message_tick = 13;
+  // Transform and combat state.
   double x = 14;
   double y = 15;
   StatsSnapshot stats = 16;
@@ -111,10 +113,21 @@ message PlayerSnapshot {
   uint64 respawn_tick = 23;
   double respawn_in = 24;
   ControlSnapshot control = 25;
+  // Hero-specific public state.
   WarriorSnapshot warrior = 26;
   SwordSnapshot sword = 27;
   TankSnapshot tank = 28;
   ArcherSnapshot archer = 29;
+  repeated BuffSnapshot buffs = 30;
+  repeated DamageEventSnapshot damage_events = 31;
+}
+
+message BuffSnapshot {
+  string id = 1;
+  string name = 2;
+  uint64 expires_at_tick = 3;
+  bool negative = 4;
+  double ability_haste = 5;
 }
 
 message EquipmentSlot {
@@ -124,6 +137,7 @@ message EquipmentSlot {
 }
 
 message StatsSnapshot {
+  // Health and resources.
   int32 hp = 1;
   int32 max_hp = 2;
   int32 bonus_hp = 3;
@@ -131,11 +145,15 @@ message StatsSnapshot {
   double max_mp = 5;
   double hp_regen5 = 6;
   double mp_regen5 = 7;
+
+  // Offensive stats.
   double attack = 8;
   double bonus_attack = 9;
   int32 ability_power = 10;
   double ability_haste = 11;
   double damage_reduce = 12;
+
+  // Defenses and penetration.
   double physical_defense = 13;
   double bonus_physical_defense = 14;
   double physical_pen_percent = 15;
@@ -146,6 +164,8 @@ message StatsSnapshot {
   double magic_pen_percent = 20;
   double magic_pen_flat = 21;
   double magic_damage_reduce = 22;
+
+  // Movement, attacks, and sustain.
   double move_speed = 23;
   double attack_range = 24;
   double attack_speed = 25;
@@ -169,6 +189,7 @@ message DummySnapshot {
   uint64 last_hit_tick = 6;
   int32 last_damage = 7;
   string last_damage_type = 8;
+  repeated DamageEventSnapshot damage_events = 9;
 }
 
 message UnitSnapshot {
@@ -183,6 +204,12 @@ message UnitSnapshot {
   int32 last_damage = 9;
   string last_damage_type = 10;
   ControlSnapshot control = 11;
+  repeated DamageEventSnapshot damage_events = 12;
+}
+
+message DamageEventSnapshot {
+  int32 damage = 1;
+  string damage_type = 2;
 }
 
 message EffectSnapshot {
@@ -203,6 +230,7 @@ message EffectSnapshot {
   uint64 created_at = 15;
   uint64 expires_at = 16;
   int32 count = 17;
+  string source_hero_id = 18;
 }
 
 message SkillSnapshot {
@@ -221,14 +249,18 @@ message PassiveSnapshot {
 }
 
 message ControlSnapshot {
+  // Action locks and hard crowd control.
   uint64 airborne_until_tick = 1;
   uint64 dash_until_tick = 2;
   uint64 action_locked_until_tick = 3;
   uint64 silenced_until_tick = 4;
   uint64 tenacity_until_tick = 5;
+  // Soft movement control.
   double move_speed_slow = 6;
   uint64 move_speed_slow_until = 7;
   uint64 stunned_until_tick = 8;
+  uint64 rooted_until_tick = 9;
+  uint64 mage_illumination_until = 10;
 }
 
 message WarriorSnapshot {

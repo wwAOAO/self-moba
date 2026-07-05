@@ -2,6 +2,7 @@ package world
 
 import (
 	"l-battle/internal/config"
+	"l-battle/internal/world/formula"
 	"math"
 )
 
@@ -50,7 +51,7 @@ func (entity *Entity) damageReductionForType(damageType string, tick uint64) flo
 		reductions = append(reductions, entity.Stats.MagicDamageReduce)
 	}
 	if entity.HeroID == warriorHeroID && entity.Warrior.CourageUntilTick > 0 {
-		reductions = append(reductions, entity.Warrior.courageDamageReductionAtTick(tick))
+		reductions = append(reductions, warriorCourageDamageReductionAtTick(entity.Warrior, tick))
 	}
 	reductions = append(reductions, equipmentLowHealthDamageReduce(entity))
 	return stackDamageReduction(reductions...)
@@ -76,7 +77,7 @@ func controlTicksAfterTenacity(target *Entity, ticks uint64, tick uint64) uint64
 	return adjusted
 }
 
-func (state WarriorState) courageDamageReductionAtTick(tick uint64) float64 {
+func warriorCourageDamageReductionAtTick(state WarriorState, tick uint64) float64 {
 	if state.CourageUntilTick == 0 {
 		return 0
 	}
@@ -95,59 +96,17 @@ func warriorWShieldValue(entity *Entity, skill config.SkillConfig, skillLevel in
 }
 
 func effectiveResistance(resistance float64, percentPen float64, flatPen float64) float64 {
-	if resistance < 0 {
-		return resistance
-	}
-	if percentPen < 0 {
-		percentPen = 0
-	}
-	if percentPen > 1 {
-		percentPen = 1
-	}
-	if flatPen < 0 {
-		flatPen = 0
-	}
-	effective := resistance*(1-percentPen) - flatPen
-	if effective < 0 {
-		return 0
-	}
-	return effective
+	return formula.EffectiveResistance(resistance, percentPen, flatPen)
 }
 
 func damageAfterResistance(rawDamage float64, resistance float64, damageReduce float64) int {
-	if rawDamage <= 0 {
-		return 0
-	}
-	multiplier := 100 / (resistance + 100)
-	if resistance < 0 {
-		denominator := 100 + resistance
-		if denominator < 1 {
-			denominator = 1
-		}
-		multiplier = 100 / denominator
-	}
-	damageReduce = clamp(damageReduce, 0, 1)
-	damage := int(math.Round(rawDamage * multiplier * (1 - damageReduce)))
-	if damage < 1 {
-		return 1
-	}
-	return damage
+	return formula.DamageAfterResistance(rawDamage, resistance, damageReduce)
 }
 
 func stackDamageReduction(reductions ...float64) float64 {
-	multiplier := 1.0
-	for _, reduction := range reductions {
-		reduction = clamp(reduction, 0, 1)
-		multiplier *= 1 - reduction
-	}
-	return 1 - multiplier
+	return formula.StackDamageReduction(reductions...)
 }
 
 func stackTenacity(tenacityValues ...float64) float64 {
-	multiplier := 1.0
-	for _, tenacity := range tenacityValues {
-		tenacity = clamp(tenacity, 0, 1)
-		multiplier *= 1 - tenacity
-	}
-	return 1 - multiplier
+	return formula.StackTenacity(tenacityValues...)
 }

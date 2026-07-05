@@ -66,6 +66,7 @@ func TestArcherBasicAttackFiresArrowProjectile(t *testing.T) {
 	hero.Base.CritChance = 0
 	w.SpawnHero("archer", hero, TeamBlue)
 	player := w.entities[playerEntityID("archer")]
+	placeEntity(player, 3000, 3000)
 	id, ok := w.SpawnObject(EntityKindEnemyHero, TeamRed, player.Position.X+300, player.Position.Y)
 	if !ok {
 		t.Fatal("spawn enemy hero failed")
@@ -80,6 +81,7 @@ func TestArcherBasicAttackFiresArrowProjectile(t *testing.T) {
 	if target.Stats.HP != startHP {
 		t.Fatalf("archer arrow should not damage instantly: hp = %d, want %d", target.Stats.HP, startHP)
 	}
+	tickAttackRelease(t, w, player, 20)
 	assertSkillEffect(t, w.SkillEffects(), "basic_arrow")
 
 	for tick := uint64(3); tick < 20; tick++ {
@@ -212,13 +214,14 @@ func TestArcherWFiresVolleyArrowsConsumesManaAndCooldown(t *testing.T) {
 	}
 	w.SpawnHero("archer", hero, TeamBlue)
 	player := w.entities[playerEntityID("archer")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, archerWSkillID, 1)
 	startMP := player.Stats.MP
 
 	w.ApplyInput("archer", protocolPlayerInputCast(archerWSkillID, player.Position.X+1000, player.Position.Y), 10, nil, 20)
 
-	if len(w.projectiles) != 7 {
-		t.Fatalf("volley projectiles = %d, want 7", len(w.projectiles))
+	if got := countProjectilesByKind(w, "archer_volley_arrow"); got != 7 {
+		t.Fatalf("volley projectiles = %d, want 7", got)
 	}
 	if math.Abs(player.Stats.MP-(startMP-70)) > 0.000001 {
 		t.Fatalf("mp = %f, want %f", player.Stats.MP, startMP-70)
@@ -238,6 +241,7 @@ func TestArcherWTargetTakesDamageOnceAndIsSlowed(t *testing.T) {
 	hero.Base.CritChance = 0
 	w.SpawnHero("archer", hero, TeamBlue)
 	player := w.entities[playerEntityID("archer")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, archerWSkillID, 1)
 	target := &Entity{
 		ID:       "target",
@@ -272,6 +276,7 @@ func TestArcherWProjectileDisappearsAfterHittingEnemy(t *testing.T) {
 	hero.Base.CritChance = 0
 	w.SpawnHero("archer", hero, TeamBlue)
 	player := w.entities[playerEntityID("archer")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, archerWSkillID, 1)
 	target := &Entity{
 		ID:       "target",
@@ -284,14 +289,14 @@ func TestArcherWProjectileDisappearsAfterHittingEnemy(t *testing.T) {
 	w.entities[target.ID] = target
 
 	w.ApplyInput("archer", protocolPlayerInputCast(archerWSkillID, target.Position.X, target.Position.Y), 10, nil, 20)
-	if len(w.projectiles) != 7 {
-		t.Fatalf("volley projectiles before hit = %d, want 7", len(w.projectiles))
+	if got := countProjectilesByKind(w, "archer_volley_arrow"); got != 7 {
+		t.Fatalf("volley projectiles before hit = %d, want 7", got)
 	}
 	for tick := uint64(11); tick < 30; tick++ {
 		w.Tick(tick, 20)
 	}
-	if len(w.projectiles) >= 7 {
-		t.Fatalf("volley projectile count after hit = %d, want less than 7", len(w.projectiles))
+	if got := countProjectilesByKind(w, "archer_volley_arrow"); got >= 7 {
+		t.Fatalf("volley projectile count after hit = %d, want less than 7", got)
 	}
 }
 
@@ -444,6 +449,7 @@ func TestArcherWPointBlankVolleyProjectilesAllDisappearOnSameTarget(t *testing.T
 	hero.Base.CritChance = 0
 	w.SpawnHero("archer", hero, TeamBlue)
 	player := w.entities[playerEntityID("archer")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, archerWSkillID, 1)
 	target := &Entity{
 		ID:       "target",
@@ -458,8 +464,8 @@ func TestArcherWPointBlankVolleyProjectilesAllDisappearOnSameTarget(t *testing.T
 	w.ApplyInput("archer", protocolPlayerInputCast(archerWSkillID, target.Position.X, target.Position.Y), 10, nil, 20)
 	w.Tick(11, 20)
 
-	if len(w.projectiles) != 0 {
-		t.Fatalf("point blank volley projectiles after hit = %d, want 0", len(w.projectiles))
+	if got := countProjectilesByKind(w, "archer_volley_arrow"); got != 0 {
+		t.Fatalf("point blank volley projectiles after hit = %d, want 0", got)
 	}
 	if target.Stats.HP != 880 {
 		t.Fatalf("target hp = %d, want one volley hit only", target.Stats.HP)
@@ -834,6 +840,7 @@ func TestArcherFocusBasicArrowDisplaysThreeArrowsWithoutExtraProjectiles(t *test
 	}
 	w.SpawnHero("archer", hero, TeamBlue)
 	player := w.entities[playerEntityID("archer")]
+	placeEntity(player, 3000, 3000)
 	target := w.entities["enemy:hero-1"]
 	target.Team = TeamRed
 	target.Position = Vector2{X: player.Position.X + 300, Y: player.Position.Y}
@@ -841,10 +848,10 @@ func TestArcherFocusBasicArrowDisplaysThreeArrowsWithoutExtraProjectiles(t *test
 
 	w.ApplyInput("archer", protocolPlayerInputAttack(target.ID), 10, nil, 20)
 	w.Tick(10, 20)
-	w.Tick(16, 20)
+	tickAttackRelease(t, w, player, 20)
 
-	if len(w.projectiles) != 1 {
-		t.Fatalf("projectile count = %d, want 1", len(w.projectiles))
+	if got := countProjectilesByKind(w, "basic_arrow"); got != 1 {
+		t.Fatalf("basic arrow projectile count = %d, want 1", got)
 	}
 	effects := w.SkillEffects()
 	if len(effects) != 1 {

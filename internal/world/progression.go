@@ -4,7 +4,7 @@ func (w *World) applyKillReward(killer *Entity, target *Entity) {
 	if target == nil {
 		return
 	}
-	w.applyMageFinalSparkRefund(target)
+	applyMageFinalSparkRefund(w, target)
 	if killer == nil {
 		return
 	}

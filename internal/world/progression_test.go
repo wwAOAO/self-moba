@@ -321,6 +321,7 @@ func TestEnemyHeroKillGrantsExperienceAndRemovesTarget(t *testing.T) {
 	hero.Base.AttackRange = 1000
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	id, ok := w.SpawnObject(EntityKindEnemyHero, TeamRed, player.Position.X+100, player.Position.Y)
 	if !ok {
 		t.Fatal("spawn enemy hero failed")
@@ -328,6 +329,7 @@ func TestEnemyHeroKillGrantsExperienceAndRemovesTarget(t *testing.T) {
 
 	w.ApplyInput("p1", protocolPlayerInputAttack(id), 1, nil, 20)
 	w.Tick(2, 20)
+	tickAttackRelease(t, w, player, 20)
 
 	if player.TotalExp != 210 {
 		t.Fatalf("total exp = %f, want 210", player.TotalExp)

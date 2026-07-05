@@ -125,6 +125,7 @@ func TestBaseRegenRestoresHPAndMPOverTime(t *testing.T) {
 	hero.Base.MPRegen5 = 5
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	player.Stats.HP = player.Stats.MaxHP - 20
 	player.Stats.MP = player.Stats.MaxMP - 20
 
@@ -194,11 +195,11 @@ func TestEnemyInFountainRangeGetsShot(t *testing.T) {
 		}
 	}
 
-	if target.Stats.HP != startHP-500 {
-		t.Fatalf("target hp = %d, want %d", target.Stats.HP, startHP-500)
+	if target.Stats.HP != startHP-250 {
+		t.Fatalf("target hp = %d, want %d", target.Stats.HP, startHP-250)
 	}
-	if len(target.Combat.DamageEvents) != 2 {
-		t.Fatalf("damage events = %+v, want 2", target.Combat.DamageEvents)
+	if len(target.Combat.DamageEvents) != 3 {
+		t.Fatalf("damage events = %+v, want 3", target.Combat.DamageEvents)
 	}
 }
 
@@ -345,6 +346,7 @@ func TestBaseRegenDoesNotExceedMaxHPOrMP(t *testing.T) {
 	hero.Base.MPRegen5 = 10
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	placeEntity(player, 3000, 3000)
 	player.Stats.HP = player.Stats.MaxHP - 1
 	player.Stats.MP = player.Stats.MaxMP - 1
 
@@ -421,11 +423,11 @@ func testWorld(t *testing.T) *World {
 	if err != nil {
 		t.Fatal(err)
 	}
-	skills, err := config.LoadSkills("../../configs/skills.json")
+	skills, err := config.LoadSkills("../../configs/skills")
 	if err != nil {
 		t.Fatal(err)
 	}
-	equipment, err := config.LoadEquipment("../../configs/equipment.json")
+	equipment, err := config.LoadEquipment("../../configs/equipment")
 	if err != nil {
 		t.Fatal(err)
 	}

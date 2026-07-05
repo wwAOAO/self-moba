@@ -10,253 +10,45 @@ func (w *World) applyCast(entity *Entity, cast protocol.CastInput, tick uint64, 
 		return
 	}
 	state, ok := entity.Skills[cast.SkillID]
-	if !ok {
+	if !ok || state.Level <= 0 {
 		return
 	}
-	if state.Level <= 0 {
-		return
-	}
-	if entity.HeroID == warriorHeroID && cast.SkillID == warriorESkillID && tick < entity.Warrior.JudgmentUntilTick {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.stopWarriorE(entity, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == mageHeroID && cast.SkillID == mageESkillID && entity.Mage.LucentSingularityActive {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.detonateMageE(entity, skill, tick, tickRate)
+	skill := w.castSkillConfig(cast.SkillID, skills)
+	if w.trySpecialRecast(entity, cast, state, skill, tick, tickRate) {
 		return
 	}
 	if tick < state.CooldownUntilTick {
 		return
 	}
-	if entity.HeroID == archerHeroID && cast.SkillID == archerQSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyArcherQ(entity, state, skill, tick, tickRate)
+	if handler := heroCastHandlerFor(entity.HeroID, cast.SkillID); handler != nil {
+		handler(w, entity, cast, state, skill, tick, tickRate)
 		return
 	}
-	if entity.HeroID == archerHeroID && cast.SkillID == archerWSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyArcherW(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == archerHeroID && cast.SkillID == archerESkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyArcherE(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == archerHeroID && cast.SkillID == archerRSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyArcherR(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == mageHeroID && cast.SkillID == mageQSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyMageQ(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == mageHeroID && cast.SkillID == mageWSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyMageW(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == mageHeroID && cast.SkillID == mageESkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyMageE(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == mageHeroID && cast.SkillID == mageRSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyMageR(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == swordHeroID && cast.SkillID == swordQSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		w.applySwordQ(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == swordHeroID && cast.SkillID == swordWSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		w.applySwordW(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == swordHeroID && cast.SkillID == swordESkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		w.applySwordE(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == swordHeroID && cast.SkillID == swordRSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		w.applySwordR(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == warriorHeroID && cast.SkillID == warriorQSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyWarriorQ(entity, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == warriorHeroID && cast.SkillID == warriorWSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyWarriorW(entity, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == warriorHeroID && cast.SkillID == warriorESkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyWarriorE(entity, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == warriorHeroID && cast.SkillID == warriorRSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyWarriorR(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == tankHeroID && cast.SkillID == tankQSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyTankQ(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == tankHeroID && cast.SkillID == tankWSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyTankW(entity, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == tankHeroID && cast.SkillID == tankESkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyTankE(entity, state, skill, tick, tickRate)
-		return
-	}
-	if entity.HeroID == tankHeroID && cast.SkillID == tankRSkillID {
-		var skill config.SkillConfig
-		if skills != nil {
-			skill, _ = skills.Get(cast.SkillID)
-		}
-		if skill.SkillID == "" {
-			skill = w.skillConfig(cast.SkillID)
-		}
-		w.applyTankR(entity, cast, state, skill, tick, tickRate)
-		return
-	}
-	if skills == nil {
-		return
-	}
-	skill, ok := skills.Get(cast.SkillID)
-	if !ok {
+	if skill.SkillID == "" {
 		return
 	}
 	w.lockAttackAfterCast(entity, tick, tickRate)
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skill.CooldownMS, tickRate)
 	entity.Skills[cast.SkillID] = state
+}
+
+func (w *World) castSkillConfig(skillID string, skills *config.SkillStore) config.SkillConfig {
+	if skills != nil {
+		if skill, ok := skills.Get(skillID); ok {
+			return skill
+		}
+	}
+	return w.skillConfig(skillID)
+}
+
+func (w *World) trySpecialRecast(entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) bool {
+	if entity.HeroID == warriorHeroID && cast.SkillID == warriorESkillID && tick < entity.Warrior.JudgmentUntilTick {
+		w.stopWarriorE(entity, state, skill, tick, tickRate)
+		return true
+	}
+	if entity.HeroID == mageHeroID && cast.SkillID == mageESkillID && entity.Mage.LucentSingularityActive {
+		w.detonateMageE(entity, skill, tick, tickRate)
+		return true
+	}
+	return false
 }

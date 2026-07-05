@@ -1,36 +1,16 @@
 package world
 
+import proj "l-battle/internal/world/projectile"
+
 func updateProjectileSpeed(projectile *Projectile, tickRate int) {
-	if projectile == nil || projectile.SpeedMin <= 0 || projectile.SpeedMax <= projectile.SpeedMin {
-		return
-	}
-	if projectile.Range <= 0 {
-		return
-	}
-	progress := clamp(projectile.Traveled/projectile.Range, 0, 1)
-	speed := projectile.SpeedMin + (projectile.SpeedMax-projectile.SpeedMin)*progress
-	if tickRate > 0 {
-		projectile.SpeedPerTick = speed / float64(tickRate)
-		return
-	}
-	projectile.SpeedPerTick = speed
+	proj.UpdateSpeed(projectile, tickRate)
 }
 
 func updateMageWProjectileSpeed(projectile *Projectile) {
 	if projectile == nil || projectile.SkillID != mageWSkillID || projectile.SpeedMin <= 0 || projectile.Range <= 0 {
 		return
 	}
-	halfRange := projectile.Range / 2
-	if halfRange <= 0 {
-		return
-	}
-	if projectile.Returning {
-		progress := clamp((projectile.Traveled-halfRange)/halfRange, 0, 1)
-		projectile.SpeedPerTick = projectile.SpeedMin * (0.35 + 0.65*progress)
-		return
-	}
-	progress := clamp(projectile.Traveled/halfRange, 0, 1)
-	projectile.SpeedPerTick = projectile.SpeedMin * (1 - 0.65*progress)
+	proj.UpdateMageWProjectileSpeed(projectile)
 }
 
 func (w *World) projectileGroupHit(projectile *Projectile, targetID string) bool {

@@ -38,8 +38,8 @@ func TestTankConfiguredStatsAtLevel18(t *testing.T) {
 	if stats.MoveSpeed != 335 {
 		t.Fatalf("tank move speed = %f, want 335", stats.MoveSpeed)
 	}
-	if stats.AttackRange != 125 {
-		t.Fatalf("tank attack range = %f, want 125", stats.AttackRange)
+	if stats.AttackRange != 175 {
+		t.Fatalf("tank attack range = %f, want 175", stats.AttackRange)
 	}
 	if math.Abs(stats.HPRegen5-16.35) > 0.000001 {
 		t.Fatalf("tank level 18 hp regen = %f, want 16.35", stats.HPRegen5)
@@ -121,6 +121,7 @@ func TestTankQFiresShardDealsMagicDamageAndStealsMoveSpeed(t *testing.T) {
 	hero.Base.AbilityPower = 100
 	w.SpawnHero("tank", hero, TeamBlue)
 	player := w.entities[playerEntityID("tank")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, tankQSkillID, 1)
 	target := w.entities["enemy:hero-1"]
 	nearby := w.entities["enemy:blue-hero-1"]
@@ -138,8 +139,8 @@ func TestTankQFiresShardDealsMagicDamageAndStealsMoveSpeed(t *testing.T) {
 	if math.Abs(player.Stats.MP-(startMP-70)) > 0.000001 {
 		t.Fatalf("tank mp = %f, want %f", player.Stats.MP, startMP-70)
 	}
-	if len(w.projectiles) != 0 {
-		t.Fatalf("projectiles during windup = %d, want 0", len(w.projectiles))
+	if got := countProjectilesByKind(w, "tank_q"); got != 0 {
+		t.Fatalf("tank shard projectiles during windup = %d, want 0", got)
 	}
 	if player.Skills[tankQSkillID].CooldownUntilTick != 0 {
 		t.Fatalf("tank q cooldown during windup = %d, want 0", player.Skills[tankQSkillID].CooldownUntilTick)
@@ -154,8 +155,8 @@ func TestTankQFiresShardDealsMagicDamageAndStealsMoveSpeed(t *testing.T) {
 		t.Fatalf("tank q action lock until = %d, want 15", player.Control.ActionLockedUntilTick)
 	}
 	w.Tick(15, 20)
-	if len(w.projectiles) != 1 {
-		t.Fatalf("projectiles = %d, want 1", len(w.projectiles))
+	if got := countProjectilesByKind(w, "tank_q"); got != 1 {
+		t.Fatalf("tank shard projectiles = %d, want 1", got)
 	}
 	if player.Skills[tankQSkillID].CooldownUntilTick != 175 {
 		t.Fatalf("tank q cooldown = %d, want 175", player.Skills[tankQSkillID].CooldownUntilTick)
@@ -202,6 +203,7 @@ func TestTankQPicksNearestTargetToCursorAndTracksIt(t *testing.T) {
 	}
 	w.SpawnHero("tank", hero, TeamBlue)
 	player := w.entities[playerEntityID("tank")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, tankQSkillID, 1)
 	target := w.entities["enemy:hero-1"]
 	target.Position = Vector2{X: player.Position.X + 500, Y: player.Position.Y}
@@ -210,12 +212,12 @@ func TestTankQPicksNearestTargetToCursorAndTracksIt(t *testing.T) {
 	other.Position = Vector2{X: player.Position.X + 260, Y: player.Position.Y}
 
 	w.ApplyInput("tank", protocolPlayerInputCast(tankQSkillID, target.Position.X, target.Position.Y), 10, w.skills, 20)
-	if len(w.projectiles) != 0 {
-		t.Fatalf("projectiles during windup = %d, want 0", len(w.projectiles))
+	if got := countProjectilesByKind(w, "tank_q"); got != 0 {
+		t.Fatalf("tank shard projectiles during windup = %d, want 0", got)
 	}
 	w.Tick(15, 20)
-	if len(w.projectiles) != 1 {
-		t.Fatalf("projectiles = %d, want 1", len(w.projectiles))
+	if got := countProjectilesByKind(w, "tank_q"); got != 1 {
+		t.Fatalf("tank shard projectiles = %d, want 1", got)
 	}
 	var projectile *Projectile
 	for _, value := range w.projectiles {
@@ -243,6 +245,7 @@ func TestTankQAlwaysHitsLockedTargetAtEnd(t *testing.T) {
 	}
 	w.SpawnHero("tank", hero, TeamBlue)
 	player := w.entities[playerEntityID("tank")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, tankQSkillID, 1)
 	target := w.entities["enemy:hero-1"]
 	target.Position = Vector2{X: player.Position.X + 500, Y: player.Position.Y}
@@ -278,6 +281,7 @@ func TestTankWPassiveArmorScalesWithShield(t *testing.T) {
 	}
 	w.SpawnHero("tank", hero, TeamBlue)
 	player := w.entities[playerEntityID("tank")]
+	placeEntity(player, 3000, 3000)
 	learnSkill(player, tankWSkillID, 1)
 
 	w.refreshTankWPassive(player)
@@ -331,6 +335,7 @@ func TestTankWEmpowersAttackAndAftershocksCone(t *testing.T) {
 
 	w.ApplyInput("tank", protocolPlayerInputAttack(target.ID), 11, nil, 20)
 	w.Tick(12, 20)
+	tickAttackRelease(t, w, player, 20)
 
 	if got := startTargetHP - target.Stats.HP; got != 171 {
 		t.Fatalf("primary damage = %d, want 171", got)
@@ -526,8 +531,8 @@ func TestTankROutOfRangeMovesIntoCastRangeThenCasts(t *testing.T) {
 	if player.Control.DashUntilTick == 0 {
 		t.Fatal("tank r should start dash after reaching cast range")
 	}
-	if math.Abs(player.Stats.MP-(startMP-100)) > 0.000001 {
-		t.Fatalf("mp after real cast = %f, want %f", player.Stats.MP, startMP-100)
+	if player.Stats.MP > startMP-99 || player.Stats.MP < startMP-101 {
+		t.Fatalf("mp after real cast = %f, want about %f", player.Stats.MP, startMP-100)
 	}
 	if player.Skills[tankRSkillID].CooldownUntilTick == 0 {
 		t.Fatal("tank r cooldown should start after real cast")

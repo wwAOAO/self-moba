@@ -3,7 +3,7 @@ package config
 import "testing"
 
 func TestSkillConfigLoadsSwordCutRanges(t *testing.T) {
-	skills, err := LoadSkills("../../configs/skills.json")
+	skills, err := LoadSkills("../../configs/skills")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,7 +27,7 @@ func TestSkillConfigLoadsSwordCutRanges(t *testing.T) {
 }
 
 func TestSkillConfigLoadsSwordSkillTables(t *testing.T) {
-	skills, err := LoadSkills("../../configs/skills.json")
+	skills, err := LoadSkills("../../configs/skills")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func TestSkillConfigLoadsSwordSkillTables(t *testing.T) {
 }
 
 func TestSkillConfigLoadsWarriorJudgment(t *testing.T) {
-	skills, err := LoadSkills("../../configs/skills.json")
+	skills, err := LoadSkills("../../configs/skills")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -17,6 +17,10 @@ import (
 	"l-battle/internal/messaging/jetstream"
 	messagingnats "l-battle/internal/messaging/nats"
 	"l-battle/internal/transport/ws"
+	_ "l-battle/internal/world/heroes/archer"
+	_ "l-battle/internal/world/heroes/mage"
+	_ "l-battle/internal/world/heroes/tank"
+	_ "l-battle/internal/world/heroes/warrior"
 )
 
 func main() {
@@ -63,6 +67,16 @@ func main() {
 	equipment, err := config.LoadEquipment(equipmentConfigPath)
 	if err != nil {
 		logger.Error("load equipment config", "path", equipmentConfigPath, "error", err)
+		os.Exit(1)
+	}
+	if err := config.ValidateGameConfig(config.GameConfig{
+		Heroes:    heroes,
+		Skills:    skills,
+		Levels:    levels,
+		Rewards:   rewards,
+		Equipment: equipment,
+	}); err != nil {
+		logger.Error("validate game config", "error", err)
 		os.Exit(1)
 	}
 	logger.Info("equipment config loaded", "path", equipmentConfigPath, "count", equipment.Count())
