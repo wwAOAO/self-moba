@@ -24,50 +24,29 @@ func finalAttackSpeed(baseAttackSpeed float64, attackSpeedBonus float64, attackS
 }
 
 func (w *World) passiveStateForHero(hero config.HeroConfig) PassiveState {
-	if hero.HeroID == swordHeroID {
-		skill := w.skillConfig(hero.Skills.Passive)
-		return PassiveState{
-			MaxSwordIntent: skillMetaRange(skill, "intentMax", 100),
+	if heroHooksFor(swordHeroID).PassiveState != nil {
+		if state := heroHooksFor(swordHeroID).PassiveState(w, hero); state.MaxSwordIntent > 0 {
+			return state
 		}
 	}
 	if hero.HeroID == tankHeroID {
-		stats := heroStatsAtLevel(hero, MinHeroLevel)
-		shield := tankGraniteShieldValue(stats.MaxHP, w.skillConfig(hero.Skills.Passive))
-		return PassiveState{
-			Shield:    shield,
-			MaxShield: shield,
+		if heroHooksFor(tankHeroID).PassiveState != nil {
+			return heroHooksFor(tankHeroID).PassiveState(w, hero)
 		}
 	}
 	return PassiveState{}
 }
 
 func swordStateForHero(heroID string) SwordState {
-	if heroID != swordHeroID {
-		return SwordState{}
+	if heroHooksFor(swordHeroID).StateForHero != nil {
+		return heroHooksFor(swordHeroID).StateForHero(heroID)
 	}
-	return SwordState{
-		SweepingBladeTargetUntil: make(map[string]uint64),
-	}
+	return SwordState{}
 }
 
 func (w *World) chargeSwordIntent(entity *Entity, moved float64) {
-	if entity == nil || entity.HeroID != swordHeroID || moved <= 0 {
-		return
-	}
-	skill := w.heroPassiveSkill(entity)
-	if entity.Passive.MaxSwordIntent <= 0 {
-		entity.Passive.MaxSwordIntent = skillMetaRange(skill, "intentMax", 100)
-	}
-	if entity.Passive.SwordIntent >= entity.Passive.MaxSwordIntent {
-		return
-	}
-	moveUnitsPerPercent := skillMetaCurveByLevel(skill, "intentMoveUnitsPerPercent", "intentMoveUnitLevels", entity.Level, 59)
-	if moveUnitsPerPercent <= 0 {
-		moveUnitsPerPercent = 59
-	}
-	entity.Passive.SwordIntent += moved / moveUnitsPerPercent
-	if entity.Passive.SwordIntent > entity.Passive.MaxSwordIntent {
-		entity.Passive.SwordIntent = entity.Passive.MaxSwordIntent
+	if heroHooksFor(swordHeroID).ChargeIntent != nil {
+		heroHooksFor(swordHeroID).ChargeIntent(w, entity, moved)
 	}
 }
 
@@ -76,12 +55,9 @@ func (w *World) tickSwordShield(entity *Entity, tick uint64) {
 	if entity == nil || entity.Passive.Shield <= 0 || entity.Passive.ShieldExpireTick == 0 {
 		return
 	}
-	if tick < entity.Passive.ShieldExpireTick {
-		return
+	if heroHooksFor(swordHeroID).TickShield != nil {
+		heroHooksFor(swordHeroID).TickShield(entity, tick)
 	}
-	entity.Passive.Shield = 0
-	entity.Passive.MaxShield = 0
-	entity.Passive.ShieldExpireTick = 0
 }
 
 func tickShieldLayers(entity *Entity, tick uint64) {
@@ -108,28 +84,16 @@ func tickShieldLayers(entity *Entity, tick uint64) {
 }
 
 func (w *World) tickTankGraniteShield(entity *Entity, tick uint64, tickRate int) {
-	if entity == nil || entity.HeroID != tankHeroID || entity.Stats.HP <= 0 {
-		return
+	if heroHooksFor(tankHeroID).TickGranite != nil {
+		heroHooksFor(tankHeroID).TickGranite(w, entity, tick, tickRate)
 	}
-	skill := w.heroPassiveSkill(entity)
-	maxShield := tankGraniteShieldValue(entity.Stats.MaxHP, skill)
-	if maxShield <= 0 || entity.Passive.Shield >= maxShield {
-		entity.Passive.MaxShield = maxShield
-		return
-	}
-	resetTicks := secondsToTicks(skillMetaRange(skill, "resetSeconds", 10), tickRate)
-	if tick < entity.Passive.LastRegenBreakTick+resetTicks {
-		return
-	}
-	entity.Passive.MaxShield = maxShield
-	entity.Passive.Shield = maxShield
-}
-
-func tankGraniteShieldValue(maxHP int, skill config.SkillConfig) int {
-	return int(math.Round(float64(maxHP) * skillMetaRange(skill, "shieldMaxHPRatio", 0.1)))
 }
 
 func (w *World) tickWarriorToughness(entity *Entity, tick uint64, tickRate int) {
+	if heroHooksFor(warriorHeroID).TickToughness != nil {
+		heroHooksFor(warriorHeroID).TickToughness(w, entity, tick, tickRate)
+		return
+	}
 	if entity == nil || entity.HeroID != warriorHeroID || entity.Stats.HP <= 0 || entity.Stats.HP >= entity.Stats.MaxHP {
 		return
 	}
@@ -190,11 +154,18 @@ func tickBaseRegen(entity *Entity, tickRate int) {
 }
 
 func warriorToughnessRegenRatio(level int, skill config.SkillConfig) float64 {
+	if heroHooksFor(warriorHeroID).ToughnessRegenRatio != nil {
+		return heroHooksFor(warriorHeroID).ToughnessRegenRatio(level, skill)
+	}
 	return skillMetaListByLevel(skill, "regenMaxHPRatio", level, []float64{
 		0.015, 0.0198, 0.0246, 0.0294, 0.0342, 0.039,
 		0.0438, 0.0486, 0.0534, 0.0582, 0.063, 0.0678,
 		0.0726, 0.0774, 0.0822, 0.087, 0.0918, 0.101,
 	})
+}
+
+func (w *World) WarriorPassiveSkill(entity *Entity) config.SkillConfig {
+	return w.heroPassiveSkill(entity)
 }
 
 func clampInt(value int, min int, max int) int {

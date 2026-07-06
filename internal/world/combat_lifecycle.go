@@ -1,7 +1,5 @@
 package world
 
-import "math"
-
 func (w *World) killPlayer(target *Entity, tick uint64, tickRate int) {
 	if target.Kind != EntityKindPlayer || target.Death.Dead {
 		return
@@ -29,12 +27,8 @@ func (w *World) applyShield(source *Entity, target *Entity, damage int, tickRate
 	if target == nil {
 		return damage
 	}
-	if target.HeroID == swordHeroID && target.Passive.Shield <= 0 && target.Passive.SwordIntent >= target.Passive.MaxSwordIntent && swordShieldTriggers(source) {
-		skill := w.heroPassiveSkill(target)
-		target.Passive.MaxShield = w.swordShieldValue(target)
-		target.Passive.Shield = target.Passive.MaxShield
-		target.Passive.ShieldExpireTick = target.Combat.LastHitTick + secondsToTicks(skillMetaRange(skill, "shieldDurationSeconds", 1), tickRate)
-		target.Passive.SwordIntent = 0
+	if heroHooksFor(swordHeroID).ApplyShield != nil {
+		heroHooksFor(swordHeroID).ApplyShield(w, source, target, tickRate)
 	}
 	if target.Passive.Shield <= 0 {
 		return damage
@@ -76,17 +70,11 @@ func consumeShieldLayers(target *Entity, absorbed int) {
 	}
 }
 
-func swordShieldTriggers(source *Entity) bool {
-	if source == nil {
-		return false
-	}
-	return source.Kind == EntityKindPlayer || source.Kind == EntityKindEnemyHero
-}
-
 func (w *World) swordShieldValue(entity *Entity) int {
-	level := clampInt(entity.Level, MinHeroLevel, MaxHeroLevel)
-	skill := w.heroPassiveSkill(entity)
-	return int(math.Round(skillMetaCurveByLevel(skill, "shieldValue", "shieldValueLevels", level, 125)))
+	if heroHooksFor(swordHeroID).ShieldValue == nil {
+		return 0
+	}
+	return heroHooksFor(swordHeroID).ShieldValue(w, entity)
 }
 
 func (w *World) removeDeadUnit(target *Entity) {

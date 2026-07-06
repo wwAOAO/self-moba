@@ -217,6 +217,9 @@ func (w *World) archerBasicAttackMultiplier(attacker *Entity, target *Entity, ti
 }
 
 func (w *World) warriorQBonusDamage(attacker *Entity, tick uint64) float64 {
+	if heroHooksFor(warriorHeroID).QBonusDamage != nil {
+		return heroHooksFor(warriorHeroID).QBonusDamage(w, attacker, tick)
+	}
 	if attacker == nil || attacker.HeroID != warriorHeroID || tick >= attacker.Warrior.DecisiveStrikeUntilTick {
 		return 0
 	}
@@ -230,6 +233,10 @@ func (w *World) warriorQBonusDamage(attacker *Entity, tick uint64) float64 {
 }
 
 func (w *World) consumeWarriorQ(attacker *Entity, target *Entity, tick uint64, tickRate int) {
+	if heroHooksFor(warriorHeroID).ConsumeQ != nil {
+		heroHooksFor(warriorHeroID).ConsumeQ(w, attacker, target, tick, tickRate)
+		return
+	}
 	if attacker == nil || attacker.HeroID != warriorHeroID || tick >= attacker.Warrior.DecisiveStrikeUntilTick {
 		return
 	}
@@ -242,92 +249,19 @@ func (w *World) consumeWarriorQ(attacker *Entity, target *Entity, tick uint64, t
 	attacker.Warrior.DecisiveStrikeLevel = 0
 }
 
+func (w *World) WarriorControlTicksAfterTenacity(target *Entity, ticks uint64, tick uint64) uint64 {
+	return controlTicksAfterTenacity(target, ticks, tick)
+}
+
 func (w *World) tankWBonusDamage(attacker *Entity, tick uint64) float64 {
-	if attacker == nil || attacker.HeroID != tankHeroID || tick >= attacker.Tank.ThunderclapEmpowerUntil {
-		return 0
+	if heroHooksFor(tankHeroID).WBonusDamage != nil {
+		return heroHooksFor(tankHeroID).WBonusDamage(w, attacker, tick)
 	}
-	skill := w.skillConfig(tankWSkillID)
-	level := attacker.Tank.ThunderclapLevel
-	if level <= 0 {
-		level = 1
-	}
-	return skillMetaListByLevel(skill, "bonusDamage", level, []float64{30, 40, 50, 60, 70}) +
-		float64(attacker.Stats.AbilityPower)*skillMetaRange(skill, "apRatio", 0.2) +
-		attacker.Stats.PhysicalDefense*skillMetaRange(skill, "armorRatio", 0.15)
+	return 0
 }
 
 func (w *World) applyTankWAftershock(attacker *Entity, primary *Entity, tick uint64, tickRate int) {
-	if attacker == nil || attacker.HeroID != tankHeroID || tick >= attacker.Tank.ThunderclapAftershockUntil {
-		return
-	}
-	skill := w.skillConfig(tankWSkillID)
-	level := attacker.Tank.ThunderclapLevel
-	if level <= 0 {
-		level = 1
-	}
-	damage := skillMetaListByLevel(skill, "aftershockDamage", level, []float64{15, 25, 35, 45, 55}) +
-		float64(attacker.Stats.AbilityPower)*skillMetaRange(skill, "aftershockAPRatio", 0.3) +
-		attacker.Stats.PhysicalDefense*skillMetaRange(skill, "aftershockArmorRatio", 0.15)
-	direction := Vector2{X: 1, Y: 0}
-	if primary != nil {
-		dx, dy := normalize(primary.Position.X-attacker.Position.X, primary.Position.Y-attacker.Position.Y)
-		if dx != 0 || dy != 0 {
-			direction = Vector2{X: dx, Y: dy}
-		}
-	}
-	coneRange := skillMetaRange(skill, "aftershockConeRange", 300)
-	coneAngle := skillMetaRange(skill, "aftershockConeAngleDegrees", 70)
-	w.addTankWAftershockEffect(attacker, direction, coneRange, coneAngle, tick, tickRate)
-	for _, target := range w.targetsInCone(attacker, direction, coneRange, coneAngle) {
-		target.Combat.LastHitTick = tick
-		previousDamage := 0
-		if primary != nil && target.ID == primary.ID {
-			previousDamage = target.Combat.LastDamage
-		}
-		aftershockDamage := damage
-		if isMonster(target) {
-			aftershockDamage *= skillMetaRange(skill, "monsterDamageMultiplier", 1.8)
-		}
-		if target.Kind != EntityKindDummy {
-			wasAlive := target.Stats.HP > 0
-			w.applyAOEDamage(attacker, target, physicalDamageAfterResistance(attacker, target, aftershockDamage, tick), "physical", tickRate)
-			if wasAlive && target.Stats.HP == 0 {
-				w.applyKillReward(attacker, target)
-				w.killPlayer(target, tick, tickRate)
-				w.removeDeadUnit(target)
-			}
-		} else {
-			target.Combat.LastDamage = physicalDamageAfterResistance(attacker, target, aftershockDamage, tick)
-			target.Combat.LastDamageType = "physical"
-		}
-		if previousDamage > 0 {
-			target.Combat.LastDamage += previousDamage
-		}
-	}
-	if tick < attacker.Tank.ThunderclapEmpowerUntil {
-		attacker.Tank.ThunderclapEmpowerUntil = 0
-	}
-}
-
-func (w *World) addTankWAftershockEffect(attacker *Entity, direction Vector2, coneRange float64, coneAngle float64, tick uint64, tickRate int) {
-	if attacker == nil {
-		return
-	}
-	lifeTicks := uint64(math.Ceil(float64(tickRate) * 0.25))
-	if lifeTicks < 1 {
-		lifeTicks = 1
-	}
-	w.nextEffectID++
-	id := "effect:tank_w_aftershock:" + strconv.Itoa(w.nextEffectID)
-	w.skillEffects[id] = SkillEffect{
-		ID:        id,
-		Kind:      "tank_w_aftershock",
-		Team:      attacker.Team,
-		Start:     attacker.Position,
-		Dir:       direction,
-		Range:     coneRange,
-		Radius:    coneAngle,
-		CreatedAt: tick,
-		ExpiresAt: tick + lifeTicks,
+	if heroHooksFor(tankHeroID).ApplyWAftershock != nil {
+		heroHooksFor(tankHeroID).ApplyWAftershock(w, attacker, primary, tick, tickRate)
 	}
 }

@@ -2,7 +2,6 @@ package world
 
 import (
 	"l-battle/internal/world/formula"
-	"math"
 )
 
 func (w *World) attackCrits(attacker *Entity, target *Entity, tick uint64) bool {
@@ -19,8 +18,8 @@ func (w *World) attackCrits(attacker *Entity, target *Entity, tick uint64) bool 
 
 func (w *World) critChance(attacker *Entity) float64 {
 	chance := attacker.Stats.CritChance
-	if attacker.HeroID == swordHeroID {
-		chance *= skillMetaRange(w.heroPassiveSkill(attacker), "critChanceMultiplier", 2)
+	if heroHooksFor(swordHeroID).CritChanceMultiplier != nil {
+		chance *= heroHooksFor(swordHeroID).CritChanceMultiplier(w, attacker)
 	}
 	if attacker.HeroID == bladeHeroID {
 		chance += bladeRageCritChance(attacker, w.heroPassiveSkill(attacker))
@@ -43,15 +42,10 @@ func (w *World) critDamageMultiplier(attacker *Entity) float64 {
 }
 
 func (w *World) applyCritFinalDamageMultiplier(attacker *Entity, damage int, crit bool) int {
-	if !crit || attacker == nil || attacker.HeroID != swordHeroID || damage <= 0 {
-		return damage
+	if heroHooksFor(swordHeroID).ApplyCritFinalMultiplier != nil {
+		return heroHooksFor(swordHeroID).ApplyCritFinalMultiplier(w, attacker, damage, crit)
 	}
-	multiplier := skillMetaRange(w.heroPassiveSkill(attacker), "critFinalDamageMultiplier", 0.9)
-	result := int(math.Round(float64(damage) * multiplier))
-	if result < 1 {
-		return 1
-	}
-	return result
+	return damage
 }
 
 func deterministicCritRoll(attackerID string, targetID string, tick uint64) float64 {

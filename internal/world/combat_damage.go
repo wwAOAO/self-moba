@@ -20,10 +20,11 @@ func magicDamageAfterResistance(attacker *Entity, target *Entity, rawDamage floa
 	return damageAfterResistance(rawDamage, effectiveResistance(target.Stats.MagicDefense, attacker.Stats.MagicPenPercent, attacker.Stats.MagicPenFlat), damageReduce)
 }
 
-func tankQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
-	baseDamage := skillMetaListByLevel(skill, "baseDamage", skillLevel, []float64{70, 120, 170, 220, 270})
-	rawDamage := baseDamage + float64(attacker.Stats.AbilityPower)*skillMetaRange(skill, "apRatio", 0.6)
-	return magicDamageAfterResistance(attacker, target, rawDamage, tick)
+func (w *World) tankQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	if heroHooksFor(tankHeroID).TankQDamage != nil {
+		return heroHooksFor(tankHeroID).TankQDamage(w, attacker, target, skill, skillLevel, tick)
+	}
+	return 0
 }
 
 func applyTankQMoveSpeedSteal(source *Entity, target *Entity, ratio float64, until uint64) {

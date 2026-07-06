@@ -92,17 +92,9 @@ func (w *World) applyEquipmentStats(entity *Entity, stats *Stats) {
 }
 
 func (w *World) applySwordCritOverflowStats(entity *Entity, stats *Stats) {
-	if entity == nil || stats == nil || entity.HeroID != swordHeroID {
-		return
+	if heroHooksFor(swordHeroID).ApplyCritOverflowStats != nil {
+		heroHooksFor(swordHeroID).ApplyCritOverflowStats(w, entity, stats)
 	}
-	skill := w.heroPassiveSkill(entity)
-	effectiveCrit := stats.CritChance * skillMetaRange(skill, "critChanceMultiplier", 2)
-	if effectiveCrit <= 1 {
-		return
-	}
-	bonusAttack := (effectiveCrit - 1) * 100 * skillMetaRange(skill, "critOverflowAttackPerPercent", 0.5)
-	stats.Attack += bonusAttack
-	stats.BonusAttack += bonusAttack
 }
 
 func (w *World) hasUniqueEquipmentGroup(entity *Entity, group string) bool {

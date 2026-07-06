@@ -69,14 +69,14 @@ func (w *World) projectileDamage(source *Entity, target *Entity, projectile *Pro
 	} else if projectile.SkillID == swordQSkillID && source != nil {
 		damage = w.swordQDamage(source, target, w.skillConfig(projectile.SkillID), tick)
 	} else if projectile.SkillID == tankQSkillID && source != nil {
-		damage = tankQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+		damage = w.tankQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
 	} else if projectile.SkillID == mageQSkillID && source != nil {
 		hitNumber := len(projectile.HitIDs)
 		multiplier := 1.0
 		if hitNumber >= 2 {
 			multiplier = skillMetaRange(w.skillConfig(projectile.SkillID), "secondHitDamageMultiplier", 0.5)
 		}
-		damage = mageQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, multiplier, tick)
+		damage = w.mageQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, multiplier, tick)
 	}
 	return damage
 }

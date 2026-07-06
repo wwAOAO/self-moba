@@ -21,7 +21,7 @@ func (w *World) resolveTankQProjectileHit(source *Entity, projectile *Projectile
 	if !canAttackTarget(source, target) {
 		return
 	}
-	damage := tankQDamage(source, target, w.skillConfig(tankQSkillID), projectile.Damage, tick)
+	damage := w.tankQDamage(source, target, w.skillConfig(tankQSkillID), projectile.Damage, tick)
 	target.Combat.LastHitTick = tick
 	target.Combat.DamageEvents = nil
 	if target.Kind == EntityKindDummy {

@@ -6,6 +6,10 @@ import (
 )
 
 func (w *World) applyArcherFrostShot(source *Entity, target *Entity, tick uint64, tickRate int) {
+	if heroHooksFor(archerHeroID).ApplyFrostShot != nil {
+		heroHooksFor(archerHeroID).ApplyFrostShot(w, source, target, tick, tickRate)
+		return
+	}
 	if source == nil || target == nil || source.HeroID != archerHeroID {
 		return
 	}
@@ -38,6 +42,18 @@ func archerFrostSlowRatio(level int, skill config.SkillConfig) float64 {
 	}
 	progress := float64(level-MinHeroLevel) / float64(MaxHeroLevel-MinHeroLevel)
 	return minSlow + (maxSlow-minSlow)*progress
+}
+
+func (w *World) ArcherPassiveSkill(entity *Entity) config.SkillConfig {
+	return w.heroPassiveSkill(entity)
+}
+
+func (w *World) ArcherAttackCrits(source *Entity, target *Entity, tick uint64) bool {
+	return w.attackCrits(source, target, tick)
+}
+
+func (w *World) ApplyArcherMoveSpeedSlow(target *Entity, slow float64, until uint64) {
+	applyMoveSpeedSlow(target, slow, until)
 }
 
 func applyMoveSpeedSlow(target *Entity, slow float64, until uint64) {

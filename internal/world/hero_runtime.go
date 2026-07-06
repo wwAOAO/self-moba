@@ -18,10 +18,6 @@ func RegisterHeroCastHandlers(heroID string, handlers map[string]HeroCastHandler
 	}
 }
 
-func registerHeroCastHandlers(heroID string, handlers map[string]HeroCastHandler) {
-	RegisterHeroCastHandlers(heroID, handlers)
-}
-
 func heroCastHandlerFor(heroID string, skillID string) HeroCastHandler {
 	if handlers := heroCastHandlers[heroID]; handlers != nil {
 		return handlers[skillID]

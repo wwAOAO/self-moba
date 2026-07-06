@@ -50,6 +50,10 @@ func (w *World) applyKillReward(killer *Entity, target *Entity) {
 }
 
 func (w *World) applyWarriorWPassiveKill(killer *Entity, target *Entity) {
+	if heroHooksFor(warriorHeroID).ApplyWPassiveKill != nil {
+		heroHooksFor(warriorHeroID).ApplyWPassiveKill(w, killer, target)
+		return
+	}
 	if killer == nil || target == nil || killer.HeroID != warriorHeroID {
 		return
 	}
@@ -151,29 +155,14 @@ func (w *World) levelUp(entity *Entity) {
 }
 
 func (w *World) refreshTankGraniteShield(entity *Entity) {
-	if entity == nil || entity.HeroID != tankHeroID {
-		return
+	if heroHooksFor(tankHeroID).RefreshGranite != nil {
+		heroHooksFor(tankHeroID).RefreshGranite(w, entity)
 	}
-	skill := w.heroPassiveSkill(entity)
-	shield := tankGraniteShieldValue(entity.Stats.MaxHP, skill)
-	entity.Passive.MaxShield = shield
-	entity.Passive.Shield = shield
-	entity.Passive.ShieldExpireTick = 0
 }
 
 func (w *World) refreshTankGraniteShieldMax(entity *Entity) {
-	if entity == nil || entity.HeroID != tankHeroID {
-		return
-	}
-	oldMax := entity.Passive.MaxShield
-	skill := w.heroPassiveSkill(entity)
-	nextMax := tankGraniteShieldValue(entity.Stats.MaxHP, skill)
-	entity.Passive.MaxShield = nextMax
-	if entity.Passive.Shield >= oldMax {
-		entity.Passive.Shield = nextMax
-	}
-	if entity.Passive.Shield > nextMax {
-		entity.Passive.Shield = nextMax
+	if heroHooksFor(tankHeroID).RefreshGraniteMax != nil {
+		heroHooksFor(tankHeroID).RefreshGraniteMax(w, entity)
 	}
 }
 

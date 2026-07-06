@@ -10,14 +10,95 @@ import (
 const (
 	heroID = "tank"
 	qID    = "slam"
+	wID    = "guard"
+	eID    = "taunt"
 	rID    = "earthquake"
 )
 
 func init() {
-	world.RegisterHeroCastHandlers(heroID, map[string]world.HeroCastHandler{
-		qID: ApplyQ,
-		rID: ApplyR,
+	world.RegisterHeroHooks(heroID, world.HeroHooks{
+		Cast: map[string]world.HeroCastHandler{
+			qID: ApplyQ,
+			wID: ApplyW,
+			eID: ApplyE,
+			rID: ApplyR,
+		},
+		ReleaseQ:          ReleaseQ,
+		ReleaseE:          ReleaseE,
+		StartRDash:        StartRDash,
+		ReleasePreparedR:  ReleasePreparedR,
+		CancelPreparedR:   CancelPreparedR,
+		ResolveRImpact:    ResolveRImpact,
+		RefreshWPassive:   RefreshWPassive,
+		PassiveState:      PassiveState,
+		TickGranite:       TickGranite,
+		RefreshGranite:    RefreshGranite,
+		RefreshGraniteMax: RefreshGraniteMax,
+		WBonusDamage:      WBonusDamage,
+		ApplyWAftershock:  ApplyWAftershock,
+		TankQDamage:       QDamage,
 	})
+}
+
+func ReleaseQ(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
+	if entity == nil || entity.HeroID != heroID || !entity.Tank.SeismicShardPending || tick < entity.Tank.SeismicShardReleaseTick {
+		return
+	}
+	target := w.EntityByID(entity.Tank.SeismicShardTargetID)
+	level := entity.Tank.SeismicShardLevel
+	entity.Tank.SeismicShardPending = false
+	entity.Tank.SeismicShardReleaseTick = 0
+	entity.Tank.SeismicShardTargetID = ""
+	entity.Tank.SeismicShardLevel = 0
+	if !canAttackTarget(entity, target) {
+		return
+	}
+	skill := w.SkillConfig(qID)
+	state := entity.Skills[qID]
+	state.CooldownUntilTick = tick + cooldownTicksFor(entity, int(skillList(skill, "cooldownMs", level, []float64{8000, 8000, 8000, 8000, 8000})), tickRate)
+	entity.Skills[qID] = state
+	dx, dy := normalize(target.Position.X-entity.Position.X, target.Position.Y-entity.Position.Y)
+	if dx == 0 && dy == 0 {
+		dx = 1
+	}
+	qRange := skillRange(skill, 625)
+	speedPerSecond := skillMeta(skill, "projectileSpeed", 1200)
+	speedPerTick := speedPerSecond / float64(tickRate)
+	if speedPerTick <= 0 {
+		speedPerTick = qRange
+	}
+	lifeTicks := uint64(math.Ceil(qRange / speedPerTick))
+	if lifeTicks == 0 {
+		lifeTicks = 1
+	}
+	id := w.NextProjectileID("projectile:tank_q:")
+	w.PutProjectile(&world.Projectile{
+		ID:           id,
+		Kind:         "tank_q",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		TargetID:     target.ID,
+		SkillID:      qID,
+		Position:     entity.Position,
+		Start:        entity.Position,
+		Dir:          world.Vector2{X: dx, Y: dy},
+		SpeedPerTick: speedPerTick,
+		Range:        qRange,
+		Radius:       skillMeta(skill, "projectileRadius", 45),
+		Damage:       level,
+		EffectRatio:  skillList(skill, "moveSpeedSteal", level, []float64{0.2, 0.25, 0.3, 0.35, 0.4}),
+		EffectTicks:  secondsToTicks(skillMeta(skill, "moveSpeedStealSeconds", 3), tickRate),
+		CreatedAt:    tick,
+		ExpiresAt:    tick + lifeTicks + 1,
+		HitIDs:       make(map[string]bool),
+	})
+	w.LockAttackAfterCast(entity, tick, tickRate)
+}
+
+func QDamage(w *world.World, attacker *world.Entity, target *world.Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	baseDamage := skillList(skill, "baseDamage", skillLevel, []float64{70, 120, 170, 220, 270})
+	rawDamage := baseDamage + float64(attacker.Stats.AbilityPower)*skillMeta(skill, "apRatio", 0.6)
+	return w.TankMagicDamageAfterResistance(attacker, target, rawDamage, tick)
 }
 
 func ApplyQ(w *world.World, entity *world.Entity, cast protocol.CastInput, state world.SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
@@ -137,6 +218,14 @@ func secondsToTicks(seconds float64, tickRate int) uint64 {
 		return 0
 	}
 	return uint64(math.Ceil(seconds * float64(tickRate)))
+}
+
+func cooldownTicksFor(entity *world.Entity, cooldownMS int, tickRate int) uint64 {
+	seconds := float64(cooldownMS) / 1000
+	if entity != nil && entity.Stats.AbilityHaste > 0 {
+		seconds /= 1 + entity.Stats.AbilityHaste/100
+	}
+	return secondsToTicks(seconds, tickRate)
 }
 
 func distance(a world.Vector2, b world.Vector2) float64 {

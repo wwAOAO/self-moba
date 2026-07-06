@@ -4,6 +4,7 @@ import (
 	"l-battle/internal/config"
 	"l-battle/internal/protocol"
 	"l-battle/internal/world"
+	_ "l-battle/internal/world/heroes/sword"
 	"testing"
 )
 

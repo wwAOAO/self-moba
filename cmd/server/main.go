@@ -18,7 +18,9 @@ import (
 	messagingnats "l-battle/internal/messaging/nats"
 	"l-battle/internal/transport/ws"
 	_ "l-battle/internal/world/heroes/archer"
+	_ "l-battle/internal/world/heroes/blade"
 	_ "l-battle/internal/world/heroes/mage"
+	_ "l-battle/internal/world/heroes/sword"
 	_ "l-battle/internal/world/heroes/tank"
 	_ "l-battle/internal/world/heroes/warrior"
 )
