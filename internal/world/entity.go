@@ -28,7 +28,10 @@ type WarriorState = state.WarriorState
 type ArcherState = state.ArcherState
 type MageState = state.MageState
 type TankState = state.TankState
+type BerserkerState = state.BerserkerState
+type NinjaState = state.NinjaState
 type PassiveState = state.PassiveState
+type BleedState = state.BleedState
 type ShieldLayer = state.ShieldLayer
 type DeathState = state.DeathState
 type IntentState = state.IntentState
@@ -63,6 +66,8 @@ type Entity struct {
 	Archer       ArcherState
 	Mage         MageState
 	Tank         TankState
+	Berserker    BerserkerState
+	Ninja        NinjaState
 	Death        DeathState
 	Intent       IntentState
 	Lane         LaneState

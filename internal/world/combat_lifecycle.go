@@ -4,6 +4,7 @@ func (w *World) killPlayer(target *Entity, tick uint64, tickRate int) {
 	if target.Kind != EntityKindPlayer || target.Death.Dead {
 		return
 	}
+	w.removeProjectilesTargeting(target)
 	target.Death = DeathState{
 		Dead:              true,
 		RespawnTick:       tick + uint64(respawnSeconds*tickRate),
@@ -16,6 +17,7 @@ func (w *World) killPlayer(target *Entity, tick uint64, tickRate int) {
 	target.Passive.Shield = 0
 	target.Passive.MaxShield = 0
 	target.Passive.ShieldExpireTick = 0
+	target.Passive.Bleeds = nil
 	for _, entity := range w.entities {
 		if entity.Intent.AttackTargetID == target.ID {
 			entity.Intent.AttackTargetID = ""
@@ -81,10 +83,25 @@ func (w *World) removeDeadUnit(target *Entity) {
 	if target.Kind == EntityKindPlayer || target.Kind == EntityKindDummy {
 		return
 	}
+	w.removeProjectilesTargeting(target)
 	delete(w.entities, target.ID)
 	for _, entity := range w.entities {
 		if entity.Intent.AttackTargetID == target.ID {
 			entity.Intent.AttackTargetID = ""
 		}
+	}
+}
+
+func (w *World) removeProjectilesTargeting(target *Entity) {
+	if target == nil {
+		return
+	}
+	for id, projectile := range w.projectiles {
+		if projectile.TargetID != target.ID {
+			continue
+		}
+		projectile.Position = target.Position
+		delete(w.projectiles, id)
+		w.cleanupProjectileGroup(projectile)
 	}
 }

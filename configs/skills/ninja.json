@@ -4,34 +4,90 @@
     "name": "忍者被动",
     "cooldownMs": 0,
     "range": 0,
-    "type": "passive"
+    "type": "passive",
+    "meta": {
+      "heroCooldownSeconds": 10,
+      "monsterDamageMultiplier": 0.75,
+      "epicMonsterDamageCap": 175
+    },
+    "metaLists": {
+      "maxHPRatio": [0.05, 0.1],
+      "maxHPRatioLevels": [1, 18]
+    }
   },
   {
     "skillId": "ninja_q",
     "name": "忍者Q",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "cooldownMs": 6000,
+    "range": 900,
+    "type": "projectile",
+    "meta": {
+      "projectileSpeed": 1700,
+      "projectileRadius": 35,
+      "castWindupSeconds": 0.25,
+      "firstBonusAdRatio": 1,
+      "laterBonusAdRatio": 0.6
+    },
+    "metaLists": {
+      "firstBaseDamage": [80, 120, 160, 200, 240],
+      "laterBaseDamage": [48, 72, 96, 120, 144],
+      "manaCost": [55, 60, 65, 70, 75],
+      "cooldownMs": [6000, 6000, 6000, 6000, 6000]
+    }
   },
   {
     "skillId": "ninja_w",
     "name": "忍者W",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "cooldownMs": 20000,
+    "range": 650,
+    "type": "dash_shadow",
+    "meta": {
+      "shadowDurationSeconds": 5,
+      "shadowDashSeconds": 0.25
+    },
+    "metaLists": {
+      "energyRefund": [30, 35, 40, 45, 50],
+      "manaCost": [20, 25, 30, 35, 40],
+      "cooldownMs": [20000, 19000, 18000, 17000, 16000]
+    }
   },
   {
     "skillId": "ninja_e",
     "name": "忍者E",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "cooldownMs": 5000,
+    "range": 290,
+    "type": "aoe",
+    "meta": {
+      "manaCost": 40,
+      "bonusAdRatio": 0.7,
+      "slowSeconds": 1.5,
+      "wCooldownRefundSeconds": 3
+    },
+    "metaLists": {
+      "baseDamage": [70, 92.5, 115, 137.5, 160],
+      "shadowSlow": [0.2, 0.25, 0.3, 0.35, 0.4],
+      "doubleSlow": [0.3, 0.375, 0.45, 0.45, 0.6],
+      "cooldownMs": [5000, 4500, 4000, 3500, 3000]
+    }
   },
   {
     "skillId": "ninja_r",
-    "name": "忍者R",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "name": "禁奥义!瞬狱影杀阵",
+    "cooldownMs": 120000,
+    "range": 625,
+    "type": "mark_dash",
+    "meta": {
+      "castWindupSeconds": 0.6,
+      "dashSeconds": 0.35,
+      "markDelaySeconds": 3,
+      "shadowDurationSeconds": 7.5,
+      "shadowLingerSeconds": 1.5,
+      "targetPickPadding": 80,
+      "attackRatio": 1
+    },
+    "metaLists": {
+      "storedDamageRatio": [0.25, 0.4, 0.55],
+      "cooldownMs": [120000, 110000, 100000]
+    }
   }
 ]

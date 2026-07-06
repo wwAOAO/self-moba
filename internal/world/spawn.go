@@ -60,6 +60,8 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 		entity.Archer = ArcherState{}
 		entity.Mage = MageState{}
 		entity.Tank = TankState{}
+		entity.Berserker = BerserkerState{}
+		entity.Ninja = NinjaState{}
 		entity.Death = DeathState{}
 		return
 	}

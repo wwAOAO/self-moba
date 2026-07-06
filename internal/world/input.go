@@ -111,9 +111,7 @@ func (w *World) tickPlayer(entity *Entity, tick uint64, tickRate int) {
 	if entity.Intent.MoveTarget != nil && !rooted {
 		if w.moveToward(entity, *entity.Intent.MoveTarget, movementStepAtTick(entity, tickRate, tick), 8) {
 			entity.Intent.MoveTarget = nil
-			if entity.HeroID == tankHeroID && entity.Tank.UnstoppableCastPending {
-				w.releasePreparedTankR(entity, tick, tickRate)
-			}
+			w.releasePreparedTankR(entity, tick, tickRate)
 		}
 	}
 }
@@ -155,6 +153,9 @@ func EffectiveAttackSpeedAtTick(entity *Entity, tick uint64) float64 {
 	attackSpeed := entity.Stats.AttackSpeed
 	if entity.HeroID == archerHeroID && entity.Archer.FocusActiveUntil > 0 && (tick == 0 || tick < entity.Archer.FocusActiveUntil) {
 		attackSpeed *= 1 + entity.Archer.FocusAttackSpeed
+	}
+	if entity.HeroID == gunnerHeroID && entity.Passive.GunnerWActiveUntil > 0 && (tick == 0 || tick < entity.Passive.GunnerWActiveUntil) {
+		attackSpeed *= 1 + entity.Passive.GunnerWAttackSpeed
 	}
 	if entity.Control.AttackSpeedSlowUntil > 0 && (tick == 0 || tick < entity.Control.AttackSpeedSlowUntil) {
 		attackSpeed *= 1 - clamp(entity.Control.AttackSpeedSlow, 0, 1)

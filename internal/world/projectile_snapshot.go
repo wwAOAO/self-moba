@@ -11,6 +11,11 @@ func (w *World) WindWalls() []WindWall {
 func (w *World) SkillEffects() []SkillEffect {
 	effects := make([]SkillEffect, 0, len(w.projectiles)+len(w.skillEffects))
 	for _, effect := range w.skillEffects {
+		if effect.Kind == "berserker_q" || effect.Kind == "berserker_r" {
+			if source := w.entities[effect.SourceID]; source != nil {
+				effect.Start = source.Position
+			}
+		}
 		effects = append(effects, effect)
 	}
 	for _, projectile := range w.projectiles {
@@ -20,7 +25,7 @@ func (w *World) SkillEffects() []SkillEffect {
 		if source := w.entities[projectile.SourceID]; source != nil {
 			sourceHeroID = source.HeroID
 		}
-		if projectile.SkillID == tankQSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" {
+		if projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == gunnerRSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID || projectile.SkillID == ninjaQSkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" {
 			start = projectile.Position
 		}
 		if projectile.SkillID == tankQSkillID {

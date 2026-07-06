@@ -144,7 +144,14 @@ function updateDamageEffects(previousTargets, currentTargets, tick) {
 
 function showTargetDamage(id, target) {
   const self = state.players.get(state.playerId);
-  if (id === state.attackTargetId && self?.heroId !== "archer") {
+  const damageEvents = target.damageEvents?.length
+    ? target.damageEvents
+    : [{ damage: target.lastDamage || 0, damageType: target.lastDamageType || "physical" }];
+  if (
+    id === state.attackTargetId &&
+    self?.heroId !== "archer" &&
+    damageEvents.some((event) => event.basicAttack)
+  ) {
     state.attackFlash = {
       x: self.x,
       y: self.y,
@@ -152,9 +159,6 @@ function showTargetDamage(id, target) {
       until: performance.now() + 180,
     };
   }
-  const damageEvents = target.damageEvents?.length
-    ? target.damageEvents
-    : [{ damage: target.lastDamage || 0, damageType: target.lastDamageType || "physical" }];
   for (const event of damageEvents) {
     spawnDamageText(target, event.damage || 0, event.damageType || "physical");
   }
@@ -226,12 +230,17 @@ function castSkill(slot) {
   if (!isSkillLearned(self, skillId)) {
     return;
   }
-  if (isSkillOnCooldown(self, skillId)) {
+  if (isSkillOnCooldown(self, skillId) && !isNinjaShadowRecast(self, skillId)) {
     return;
   }
   const selected = currentTarget();
   const useAimPointFirst =
     skillId.startsWith("mage_") ||
+    skillId === "berserker_e" ||
+    skillId === "berserker_r" ||
+    skillId === "ninja_q" ||
+    skillId === "ninja_w" ||
+    skillId === "ninja_r" ||
     skillId === "blade_e" ||
     skillId === "sword_cut" ||
     skillId === "sword_sweeping_blade" ||
@@ -256,8 +265,19 @@ function castSkill(slot) {
   });
 }
 
+function isNinjaShadowRecast(player, skillId) {
+  return player?.heroId === "ninja" && (skillId === "ninja_w" || skillId === "ninja_r");
+}
+
 function addCastWindup(self, skillId, target, selectedTarget) {
   const config = skillClientConfig[skillId] || {};
+  if (
+    skillId === "berserker_r" &&
+    Math.hypot((target?.x ?? self.x) - self.x, (target?.y ?? self.y) - self.y) >
+      (config.range || 460)
+  ) {
+    return;
+  }
   const windupSeconds =
     Number(config.castWindupSeconds || 0) ||
     Number(config.castDelaySeconds || 0);

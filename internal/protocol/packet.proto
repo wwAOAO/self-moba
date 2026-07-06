@@ -120,6 +120,7 @@ message PlayerSnapshot {
   ArcherSnapshot archer = 29;
   repeated BuffSnapshot buffs = 30;
   repeated DamageEventSnapshot damage_events = 31;
+  NinjaSnapshot ninja = 32;
 }
 
 message BuffSnapshot {
@@ -190,6 +191,7 @@ message DummySnapshot {
   int32 last_damage = 7;
   string last_damage_type = 8;
   repeated DamageEventSnapshot damage_events = 9;
+  repeated BuffSnapshot buffs = 10;
 }
 
 message UnitSnapshot {
@@ -205,11 +207,13 @@ message UnitSnapshot {
   string last_damage_type = 10;
   ControlSnapshot control = 11;
   repeated DamageEventSnapshot damage_events = 12;
+  repeated BuffSnapshot buffs = 13;
 }
 
 message DamageEventSnapshot {
   int32 damage = 1;
   string damage_type = 2;
+  bool basic_attack = 3;
 }
 
 message EffectSnapshot {
@@ -246,6 +250,7 @@ message PassiveSnapshot {
   double max_sword_intent = 2;
   int32 shield = 3;
   int32 max_shield = 4;
+  map<string, uint64> ninja_soul_cooldowns = 5;
 }
 
 message ControlSnapshot {
@@ -280,6 +285,12 @@ message ArcherSnapshot {
 
 message SwordSnapshot {
   map<string, uint64> sweeping_blade_target_until = 1;
+}
+
+message NinjaSnapshot {
+  double shadow_x = 1;
+  double shadow_y = 2;
+  uint64 shadow_expires_at = 3;
 }
 
 message Error {

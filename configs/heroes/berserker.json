@@ -1,44 +1,44 @@
 [
     {
-        "heroId":  "berserker",
-        "name":  "Berserker",
-        "resource":  "mp",
-        "base":  {
-                     "hp":  652,
-                     "mp":  263,
-                     "hpRegen5":  10,
-                     "mpRegen5":  6.6,
-                     "attack":  64,
-                     "abilityHaste":  0,
-                     "physicalDefense":  39,
-                     "magicDefense":  32.1,
-                     "moveSpeed":  340,
-                     "attackRange":  175,
-                     "attackSpeed":  0.625,
-                     "attackWindupSeconds":  0.25,
-                     "attackSpeedRatio":  0.625,
-                     "critChance":  0
-                 },
-        "growth":  {
-                       "hp":  114,
-                       "mp":  57.5,
-                       "hpRegen5":  0.95,
-                       "mpRegen5":  0.35,
-                       "attack":  5,
-                       "physicalDefense":  5.2,
-                       "magicDefense":  2.05,
-                       "moveSpeed":  0,
-                       "attackRange":  0,
-                       "attackSpeed":  0.01,
-                       "critChance":  0
-                   },
-        "radius":  18,
-        "skills":  {
-                       "passive":  "berserker_passive",
-                       "q":  "berserker_q",
-                       "w":  "berserker_w",
-                       "e":  "berserker_e",
-                       "r":  "berserker_r"
-                   }
+        "heroId": "berserker",
+        "name": "Berserker",
+        "resource": "mp",
+        "base": {
+            "hp": 652,
+            "mp": 263,
+            "hpRegen5": 10,
+            "mpRegen5": 6.6,
+            "attack": 64,
+            "abilityHaste": 0,
+            "physicalDefense": 39,
+            "magicDefense": 32.1,
+            "moveSpeed": 340,
+            "attackRange": 175,
+            "attackSpeed": 0.625,
+            "attackWindupSeconds": 0.25,
+            "attackSpeedRatio": 0.5,
+            "critChance": 0
+        },
+        "growth": {
+            "hp": 114,
+            "mp": 57.5,
+            "hpRegen5": 0.95,
+            "mpRegen5": 0.35,
+            "attack": 5,
+            "physicalDefense": 5.2,
+            "magicDefense": 2.05,
+            "moveSpeed": 0,
+            "attackRange": 0,
+            "attackSpeed": 0.01,
+            "critChance": 0
+        },
+        "radius": 18,
+        "skills": {
+            "passive": "berserker_passive",
+            "q": "berserker_q",
+            "w": "berserker_w",
+            "e": "berserker_e",
+            "r": "berserker_r"
+        }
     }
 ]

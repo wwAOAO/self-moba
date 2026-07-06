@@ -43,7 +43,7 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 		target.Combat.DamageEvents = nil
 		target.Combat.DamageEventsTick = target.Combat.LastHitTick
 	}
-	target.Combat.DamageEvents = append(target.Combat.DamageEvents, DamageEvent{Damage: damage, DamageType: damageType})
+	target.Combat.DamageEvents = append(target.Combat.DamageEvents, DamageEvent{Damage: damage, DamageType: damageType, BasicAttack: context.BasicAttack})
 	w.applyArcherFrostShot(source, target, target.Combat.LastHitTick, tickRate)
 	w.breakTankGraniteShield(target, target.Combat.LastHitTick)
 	if damage <= 0 {
@@ -78,6 +78,7 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 		w.applyEquipmentSkillBurn(source, target, target.Combat.LastHitTick, tickRate)
 	}
 	w.applySustain(source, actualDamage, context)
+	w.onHeroDamage(source, target, context, target.Combat.LastHitTick, tickRate)
 	w.refreshPlayerStatsAfterHPChange(source, sourceBeforeHP)
 	if damageType == "physical" {
 		w.triggerEquipmentPhysicalDamageEffects(source, target, actualDamage, target.Combat.LastHitTick, tickRate)

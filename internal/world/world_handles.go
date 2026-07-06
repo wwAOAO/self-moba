@@ -91,8 +91,65 @@ func (w *World) ApplyAOEDamage(source *Entity, target *Entity, damage int, damag
 	w.applyAOEDamage(source, target, damage, damageType, tickRate)
 }
 
+func (w *World) ApplyAOEDamageWithoutBerserkerBleed(source *Entity, target *Entity, damage int, damageType string, tickRate int) {
+	context := sustainAOESkill
+	context.SkipBerserkerBleed = true
+	w.applyResolvedDamage(source, target, damage, damageType, context, tickRate)
+}
+
+func (w *World) ApplyPetDamage(source *Entity, target *Entity, damage int, damageType string, tickRate int) {
+	w.applyResolvedDamage(source, target, damage, damageType, sustainPetDamage, tickRate)
+}
+
 func (w *World) PhysicalDamageAfterResistance(source *Entity, target *Entity, rawDamage float64, tick uint64) int {
 	return physicalDamageAfterResistance(source, target, rawDamage, tick)
+}
+
+func (w *World) PhysicalCritDamageAfterResistance(source *Entity, target *Entity, rawDamage float64, crit bool, tick uint64) int {
+	if crit {
+		rawDamage *= w.critDamageMultiplier(source)
+	}
+	return reduceCritDamage(target, w.applyCritFinalDamageMultiplier(source, physicalDamageAfterResistance(source, target, rawDamage, tick), crit), crit)
+}
+
+func (w *World) MagicDamageAfterResistance(source *Entity, target *Entity, rawDamage float64, tick uint64) int {
+	return magicDamageAfterResistance(source, target, rawDamage, tick)
+}
+
+func (w *World) TrueDamageAfterReduction(target *Entity, rawDamage float64, tick uint64) int {
+	return trueDamageAfterReduction(target, rawDamage, tick)
+}
+
+func (w *World) RefreshStatsAfterHPChange(entity *Entity, beforeHP int) {
+	w.refreshPlayerStatsAfterHPChange(entity, beforeHP)
+}
+
+func (w *World) TargetsInRadius(entity *Entity, center Vector2, radius float64) []*Entity {
+	return w.targetsInRadius(entity, center, radius)
+}
+
+func (w *World) TargetsInCone(entity *Entity, direction Vector2, coneRange float64, angleDegrees float64) []*Entity {
+	return w.targetsInCone(entity, direction, coneRange, angleDegrees)
+}
+
+func (w *World) ApplyAttackSpeedSlow(target *Entity, slow float64, until uint64) {
+	applyAttackSpeedSlow(target, slow, until)
+}
+
+func ControlTicksAfterTenacity(target *Entity, ticks uint64, now uint64) uint64 {
+	return controlTicksAfterTenacity(target, ticks, now)
+}
+
+func IsHeroUnit(entity *Entity) bool {
+	return entity != nil && (entity.Kind == EntityKindPlayer || entity.Kind == EntityKindEnemyHero)
+}
+
+func IsMinion(entity *Entity) bool {
+	return isMinion(entity)
+}
+
+func IsMonster(entity *Entity) bool {
+	return isMonster(entity)
 }
 
 func (w *World) ApplyKillReward(killer *Entity, target *Entity) {
@@ -105,6 +162,10 @@ func (w *World) KillPlayer(target *Entity, tick uint64, tickRate int) {
 
 func (w *World) RemoveDeadUnit(target *Entity) {
 	w.removeDeadUnit(target)
+}
+
+func CanAttackTarget(attacker *Entity, target *Entity) bool {
+	return canAttackTarget(attacker, target)
 }
 
 func (w *World) StartTankRDash(entity *Entity, targetPoint Vector2, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {

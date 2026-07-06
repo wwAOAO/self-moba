@@ -127,6 +127,17 @@ func tickAttackRelease(t *testing.T, w *World, entity *Entity, tickRate int) uin
 	return releaseTick
 }
 
+func tickUntilDamage(t *testing.T, w *World, entity *Entity, from uint64, to uint64, tickRate int) {
+	t.Helper()
+	for tick := from + 1; tick <= to; tick++ {
+		w.Tick(tick, tickRate)
+		if entity.Combat.LastDamage > 0 {
+			return
+		}
+	}
+	t.Fatalf("entity %s was not damaged by tick %d", entity.ID, to)
+}
+
 func countProjectilesByKind(w *World, kind string) int {
 	count := 0
 	for _, projectile := range w.projectiles {

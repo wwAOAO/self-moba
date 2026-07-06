@@ -50,5 +50,8 @@ func (w *World) trySpecialRecast(entity *Entity, cast protocol.CastInput, state 
 		w.detonateMageE(entity, skill, tick, tickRate)
 		return true
 	}
+	if h := heroHooksForEntity(entity).SpecialRecast; h != nil {
+		return h(w, entity, cast, state, skill, tick, tickRate)
+	}
 	return false
 }

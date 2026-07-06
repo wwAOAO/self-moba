@@ -47,8 +47,9 @@ function drawCastWindup(windup, frame, now) {
     1,
   );
   const alpha = 1 - progress * 0.35;
-  const x = frame.offsetX + windup.x * frame.scale;
-  const y = frame.offsetY + windup.y * frame.scale;
+  const origin = castWindupOrigin(windup);
+  const x = frame.offsetX + origin.x * frame.scale;
+  const y = frame.offsetY + origin.y * frame.scale;
   const pulseRadius = (20 + 18 * progress) * frame.scale;
   const color = castWindupColor(windup.skillId);
   skillLayer.circle(x, y, pulseRadius);
@@ -73,12 +74,28 @@ function drawCastWindup(windup, frame, now) {
     drawSwordQWindup(windup, frame, color, alpha);
     return;
   }
+  if (windup.skillId === "berserker_q") {
+    drawBerserkerQWindup(windup, frame, alpha);
+    return;
+  }
+  if (windup.skillId === "berserker_e") {
+    drawBerserkerEWindup(windup, frame, alpha);
+    return;
+  }
   if (windup.skillId === "taunt") {
     drawCircleWindup(windup, frame, color, alpha, windup.range || 400);
     return;
   }
   if (windup.skillId === "justice") {
     drawTargetLockWindup(windup, frame, color, alpha);
+    return;
+  }
+  if (windup.skillId === "berserker_r") {
+    drawBerserkerRWindup(windup, frame, color, alpha);
+    return;
+  }
+  if (windup.skillId === "ninja_q") {
+    drawNinjaQWindup(windup, frame, color, alpha);
     return;
   }
   if (windup.skillId === "arrow_rain") {
@@ -92,6 +109,70 @@ function drawCastWindup(windup, frame, now) {
 
 function drawSwordQWindup(windup, frame, color, alpha) {
   return;
+}
+
+function drawBerserkerQWindup(windup, frame, alpha) {
+  const config = skillClientConfig.berserker_q || {};
+  const origin = castWindupOrigin(windup);
+  drawBerserkerQRange(
+    origin.x,
+    origin.y,
+    config.innerRadius || 300,
+    config.range || windup.range || 425,
+    frame,
+    alpha,
+  );
+}
+
+function drawBerserkerEWindup(windup, frame, alpha) {
+  const config = skillClientConfig.berserker_e || {};
+  const range = config.range || windup.range || 535;
+  const angle = ((config.coneAngleDegrees || 50) * Math.PI) / 180;
+  const center = Math.atan2(windup.dirY || 0, windup.dirX || 1);
+  const startAngle = center - angle / 2;
+  const endAngle = center + angle / 2;
+  const x = frame.offsetX + windup.x * frame.scale;
+  const y = frame.offsetY + windup.y * frame.scale;
+  const radius = range * frame.scale;
+  skillLayer.moveTo(x, y);
+  skillLayer.arc(x, y, radius, startAngle, endAngle);
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xdc2626, alpha: 0.1 * alpha });
+  skillLayer.moveTo(x, y);
+  skillLayer.arc(x, y, radius, startAngle, endAngle);
+  skillLayer.closePath();
+  skillLayer.stroke({ color: 0xf97316, width: 3, alpha: 0.75 * alpha });
+}
+
+function drawBerserkerRWindup(windup, frame, color, alpha) {
+  const config = skillClientConfig.berserker_r || {};
+  drawCircleWindup(windup, frame, color, alpha, config.range || windup.range || 460);
+  drawTargetLockWindup(windup, frame, color, alpha);
+}
+
+function drawNinjaQWindup(windup, frame, color, alpha) {
+  drawDirectionalWindup(windup, frame, color, alpha, 10);
+  const self = state.players.get(state.playerId);
+  if (!self || (self.ninja?.shadowExpiresAt || 0) <= interpolatedTick()) {
+    return;
+  }
+  drawDirectionalWindup(
+    { ...windup, x: self.ninja.shadowX, y: self.ninja.shadowY },
+    frame,
+    color,
+    alpha,
+    10,
+  );
+}
+
+function castWindupOrigin(windup) {
+  if (windup.skillId === "berserker_q") {
+    const self = state.players.get(state.playerId);
+    if (self && !self.dead) {
+      return self;
+    }
+  }
+  return windup;
 }
 
 function drawDirectionalWindup(windup, frame, color, alpha, width) {
@@ -165,6 +246,15 @@ function castWindupColor(skillId) {
   }
   if (skillId === "arrow_rain") {
     return 0xa78bfa;
+  }
+  if (skillId === "berserker_q") {
+    return 0xf97316;
+  }
+  if (skillId === "berserker_e") {
+    return 0xdc2626;
+  }
+  if (skillId === "berserker_r") {
+    return 0xef4444;
   }
   return 0x38bdf8;
 }
@@ -299,4 +389,3 @@ function drawSkillPreview(frame) {
   skillLayer.lineTo(endX, endY);
   skillLayer.stroke({ color: 0x0284c7, width: 2, alpha: 0.8 * alpha });
 }
-

@@ -1,37 +1,172 @@
 [
   {
     "skillId": "gunner_passive",
-    "name": "枪手被动",
+    "name": "Gunner Passive",
     "cooldownMs": 0,
     "range": 0,
     "type": "passive"
   },
   {
     "skillId": "gunner_q",
-    "name": "枪手Q",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "name": "Double Up",
+    "cooldownMs": 7000,
+    "range": 650,
+    "type": "target_bounce",
+    "meta": {
+      "totalAdRatio": 1,
+      "apRatio": 0.35,
+      "projectileRadius": 16,
+      "projectileSpeed": 1800,
+      "bounceRange": 500,
+      "bounceAngleDegrees": 60,
+      "targetPickPadding": 90
+    },
+    "metaLists": {
+      "manaCost": [
+        40,
+        40,
+        40,
+        40,
+        40
+      ],
+      "cooldownMs": [
+        7000,
+        6000,
+        5000,
+        4000,
+        3000
+      ],
+      "baseDamage": [
+        20,
+        45,
+        70,
+        95,
+        120
+      ]
+    }
   },
   {
     "skillId": "gunner_w",
-    "name": "枪手W",
-    "cooldownMs": 0,
+    "name": "Strut",
+    "cooldownMs": 12000,
     "range": 0,
-    "type": "placeholder"
+    "type": "self_buff",
+    "meta": {
+      "activeDurationSeconds": 4
+    },
+    "metaLists": {
+      "manaCost": [
+        45,
+        45,
+        45,
+        45,
+        45
+      ],
+      "cooldownMs": [
+        12000,
+        12000,
+        12000,
+        12000,
+        12000
+      ],
+      "moveSpeed": [
+        30,
+        35,
+        40,
+        45,
+        50
+      ],
+      "enhancedMoveSpeed": [
+        60,
+        70,
+        80,
+        90,
+        100
+      ],
+      "attackSpeedBonus": [
+        0.4,
+        0.55,
+        0.7,
+        0.85,
+        1
+      ]
+    }
   },
   {
     "skillId": "gunner_e",
-    "name": "枪手E",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "name": "Make It Rain",
+    "cooldownMs": 18000,
+    "range": 1000,
+    "type": "area_dot",
+    "meta": {
+      "radius": 300,
+      "durationSeconds": 2,
+      "tickSeconds": 0.25,
+      "slow": 0.4,
+      "slowAPRatio": 0.0006,
+      "apRatio": 0.6
+    },
+    "metaLists": {
+      "manaCost": [
+        80,
+        80,
+        80,
+        80,
+        80
+      ],
+      "cooldownMs": [
+        18000,
+        17000,
+        16000,
+        15000,
+        14000
+      ],
+      "damagePerSecond": [
+        35,
+        50,
+        65,
+        80,
+        95
+      ]
+    }
   },
   {
     "skillId": "gunner_r",
-    "name": "枪手R",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "name": "Bullet Time",
+    "cooldownMs": 120000,
+    "range": 1400,
+    "type": "channel_cone",
+    "meta": {
+      "durationSeconds": 3,
+      "firstWaveSeconds": 0.066,
+      "lastWaveSeconds": 2.904,
+      "coneAngleDegrees": 45,
+      "projectileRadius": 18,
+      "projectileSpeed": 2800,
+      "adRatio": 0.6,
+      "apRatio": 0.25
+    },
+    "metaLists": {
+      "manaCost": [
+        100,
+        100,
+        100
+      ],
+      "cooldownMs": [
+        120000,
+        110000,
+        100000
+      ],
+      "baseDamage": [
+        20,
+        30,
+        40
+      ],
+      "waves": [
+        14,
+        16,
+        18
+      ]
+    }
   }
 ]

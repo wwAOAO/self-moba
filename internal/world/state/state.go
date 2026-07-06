@@ -114,12 +114,14 @@ type CombatState struct {
 }
 
 type DamageEvent struct {
-	Damage     int
-	DamageType string
+	Damage      int
+	DamageType  string
+	BasicAttack bool
 }
 
 type ControlState struct {
 	AirborneUntilTick       uint64
+	UntargetableUntilTick   uint64
 	DashUntilTick           uint64
 	DashStartTick           uint64
 	DashStart               geom.Vector2
@@ -239,9 +241,64 @@ type TankState struct {
 	UnstoppableKnockupTicks    uint64
 }
 
+type BerserkerState struct {
+	BloodRageUntil              uint64
+	ApprehendDir                geom.Vector2
+	NoxianGuillotineTarget      string
+	NoxianGuillotineLevel       int
+	NoxianGuillotineCastPending bool
+	NoxianGuillotineCastTarget  string
+	NoxianGuillotineRecast      uint64
+	NoxianGuillotineRestore     uint64
+}
+
+type NinjaState struct {
+	ShadowPosition      geom.Vector2
+	ShadowExpiresAt     uint64
+	ShadowEffectID      string
+	ShadowRecastSkillID string
+	ShadowRecastUntil   uint64
+	QPending            bool
+	QReleaseTick        uint64
+	QTarget             geom.Vector2
+	QLevel              int
+	SkillHitMarks       map[string]uint8
+	SkillEnergyRefunded map[string]bool
+	RPending            bool
+	RCastPending        bool
+	RCastTargetID       string
+	RCastLevel          int
+	RReleaseTick        uint64
+	RDashEndTick        uint64
+	RTargetID           string
+	RLevel              int
+	RMarkTargetID       string
+	RMarkTriggerTick    uint64
+	RMarkDamage         float64
+	RMarkLevel          int
+}
+
 type PassiveState struct {
 	SwordIntent        float64
 	MaxSwordIntent     float64
+	GunnerTargetID     string
+	GunnerWActiveUntil uint64
+	GunnerWAttackSpeed float64
+	GunnerWMoveSpeed   float64
+	GunnerECenter      geom.Vector2
+	GunnerEExpireTick  uint64
+	GunnerENextTick    uint64
+	GunnerELevel       int
+	GunnerEEffectID    string
+	GunnerRDir         geom.Vector2
+	GunnerRStartTick   uint64
+	GunnerRExpireTick  uint64
+	GunnerRNextTick    uint64
+	GunnerRLevel       int
+	GunnerRWaves       int
+	GunnerRWaveCount   int
+	GunnerREffectID    string
+	NinjaSoulCooldowns map[string]uint64
 	Shield             int
 	MaxShield          int
 	ShieldExpireTick   uint64
@@ -249,6 +306,14 @@ type PassiveState struct {
 	LastRegenBreakTick uint64
 	NextRegenTick      uint64
 	NextFountainTick   uint64
+	Bleeds             map[string]BleedState
+}
+
+type BleedState struct {
+	Stacks        int
+	ExpiresAtTick uint64
+	NextTick      uint64
+	Remainder     float64
 }
 
 type ShieldLayer struct {

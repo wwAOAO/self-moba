@@ -52,6 +52,7 @@ func (w *World) ActiveBuffs(entity *Entity, tick uint64) []BuffState {
 		buffs = append(buffs, buff)
 	}
 	buffs = append(buffs, w.activeEquipmentBurnBuffs(entity, tick)...)
+	buffs = append(buffs, w.heroActiveBuffs(entity, tick)...)
 	buffs = append(buffs, activeCombatBuffs(entity, tick)...)
 	buffs = append(buffs, activeEquipmentSlotBuffs(entity, tick)...)
 	return buffs

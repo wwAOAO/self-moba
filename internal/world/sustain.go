@@ -3,9 +3,10 @@ package world
 import "math"
 
 type sustainContext struct {
-	BasicAttack bool
-	AOE         bool
-	Pet         bool
+	BasicAttack        bool
+	AOE                bool
+	Pet                bool
+	SkipBerserkerBleed bool
 }
 
 var (

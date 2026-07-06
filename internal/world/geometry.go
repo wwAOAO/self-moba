@@ -19,6 +19,9 @@ func canAttackTarget(attacker *Entity, target *Entity) bool {
 	if target.Kind == EntityKindPlayer && target.Death.Dead {
 		return false
 	}
+	if target.Control.UntargetableUntilTick > 0 {
+		return false
+	}
 	if target.ID == attacker.ID || target.Team == attacker.Team {
 		return false
 	}

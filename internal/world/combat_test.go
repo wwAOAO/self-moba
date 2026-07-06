@@ -219,6 +219,39 @@ func TestAbilityHasteReducesSkillCooldowns(t *testing.T) {
 	}
 }
 
+func TestWarriorQResetsBasicAttack(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(warriorHeroID)
+	if !ok {
+		t.Fatal("warrior hero not found")
+	}
+	w.SpawnHero("warrior", hero, TeamBlue)
+	player := w.entities[playerEntityID("warrior")]
+	target := w.entities["enemy:hero-1"]
+	placeEntity(player, 1000, 1000)
+	placeEntity(target, 1100, 1000)
+	player.Stats.AttackSpeed = 1
+	target.Stats.PhysicalDefense = 0
+	learnSkill(player, warriorQSkillID, 1)
+
+	w.ApplyInput("warrior", protocolPlayerInputAttack(target.ID), 10, nil, 20)
+	w.Tick(10, 20)
+	tickAttackRelease(t, w, player, 20)
+	if got, want := player.Combat.NextAttackTick, uint64(30); got != want {
+		t.Fatalf("next attack after first hit = %d, want %d", got, want)
+	}
+
+	w.ApplyInput("warrior", protocolPlayerInputCast(warriorQSkillID, target.Position.X, target.Position.Y), 16, nil, 20)
+	w.Tick(16, 20)
+
+	if got := player.Combat.PendingAttackTargetID; got != target.ID {
+		t.Fatalf("pending attack after q reset = %q, want %q", got, target.ID)
+	}
+	if got, want := player.Combat.AttackReleaseTick, uint64(22); got != want {
+		t.Fatalf("second attack release tick = %d, want %d", got, want)
+	}
+}
+
 func TestBasicAttackUsesWindupBeforeDamage(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()
@@ -238,6 +271,9 @@ func TestBasicAttackUsesWindupBeforeDamage(t *testing.T) {
 	w.Tick(15, 20)
 	if target.Combat.LastDamage <= 0 {
 		t.Fatal("basic attack should damage after windup")
+	}
+	if len(target.Combat.DamageEvents) != 1 || !target.Combat.DamageEvents[0].BasicAttack {
+		t.Fatalf("basic attack damage events = %+v", target.Combat.DamageEvents)
 	}
 	if player.Combat.NextAttackTick != 30 {
 		t.Fatalf("next attack tick = %d, want 30", player.Combat.NextAttackTick)
@@ -289,6 +325,33 @@ func TestRangedBasicAttackFiresProjectileAfterWindup(t *testing.T) {
 	}
 }
 
+func TestTargetedProjectileDisappearsWhenTargetDies(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(archerHeroID)
+	if !ok {
+		t.Fatal("archer hero not found")
+	}
+	w.SpawnHero("archer", hero, TeamBlue)
+	w.SpawnHero("red", testHeroConfig(), TeamRed)
+	archer := w.entities[playerEntityID("archer")]
+	target := w.entities[playerEntityID("red")]
+	placeEntity(archer, 1000, 1000)
+	placeEntity(target, 1500, 1000)
+
+	w.ApplyInput("archer", protocolPlayerInputAttack(target.ID), 10, nil, 20)
+	w.Tick(10, 20)
+	tickAttackRelease(t, w, archer, 20)
+	if got := countProjectilesByKind(w, "basic_arrow"); got != 1 {
+		t.Fatalf("basic arrows after release = %d, want 1", got)
+	}
+
+	w.killPlayer(target, 17, 20)
+
+	if got := countProjectilesByKind(w, "basic_arrow"); got != 0 {
+		t.Fatalf("basic arrows after target death = %d, want 0", got)
+	}
+}
+
 func TestCastingSkillLocksAutoAttackForAttackInterval(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()
@@ -313,5 +376,303 @@ func TestCastingSkillLocksAutoAttackForAttackInterval(t *testing.T) {
 	tickSwordQRelease(t, w, player, 20)
 	if player.Combat.NextAttackTick != 28 {
 		t.Fatalf("next attack tick = %d, want 28", player.Combat.NextAttackTick)
+	}
+}
+
+func TestGunnerPassiveDamagesOnlyNewTargetsAndReducesWCooldown(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(gunnerHeroID)
+	if !ok {
+		t.Fatal("gunner hero not found")
+	}
+	w.SpawnHero("gunner", hero, TeamBlue)
+	gunner := w.entities[playerEntityID("gunner")]
+	gunner.Stats.Attack = 100
+	target := w.entities["enemy:hero-1"]
+	target.Stats.PhysicalDefense = 0
+
+	if got := w.attackDamage(gunner, target, 10, 20); got != 150 {
+		t.Fatalf("first target damage = %d, want 150", got)
+	}
+	gunner.Skills[gunnerWSkillID] = SkillState{SkillID: gunnerWSkillID, CooldownUntilTick: 100}
+	w.onHeroBasicHit(gunner, target, 10, 20)
+	if got := gunner.Skills[gunnerWSkillID].CooldownUntilTick; got != 60 {
+		t.Fatalf("w cooldown after passive = %d, want 60", got)
+	}
+	if got := w.attackDamage(gunner, target, 20, 20); got != 100 {
+		t.Fatalf("same target damage = %d, want 100", got)
+	}
+}
+
+func TestGunnerPassiveUsesLowerMinionDamage(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(gunnerHeroID)
+	if !ok {
+		t.Fatal("gunner hero not found")
+	}
+	w.SpawnHero("gunner", hero, TeamBlue)
+	gunner := w.entities[playerEntityID("gunner")]
+	gunner.Level = MaxHeroLevel
+	gunner.Stats.Attack = 100
+	target := w.entities["minion:red-melee-1"]
+	target.Stats.PhysicalDefense = 0
+
+	if got := w.attackDamage(gunner, target, 10, 20); got != 150 {
+		t.Fatalf("max-level minion damage = %d, want 150", got)
+	}
+}
+
+func TestGunnerQBouncesToEnemyBehindTarget(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(gunnerHeroID)
+	if !ok {
+		t.Fatal("gunner hero not found")
+	}
+	w.SpawnHero("gunner", hero, TeamBlue)
+	gunner := w.entities[playerEntityID("gunner")]
+	gunner.Stats.Attack = 100
+	first := w.entities["enemy:hero-1"]
+	secondID, _ := w.SpawnObject(EntityKindEnemyHero, TeamRed, 1400, 1000)
+	second := w.entities[secondID]
+	placeEntity(gunner, 1000, 1000)
+	placeEntity(first, 1200, 1000)
+	first.Stats.PhysicalDefense = 0
+	second.Stats.PhysicalDefense = 0
+	learnSkill(gunner, "gunner_q", 1)
+
+	w.ApplyInput("gunner", protocolPlayerInputCastTarget("gunner_q", first.ID, first.Position.X, first.Position.Y), 10, nil, 20)
+	if got := first.Combat.LastDamage; got != 0 {
+		t.Fatalf("first q damage before projectile hit = %d, want 0", got)
+	}
+	tickUntilDamage(t, w, first, 10, 40, 20)
+	tickUntilDamage(t, w, second, 10, 40, 20)
+
+	if got := first.Combat.LastDamage; got != 120 {
+		t.Fatalf("first q damage = %d, want 120", got)
+	}
+	if got := second.Combat.LastDamage; got != 120 {
+		t.Fatalf("second q damage = %d, want 120", got)
+	}
+	if got := gunner.Skills["gunner_q"].CooldownUntilTick; got != 150 {
+		t.Fatalf("q cooldown = %d, want 150", got)
+	}
+}
+
+func TestGunnerQDoesNotBounceWithoutEnemyBehindTarget(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(gunnerHeroID)
+	if !ok {
+		t.Fatal("gunner hero not found")
+	}
+	w.SpawnHero("gunner", hero, TeamBlue)
+	gunner := w.entities[playerEntityID("gunner")]
+	gunner.Stats.Attack = 100
+	first := w.entities["enemy:hero-1"]
+	secondID, _ := w.SpawnObject(EntityKindEnemyHero, TeamRed, 1000, 1400)
+	second := w.entities[secondID]
+	placeEntity(gunner, 1000, 1000)
+	placeEntity(first, 1200, 1000)
+	first.Stats.PhysicalDefense = 0
+	second.Stats.PhysicalDefense = 0
+	learnSkill(gunner, "gunner_q", 1)
+
+	w.ApplyInput("gunner", protocolPlayerInputCastTarget("gunner_q", first.ID, first.Position.X, first.Position.Y), 10, nil, 20)
+	tickUntilDamage(t, w, first, 10, 40, 20)
+
+	if got := first.Combat.LastDamage; got != 120 {
+		t.Fatalf("first q damage = %d, want 120", got)
+	}
+	if got := second.Combat.LastDamage; got != 0 {
+		t.Fatalf("second q damage = %d, want 0", got)
+	}
+}
+
+func TestGunnerQSecondHitCritsWhenFirstHitKills(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(gunnerHeroID)
+	if !ok {
+		t.Fatal("gunner hero not found")
+	}
+	w.SpawnHero("gunner", hero, TeamBlue)
+	gunner := w.entities[playerEntityID("gunner")]
+	gunner.Stats.Attack = 100
+	first := w.entities["enemy:hero-1"]
+	secondID, _ := w.SpawnObject(EntityKindEnemyHero, TeamRed, 1400, 1000)
+	second := w.entities[secondID]
+	placeEntity(gunner, 1000, 1000)
+	placeEntity(first, 1200, 1000)
+	first.Stats.HP = 100
+	first.Stats.PhysicalDefense = 0
+	second.Stats.PhysicalDefense = 0
+	learnSkill(gunner, "gunner_q", 1)
+
+	w.ApplyInput("gunner", protocolPlayerInputCastTarget("gunner_q", first.ID, first.Position.X, first.Position.Y), 10, nil, 20)
+	tickUntilDamage(t, w, second, 10, 40, 20)
+
+	if got := second.Combat.LastDamage; got != 240 {
+		t.Fatalf("second q crit damage = %d, want 240", got)
+	}
+}
+
+func TestGunnerWPassiveMoveSpeedScalesOutOfCombat(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(gunnerHeroID)
+	if !ok {
+		t.Fatal("gunner hero not found")
+	}
+	w.SpawnHero("gunner", hero, TeamBlue)
+	gunner := w.entities[playerEntityID("gunner")]
+	learnSkill(gunner, gunnerWSkillID, 1)
+	baseMoveSpeed := gunner.Stats.MoveSpeed
+
+	w.Tick(80, 20)
+	if got := gunner.Stats.MoveSpeed; got != baseMoveSpeed+30 {
+		t.Fatalf("w passive move speed after 4s = %f, want %f", got, baseMoveSpeed+30)
+	}
+	w.Tick(140, 20)
+	if got := gunner.Stats.MoveSpeed; got != baseMoveSpeed+60 {
+		t.Fatalf("w passive move speed after 7s = %f, want %f", got, baseMoveSpeed+60)
+	}
+	gunner.Combat.LastHitTick = 150
+	w.Tick(151, 20)
+	if got := gunner.Stats.MoveSpeed; got != baseMoveSpeed {
+		t.Fatalf("w passive move speed after damage = %f, want %f", got, baseMoveSpeed)
+	}
+}
+
+func TestGunnerWActiveGrantsFullMoveSpeedAndAttackSpeed(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(gunnerHeroID)
+	if !ok {
+		t.Fatal("gunner hero not found")
+	}
+	w.SpawnHero("gunner", hero, TeamBlue)
+	gunner := w.entities[playerEntityID("gunner")]
+	learnSkill(gunner, gunnerWSkillID, 1)
+	baseMoveSpeed := gunner.Stats.MoveSpeed
+	baseAttackSpeed := EffectiveAttackSpeedAtTick(gunner, 10)
+
+	w.ApplyInput("gunner", protocolPlayerInputCast(gunnerWSkillID, gunner.Position.X, gunner.Position.Y), 10, nil, 20)
+
+	if got := gunner.Stats.MoveSpeed; got != baseMoveSpeed+60 {
+		t.Fatalf("w active move speed = %f, want %f", got, baseMoveSpeed+60)
+	}
+	if got := EffectiveAttackSpeedAtTick(gunner, 10); math.Abs(got-baseAttackSpeed*1.4) > 0.000001 {
+		t.Fatalf("w active attack speed = %f, want %f", got, baseAttackSpeed*1.4)
+	}
+	if got := gunner.Skills[gunnerWSkillID].CooldownUntilTick; got != 250 {
+		t.Fatalf("w cooldown = %d, want 250", got)
+	}
+	assertBuff(t, w.ActiveBuffs(gunner, 10), "gunner_w_active")
+}
+
+func TestGunnerEDealsAreaDamageSlowAndExpires(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(gunnerHeroID)
+	if !ok {
+		t.Fatal("gunner hero not found")
+	}
+	w.SpawnHero("gunner", hero, TeamBlue)
+	gunner := w.entities[playerEntityID("gunner")]
+	target := w.entities["enemy:hero-1"]
+	placeEntity(gunner, 1000, 1000)
+	placeEntity(target, 1200, 1000)
+	gunner.Stats.AbilityPower = 100
+	target.Stats.MagicDefense = 0
+	startHP := target.Stats.HP
+	learnSkill(gunner, "gunner_e", 1)
+
+	w.ApplyInput("gunner", protocolPlayerInputCast("gunner_e", target.Position.X, target.Position.Y), 10, nil, 20)
+
+	if got := target.Combat.LastDamage; got != 24 {
+		t.Fatalf("first e tick damage = %d, want 24", got)
+	}
+	if math.Abs(target.Control.MoveSpeedSlow-0.46) > 0.000001 {
+		t.Fatalf("e slow = %f, want 0.46", target.Control.MoveSpeedSlow)
+	}
+	if got := gunner.Skills["gunner_e"].CooldownUntilTick; got != 370 {
+		t.Fatalf("e cooldown = %d, want 370", got)
+	}
+	if len(w.SkillEffects()) == 0 {
+		t.Fatal("e should create a visible area effect")
+	}
+
+	for tick := uint64(11); tick <= 45; tick++ {
+		w.Tick(tick, 20)
+	}
+	if got := startHP - target.Stats.HP; got != 192 {
+		t.Fatalf("total e damage after 8 ticks = %d, want 192", got)
+	}
+	w.Tick(50, 20)
+	for _, effect := range w.SkillEffects() {
+		if effect.Kind == "gunner_e" {
+			t.Fatal("e effect should expire after 2s")
+		}
+	}
+}
+
+func TestGunnerRChannelsConeWaves(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(gunnerHeroID)
+	if !ok {
+		t.Fatal("gunner hero not found")
+	}
+	w.SpawnHero("gunner", hero, TeamBlue)
+	gunner := w.entities[playerEntityID("gunner")]
+	target := w.entities["enemy:hero-1"]
+	sideID, _ := w.SpawnObject(EntityKindEnemyHero, TeamRed, 1000, 1800)
+	side := w.entities[sideID]
+	placeEntity(gunner, 1000, 1000)
+	placeEntity(target, 1800, 1000)
+	gunner.Stats.Attack = 100
+	target.Stats.HP = 3000
+	target.Stats.MaxHP = 3000
+	target.Stats.PhysicalDefense = 0
+	side.Stats.PhysicalDefense = 0
+	learnSkill(gunner, "gunner_r", 1)
+
+	w.ApplyInput("gunner", protocolPlayerInputCast("gunner_r", 2000, 1000), 10, nil, 20)
+	if target.Combat.LastDamage != 0 {
+		t.Fatalf("r should not damage before projectile flight, got %d", target.Combat.LastDamage)
+	}
+	for tick := uint64(11); tick <= 90; tick++ {
+		w.Tick(tick, 20)
+	}
+
+	if got := 3000 - target.Stats.HP; got != 1120 {
+		t.Fatalf("r total damage = %d, want 1120", got)
+	}
+	if got := side.Combat.LastDamage; got != 0 {
+		t.Fatalf("side target damage = %d, want 0", got)
+	}
+	if got := gunner.Skills["gunner_r"].CooldownUntilTick; got != 2410 {
+		t.Fatalf("r cooldown = %d, want 2410", got)
+	}
+	if gunner.Passive.GunnerRExpireTick != 0 {
+		t.Fatalf("r state should be cleared: expire=%d", gunner.Passive.GunnerRExpireTick)
+	}
+}
+
+func TestGunnerRWaveCanCrit(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(gunnerHeroID)
+	if !ok {
+		t.Fatal("gunner hero not found")
+	}
+	w.SpawnHero("gunner", hero, TeamBlue)
+	gunner := w.entities[playerEntityID("gunner")]
+	target := w.entities["enemy:hero-1"]
+	placeEntity(gunner, 1000, 1000)
+	placeEntity(target, 1800, 1000)
+	gunner.Stats.Attack = 100
+	gunner.Stats.CritChance = 1
+	target.Stats.PhysicalDefense = 0
+	learnSkill(gunner, "gunner_r", 1)
+
+	w.ApplyInput("gunner", protocolPlayerInputCast("gunner_r", 2000, 1000), 10, nil, 20)
+	tickUntilDamage(t, w, target, 10, 30, 20)
+
+	if got := target.Combat.LastDamage; got != 160 {
+		t.Fatalf("r crit wave damage = %d, want 160", got)
 	}
 }

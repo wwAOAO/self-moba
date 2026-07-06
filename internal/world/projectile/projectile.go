@@ -31,6 +31,7 @@ type Projectile struct {
 	EffectRatio  float64
 	EffectTicks  uint64
 	Returning    bool
+	FromShadow   bool
 	CreatedAt    uint64
 	ExpiresAt    uint64
 	HitIDs       map[string]bool

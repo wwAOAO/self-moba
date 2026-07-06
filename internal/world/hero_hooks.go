@@ -11,15 +11,25 @@ type HeroTickHandler func(w *World, entity *Entity, tick uint64, tickRate int)
 type HeroHitHandler func(w *World, source *Entity, target *Entity, tick uint64, tickRate int)
 type HeroKillHandler func(w *World, killer *Entity, target *Entity)
 type HeroSkillUpgradeHandler func(w *World, entity *Entity, skillID string)
+type HeroSpecialRecastHandler func(w *World, entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) bool
+type HeroDamageHandler func(w *World, source *Entity, target *Entity, basicAttack bool, pet bool, skipBleed bool, tick uint64, tickRate int)
+type HeroActiveBuffsHandler func(w *World, entity *Entity, tick uint64) []BuffState
 
 type HeroHooks struct {
-	Cast           map[string]HeroCastHandler
-	Tick           HeroTickHandler
-	OnBasicHit     HeroHitHandler
-	OnSkillHit     HeroHitHandler
-	OnKill         HeroKillHandler
-	OnSkillUpgrade HeroSkillUpgradeHandler
-	ApplyStats     func(w *World, entity *Entity, stats *Stats)
+	Cast                           map[string]HeroCastHandler
+	Tick                           HeroTickHandler
+	TickEntity                     HeroTickHandler
+	OnBasicHit                     HeroHitHandler
+	OnDamage                       HeroDamageHandler
+	OnSkillHit                     HeroHitHandler
+	OnKill                         HeroKillHandler
+	OnSkillUpgrade                 HeroSkillUpgradeHandler
+	SpecialRecast                  HeroSpecialRecastHandler
+	ActiveBuffs                    HeroActiveBuffsHandler
+	ApplyStats                     func(w *World, entity *Entity, stats *Stats)
+	BasicAttackMultiplier          func(w *World, attacker *Entity, target *Entity, tick uint64) float64
+	BasicAttackBonusPhysicalDamage func(w *World, attacker *Entity, target *Entity, tick uint64, tickRate int) int
+	BasicAttackBonusMagicDamage    func(w *World, attacker *Entity, target *Entity, tick uint64, tickRate int) int
 
 	FocusBonusDamage func(w *World, attacker *Entity, target *Entity, tick uint64) int
 	ApplyFrostShot   func(w *World, source *Entity, target *Entity, tick uint64, tickRate int)
@@ -54,6 +64,8 @@ type HeroHooks struct {
 	RefreshGraniteMax func(w *World, entity *Entity)
 	WBonusDamage      func(w *World, attacker *Entity, tick uint64) float64
 	TankQDamage       func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int
+	NinjaQDamage      func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, hitNumber int, tick uint64) int
+	NinjaSkillHit     func(w *World, source *Entity, target *Entity, skillID string, groupID string, fromShadow bool, tick uint64, tickRate int)
 
 	StopE          func(w *World, entity *Entity, state SkillState, skill config.SkillConfig, tick uint64, tickRate int)
 	QBonusDamage   func(w *World, attacker *Entity, tick uint64) float64
@@ -90,10 +102,55 @@ func (w *World) tickHero(entity *Entity, tick uint64, tickRate int) {
 	}
 }
 
+func (w *World) tickHeroEntity(entity *Entity, tick uint64, tickRate int) {
+	for _, hooks := range heroHooks {
+		if hooks.TickEntity != nil {
+			hooks.TickEntity(w, entity, tick, tickRate)
+		}
+	}
+}
+
 func (w *World) onHeroBasicHit(source *Entity, target *Entity, tick uint64, tickRate int) {
 	if h := heroHooksForEntity(source).OnBasicHit; h != nil {
 		h(w, source, target, tick, tickRate)
 	}
+}
+
+func (w *World) onHeroDamage(source *Entity, target *Entity, context sustainContext, tick uint64, tickRate int) {
+	if h := heroHooksForEntity(source).OnDamage; h != nil {
+		h(w, source, target, context.BasicAttack, context.Pet, context.SkipBerserkerBleed, tick, tickRate)
+	}
+}
+
+func (w *World) heroBasicAttackMultiplier(attacker *Entity, target *Entity, tick uint64) float64 {
+	if h := heroHooksForEntity(attacker).BasicAttackMultiplier; h != nil {
+		return h(w, attacker, target, tick)
+	}
+	return 1
+}
+
+func (w *World) heroBasicAttackBonusMagicDamage(attacker *Entity, target *Entity, tick uint64, tickRate int) int {
+	if h := heroHooksForEntity(attacker).BasicAttackBonusMagicDamage; h != nil {
+		return h(w, attacker, target, tick, tickRate)
+	}
+	return 0
+}
+
+func (w *World) heroBasicAttackBonusPhysicalDamage(attacker *Entity, target *Entity, tick uint64, tickRate int) int {
+	if h := heroHooksForEntity(attacker).BasicAttackBonusPhysicalDamage; h != nil {
+		return h(w, attacker, target, tick, tickRate)
+	}
+	return 0
+}
+
+func (w *World) heroActiveBuffs(entity *Entity, tick uint64) []BuffState {
+	buffs := make([]BuffState, 0, 4)
+	for _, hooks := range heroHooks {
+		if hooks.ActiveBuffs != nil {
+			buffs = append(buffs, hooks.ActiveBuffs(w, entity, tick)...)
+		}
+	}
+	return buffs
 }
 
 func (w *World) onHeroSkillHit(source *Entity, target *Entity, tick uint64, tickRate int) {
@@ -319,13 +376,13 @@ func (w *World) startTankRDash(entity *Entity, targetPoint Vector2, state SkillS
 }
 
 func (w *World) releasePreparedTankR(entity *Entity, tick uint64, tickRate int) {
-	if h := heroHooksFor(tankHeroID).ReleasePreparedR; h != nil {
+	if h := heroHooksForEntity(entity).ReleasePreparedR; h != nil {
 		h(w, entity, tick, tickRate)
 	}
 }
 
 func (w *World) cancelTankRPreparedCast(entity *Entity) {
-	if h := heroHooksFor(tankHeroID).CancelPreparedR; h != nil {
+	if h := heroHooksForEntity(entity).CancelPreparedR; h != nil {
 		h(entity)
 	}
 }

@@ -72,6 +72,17 @@ func applyMoveSpeedSlow(target *Entity, slow float64, until uint64) {
 	target.Control.MoveSpeedSlowUntil = until
 }
 
+func applyAttackSpeedSlow(target *Entity, slow float64, until uint64) {
+	if target == nil || slow <= 0 || until == 0 {
+		return
+	}
+	if until < target.Control.AttackSpeedSlowUntil && slow <= target.Control.AttackSpeedSlow {
+		return
+	}
+	target.Control.AttackSpeedSlow = clamp(slow, 0, 1)
+	target.Control.AttackSpeedSlowUntil = until
+}
+
 func (w *World) ApplyAttackDamageReduction(target *Entity, amount float64, until uint64) {
 	if target == nil || amount <= 0 || until == 0 {
 		return

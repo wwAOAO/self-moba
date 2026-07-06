@@ -27,6 +27,33 @@ func (w *World) tankQDamage(attacker *Entity, target *Entity, skill config.Skill
 	return 0
 }
 
+func (w *World) ninjaQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, hitNumber int, tick uint64) int {
+	if heroHooksFor(ninjaHeroID).NinjaQDamage != nil {
+		return heroHooksFor(ninjaHeroID).NinjaQDamage(w, attacker, target, skill, skillLevel, hitNumber, tick)
+	}
+	return 0
+}
+
+func (w *World) gunnerQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, crit bool, tick uint64) int {
+	rawDamage := skillMetaListByLevel(skill, "baseDamage", skillLevel, []float64{20, 45, 70, 95, 120})
+	rawDamage += attacker.Stats.Attack * skillMetaRange(skill, "totalAdRatio", 1)
+	rawDamage += float64(attacker.Stats.AbilityPower) * skillMetaRange(skill, "apRatio", 0.35)
+	return w.PhysicalCritDamageAfterResistance(attacker, target, rawDamage, crit, tick)
+}
+
+func (w *World) gunnerRDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	rawDamage := skillMetaListByLevel(skill, "baseDamage", skillLevel, []float64{20, 30, 40})
+	rawDamage += attacker.Stats.Attack * skillMetaRange(skill, "adRatio", 0.6)
+	rawDamage += float64(attacker.Stats.AbilityPower) * skillMetaRange(skill, "apRatio", 0.25)
+	return w.PhysicalCritDamageAfterResistance(attacker, target, rawDamage, w.attackCrits(attacker, target, tick), tick)
+}
+
+func (w *World) ninjaSkillHit(source *Entity, target *Entity, skillID string, groupID string, fromShadow bool, tick uint64, tickRate int) {
+	if h := heroHooksFor(ninjaHeroID).NinjaSkillHit; h != nil {
+		h(w, source, target, skillID, groupID, fromShadow, tick, tickRate)
+	}
+}
+
 func applyTankQMoveSpeedSteal(source *Entity, target *Entity, ratio float64, until uint64) {
 	if source == nil || target == nil || ratio <= 0 || until == 0 {
 		return

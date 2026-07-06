@@ -18,7 +18,13 @@ const (
 	mageHeroID         = "mage"
 	gunnerHeroID       = "gunner"
 	bladeHeroID        = "blade"
+	berserkerHeroID    = "berserker"
+	ninjaHeroID        = "ninja"
 	respawnSeconds     = 20
+	berserkerQSkillID  = "berserker_q"
+	berserkerWSkillID  = "berserker_w"
+	berserkerESkillID  = "berserker_e"
+	berserkerRSkillID  = "berserker_r"
 	swordQSkillID      = "sword_cut"
 	swordQStackTicks   = 6
 	swordWSkillID      = "sword_wind_wall"
@@ -40,6 +46,11 @@ const (
 	mageWSkillID       = "mage_w"
 	mageESkillID       = "mage_e"
 	mageRSkillID       = "mage_r"
+	gunnerQSkillID     = "gunner_q"
+	gunnerWSkillID     = "gunner_w"
+	gunnerRSkillID     = "gunner_r"
+	ninjaQSkillID      = "ninja_q"
+	ninjaRSkillID      = "ninja_r"
 	windWallDuration   = 4
 )
 
@@ -94,6 +105,8 @@ func (w *World) Tick(tick uint64, tickRate int) {
 	w.tickEquipmentBurns(tick, tickRate)
 	w.tickFountains(tick, tickRate)
 	for _, entity := range w.entities {
+		w.tickHeroEntity(entity, tick, tickRate)
+		w.tickUntargetable(entity, tick)
 		w.tickPhysicalDefenseShred(entity, tick)
 		w.tickAttackDamageReduction(entity, tick)
 		w.tickSwordShield(entity, tick)
@@ -120,6 +133,12 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		w.tickBaseRegen(entity, tickRate)
 		w.tickEquipmentPercentRegen(entity, tick, tickRate)
 		w.tickPlayer(entity, tick, tickRate)
+	}
+}
+
+func (w *World) tickUntargetable(entity *Entity, tick uint64) {
+	if entity != nil && entity.Control.UntargetableUntilTick > 0 && tick >= entity.Control.UntargetableUntilTick {
+		entity.Control.UntargetableUntilTick = 0
 	}
 }
 
@@ -175,8 +194,29 @@ func (w *World) tickRespawn(entity *Entity, tick uint64) {
 	entity.Archer = ArcherState{}
 	entity.Mage = MageState{}
 	entity.Tank = TankState{}
+	entity.Berserker = BerserkerState{}
+	entity.Ninja = NinjaState{}
+	entity.Passive.GunnerTargetID = ""
+	entity.Passive.GunnerWActiveUntil = 0
+	entity.Passive.GunnerWAttackSpeed = 0
+	entity.Passive.GunnerWMoveSpeed = 0
+	entity.Passive.GunnerECenter = Vector2{}
+	entity.Passive.GunnerEExpireTick = 0
+	entity.Passive.GunnerENextTick = 0
+	entity.Passive.GunnerELevel = 0
+	entity.Passive.GunnerEEffectID = ""
+	entity.Passive.GunnerRDir = Vector2{}
+	entity.Passive.GunnerRStartTick = 0
+	entity.Passive.GunnerRExpireTick = 0
+	entity.Passive.GunnerRNextTick = 0
+	entity.Passive.GunnerRLevel = 0
+	entity.Passive.GunnerRWaves = 0
+	entity.Passive.GunnerRWaveCount = 0
+	entity.Passive.GunnerREffectID = ""
 	entity.Passive.Shield = 0
 	entity.Passive.MaxShield = 0
+	entity.Passive.ShieldExpireTick = 0
+	entity.Passive.Bleeds = nil
 	entity.Passive.LastRegenBreakTick = tick
 	entity.Passive.NextRegenTick = 0
 	w.refreshTankGraniteShield(entity)

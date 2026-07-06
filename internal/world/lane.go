@@ -13,6 +13,7 @@ const (
 	laneMinionReturnDistance  = 500
 	laneMinionReturnSeconds   = 5
 	laneMinionMoveSpeed       = 260
+	laneMinionAvoidLookahead  = 120
 )
 
 func (w *World) tickMinionWaves(tick uint64, tickRate int) {
@@ -133,7 +134,7 @@ func (w *World) tickLaneMinion(minion *Entity, tick uint64, tickRate int) {
 		minion.Intent.AttackTargetID = ""
 		minion.Combat.PendingAttackTargetID = ""
 		minion.Combat.AttackReleaseTick = 0
-		w.moveToward(minion, laneMoveTarget(minion.Position, routeStart, routeEnd), movementStepAtTick(minion, tickRate, tick), 8)
+		w.moveToward(minion, w.laneMoveTargetAvoidingAllies(minion, routeStart, routeEnd), movementStepAtTick(minion, tickRate, tick), 8)
 		return
 	}
 
@@ -154,7 +155,7 @@ func (w *World) tickLaneMinion(minion *Entity, tick uint64, tickRate int) {
 		w.moveToward(minion, target.Position, movementStepAtTick(minion, tickRate, tick), 0)
 		return
 	}
-	w.moveToward(minion, laneMoveTarget(minion.Position, routeStart, routeEnd), movementStepAtTick(minion, tickRate, tick), 8)
+	w.moveToward(minion, w.laneMoveTargetAvoidingAllies(minion, routeStart, routeEnd), movementStepAtTick(minion, tickRate, tick), 8)
 }
 
 func (w *World) nearestLaneTarget(minion *Entity) *Entity {
@@ -189,4 +190,46 @@ func laneMoveTarget(position Vector2, routeStart Vector2, routeEnd Vector2) Vect
 		return closestPointOnSegment(position, routeStart, routeEnd)
 	}
 	return routeEnd
+}
+
+func (w *World) laneMoveTargetAvoidingAllies(minion *Entity, routeStart Vector2, routeEnd Vector2) Vector2 {
+	target := laneMoveTarget(minion.Position, routeStart, routeEnd)
+	dx, dy := normalize(target.X-minion.Position.X, target.Y-minion.Position.Y)
+	if dx == 0 && dy == 0 {
+		return target
+	}
+	perpX, perpY := -dy, dx
+	bestForward := math.MaxFloat64
+	bestSide := 0.0
+	bestClearance := 0.0
+	for _, other := range w.entities {
+		if other == nil || other.ID == minion.ID || other.Team != minion.Team || !isCollisionEntity(other) {
+			continue
+		}
+		rx := other.Position.X - minion.Position.X
+		ry := other.Position.Y - minion.Position.Y
+		forward := rx*dx + ry*dy
+		clearance := minion.Radius + other.Radius + 8
+		if forward <= 0 || forward > laneMinionAvoidLookahead || forward >= bestForward {
+			continue
+		}
+		side := rx*perpX + ry*perpY
+		if math.Abs(side) >= clearance {
+			continue
+		}
+		bestForward = forward
+		bestSide = side
+		bestClearance = clearance
+	}
+	if bestForward == math.MaxFloat64 {
+		return target
+	}
+	sideStep := bestClearance
+	if bestSide >= 0 {
+		sideStep = -bestClearance
+	}
+	return Vector2{
+		X: clamp(minion.Position.X+dx*laneMinionAvoidLookahead+perpX*sideStep, 0, w.width),
+		Y: clamp(minion.Position.Y+dy*laneMinionAvoidLookahead+perpY*sideStep, 0, w.height),
+	}
 }

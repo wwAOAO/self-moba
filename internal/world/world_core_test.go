@@ -357,6 +357,44 @@ func TestLaneMinionMovesTowardEnemyFountain(t *testing.T) {
 	}
 }
 
+func TestLaneMinionWalksAroundBlockingAlly(t *testing.T) {
+	w := testWorld(t)
+	routeStart := w.spawnPosition(TeamBlue)
+	routeEnd := w.spawnPosition(TeamRed)
+	dx, dy := normalize(routeEnd.X-routeStart.X, routeEnd.Y-routeStart.Y)
+	start := Vector2{X: routeStart.X + dx*500, Y: routeStart.Y + dy*500}
+	blockerPosition := Vector2{X: start.X + dx*45, Y: start.Y + dy*45}
+	minion := &Entity{
+		ID:       "spawn:test-blue-runner",
+		Kind:     EntityKindMeleeMinion,
+		Team:     TeamBlue,
+		Position: start,
+		Radius:   20,
+		Stats:    Stats{HP: 445, MaxHP: 445, MoveSpeed: laneMinionMoveSpeed, AttackRange: 125, AttackSpeed: 1.25},
+		Lane:     LaneState{Active: true, RouteTarget: routeEnd, LastOnLaneTick: 1},
+	}
+	blocker := &Entity{
+		ID:       "spawn:test-blue-blocker",
+		Kind:     EntityKindMeleeMinion,
+		Team:     TeamBlue,
+		Position: blockerPosition,
+		Radius:   20,
+		Stats:    Stats{HP: 445, MaxHP: 445},
+	}
+	w.entities[minion.ID] = minion
+	w.entities[blocker.ID] = blocker
+	blockerProgress := (blockerPosition.X-routeStart.X)*dx + (blockerPosition.Y-routeStart.Y)*dy
+
+	for tick := uint64(2); tick <= 80; tick++ {
+		w.Tick(tick, 20)
+	}
+
+	minionProgress := (minion.Position.X-routeStart.X)*dx + (minion.Position.Y-routeStart.Y)*dy
+	if minionProgress <= blockerProgress+minion.Radius+blocker.Radius {
+		t.Fatalf("minion progress = %f, want past blocker progress %f", minionProgress, blockerProgress)
+	}
+}
+
 func TestLaneMinionAttacksEnemyOnRoute(t *testing.T) {
 	w := testWorld(t)
 	w.spawnMinionWave(TeamBlue, 1)

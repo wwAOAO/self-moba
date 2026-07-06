@@ -1,5 +1,7 @@
 package world
 
+import "math"
+
 func projectileIntersectsTarget(projectile *Projectile, previousPosition Vector2, target *Entity) bool {
 	if projectile == nil || target == nil {
 		return false
@@ -7,7 +9,20 @@ func projectileIntersectsTarget(projectile *Projectile, previousPosition Vector2
 	if projectile.SkillID == archerWSkillID {
 		return archerVolleyArrowIntersectsTarget(projectile, previousPosition, target)
 	}
+	if projectile.SkillID == gunnerRSkillID {
+		return gunnerRWaveIntersectsTarget(projectile, previousPosition, target)
+	}
 	return distancePointToSegment(target.Position, previousPosition, projectile.Position) <= projectile.Radius+target.Radius
+}
+
+func gunnerRWaveIntersectsTarget(projectile *Projectile, previousPosition Vector2, target *Entity) bool {
+	prevAlong, _ := projectPoint(projectile.Start, projectile.Dir, previousPosition)
+	targetAlong, perpendicular := projectPoint(projectile.Start, projectile.Dir, target.Position)
+	if targetAlong < prevAlong-target.Radius || targetAlong > projectile.Traveled+target.Radius {
+		return false
+	}
+	coneRadius := math.Tan(projectile.EffectRatio*math.Pi/360)*targetAlong + projectile.Radius
+	return perpendicular <= coneRadius+target.Radius
 }
 
 func canShieldTarget(source *Entity, target *Entity) bool {

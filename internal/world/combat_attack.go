@@ -81,7 +81,7 @@ func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64
 		return
 	}
 
-	damage := w.attackDamage(attacker, target, tick)
+	damage := w.attackDamage(attacker, target, tick, tickRate)
 	target.Combat.LastHitTick = tick
 	target.Combat.DamageEvents = nil
 	if target.Kind != EntityKindDummy {
@@ -145,7 +145,7 @@ func (w *World) fireBasicAttackProjectile(attacker *Entity, target *Entity, tick
 	}
 }
 
-func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64) int {
+func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64, tickRate int) int {
 	attack := attacker.Stats.Attack
 	crit := false
 	if attacker.HeroID == archerHeroID {
@@ -155,16 +155,19 @@ func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64) int 
 		attack *= w.critDamageMultiplier(attacker)
 	}
 	rawPhysical := attack + w.warriorQBonusDamage(attacker, tick) + w.tankWBonusDamage(attacker, tick)
+	rawPhysical *= w.heroBasicAttackMultiplier(attacker, target, tick)
 	rawPhysical = minionBasicAttackRawDamage(attacker, target, rawPhysical)
 	if isMinion(target) {
 		rawPhysical += w.equipmentMinionBasicAttackBonus(attacker, "physical")
 	}
+	rawPhysical += float64(w.heroBasicAttackBonusPhysicalDamage(attacker, target, tick, tickRate))
 	damage := reduceCritDamage(target, w.applyCritFinalDamageMultiplier(attacker, physicalDamageAfterResistance(attacker, target, rawPhysical, tick), crit), crit)
 	damage += magicDamageAfterResistance(attacker, target, w.equipmentBasicAttackBonus(attacker, "magic"), tick)
 	damage += physicalDamageAfterResistance(attacker, target, w.equipmentBasicAttackBonus(attacker, "physical"), tick)
 	if isMinion(target) {
 		damage += magicDamageAfterResistance(attacker, target, w.equipmentMinionBasicAttackBonus(attacker, "magic"), tick)
 	}
+	damage += w.heroBasicAttackBonusMagicDamage(attacker, target, tick, tickRate)
 	return damage
 }
 

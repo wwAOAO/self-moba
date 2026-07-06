@@ -126,6 +126,7 @@ type PlayerSnapshot struct {
 	Warrior        WarriorSnapshot       `json:"warrior"`
 	Tank           TankSnapshot          `json:"tank"`
 	Archer         ArcherSnapshot        `json:"archer"`
+	Ninja          NinjaSnapshot         `json:"ninja"`
 }
 
 type BuffSnapshot struct {
@@ -142,6 +143,7 @@ type DummySnapshot struct {
 	Y              float64               `json:"y"`
 	Radius         float64               `json:"radius"`
 	Stats          StatsSnapshot         `json:"stats"`
+	Buffs          []BuffSnapshot        `json:"buffs,omitempty"`
 	LastHitTick    uint64                `json:"lastHitTick"`
 	LastDamage     int                   `json:"lastDamage"`
 	LastDamageType string                `json:"lastDamageType"`
@@ -156,6 +158,7 @@ type UnitSnapshot struct {
 	Y              float64               `json:"y"`
 	Radius         float64               `json:"radius"`
 	Stats          StatsSnapshot         `json:"stats"`
+	Buffs          []BuffSnapshot        `json:"buffs,omitempty"`
 	LastHitTick    uint64                `json:"lastHitTick"`
 	LastDamage     int                   `json:"lastDamage"`
 	LastDamageType string                `json:"lastDamageType"`
@@ -164,8 +167,9 @@ type UnitSnapshot struct {
 }
 
 type DamageEventSnapshot struct {
-	Damage     int    `json:"damage"`
-	DamageType string `json:"damageType"`
+	Damage      int    `json:"damage"`
+	DamageType  string `json:"damageType"`
+	BasicAttack bool   `json:"basicAttack,omitempty"`
 }
 
 type EquipmentSlot struct {
@@ -241,10 +245,11 @@ type SkillSnapshot struct {
 }
 
 type PassiveSnapshot struct {
-	SwordIntent    float64 `json:"swordIntent"`
-	MaxSwordIntent float64 `json:"maxSwordIntent"`
-	Shield         int     `json:"shield"`
-	MaxShield      int     `json:"maxShield"`
+	SwordIntent        float64           `json:"swordIntent"`
+	MaxSwordIntent     float64           `json:"maxSwordIntent"`
+	NinjaSoulCooldowns map[string]uint64 `json:"ninjaSoulCooldowns,omitempty"`
+	Shield             int               `json:"shield"`
+	MaxShield          int               `json:"maxShield"`
 }
 
 type ControlSnapshot struct {
@@ -277,6 +282,12 @@ type ArcherSnapshot struct {
 
 type SwordSnapshot struct {
 	SweepingBladeTargetUntil map[string]uint64 `json:"sweepingBladeTargetUntil"`
+}
+
+type NinjaSnapshot struct {
+	ShadowX         float64 `json:"shadowX"`
+	ShadowY         float64 `json:"shadowY"`
+	ShadowExpiresAt uint64  `json:"shadowExpiresAt"`
 }
 
 type Error struct {

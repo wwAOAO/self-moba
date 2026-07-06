@@ -62,6 +62,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Warrior:        buildWarriorSnapshot(entity.Warrior),
 			Tank:           buildTankSnapshot(entity.Tank),
 			Archer:         buildArcherSnapshot(entity.Archer),
+			Ninja:          buildNinjaSnapshot(entity.Ninja),
 		})
 	}
 	for _, entity := range dummies {
@@ -71,6 +72,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Y:              entity.Position.Y,
 			Radius:         entity.Radius,
 			Stats:          buildStatsSnapshot(entity.Stats),
+			Buffs:          buildBuffSnapshots(w.ActiveBuffs(&entity, tick)),
 			LastHitTick:    entity.Combat.LastHitTick,
 			LastDamage:     entity.Combat.LastDamage,
 			LastDamageType: entity.Combat.LastDamageType,
@@ -89,6 +91,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			Y:              entity.Position.Y,
 			Radius:         entity.Radius,
 			Stats:          stats,
+			Buffs:          buildBuffSnapshots(w.ActiveBuffs(&entity, tick)),
 			LastHitTick:    entity.Combat.LastHitTick,
 			LastDamage:     entity.Combat.LastDamage,
 			LastDamageType: entity.Combat.LastDamageType,
@@ -158,8 +161,9 @@ func buildDamageEventSnapshots(events []world.DamageEvent) []protocol.DamageEven
 	snapshots := make([]protocol.DamageEventSnapshot, 0, len(events))
 	for _, event := range events {
 		snapshots = append(snapshots, protocol.DamageEventSnapshot{
-			Damage:     event.Damage,
-			DamageType: event.DamageType,
+			Damage:      event.Damage,
+			DamageType:  event.DamageType,
+			BasicAttack: event.BasicAttack,
 		})
 	}
 	return snapshots
@@ -231,11 +235,16 @@ func buildSkillSnapshots(states map[string]world.SkillState) []protocol.SkillSna
 }
 
 func buildPassiveSnapshot(state world.PassiveState) protocol.PassiveSnapshot {
+	ninjaCooldowns := make(map[string]uint64, len(state.NinjaSoulCooldowns))
+	for id, until := range state.NinjaSoulCooldowns {
+		ninjaCooldowns[id] = until
+	}
 	return protocol.PassiveSnapshot{
-		SwordIntent:    state.SwordIntent,
-		MaxSwordIntent: state.MaxSwordIntent,
-		Shield:         state.Shield,
-		MaxShield:      state.MaxShield,
+		SwordIntent:        state.SwordIntent,
+		MaxSwordIntent:     state.MaxSwordIntent,
+		NinjaSoulCooldowns: ninjaCooldowns,
+		Shield:             state.Shield,
+		MaxShield:          state.MaxShield,
 	}
 }
 
@@ -282,6 +291,14 @@ func buildSwordSnapshot(state world.SwordState) protocol.SwordSnapshot {
 	}
 	return protocol.SwordSnapshot{
 		SweepingBladeTargetUntil: targetUntil,
+	}
+}
+
+func buildNinjaSnapshot(state world.NinjaState) protocol.NinjaSnapshot {
+	return protocol.NinjaSnapshot{
+		ShadowX:         state.ShadowPosition.X,
+		ShadowY:         state.ShadowPosition.Y,
+		ShadowExpiresAt: state.ShadowExpiresAt,
 	}
 }
 

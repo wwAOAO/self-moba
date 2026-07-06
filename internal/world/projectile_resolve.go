@@ -11,7 +11,7 @@ func (w *World) resolveProjectileTargets(id string, source *Entity, projectile *
 		if !canHit {
 			continue
 		}
-		damage := w.projectileDamage(source, target, projectile, tick)
+		damage := w.projectileDamage(source, target, projectile, tick, tickRate)
 		target.Combat.LastHitTick = tick
 		target.Combat.DamageEvents = nil
 		if target.Kind != EntityKindDummy {
@@ -37,7 +37,7 @@ func (w *World) projectileCanHitTarget(id string, source *Entity, projectile *Pr
 	if projectile.SkillID == archerRSkillID && target.Kind != EntityKindPlayer && target.Kind != EntityKindEnemyHero {
 		return false, false
 	}
-	if (projectile.SkillID == tankQSkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot") && target.ID != projectile.TargetID {
+	if (projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot") && target.ID != projectile.TargetID {
 		return false, false
 	}
 	if projectile.HitIDs[target.ID] || !canAttackTarget(source, target) {
@@ -46,7 +46,7 @@ func (w *World) projectileCanHitTarget(id string, source *Entity, projectile *Pr
 	if !projectileIntersectsTarget(projectile, previousPosition, target) {
 		return false, false
 	}
-	if w.projectileGroupHit(projectile, target.ID) {
+	if projectile.SkillID != ninjaQSkillID && w.projectileGroupHit(projectile, target.ID) {
 		if projectile.SkillID == archerWSkillID {
 			delete(w.projectiles, id)
 			return false, true
@@ -54,14 +54,16 @@ func (w *World) projectileCanHitTarget(id string, source *Entity, projectile *Pr
 		return false, false
 	}
 	projectile.HitIDs[target.ID] = true
-	w.markProjectileGroupHit(projectile, target.ID)
+	if projectile.SkillID != ninjaQSkillID {
+		w.markProjectileGroupHit(projectile, target.ID)
+	}
 	return true, false
 }
 
-func (w *World) projectileDamage(source *Entity, target *Entity, projectile *Projectile, tick uint64) int {
+func (w *World) projectileDamage(source *Entity, target *Entity, projectile *Projectile, tick uint64, tickRate int) int {
 	damage := projectile.Damage
 	if projectile.Kind == "basic_arrow" && source != nil {
-		damage = w.attackDamage(source, target, tick)
+		damage = w.attackDamage(source, target, tick, tickRate)
 	} else if projectile.SkillID == archerWSkillID && source != nil {
 		damage = archerWDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
 	} else if projectile.SkillID == archerRSkillID && source != nil {
@@ -70,6 +72,11 @@ func (w *World) projectileDamage(source *Entity, target *Entity, projectile *Pro
 		damage = w.swordQDamage(source, target, w.skillConfig(projectile.SkillID), tick)
 	} else if projectile.SkillID == tankQSkillID && source != nil {
 		damage = w.tankQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+	} else if projectile.SkillID == gunnerQSkillID && source != nil {
+		crit := projectile.Returning && (projectile.EffectRatio > 0 || w.attackCrits(source, target, tick))
+		damage = w.gunnerQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, crit, tick)
+	} else if projectile.SkillID == gunnerRSkillID && source != nil {
+		damage = w.gunnerRDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
 	} else if projectile.SkillID == mageQSkillID && source != nil {
 		hitNumber := len(projectile.HitIDs)
 		multiplier := 1.0
@@ -77,6 +84,8 @@ func (w *World) projectileDamage(source *Entity, target *Entity, projectile *Pro
 			multiplier = skillMetaRange(w.skillConfig(projectile.SkillID), "secondHitDamageMultiplier", 0.5)
 		}
 		damage = w.mageQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, multiplier, tick)
+	} else if projectile.SkillID == ninjaQSkillID && source != nil {
+		damage = w.ninjaQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, len(projectile.HitIDs), tick)
 	}
 	return damage
 }
@@ -88,6 +97,15 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 		w.resolveTankQProjectileHit(source, projectile, tick, tickRate)
 		delete(w.projectiles, id)
 		removeProjectile = true
+	} else if projectile.SkillID == gunnerQSkillID {
+		w.applyDamage(source, target, damage, tickRate)
+		if !projectile.Returning {
+			w.fireGunnerQBounce(source, target, projectile, wasAlive && target.Stats.HP == 0, tick, tickRate)
+		}
+		delete(w.projectiles, id)
+		removeProjectile = true
+	} else if projectile.SkillID == gunnerRSkillID {
+		w.applyAOEDamage(source, target, damage, "physical", tickRate)
 	} else if projectile.SkillID == mageQSkillID {
 		w.applyMagicDamage(source, target, damage, tickRate)
 		target.Control.RootedUntilTick = tick + controlTicksAfterTenacity(target, projectile.EffectTicks, tick)
@@ -104,6 +122,9 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 		removeProjectile = true
 	} else {
 		w.applyGenericProjectileDamage(source, target, projectile, damage, tick, tickRate)
+		if projectile.SkillID == ninjaQSkillID {
+			w.ninjaSkillHit(source, target, projectile.SkillID, projectile.GroupID, projectile.FromShadow, tick, tickRate)
+		}
 		if projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" || projectile.SkillID == archerWSkillID {
 			delete(w.projectiles, id)
 			removeProjectile = true
@@ -143,6 +164,13 @@ func (w *World) resolveProjectileDummyHit(id string, source *Entity, target *Ent
 	}
 	if projectile.SkillID == tankQSkillID {
 		w.resolveTankQProjectileHit(source, projectile, tick, tickRate)
+		delete(w.projectiles, id)
+		return true
+	}
+	if projectile.SkillID == gunnerQSkillID {
+		if !projectile.Returning {
+			w.fireGunnerQBounce(source, target, projectile, false, tick, tickRate)
+		}
 		delete(w.projectiles, id)
 		return true
 	}

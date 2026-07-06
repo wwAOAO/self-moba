@@ -297,6 +297,13 @@ function abnormalStatuses(target) {
   if ((target.control?.mageIlluminationUntil || 0) > tick) {
     statuses.push("启明");
   }
+  for (const buff of target.buffs || []) {
+    if (!buff.negative || !buff.expiresAtTick || buff.expiresAtTick <= tick) {
+      continue;
+    }
+    const remain = ((buff.expiresAtTick - tick) / state.tickRate).toFixed(1);
+    statuses.push(`${buff.name || buff.id} ${remain}s`);
+  }
   return statuses;
 }
 
@@ -566,4 +573,3 @@ function drawFountainCore(body, size, color) {
   body.rect(-8 * s, -78 * s, 16 * s, 48 * s);
   body.fill({ color, alpha: 0.13 });
 }
-
