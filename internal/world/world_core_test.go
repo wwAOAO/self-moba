@@ -222,6 +222,56 @@ func TestEnemyMinionInFountainRangeGetsShot(t *testing.T) {
 	}
 }
 
+func TestFountainLocksNearestTargetUntilInvalid(t *testing.T) {
+	w := testWorld(t)
+	fountain := w.entities["spawn:fountain:blue"]
+	near := &Entity{
+		ID:       "spawn:red-near-fountain",
+		Kind:     EntityKindMeleeMinion,
+		Team:     TeamRed,
+		Position: Vector2{X: fountain.Position.X + 200, Y: fountain.Position.Y},
+		Radius:   14,
+		Stats:    Stats{HP: 420, MaxHP: 420},
+	}
+	far := &Entity{
+		ID:       "spawn:red-far-fountain",
+		Kind:     EntityKindMeleeMinion,
+		Team:     TeamRed,
+		Position: Vector2{X: fountain.Position.X + 500, Y: fountain.Position.Y},
+		Radius:   14,
+		Stats:    Stats{HP: 420, MaxHP: 420},
+	}
+	closer := &Entity{
+		ID:       "spawn:red-closer-fountain",
+		Kind:     EntityKindMeleeMinion,
+		Team:     TeamRed,
+		Position: Vector2{X: fountain.Position.X + 100, Y: fountain.Position.Y},
+		Radius:   14,
+		Stats:    Stats{HP: 420, MaxHP: 420},
+	}
+	w.entities[near.ID] = near
+	w.entities[far.ID] = far
+
+	if target := w.fountainTarget(fountain); target.ID != near.ID {
+		t.Fatalf("target = %q, want nearest %q", target.ID, near.ID)
+	}
+
+	w.entities[closer.ID] = closer
+	if target := w.fountainTarget(fountain); target.ID != near.ID {
+		t.Fatalf("target = %q, want locked %q", target.ID, near.ID)
+	}
+
+	near.Position.X = fountain.Position.X + fountainRange + 1
+	if target := w.fountainTarget(fountain); target.ID != closer.ID {
+		t.Fatalf("target = %q, want new nearest %q", target.ID, closer.ID)
+	}
+
+	closer.Stats.HP = 0
+	if target := w.fountainTarget(fountain); target.ID != far.ID {
+		t.Fatalf("target = %q, want living nearest %q", target.ID, far.ID)
+	}
+}
+
 func TestMinionWavesSpawnEvery30Seconds(t *testing.T) {
 	w := testWorld(t)
 
@@ -260,6 +310,32 @@ func TestMinionWaveComposition(t *testing.T) {
 	}
 	if counts[EntityKindMeleeMinion] != 3 || counts[EntityKindRangedMinion] != 3 || counts[EntityKindSiegeMinion] != 1 {
 		t.Fatalf("wave counts = %+v, want 3 melee, 3 ranged, 1 siege", counts)
+	}
+}
+
+func TestMinionGrowthCaps(t *testing.T) {
+	siege, _, _ := unitTemplate(EntityKindSiegeMinion)
+	applyMinionGrowth(&siege, EntityKindSiegeMinion, uint64(minionWaveIntervalSeconds)*6)
+	if siege.MaxHP != 927 || siege.HP != 927 || siege.Attack != 41.5 || siege.PhysicalDefense != 2 || siege.MagicDefense != 1.25 {
+		t.Fatalf("siege one-step stats = %+v", siege)
+	}
+
+	melee, _, _ := unitTemplate(EntityKindMeleeMinion)
+	ranged, _, _ := unitTemplate(EntityKindRangedMinion)
+	siege, _, _ = unitTemplate(EntityKindSiegeMinion)
+	highTick := uint64(minionWaveIntervalSeconds) * 6 * 1000
+	applyMinionGrowth(&melee, EntityKindMeleeMinion, highTick)
+	applyMinionGrowth(&ranged, EntityKindRangedMinion, highTick)
+	applyMinionGrowth(&siege, EntityKindSiegeMinion, highTick)
+
+	if melee.MaxHP != 3500 || melee.Attack != 120 || melee.PhysicalDefense != 40 || melee.MagicDefense != 30 {
+		t.Fatalf("melee capped stats = %+v", melee)
+	}
+	if ranged.MaxHP != 600 || ranged.Attack != 125 {
+		t.Fatalf("ranged capped stats = %+v", ranged)
+	}
+	if siege.MaxHP != 8850 || siege.Attack != 221 || siege.PhysicalDefense != 100 || siege.MagicDefense != 100 {
+		t.Fatalf("siege capped stats = %+v", siege)
 	}
 }
 
@@ -405,7 +481,7 @@ func TestSpawnObjectRejectsUnsupportedKind(t *testing.T) {
 
 func testWorld(t *testing.T) *World {
 	t.Helper()
-	loadedHeroes, err := config.LoadHeroes("../../configs/heroes.json")
+	loadedHeroes, err := config.LoadHeroes("../../configs/heroes")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -56,6 +56,10 @@ func (w *World) ApplyArcherMoveSpeedSlow(target *Entity, slow float64, until uin
 	applyMoveSpeedSlow(target, slow, until)
 }
 
+func (w *World) ApplyMoveSpeedSlow(target *Entity, slow float64, until uint64) {
+	applyMoveSpeedSlow(target, slow, until)
+}
+
 func applyMoveSpeedSlow(target *Entity, slow float64, until uint64) {
 	if target == nil || slow <= 0 || until == 0 {
 		return
@@ -66,6 +70,42 @@ func applyMoveSpeedSlow(target *Entity, slow float64, until uint64) {
 	}
 	target.Control.MoveSpeedSlow = slow
 	target.Control.MoveSpeedSlowUntil = until
+}
+
+func (w *World) ApplyAttackDamageReduction(target *Entity, amount float64, until uint64) {
+	if target == nil || amount <= 0 || until == 0 {
+		return
+	}
+	if target.Kind == EntityKindPlayer {
+		target.Control.AttackDamageReduction = amount
+		target.Control.AttackDamageReduceUntil = until
+		w.recalculatePlayerStats(target)
+		return
+	}
+	if target.Control.AttackDamageReduceUntil > 0 {
+		target.Stats.Attack += target.Control.AttackDamageReduction
+	}
+	applied := math.Min(amount, target.Stats.Attack)
+	target.Control.AttackDamageReduction = applied
+	target.Control.AttackDamageReduceUntil = until
+	target.Stats.Attack -= applied
+	if target.Stats.Attack < 0 {
+		target.Stats.Attack = 0
+	}
+}
+
+func (w *World) tickAttackDamageReduction(entity *Entity, tick uint64) {
+	if entity == nil || entity.Control.AttackDamageReduceUntil == 0 || tick < entity.Control.AttackDamageReduceUntil {
+		return
+	}
+	amount := entity.Control.AttackDamageReduction
+	entity.Control.AttackDamageReduction = 0
+	entity.Control.AttackDamageReduceUntil = 0
+	if entity.Kind == EntityKindPlayer {
+		w.recalculatePlayerStats(entity)
+		return
+	}
+	entity.Stats.Attack += amount
 }
 
 func (w *World) skillConfig(skillID string) config.SkillConfig {

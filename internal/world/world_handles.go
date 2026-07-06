@@ -67,6 +67,10 @@ func (w *World) LockAttackAfterCast(entity *Entity, tick uint64, tickRate int) {
 	w.lockAttackAfterCast(entity, tick, tickRate)
 }
 
+func (w *World) RefreshPlayerStats(entity *Entity) {
+	w.recalculatePlayerStats(entity)
+}
+
 func (w *World) TickDashMovement(entity *Entity, tick uint64, tickRate int) {
 	w.tickDashMovement(entity, tick, tickRate)
 }
@@ -85,6 +89,10 @@ func (w *World) ApplyTrueDamage(source *Entity, target *Entity, rawDamage float6
 
 func (w *World) ApplyAOEDamage(source *Entity, target *Entity, damage int, damageType string, tickRate int) {
 	w.applyAOEDamage(source, target, damage, damageType, tickRate)
+}
+
+func (w *World) PhysicalDamageAfterResistance(source *Entity, target *Entity, rawDamage float64, tick uint64) int {
+	return physicalDamageAfterResistance(source, target, rawDamage, tick)
 }
 
 func (w *World) ApplyKillReward(killer *Entity, target *Entity) {

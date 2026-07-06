@@ -7,13 +7,8 @@ import (
 )
 
 func LoadHeroes(path string) (*HeroStore, error) {
-	data, err := os.ReadFile(path)
+	heroes, err := loadJSONList[HeroConfig](path)
 	if err != nil {
-		return nil, err
-	}
-
-	var heroes []HeroConfig
-	if err := json.Unmarshal(data, &heroes); err != nil {
 		return nil, err
 	}
 	return NewHeroStore(heroes)

@@ -1,0 +1,43 @@
+[
+    {
+        "heroId":  "tank",
+        "name":  "Tank",
+        "base":  {
+                     "hp":  665,
+                     "mp":  282.2,
+                     "hpRegen5":  7,
+                     "mpRegen5":  7.32,
+                     "attack":  61.97,
+                     "abilityHaste":  0,
+                     "physicalDefense":  40,
+                     "magicDefense":  32.1,
+                     "moveSpeed":  335,
+                     "attackRange":  175,
+                     "attackSpeed":  0.638,
+                     "attackWindupSeconds":  0.25,
+                     "attackSpeedRatio":  0.638,
+                     "critChance":  0
+                 },
+        "growth":  {
+                       "hp":  112,
+                       "mp":  60,
+                       "hpRegen5":  0.55,
+                       "mpRegen5":  0.55,
+                       "attack":  4,
+                       "physicalDefense":  3.75,
+                       "magicDefense":  1.25,
+                       "moveSpeed":  0,
+                       "attackRange":  0,
+                       "attackSpeed":  0.034,
+                       "critChance":  0
+                   },
+        "radius":  22,
+        "skills":  {
+                       "passive":  "tank_armor",
+                       "q":  "slam",
+                       "w":  "guard",
+                       "e":  "taunt",
+                       "r":  "earthquake"
+                   }
+    }
+]

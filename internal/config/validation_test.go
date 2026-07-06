@@ -3,7 +3,7 @@ package config
 import "testing"
 
 func TestValidateGameConfigLoadsCurrentTables(t *testing.T) {
-	heroes, err := LoadHeroes("../../configs/heroes.json")
+	heroes, err := LoadHeroes("../../configs/heroes")
 	if err != nil {
 		t.Fatal(err)
 	}

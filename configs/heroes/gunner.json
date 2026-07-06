@@ -1,0 +1,44 @@
+[
+    {
+        "heroId":  "gunner",
+        "name":  "Gunner",
+        "resource":  "mp",
+        "base":  {
+                     "hp":  640,
+                     "mp":  300,
+                     "hpRegen5":  3.75,
+                     "mpRegen5":  8,
+                     "attack":  53,
+                     "abilityHaste":  0,
+                     "physicalDefense":  28,
+                     "magicDefense":  30,
+                     "moveSpeed":  325,
+                     "attackRange":  550,
+                     "attackSpeed":  0.656,
+                     "attackWindupSeconds":  0.25,
+                     "attackSpeedRatio":  0.625,
+                     "critChance":  0
+                 },
+        "growth":  {
+                       "hp":  103,
+                       "mp":  40,
+                       "hpRegen5":  0.65,
+                       "mpRegen5":  0.8,
+                       "attack":  2.4,
+                       "physicalDefense":  4.2,
+                       "magicDefense":  1.3,
+                       "moveSpeed":  0,
+                       "attackRange":  0,
+                       "attackSpeed":  0.03,
+                       "critChance":  0
+                   },
+        "radius":  16,
+        "skills":  {
+                       "passive":  "gunner_passive",
+                       "q":  "gunner_q",
+                       "w":  "gunner_w",
+                       "e":  "gunner_e",
+                       "r":  "gunner_r"
+                   }
+    }
+]

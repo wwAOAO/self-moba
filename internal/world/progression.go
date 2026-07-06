@@ -109,11 +109,14 @@ func (w *World) levelUp(entity *Entity) {
 	if nextStats.MP > nextStats.MaxMP {
 		nextStats.MP = nextStats.MaxMP
 	}
+	w.applyHeroStats(entity, &nextStats)
+	applyControlStats(entity, &nextStats)
 	entity.Tank.ThunderclapArmorBonus = 0
 	entity.Stats = nextStats
 	w.refreshTankGraniteShieldMax(entity)
 	w.refreshTankWPassive(entity)
 	w.applyEquipmentLevelUpRestore(entity)
+	w.refreshPlayerStatsAfterHPChange(entity, nextStats.HP)
 	entity.SkillPoints++
 }
 
@@ -175,6 +178,9 @@ func (w *World) upgradeSkill(entity *Entity, slot string) {
 	entity.SkillPoints--
 	entity.Skills[skillID] = state
 	w.onHeroSkillUpgrade(entity, skillID)
+	if heroHooksForEntity(entity).ApplyStats != nil {
+		w.recalculatePlayerStats(entity)
+	}
 	w.refreshTankWPassive(entity)
 }
 

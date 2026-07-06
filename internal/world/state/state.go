@@ -119,27 +119,31 @@ type DamageEvent struct {
 }
 
 type ControlState struct {
-	AirborneUntilTick     uint64
-	DashUntilTick         uint64
-	DashStartTick         uint64
-	DashStart             geom.Vector2
-	DashEnd               geom.Vector2
-	ActionLockedUntilTick uint64
-	StunnedUntilTick      uint64
-	SilencedUntilTick     uint64
-	TenacityUntilTick     uint64
-	MoveSpeedBonusFlat    float64
-	MoveSpeedBonusUntil   uint64
-	MoveSpeedSlow         float64
-	MoveSpeedSlowUntil    uint64
-	RootedUntilTick       uint64
-	AttackSpeedSlow       float64
-	AttackSpeedSlowUntil  uint64
-	MageIlluminationUntil uint64
-	MageIlluminationBy    string
-	MageFinalSparkBy      string
-	MageFinalSparkUntil   uint64
-	MageFinalSparkRefund  float64
+	AirborneUntilTick       uint64
+	DashUntilTick           uint64
+	DashStartTick           uint64
+	DashStart               geom.Vector2
+	DashEnd                 geom.Vector2
+	ActionLockedUntilTick   uint64
+	StunnedUntilTick        uint64
+	SilencedUntilTick       uint64
+	TenacityUntilTick       uint64
+	MoveSpeedBonusFlat      float64
+	MoveSpeedBonusUntil     uint64
+	MoveSpeedSlow           float64
+	MoveSpeedSlowUntil      uint64
+	AttackDamageReduction   float64
+	AttackDamageReduceUntil uint64
+	UndyingRageUntil        uint64
+	UndyingRageMinHP        int
+	RootedUntilTick         uint64
+	AttackSpeedSlow         float64
+	AttackSpeedSlowUntil    uint64
+	MageIlluminationUntil   uint64
+	MageIlluminationBy      string
+	MageFinalSparkBy        string
+	MageFinalSparkUntil     uint64
+	MageFinalSparkRefund    float64
 }
 
 type SwordState struct {

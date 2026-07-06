@@ -1,0 +1,42 @@
+[
+    {
+        "heroId":  "sword",
+        "name":  "Sword",
+        "resource":  "sword_intent",
+        "base":  {
+                     "hp":  490,
+                     "mp":  0,
+                     "hpRegen5":  6.5,
+                     "attack":  60,
+                     "abilityHaste":  0,
+                     "physicalDefense":  30,
+                     "magicDefense":  32,
+                     "moveSpeed":  345,
+                     "attackRange":  175,
+                     "attackSpeed":  0.697,
+                     "attackWindupSeconds":  0.328,
+                     "attackSpeedRatio":  0.67,
+                     "critChance":  0
+                 },
+        "growth":  {
+                       "hp":  87,
+                       "mp":  0,
+                       "hpRegen5":  0.9,
+                       "attack":  3,
+                       "physicalDefense":  3.4,
+                       "magicDefense":  1.25,
+                       "moveSpeed":  0,
+                       "attackRange":  0,
+                       "attackSpeed":  0.035,
+                       "critChance":  0
+                   },
+        "radius":  17,
+        "skills":  {
+                       "passive":  "sword_edge",
+                       "q":  "sword_cut",
+                       "w":  "sword_wind_wall",
+                       "e":  "sword_sweeping_blade",
+                       "r":  "sword_storm"
+                   }
+    }
+]

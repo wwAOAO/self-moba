@@ -1,0 +1,42 @@
+[
+    {
+        "heroId":  "warrior",
+        "name":  "Warrior",
+        "resource":  "none",
+        "base":  {
+                     "hp":  620,
+                     "mp":  0,
+                     "hpRegen5":  8,
+                     "attack":  64,
+                     "abilityHaste":  0,
+                     "physicalDefense":  36,
+                     "magicDefense":  32.1,
+                     "moveSpeed":  340,
+                     "attackRange":  175,
+                     "attackSpeed":  0.625,
+                     "attackWindupSeconds":  0.273,
+                     "attackSpeedRatio":  0.625,
+                     "critChance":  0
+                 },
+        "growth":  {
+                       "hp":  84,
+                       "mp":  0,
+                       "hpRegen5":  0.5,
+                       "attack":  4.5,
+                       "physicalDefense":  5,
+                       "magicDefense":  1.25,
+                       "moveSpeed":  0,
+                       "attackRange":  0,
+                       "attackSpeed":  0.0365,
+                       "critChance":  0
+                   },
+        "radius":  18,
+        "skills":  {
+                       "passive":  "warrior_toughness",
+                       "q":  "slash",
+                       "w":  "dash",
+                       "e":  "judgment",
+                       "r":  "justice"
+                   }
+    }
+]

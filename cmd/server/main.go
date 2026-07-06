@@ -32,7 +32,7 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	addr := env("BATTLE_ADDR", ":6969")
 	natsURL := env("NATS_URL", natsgo.DefaultURL)
-	heroConfigPath := env("HERO_CONFIG", "configs/heroes.json")
+	heroConfigPath := env("HERO_CONFIG", "configs/heroes")
 	skillConfigPath := env("SKILL_CONFIG", "configs/skills")
 	levelConfigPath := env("LEVEL_CONFIG", "configs/levels.json")
 	rewardConfigPath := env("REWARD_CONFIG", "configs/rewards.json")

@@ -32,10 +32,36 @@ func (w *World) recalculatePlayerStats(entity *Entity) {
 	if nextStats.MP < 0 {
 		nextStats.MP = 0
 	}
+	w.applyHeroStats(entity, &nextStats)
+	applyControlStats(entity, &nextStats)
 	entity.Tank.ThunderclapArmorBonus = 0
 	entity.Stats = nextStats
 	w.refreshTankGraniteShieldMax(entity)
 	w.refreshTankWPassive(entity)
+}
+
+func applyControlStats(entity *Entity, stats *Stats) {
+	if entity == nil || stats == nil || entity.Control.AttackDamageReduceUntil == 0 || entity.Control.AttackDamageReduction <= 0 {
+		return
+	}
+	stats.Attack -= entity.Control.AttackDamageReduction
+	if stats.Attack < 0 {
+		stats.Attack = 0
+	}
+	stats.BonusAttack -= entity.Control.AttackDamageReduction
+	if stats.BonusAttack < 0 {
+		stats.BonusAttack = 0
+	}
+}
+
+func (w *World) refreshPlayerStatsAfterHPChange(entity *Entity, beforeHP int) {
+	if entity == nil || entity.Kind != EntityKindPlayer || entity.Stats.HP <= 0 || entity.Stats.HP == beforeHP {
+		return
+	}
+	if heroHooksForEntity(entity).ApplyStats == nil {
+		return
+	}
+	w.recalculatePlayerStats(entity)
 }
 
 func (w *World) applyEquipmentStats(entity *Entity, stats *Stats) {

@@ -329,13 +329,12 @@ func (w *World) tickFountainForTarget(target *Entity, tick uint64, tickRate int)
 		}
 		if fountain.Team == target.Team {
 			insideFriendly = true
-			continue
 		}
-		w.fireFountainShot(fountain, target, tick, tickRate)
 	}
 	if target.Kind != EntityKindPlayer || !insideFriendly || tick < target.Passive.NextFountainTick {
 		return
 	}
+	beforeHP := target.Stats.HP
 	target.Stats.HP += int(math.Floor(float64(target.Stats.MaxHP) * fountainRegenRatio))
 	if target.Stats.HP > target.Stats.MaxHP {
 		target.Stats.HP = target.Stats.MaxHP
@@ -344,7 +343,53 @@ func (w *World) tickFountainForTarget(target *Entity, tick uint64, tickRate int)
 	if target.Stats.MP > target.Stats.MaxMP {
 		target.Stats.MP = target.Stats.MaxMP
 	}
+	w.refreshPlayerStatsAfterHPChange(target, beforeHP)
 	target.Passive.NextFountainTick = tick + uint64(tickRate)
+}
+
+func (w *World) tickFountains(tick uint64, tickRate int) {
+	if tickRate <= 0 {
+		return
+	}
+	for _, fountain := range w.entities {
+		if fountain.Kind != EntityKindFountain {
+			continue
+		}
+		if target := w.fountainTarget(fountain); target != nil {
+			w.fireFountainShot(fountain, target, tick, tickRate)
+		}
+	}
+}
+
+func (w *World) fountainTarget(fountain *Entity) *Entity {
+	if fountain == nil || fountain.Kind != EntityKindFountain {
+		return nil
+	}
+	if target := w.entities[fountain.Intent.AttackTargetID]; w.fountainCanTarget(fountain, target) {
+		return target
+	}
+	fountain.Intent.AttackTargetID = ""
+
+	var nearest *Entity
+	nearestDistance := math.Inf(1)
+	for _, target := range w.entities {
+		if !w.fountainCanTarget(fountain, target) {
+			continue
+		}
+		dist := distance(fountain.Position, target.Position)
+		if dist < nearestDistance {
+			nearest = target
+			nearestDistance = dist
+		}
+	}
+	if nearest != nil {
+		fountain.Intent.AttackTargetID = nearest.ID
+	}
+	return nearest
+}
+
+func (w *World) fountainCanTarget(fountain *Entity, target *Entity) bool {
+	return canAttackTarget(fountain, target) && distance(fountain.Position, target.Position) <= fountainRange
 }
 
 func (w *World) fireFountainShot(fountain *Entity, target *Entity, tick uint64, tickRate int) {

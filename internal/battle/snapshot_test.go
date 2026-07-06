@@ -32,7 +32,7 @@ func TestSwordCritChanceSnapshotUsesPassiveMultiplier(t *testing.T) {
 
 func testSnapshotWorld(t *testing.T) (*world.World, *config.HeroStore) {
 	t.Helper()
-	heroes, err := config.LoadHeroes("../../configs/heroes.json")
+	heroes, err := config.LoadHeroes("../../configs/heroes")
 	if err != nil {
 		t.Fatal(err)
 	}

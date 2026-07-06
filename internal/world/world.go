@@ -92,8 +92,10 @@ func (w *World) Tick(tick uint64, tickRate int) {
 	w.tickMinionWaves(tick, tickRate)
 	w.tickProjectiles(tick, tickRate)
 	w.tickEquipmentBurns(tick, tickRate)
+	w.tickFountains(tick, tickRate)
 	for _, entity := range w.entities {
 		w.tickPhysicalDefenseShred(entity, tick)
+		w.tickAttackDamageReduction(entity, tick)
 		w.tickSwordShield(entity, tick)
 		tickEquipmentPhysicalDamageShield(entity, tick)
 		w.tickStoneplateShield(entity, tick)
@@ -115,7 +117,7 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		if entity.Death.Dead || entity.Stats.HP <= 0 {
 			continue
 		}
-		tickBaseRegen(entity, tickRate)
+		w.tickBaseRegen(entity, tickRate)
 		w.tickEquipmentPercentRegen(entity, tick, tickRate)
 		w.tickPlayer(entity, tick, tickRate)
 	}

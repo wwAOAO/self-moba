@@ -93,6 +93,21 @@ func activeCombatBuffs(entity *Entity, tick uint64) []BuffState {
 			Negative:      true,
 		})
 	}
+	if entity.Control.AttackDamageReduceUntil > tick && entity.Control.AttackDamageReduction > 0 {
+		buffs = append(buffs, BuffState{
+			ID:            "attack_damage_reduction",
+			Name:          "攻击力降低",
+			ExpiresAtTick: entity.Control.AttackDamageReduceUntil,
+			Negative:      true,
+		})
+	}
+	if entity.Control.UndyingRageUntil > tick {
+		buffs = append(buffs, BuffState{
+			ID:            "undying_rage",
+			Name:          "无尽怒火",
+			ExpiresAtTick: entity.Control.UndyingRageUntil,
+		})
+	}
 	if entity.Combat.BlackCleaverUntil > tick && entity.Combat.BlackCleaverStacks > 0 {
 		buffs = append(buffs, BuffState{
 			ID:            "black_cleaver_shred",

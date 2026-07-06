@@ -83,10 +83,11 @@ func tickShieldLayers(entity *Entity, tick uint64) {
 	entity.Passive.MaxShield = total
 }
 
-func tickBaseRegen(entity *Entity, tickRate int) {
+func (w *World) tickBaseRegen(entity *Entity, tickRate int) {
 	if entity == nil || tickRate <= 0 || entity.Stats.HP <= 0 {
 		return
 	}
+	beforeHP := entity.Stats.HP
 	if entity.Stats.HP < entity.Stats.MaxHP && entity.Stats.HPRegen5 > 0 {
 		entity.Regen.HPRemainder += entity.Stats.HPRegen5 / 5 / float64(tickRate)
 		heal := int(math.Floor(entity.Regen.HPRemainder + 0.000000001))
@@ -110,6 +111,7 @@ func tickBaseRegen(entity *Entity, tickRate int) {
 	} else {
 		entity.Regen.MPRemainder = 0
 	}
+	w.refreshPlayerStatsAfterHPChange(entity, beforeHP)
 }
 
 func warriorToughnessRegenRatio(level int, skill config.SkillConfig) float64 {

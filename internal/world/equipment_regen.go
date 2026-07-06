@@ -6,6 +6,7 @@ func (w *World) tickEquipmentPercentRegen(entity *Entity, tick uint64, tickRate 
 	if entity == nil || entity.Kind != EntityKindPlayer || entity.Stats.HP <= 0 || tickRate <= 0 || tick%uint64(5*tickRate) != 0 || w.equipment == nil {
 		return
 	}
+	beforeHP := entity.Stats.HP
 	hpRatio, mpRatio := w.equipmentPercentRegenRatios(entity, tick, tickRate)
 	if hpRatio > 0 && entity.Stats.HP < entity.Stats.MaxHP {
 		entity.Stats.HP += int(math.Floor(float64(entity.Stats.MaxHP) * hpRatio))
@@ -19,6 +20,7 @@ func (w *World) tickEquipmentPercentRegen(entity *Entity, tick uint64, tickRate 
 			entity.Stats.MP = entity.Stats.MaxMP
 		}
 	}
+	w.refreshPlayerStatsAfterHPChange(entity, beforeHP)
 }
 
 func (w *World) equipmentPercentRegenRatios(entity *Entity, tick uint64, tickRate int) (float64, float64) {

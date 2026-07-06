@@ -19,6 +19,7 @@ type HeroHooks struct {
 	OnSkillHit     HeroHitHandler
 	OnKill         HeroKillHandler
 	OnSkillUpgrade HeroSkillUpgradeHandler
+	ApplyStats     func(w *World, entity *Entity, stats *Stats)
 
 	FocusBonusDamage func(w *World, attacker *Entity, target *Entity, tick uint64) int
 	ApplyFrostShot   func(w *World, source *Entity, target *Entity, tick uint64, tickRate int)
@@ -112,6 +113,12 @@ func (w *World) onHeroKill(killer *Entity, target *Entity) {
 func (w *World) onHeroSkillUpgrade(entity *Entity, skillID string) {
 	if h := heroHooksForEntity(entity).OnSkillUpgrade; h != nil {
 		h(w, entity, skillID)
+	}
+}
+
+func (w *World) applyHeroStats(entity *Entity, stats *Stats) {
+	if h := heroHooksForEntity(entity).ApplyStats; h != nil {
+		h(w, entity, stats)
 	}
 }
 

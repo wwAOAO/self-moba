@@ -98,22 +98,21 @@ func applyMinionGrowth(stats *Stats, kind EntityKind, tick uint64) {
 	}
 	switch kind {
 	case EntityKindMeleeMinion:
-		stats.MaxHP += steps * 20
+		stats.MaxHP = min(stats.MaxHP+steps*20, 3500)
 		stats.HP = stats.MaxHP
-		stats.Attack += float64(steps)
-		stats.PhysicalDefense += float64(steps * 2)
-		stats.MagicDefense += float64(steps) * 1.25
+		stats.Attack = min(stats.Attack+float64(steps), 120)
+		stats.PhysicalDefense = min(stats.PhysicalDefense+float64(steps*2), 40)
+		stats.MagicDefense = min(stats.MagicDefense+float64(steps)*1.25, 30)
 	case EntityKindRangedMinion:
-		stats.MaxHP += steps * 14
-		if stats.MaxHP > 425 {
-			stats.MaxHP = 425
-		}
+		stats.MaxHP = min(stats.MaxHP+steps*14, 600)
 		stats.HP = stats.MaxHP
-		stats.Attack += float64(steps) * 2
+		stats.Attack = min(stats.Attack+float64(steps)*2, 125)
 	case EntityKindSiegeMinion:
-		stats.MaxHP += steps * 27
+		stats.MaxHP = min(stats.MaxHP+steps*27, 8850)
 		stats.HP = stats.MaxHP
-		stats.Attack += float64(steps) * 1.5
+		stats.Attack = min(stats.Attack+float64(steps)*1.5, 221)
+		stats.PhysicalDefense = min(stats.PhysicalDefense+float64(steps*2), 100)
+		stats.MagicDefense = min(stats.MagicDefense+float64(steps)*1.25, 100)
 	}
 }
 

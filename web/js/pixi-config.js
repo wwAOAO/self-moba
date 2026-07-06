@@ -57,7 +57,7 @@ async function fetchConfigList(path, fallbackPath) {
 
 async function loadHeroConfig() {
   try {
-    const heroes = await fetchConfig("/configs/heroes.json");
+    const heroes = await fetchConfigList("/configs/heroes");
     heroClientConfig = Object.fromEntries(
       heroes.map((hero) => [hero.heroId, hero]),
     );

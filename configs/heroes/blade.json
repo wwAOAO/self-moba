@@ -1,0 +1,44 @@
+[
+    {
+        "heroId":  "blade",
+        "name":  "Blade",
+        "resource":  "rage",
+        "base":  {
+                     "hp":  696,
+                     "mp":  100,
+                     "hpRegen5":  8.5,
+                     "mpRegen5":  0,
+                     "attack":  69,
+                     "abilityHaste":  0,
+                     "physicalDefense":  33,
+                     "magicDefense":  32,
+                     "moveSpeed":  345,
+                     "attackRange":  175,
+                     "attackSpeed":  0.64,
+                     "attackWindupSeconds":  0.25,
+                     "attackSpeedRatio":  0.625,
+                     "critChance":  0
+                 },
+        "growth":  {
+                       "hp":  82,
+                       "mp":  0,
+                       "hpRegen5":  0.18,
+                       "mpRegen5":  0,
+                       "attack":  3.7,
+                       "physicalDefense":  4.3,
+                       "magicDefense":  2.05,
+                       "moveSpeed":  0,
+                       "attackRange":  0,
+                       "attackSpeed":  0.034,
+                       "critChance":  0
+                   },
+        "radius":  17,
+        "skills":  {
+                       "passive":  "blade_passive",
+                       "q":  "blade_q",
+                       "w":  "blade_w",
+                       "e":  "blade_e",
+                       "r":  "blade_r"
+                   }
+    }
+]

@@ -50,9 +50,19 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 		return
 	}
 	beforeHP := target.Stats.HP
+	sourceBeforeHP := 0
+	if source != nil {
+		sourceBeforeHP = source.Stats.HP
+	}
 	target.Stats.HP -= damage
-	if target.Stats.HP < 0 {
-		target.Stats.HP = 0
+	minHP := undyingRageMinHP(target, target.Combat.LastHitTick)
+	if target.Stats.HP < minHP {
+		target.Stats.HP = minHP
+	}
+	actualDamage := beforeHP - target.Stats.HP
+	target.Combat.LastDamage = actualDamage
+	if len(target.Combat.DamageEvents) > 0 {
+		target.Combat.DamageEvents[len(target.Combat.DamageEvents)-1].Damage = actualDamage
 	}
 	w.triggerEquipmentLowHealthShield(target, tickRate)
 	w.triggerEquipmentHeroDamageManaShield(source, target, tickRate)
@@ -67,12 +77,24 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 	if !context.BasicAttack && !context.Pet {
 		w.applyEquipmentSkillBurn(source, target, target.Combat.LastHitTick, tickRate)
 	}
-	w.applySustain(source, beforeHP-target.Stats.HP, context)
+	w.applySustain(source, actualDamage, context)
+	w.refreshPlayerStatsAfterHPChange(source, sourceBeforeHP)
 	if damageType == "physical" {
-		w.triggerEquipmentPhysicalDamageEffects(source, target, beforeHP-target.Stats.HP, target.Combat.LastHitTick, tickRate)
+		w.triggerEquipmentPhysicalDamageEffects(source, target, actualDamage, target.Combat.LastHitTick, tickRate)
 	}
 	w.triggerSunfireCombat(source, target.Combat.LastHitTick, tickRate)
 	w.triggerSunfireCombat(target, target.Combat.LastHitTick, tickRate)
 	w.triggerEquipmentHeroHitHeal(source, target)
 	w.breakWarriorToughness(source, target, target.Combat.LastHitTick)
+	w.refreshPlayerStatsAfterHPChange(target, beforeHP)
+}
+
+func undyingRageMinHP(target *Entity, tick uint64) int {
+	if target == nil || target.Control.UndyingRageUntil == 0 || tick >= target.Control.UndyingRageUntil {
+		return 0
+	}
+	if target.Control.UndyingRageMinHP < 1 {
+		return 1
+	}
+	return target.Control.UndyingRageMinHP
 }

@@ -181,7 +181,7 @@ func TestFinalAttackSpeedUsesBonusRatioSlowAndCap(t *testing.T) {
 }
 
 func TestHeroConfigLoadsAttackWindups(t *testing.T) {
-	heroes, err := config.LoadHeroes("../../configs/heroes.json")
+	heroes, err := config.LoadHeroes("../../configs/heroes")
 	if err != nil {
 		t.Fatal(err)
 	}
