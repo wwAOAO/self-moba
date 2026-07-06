@@ -98,8 +98,6 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		tickEquipmentPhysicalDamageShield(entity, tick)
 		w.tickStoneplateShield(entity, tick)
 		w.tickSunfire(entity, tick, tickRate)
-		w.tickTankGraniteShield(entity, tick, tickRate)
-		w.refreshTankWPassive(entity)
 		w.tickFountainForTarget(entity, tick, tickRate)
 		if entity.Lane.Active {
 			w.releasePendingAttack(entity, tick, tickRate)
@@ -109,23 +107,8 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		if entity.Kind != EntityKindPlayer {
 			continue
 		}
-		w.expireArcherFocus(entity, tick)
 		w.tickEquipmentStacks(entity, tick)
-		w.expireSwordQStacks(entity, tick)
-		w.tickArcherHawkCharges(entity, tick, tickRate)
-		w.releaseArcherCrystalArrow(entity, tick, tickRate)
-		w.releaseMageQ(entity, tick, tickRate)
-		w.releaseMageW(entity, tick, tickRate)
-		w.releaseMageE(entity, tick, tickRate)
-		w.releaseMageR(entity, tick, tickRate)
-		w.tickMageE(entity, tick, tickRate)
-		if entity.HeroID == swordHeroID && entity.Sword.QPending {
-			w.tickDashMovement(entity, tick, tickRate)
-		}
-		w.releaseSwordQ(entity, tick, tickRate)
-		w.releaseWarriorR(entity, tick, tickRate)
-		w.releaseTankQ(entity, tick, tickRate)
-		w.releaseTankE(entity, tick, tickRate)
+		w.tickHero(entity, tick, tickRate)
 		w.tickDashMovement(entity, tick, tickRate)
 		w.releasePendingAttack(entity, tick, tickRate)
 		w.tickRespawn(entity, tick)
@@ -134,10 +117,7 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		}
 		tickBaseRegen(entity, tickRate)
 		w.tickEquipmentPercentRegen(entity, tick, tickRate)
-		w.tickWarriorToughness(entity, tick, tickRate)
-		w.tickBladeRageDecay(entity, tick, tickRate)
 		w.tickPlayer(entity, tick, tickRate)
-		w.tickWarriorJudgment(entity, tick, tickRate)
 	}
 }
 

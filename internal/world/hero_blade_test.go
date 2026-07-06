@@ -61,11 +61,11 @@ func TestBladePassiveRageDecaysAfterOutOfCombat(t *testing.T) {
 	player.Stats.MP = 20
 	player.Combat.LastHitTick = 100
 
-	w.tickBladeRageDecay(player, 199, 20)
+	w.tickHero(player, 199, 20)
 	if player.Stats.MP != 20 {
 		t.Fatalf("rage before out of combat = %f, want 20", player.Stats.MP)
 	}
-	w.tickBladeRageDecay(player, 200, 20)
+	w.tickHero(player, 200, 20)
 	if math.Abs(player.Stats.MP-19.75) > 0.000001 {
 		t.Fatalf("rage after decay tick = %f, want 19.75", player.Stats.MP)
 	}

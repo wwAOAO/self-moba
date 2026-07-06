@@ -23,21 +23,26 @@ func init() {
 			eID: ApplyE,
 			rID: ApplyR,
 		},
-		ReleaseQ:          ReleaseQ,
-		ReleaseE:          ReleaseE,
+		Tick:              Tick,
+		OnBasicHit:        ApplyWAftershock,
 		StartRDash:        StartRDash,
 		ReleasePreparedR:  ReleasePreparedR,
 		CancelPreparedR:   CancelPreparedR,
 		ResolveRImpact:    ResolveRImpact,
 		RefreshWPassive:   RefreshWPassive,
 		PassiveState:      PassiveState,
-		TickGranite:       TickGranite,
 		RefreshGranite:    RefreshGranite,
 		RefreshGraniteMax: RefreshGraniteMax,
 		WBonusDamage:      WBonusDamage,
-		ApplyWAftershock:  ApplyWAftershock,
 		TankQDamage:       QDamage,
 	})
+}
+
+func Tick(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
+	TickGranite(w, entity, tick, tickRate)
+	RefreshWPassive(w, entity)
+	ReleaseQ(w, entity, tick, tickRate)
+	ReleaseE(w, entity, tick, tickRate)
 }
 
 func ReleaseQ(w *world.World, entity *world.Entity, tick uint64, tickRate int) {

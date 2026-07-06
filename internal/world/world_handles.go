@@ -67,6 +67,10 @@ func (w *World) LockAttackAfterCast(entity *Entity, tick uint64, tickRate int) {
 	w.lockAttackAfterCast(entity, tick, tickRate)
 }
 
+func (w *World) TickDashMovement(entity *Entity, tick uint64, tickRate int) {
+	w.tickDashMovement(entity, tick, tickRate)
+}
+
 func (w *World) ApplyDamage(source *Entity, target *Entity, damage int, tickRate int) {
 	w.applyDamage(source, target, damage, tickRate)
 }

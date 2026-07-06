@@ -29,16 +29,23 @@ func init() {
 			},
 			rID: ApplyR,
 		},
-		ReleaseR:            ReleaseR,
-		StopE:               StopE,
-		TickE:               TickE,
-		QBonusDamage:        QBonusDamage,
-		ConsumeQ:            ConsumeQ,
-		ApplyWPassiveKill:   ApplyWPassiveKill,
-		TickToughness:       TickToughness,
-		ToughnessRegenRatio: ToughnessRegenRatio,
-		WarriorRDamage:      RDamage,
+		Tick:           Tick,
+		OnBasicHit:     ConsumeQ,
+		OnKill:         OnKill,
+		StopE:          StopE,
+		QBonusDamage:   QBonusDamage,
+		WarriorRDamage: RDamage,
 	})
+}
+
+func Tick(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
+	ReleaseR(w, entity, tick, tickRate)
+	TickToughness(w, entity, tick, tickRate)
+	TickE(w, entity, tick, tickRate)
+}
+
+func OnKill(w *world.World, killer *world.Entity, target *world.Entity) {
+	ApplyWPassiveKill(w, killer, target)
 }
 
 func ApplyQ(w *world.World, entity *world.Entity, state world.SkillState, skill config.SkillConfig, tick uint64, tickRate int) {

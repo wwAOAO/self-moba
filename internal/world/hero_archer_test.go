@@ -104,8 +104,8 @@ func TestArcherQStacksOnBasicAttackHit(t *testing.T) {
 	learnSkill(player, archerQSkillID, 1)
 	target := &Entity{ID: "target", Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
 
-	w.addArcherFocusStack(player, 10, 20)
-	w.addArcherFocusStack(player, 20, 20)
+	w.onHeroBasicHit(player, target, 10, 20)
+	w.onHeroBasicHit(player, target, 20, 20)
 
 	if player.Archer.FocusStacks != 2 {
 		t.Fatalf("focus stacks = %d, want 2", player.Archer.FocusStacks)
@@ -113,7 +113,7 @@ func TestArcherQStacksOnBasicAttackHit(t *testing.T) {
 	if player.Archer.FocusExpireTick != 100 {
 		t.Fatalf("focus expire = %d, want 100", player.Archer.FocusExpireTick)
 	}
-	w.applyArcherFocusOnBasicHit(player, target, 30, 20)
+	w.onHeroBasicHit(player, target, 30, 20)
 	if player.Archer.FocusStacks != 3 {
 		t.Fatalf("focus stacks after hit = %d, want 3", player.Archer.FocusStacks)
 	}
@@ -131,6 +131,7 @@ func TestArcherQConsumesStacksAndGrantsAttackSpeed(t *testing.T) {
 	player.Archer.FocusStacks = 4
 	player.Archer.FocusExpireTick = 100
 	startMP := player.Stats.MP
+	target := &Entity{ID: "target", Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
 
 	w.ApplyInput("archer", protocolPlayerInputCast(archerQSkillID, player.Position.X, player.Position.Y), 10, nil, 20)
 
@@ -147,7 +148,7 @@ func TestArcherQConsumesStacksAndGrantsAttackSpeed(t *testing.T) {
 	if math.Abs(EffectiveAttackSpeedAtTick(player, 11)-wantAttackSpeed) > 0.000001 {
 		t.Fatalf("attack speed = %f, want %f", EffectiveAttackSpeedAtTick(player, 11), wantAttackSpeed)
 	}
-	w.addArcherFocusStack(player, 20, 20)
+	w.onHeroBasicHit(player, target, 20, 20)
 	if player.Archer.FocusStacks != 0 {
 		t.Fatalf("focus stacks during active = %d, want 0", player.Archer.FocusStacks)
 	}
@@ -199,7 +200,7 @@ func TestArcherQActiveAddsBonusPhysicalDamage(t *testing.T) {
 		Stats: Stats{HP: 1000, MaxHP: 1000, PhysicalDefense: 0},
 	}
 
-	damage := w.archerFocusBonusDamage(attacker, target, 20)
+	damage := heroHooksFor(archerHeroID).FocusBonusDamage(w, attacker, target, 20)
 
 	if damage != 105 {
 		t.Fatalf("focus bonus damage = %d, want 105", damage)
@@ -545,7 +546,7 @@ func TestArcherEStartsWithTwoChargesAndLaunchesHawk(t *testing.T) {
 	w.SpawnHero("archer", hero, TeamBlue)
 	player := w.entities[playerEntityID("archer")]
 	learnSkill(player, archerESkillID, 1)
-	w.refreshArcherSkillOnUpgrade(player, archerESkillID)
+	w.onHeroSkillUpgrade(player, archerESkillID)
 
 	if player.Skills[archerESkillID].Stacks != 2 {
 		t.Fatalf("hawk charges = %d, want 2", player.Skills[archerESkillID].Stacks)
@@ -575,7 +576,7 @@ func TestArcherEUsesMousePointAsLandingLocation(t *testing.T) {
 	w.SpawnHero("archer", hero, TeamBlue)
 	player := w.entities[playerEntityID("archer")]
 	learnSkill(player, archerESkillID, 1)
-	w.refreshArcherSkillOnUpgrade(player, archerESkillID)
+	w.onHeroSkillUpgrade(player, archerESkillID)
 	target := w.entities["enemy:hero-1"]
 	target.Position = Vector2{X: player.Position.X + 100, Y: player.Position.Y}
 	landing := Vector2{X: player.Position.X + 700, Y: player.Position.Y + 250}
@@ -603,13 +604,13 @@ func TestArcherERechargeRestoresCharge(t *testing.T) {
 	w.SpawnHero("archer", hero, TeamBlue)
 	player := w.entities[playerEntityID("archer")]
 	learnSkill(player, archerESkillID, 1)
-	w.refreshArcherSkillOnUpgrade(player, archerESkillID)
+	w.onHeroSkillUpgrade(player, archerESkillID)
 	state := player.Skills[archerESkillID]
 	state.Stacks = 1
 	state.StacksExpireTick = 100
 	player.Skills[archerESkillID] = state
 
-	w.tickArcherHawkCharges(player, 100, 20)
+	w.tickHero(player, 100, 20)
 
 	state = player.Skills[archerESkillID]
 	if state.Stacks != 2 {

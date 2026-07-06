@@ -22,20 +22,28 @@ func init() {
 			eID: ApplyE,
 			rID: ApplyR,
 		},
-		ApplyW:                ApplyW,
-		ReleaseR:              ReleaseR,
-		RefreshSkillOnUpgrade: RefreshSkillOnUpgrade,
-		TickHawkCharges:       TickHawkCharges,
-		AddFocusStack:         AddFocusStack,
-		ExpireFocus:           ExpireFocus,
-		FocusBonusDamage:      FocusBonusDamage,
-		ApplyFocusOnBasicHit:  ApplyFocusOnBasicHit,
-		ApplyFrostShot:        ApplyFrostShot,
-		WDamage:               WDamage,
-		ArcherRDamage:         RDamage,
-		RStunTicks:            RStunTicks,
-		ApplyRSplash:          ApplyRSplash,
+		Tick:             Tick,
+		OnBasicHit:       OnBasicHit,
+		OnSkillHit:       ApplyFrostShot,
+		OnSkillUpgrade:   RefreshSkillOnUpgrade,
+		FocusBonusDamage: FocusBonusDamage,
+		ApplyFrostShot:   ApplyFrostShot,
+		WDamage:          WDamage,
+		ArcherRDamage:    RDamage,
+		RStunTicks:       RStunTicks,
+		ApplyRSplash:     ApplyRSplash,
 	})
+}
+
+func Tick(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
+	ExpireFocus(w, entity, tick)
+	TickHawkCharges(w, entity, tick, tickRate)
+	ReleaseR(w, entity, tick, tickRate)
+}
+
+func OnBasicHit(w *world.World, source *world.Entity, target *world.Entity, tick uint64, tickRate int) {
+	ApplyFrostShot(w, source, target, tick, tickRate)
+	ApplyFocusOnBasicHit(w, source, target, tick, tickRate)
 }
 
 func ApplyQ(w *world.World, entity *world.Entity, cast protocol.CastInput, state world.SkillState, skill config.SkillConfig, tick uint64, tickRate int) {

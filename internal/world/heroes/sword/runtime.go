@@ -18,8 +18,7 @@ func init() {
 			eID: ApplyE,
 			rID: ApplyR,
 		},
-		ReleaseQ:                 ReleaseQ,
-		ExpireQStacks:            ExpireQStacks,
+		Tick:                     Tick,
 		CritChanceMultiplier:     CritChanceMultiplier,
 		ApplyCritFinalMultiplier: ApplyCritFinalMultiplier,
 		ApplyShield:              ApplyShield,
@@ -30,4 +29,12 @@ func init() {
 		TickShield:               TickShield,
 		ApplyCritOverflowStats:   ApplyCritOverflowStats,
 	})
+}
+
+func Tick(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
+	ExpireQStacks(entity, tick)
+	if entity != nil && entity.Sword.QPending {
+		w.TickDashMovement(entity, tick, tickRate)
+	}
+	ReleaseQ(w, entity, tick, tickRate)
 }

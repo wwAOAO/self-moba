@@ -91,7 +91,7 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 	} else if projectile.SkillID == mageQSkillID {
 		w.applyMagicDamage(source, target, damage, tickRate)
 		target.Control.RootedUntilTick = tick + controlTicksAfterTenacity(target, projectile.EffectTicks, tick)
-		w.applyMageIlluminationOnSkillHit(source, target, tick, tickRate)
+		w.onHeroSkillHit(source, target, tick, tickRate)
 		if len(projectile.HitIDs) >= int(skillMetaRange(w.skillConfig(projectile.SkillID), "maxHits", 2)) {
 			delete(w.projectiles, id)
 			removeProjectile = true
@@ -130,23 +130,16 @@ func (w *World) applyGenericProjectileDamage(source *Entity, target *Entity, pro
 	} else {
 		w.applyDamage(source, target, damage, tickRate)
 	}
-	if projectile.Kind == "basic_arrow" && source != nil && source.HeroID == archerHeroID {
-		w.applyArcherFocusOnBasicHit(source, target, tick, tickRate)
-	}
 	if projectile.Kind == "basic_arrow" {
-		w.triggerMageIlluminationOnBasicAttack(source, target, tick, tickRate)
-		w.gainBladeBasicAttackRage(source, target, tick)
+		w.onHeroBasicHit(source, target, tick, tickRate)
 	}
 }
 
 func (w *World) resolveProjectileDummyHit(id string, source *Entity, target *Entity, projectile *Projectile, damage int, tick uint64, tickRate int) bool {
 	target.Combat.LastDamage = damage
 	target.Combat.LastDamageType = projectileDamageType(projectile.SkillID)
-	if projectile.Kind == "basic_arrow" && source != nil && source.HeroID == archerHeroID {
-		w.applyArcherFocusOnBasicHit(source, target, tick, tickRate)
-	}
 	if projectile.Kind == "basic_arrow" {
-		w.gainBladeBasicAttackRage(source, target, tick)
+		w.onHeroBasicHit(source, target, tick, tickRate)
 	}
 	if projectile.SkillID == tankQSkillID {
 		w.resolveTankQProjectileHit(source, projectile, tick, tickRate)
@@ -155,7 +148,7 @@ func (w *World) resolveProjectileDummyHit(id string, source *Entity, target *Ent
 	}
 	if projectile.SkillID == mageQSkillID {
 		target.Control.RootedUntilTick = tick + projectile.EffectTicks
-		w.applyMageIlluminationOnSkillHit(source, target, tick, tickRate)
+		w.onHeroSkillHit(source, target, tick, tickRate)
 		if len(projectile.HitIDs) >= int(skillMetaRange(w.skillConfig(projectile.SkillID), "maxHits", 2)) {
 			delete(w.projectiles, id)
 			return true

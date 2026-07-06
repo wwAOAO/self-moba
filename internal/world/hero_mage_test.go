@@ -61,7 +61,7 @@ func TestMagePassiveSkillHitAppliesAndRefreshesIllumination(t *testing.T) {
 	player := w.entities[playerEntityID("mage")]
 	target := w.entities["enemy:hero-1"]
 
-	w.applyMageIlluminationOnSkillHit(player, target, 10, 20)
+	w.onHeroSkillHit(player, target, 10, 20)
 	if target.Control.MageIlluminationBy != player.ID {
 		t.Fatalf("illumination source = %q, want %q", target.Control.MageIlluminationBy, player.ID)
 	}
@@ -69,7 +69,7 @@ func TestMagePassiveSkillHitAppliesAndRefreshesIllumination(t *testing.T) {
 		t.Fatalf("illumination until = %d, want 130", target.Control.MageIlluminationUntil)
 	}
 
-	w.applyMageIlluminationOnSkillHit(player, target, 40, 20)
+	w.onHeroSkillHit(player, target, 40, 20)
 	if target.Control.MageIlluminationUntil != 160 {
 		t.Fatalf("refreshed illumination until = %d, want 160", target.Control.MageIlluminationUntil)
 	}
@@ -92,8 +92,8 @@ func TestMagePassiveBasicAttackDetonatesIllumination(t *testing.T) {
 		Radius: 18,
 	}
 
-	w.applyMageIlluminationOnSkillHit(player, target, 10, 20)
-	w.triggerMageIlluminationOnBasicAttack(player, target, 20, 20)
+	w.onHeroSkillHit(player, target, 10, 20)
+	w.onHeroBasicHit(player, target, 20, 20)
 
 	if target.Stats.HP != 950 {
 		t.Fatalf("target hp = %d, want 950", target.Stats.HP)
@@ -125,8 +125,8 @@ func TestMagePassiveDisplayDamageIncludesBasicAttackAndIllumination(t *testing.T
 
 	target.Combat.LastHitTick = 10
 	w.applyDamage(player, target, 37, 20)
-	w.applyMageIlluminationOnSkillHit(player, target, 10, 20)
-	w.triggerMageIlluminationOnBasicAttack(player, target, 10, 20)
+	w.onHeroSkillHit(player, target, 10, 20)
+	w.onHeroBasicHit(player, target, 10, 20)
 
 	if len(target.Combat.DamageEvents) != 2 {
 		t.Fatalf("damage events = %#v, want 2 events", target.Combat.DamageEvents)
@@ -156,8 +156,8 @@ func TestMagePassiveUltimateHitDetonatesAndReappliesIllumination(t *testing.T) {
 		Radius: 18,
 	}
 
-	w.applyMageIlluminationOnSkillHit(player, target, 10, 20)
-	w.applyMageIlluminationOnUltimateHit(player, target, 20, 20)
+	w.onHeroSkillHit(player, target, 10, 20)
+	w.ApplyMageIlluminationOnUltimateHit(player, target, 20, 20)
 
 	if target.Stats.HP != 800 {
 		t.Fatalf("target hp = %d, want 800", target.Stats.HP)

@@ -18,18 +18,25 @@ func init() {
 			eID: ApplyE,
 			rID: ApplyR,
 		},
-		ReleaseQ:              ReleaseQ,
-		ReleaseW:              ReleaseW,
-		ReleaseE:              ReleaseE,
-		ActivateEZone:         ActivateEZone,
-		TickE:                 TickE,
-		DetonateE:             DetonateE,
-		ReleaseR:              ReleaseR,
-		ApplyFinalSparkRefund: ApplyFinalSparkRefund,
-		MageQDamage:           QDamage,
-		ApplyIllumination:     ApplyIllumination,
-		ApplyUltimateIllum:    ApplyUltimateIllumination,
-		TriggerIllumination:   TriggerIllumination,
-		DetonateIllumination:  DetonateIllumination,
+		Tick:               Tick,
+		OnBasicHit:         TriggerIllumination,
+		OnSkillHit:         ApplyIllumination,
+		OnKill:             OnKill,
+		ActivateEZone:      ActivateEZone,
+		DetonateE:          DetonateE,
+		MageQDamage:        QDamage,
+		ApplyUltimateIllum: ApplyUltimateIllumination,
 	})
+}
+
+func Tick(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
+	ReleaseQ(w, entity, tick, tickRate)
+	ReleaseW(w, entity, tick, tickRate)
+	ReleaseE(w, entity, tick, tickRate)
+	ReleaseR(w, entity, tick, tickRate)
+	TickE(w, entity, tick, tickRate)
+}
+
+func OnKill(w *world.World, killer *world.Entity, target *world.Entity) {
+	ApplyFinalSparkRefund(w, target)
 }

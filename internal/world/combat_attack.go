@@ -96,10 +96,7 @@ func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64
 		target.Combat.LastDamage = damage
 		target.Combat.LastDamageType = "physical"
 	}
-	w.gainBladeBasicAttackRage(attacker, target, tick)
-	w.applyTankWAftershock(attacker, target, tick, tickRate)
-	w.consumeWarriorQ(attacker, target, tick, tickRate)
-	w.triggerMageIlluminationOnBasicAttack(attacker, target, tick, tickRate)
+	w.onHeroBasicHit(attacker, target, tick, tickRate)
 }
 
 func isRangedBasicAttacker(attacker *Entity) bool {
@@ -232,23 +229,6 @@ func (w *World) warriorQBonusDamage(attacker *Entity, tick uint64) float64 {
 	return baseDamage + attacker.Stats.Attack*skillMetaRange(skill, "totalAdRatio", 1.4)
 }
 
-func (w *World) consumeWarriorQ(attacker *Entity, target *Entity, tick uint64, tickRate int) {
-	if heroHooksFor(warriorHeroID).ConsumeQ != nil {
-		heroHooksFor(warriorHeroID).ConsumeQ(w, attacker, target, tick, tickRate)
-		return
-	}
-	if attacker == nil || attacker.HeroID != warriorHeroID || tick >= attacker.Warrior.DecisiveStrikeUntilTick {
-		return
-	}
-	skill := w.skillConfig(warriorQSkillID)
-	if target != nil {
-		silenceTicks := secondsToTicks(skillMetaRange(skill, "silenceSeconds", 1.5), tickRate)
-		target.Control.SilencedUntilTick = tick + controlTicksAfterTenacity(target, silenceTicks, tick)
-	}
-	attacker.Warrior.DecisiveStrikeUntilTick = 0
-	attacker.Warrior.DecisiveStrikeLevel = 0
-}
-
 func (w *World) WarriorControlTicksAfterTenacity(target *Entity, ticks uint64, tick uint64) uint64 {
 	return controlTicksAfterTenacity(target, ticks, tick)
 }
@@ -258,10 +238,4 @@ func (w *World) tankWBonusDamage(attacker *Entity, tick uint64) float64 {
 		return heroHooksFor(tankHeroID).WBonusDamage(w, attacker, tick)
 	}
 	return 0
-}
-
-func (w *World) applyTankWAftershock(attacker *Entity, primary *Entity, tick uint64, tickRate int) {
-	if heroHooksFor(tankHeroID).ApplyWAftershock != nil {
-		heroHooksFor(tankHeroID).ApplyWAftershock(w, attacker, primary, tick, tickRate)
-	}
 }

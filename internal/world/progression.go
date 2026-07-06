@@ -4,15 +4,13 @@ func (w *World) applyKillReward(killer *Entity, target *Entity) {
 	if target == nil {
 		return
 	}
-	applyMageFinalSparkRefund(w, target)
+	w.onHeroKill(killer, target)
 	if killer == nil {
 		return
 	}
-	w.gainBladeKillRage(killer)
 	if w.rewards == nil {
 		return
 	}
-	w.applyWarriorWPassiveKill(killer, target)
 	w.applyEquipmentUnitKillGrowth(killer, target)
 	switch target.Kind {
 	case EntityKindMeleeMinion, EntityKindRangedMinion, EntityKindSiegeMinion, EntityKindSuperMinion:
@@ -47,41 +45,6 @@ func (w *World) applyKillReward(killer *Entity, target *Entity) {
 		}
 		w.addGold(killer, float64(w.rewards.HeroKillGold()))
 	}
-}
-
-func (w *World) applyWarriorWPassiveKill(killer *Entity, target *Entity) {
-	if heroHooksFor(warriorHeroID).ApplyWPassiveKill != nil {
-		heroHooksFor(warriorHeroID).ApplyWPassiveKill(w, killer, target)
-		return
-	}
-	if killer == nil || target == nil || killer.HeroID != warriorHeroID {
-		return
-	}
-	state, ok := killer.Skills[warriorWSkillID]
-	if !ok || state.Level <= 0 {
-		return
-	}
-	skill := w.skillConfig(warriorWSkillID)
-	gain := skillMetaRange(skill, "passiveMinionResistGain", 0.2)
-	if target.Kind == EntityKindPlayer || target.Kind == EntityKindEnemyHero {
-		gain = skillMetaRange(skill, "passiveHeroResistGain", 1)
-	}
-	maxGain := skillMetaRange(skill, "passiveMaxResistGain", 40)
-	before := killer.Warrior.CouragePassiveResistGain
-	after := before + gain
-	if after > maxGain {
-		after = maxGain
-	}
-	if after <= before {
-		return
-	}
-	delta := after - before
-	killer.Warrior.CouragePassiveResistGain = after
-	killer.Stats.PhysicalDefense += delta
-	killer.Stats.BonusPhysicalDefense += delta
-	killer.Stats.MagicDefense += delta
-	killer.Stats.BonusMagicDefense += delta
-	killer.Skills[warriorWSkillID] = state
 }
 
 func (w *World) addTeamExperience(team Team, exp float64) {
@@ -211,7 +174,7 @@ func (w *World) upgradeSkill(entity *Entity, slot string) {
 	state.Level++
 	entity.SkillPoints--
 	entity.Skills[skillID] = state
-	w.refreshArcherSkillOnUpgrade(entity, skillID)
+	w.onHeroSkillUpgrade(entity, skillID)
 	w.refreshTankWPassive(entity)
 }
 

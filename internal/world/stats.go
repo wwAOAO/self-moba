@@ -83,47 +83,6 @@ func tickShieldLayers(entity *Entity, tick uint64) {
 	entity.Passive.MaxShield = total
 }
 
-func (w *World) tickTankGraniteShield(entity *Entity, tick uint64, tickRate int) {
-	if heroHooksFor(tankHeroID).TickGranite != nil {
-		heroHooksFor(tankHeroID).TickGranite(w, entity, tick, tickRate)
-	}
-}
-
-func (w *World) tickWarriorToughness(entity *Entity, tick uint64, tickRate int) {
-	if heroHooksFor(warriorHeroID).TickToughness != nil {
-		heroHooksFor(warriorHeroID).TickToughness(w, entity, tick, tickRate)
-		return
-	}
-	if entity == nil || entity.HeroID != warriorHeroID || entity.Stats.HP <= 0 || entity.Stats.HP >= entity.Stats.MaxHP {
-		return
-	}
-	skill := w.heroPassiveSkill(entity)
-	outOfCombatTicks := secondsToTicks(skillMetaRange(skill, "outOfCombatSeconds", 8), tickRate)
-	if tick < entity.Passive.LastRegenBreakTick+outOfCombatTicks {
-		return
-	}
-	intervalTicks := secondsToTicks(skillMetaRange(skill, "regenIntervalSeconds", 5), tickRate)
-	if intervalTicks == 0 {
-		intervalTicks = uint64(tickRate * 5)
-	}
-	if entity.Passive.NextRegenTick == 0 {
-		entity.Passive.NextRegenTick = tick
-	}
-	if tick < entity.Passive.NextRegenTick {
-		return
-	}
-	ratio := warriorToughnessRegenRatio(entity.Level, skill)
-	heal := int(math.Round(float64(entity.Stats.MaxHP) * ratio))
-	if heal < 1 {
-		heal = 1
-	}
-	entity.Stats.HP += heal
-	if entity.Stats.HP > entity.Stats.MaxHP {
-		entity.Stats.HP = entity.Stats.MaxHP
-	}
-	entity.Passive.NextRegenTick = tick + intervalTicks
-}
-
 func tickBaseRegen(entity *Entity, tickRate int) {
 	if entity == nil || tickRate <= 0 || entity.Stats.HP <= 0 {
 		return
@@ -154,9 +113,6 @@ func tickBaseRegen(entity *Entity, tickRate int) {
 }
 
 func warriorToughnessRegenRatio(level int, skill config.SkillConfig) float64 {
-	if heroHooksFor(warriorHeroID).ToughnessRegenRatio != nil {
-		return heroHooksFor(warriorHeroID).ToughnessRegenRatio(level, skill)
-	}
 	return skillMetaListByLevel(skill, "regenMaxHPRatio", level, []float64{
 		0.015, 0.0198, 0.0246, 0.0294, 0.0342, 0.039,
 		0.0438, 0.0486, 0.0534, 0.0582, 0.063, 0.0678,

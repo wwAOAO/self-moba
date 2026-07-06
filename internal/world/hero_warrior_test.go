@@ -547,7 +547,7 @@ func TestWarriorWPassiveKillGrantsPermanentResists(t *testing.T) {
 	baseArmor := player.Stats.PhysicalDefense
 	baseMagic := player.Stats.MagicDefense
 
-	w.applyWarriorWPassiveKill(player, &Entity{Kind: EntityKindMeleeMinion})
+	w.onHeroKill(player, &Entity{Kind: EntityKindMeleeMinion})
 	if math.Abs(player.Stats.PhysicalDefense-(baseArmor+0.2)) > 0.0001 {
 		t.Fatalf("armor after minion kill = %f, want %f", player.Stats.PhysicalDefense, baseArmor+0.2)
 	}
@@ -555,7 +555,7 @@ func TestWarriorWPassiveKillGrantsPermanentResists(t *testing.T) {
 		t.Fatalf("magic resist after minion kill = %f, want %f", player.Stats.MagicDefense, baseMagic+0.2)
 	}
 
-	w.applyWarriorWPassiveKill(player, &Entity{Kind: EntityKindEnemyHero})
+	w.onHeroKill(player, &Entity{Kind: EntityKindEnemyHero})
 	if math.Abs(player.Warrior.CouragePassiveResistGain-1.2) > 0.0001 {
 		t.Fatalf("passive resist gain = %f, want 1.2", player.Warrior.CouragePassiveResistGain)
 	}
@@ -576,7 +576,7 @@ func TestWarriorWPassiveRequiresLearnedSkill(t *testing.T) {
 	baseArmor := player.Stats.PhysicalDefense
 	baseMagic := player.Stats.MagicDefense
 
-	w.applyWarriorWPassiveKill(player, &Entity{Kind: EntityKindMeleeMinion})
+	w.onHeroKill(player, &Entity{Kind: EntityKindMeleeMinion})
 
 	if player.Stats.PhysicalDefense != baseArmor {
 		t.Fatalf("armor = %f, want unchanged %f", player.Stats.PhysicalDefense, baseArmor)
