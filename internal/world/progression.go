@@ -5,21 +5,23 @@ func (w *World) applyKillReward(killer *Entity, target *Entity) {
 		return
 	}
 	w.onHeroKill(killer, target)
-	if killer == nil {
+	if w.rewards == nil {
 		return
 	}
-	if w.rewards == nil {
+	switch target.Kind {
+	case EntityKindMeleeMinion, EntityKindRangedMinion, EntityKindSiegeMinion, EntityKindSuperMinion:
+		w.addNearbyMinionExperience(target)
+		w.applyEquipmentUnitKillGrowth(killer, target)
+		if gold, ok := w.rewards.MinionGold(string(target.Kind)); ok {
+			w.addGold(killer, float64(gold))
+		}
+		return
+	}
+	if killer == nil {
 		return
 	}
 	w.applyEquipmentUnitKillGrowth(killer, target)
 	switch target.Kind {
-	case EntityKindMeleeMinion, EntityKindRangedMinion, EntityKindSiegeMinion, EntityKindSuperMinion:
-		if exp, ok := w.rewards.MinionExp(string(target.Kind), 1); ok {
-			w.addExperience(killer, exp)
-		}
-		if gold, ok := w.rewards.MinionGold(string(target.Kind)); ok {
-			w.addGold(killer, float64(gold))
-		}
 	case EntityKindBlueBuff, EntityKindRedBuff, EntityKindGromp, EntityKindRaptor, EntityKindMurkWolf, EntityKindKrugCamp:
 		if exp, ok := w.rewards.JungleExp(string(target.Kind)); ok {
 			w.addExperience(killer, exp)
@@ -45,6 +47,41 @@ func (w *World) applyKillReward(killer *Entity, target *Entity) {
 		}
 		w.addGold(killer, float64(w.rewards.HeroKillGold()))
 	}
+}
+
+func (w *World) addNearbyMinionExperience(target *Entity) {
+	if target == nil || w.rewards == nil {
+		return
+	}
+	receivers := w.nearbyMinionExperienceReceivers(target)
+	if len(receivers) == 0 {
+		return
+	}
+	exp, ok := w.rewards.MinionExp(string(target.Kind), len(receivers))
+	if !ok {
+		return
+	}
+	for _, receiver := range receivers {
+		w.addExperience(receiver, exp)
+	}
+}
+
+func (w *World) nearbyMinionExperienceReceivers(target *Entity) []*Entity {
+	if target == nil || w.rewards == nil {
+		return nil
+	}
+	team := oppositeTeam(target.Team)
+	radius := w.rewards.Minion.ShareRadius
+	receivers := make([]*Entity, 0, 2)
+	for _, entity := range w.entities {
+		if entity.Kind != EntityKindPlayer || entity.Team != team || entity.Stats.HP <= 0 || entity.Death.Dead {
+			continue
+		}
+		if distance(target.Position, entity.Position) <= radius+entity.Radius {
+			receivers = append(receivers, entity)
+		}
+	}
+	return receivers
 }
 
 func (w *World) addTeamExperience(team Team, exp float64) {
@@ -174,6 +211,9 @@ func (w *World) upgradeSkill(entity *Entity, slot string) {
 	if maxLevel <= 0 || state.Level >= maxLevel {
 		return
 	}
+	if !canUpgradeSkillAtLevel(slot, state.Level, entity.Level) {
+		return
+	}
 	state.Level++
 	entity.SkillPoints--
 	entity.Skills[skillID] = state
@@ -193,4 +233,12 @@ func maxSkillLevel(slot string) int {
 	default:
 		return 0
 	}
+}
+
+func canUpgradeSkillAtLevel(slot string, skillLevel int, heroLevel int) bool {
+	if slot != "r" {
+		return true
+	}
+	required := []int{6, 11, 16}
+	return skillLevel >= 0 && skillLevel < len(required) && heroLevel >= required[skillLevel]
 }

@@ -34,7 +34,7 @@ function formatSkillCooldowns(player, tick) {
       const remainSeconds = (remainTicks / state.tickRate).toFixed(1);
       const level = skill?.level || 0;
       const maxLevel = maxSkillLevel(slot);
-      const disabled = !canSpend || level >= maxLevel ? "disabled" : "";
+      const disabled = !canSpend || !canUpgradeSkill(player, slot, level) ? "disabled" : "";
       const chargeText = formatSkillChargeText(player, slot, skill);
       const timeText = formatSkillTimeText(player, slot, skill, remainSeconds, tick);
       return `<div class="skill-row${chargeText ? " has-charge" : ""}">
@@ -67,6 +67,16 @@ function formatSkillTimeText(player, slot, skill, remainSeconds, tick) {
 
 function maxSkillLevel(slot) {
   return slot === "r" ? 3 : 5;
+}
+
+function canUpgradeSkill(player, slot, level) {
+  if (level >= maxSkillLevel(slot)) {
+    return false;
+  }
+  if (slot !== "r") {
+    return true;
+  }
+  return (player.level || 1) >= [6, 11, 16][level];
 }
 
 function formatHeroSkillState(player, tick) {

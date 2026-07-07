@@ -28,9 +28,11 @@ type Room struct {
 }
 
 func NewRoom(id string, publisher *jetstream.Publisher, heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig, equipment *config.EquipmentStore) *Room {
+	w := world.NewWorld(heroes, skills, levels, rewards, equipment)
+	w.RemovePresetHiddenUnits()
 	room := &Room{
 		id:        id,
-		world:     world.NewWorld(heroes, skills, levels, rewards, equipment),
+		world:     w,
 		publisher: publisher,
 		heroes:    heroes,
 		skills:    skills,

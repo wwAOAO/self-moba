@@ -70,6 +70,7 @@ func startRWindup(entity *world.Entity, target *world.Entity, state world.SkillS
 	entity.Ninja.RDashEndTick = entity.Ninja.RReleaseTick + dashTicks
 	entity.Ninja.RTargetID = target.ID
 	entity.Ninja.RLevel = state.Level
+	entity.Intent.MoveTarget = nil
 	entity.Control.ActionLockedUntilTick = entity.Ninja.RDashEndTick
 	entity.Control.UntargetableUntilTick = entity.Ninja.RDashEndTick
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, int(skillList(skill, "cooldownMs", state.Level, []float64{120000, 110000, 100000})), tickRate)
@@ -179,22 +180,38 @@ func CastE(w *world.World, entity *world.Entity, cast protocol.CastInput, state 
 	entity.Skills[eID] = state
 	showERange(w, entity, skill, tick, tickRate)
 
-	hits := eHits(w, entity, skillRange(skill, 290), tick)
 	groupID := w.NextEffectID("effect:ninja_e_group:")
+	hits := eHits(w, entity, skillRange(skill, 290), tick)
+	heroHits, hitIDs := applyEHits(w, entity, skill, state.Level, groupID, hits, nil, tick, tickRate)
+	if wShadowMoving(entity, tick) {
+		entity.Ninja.PendingShadowELevel = state.Level
+		entity.Ninja.PendingShadowEGroup = groupID
+		entity.Ninja.PendingShadowEHitIDs = hitIDs
+	}
+	reduceWCooldown(entity, heroHits, tick, secondsToTicks(skillMeta(skill, "wCooldownRefundSeconds", 3), tickRate))
+	w.LockAttackAfterCast(entity, tick, tickRate)
+}
+
+func applyEHits(w *world.World, entity *world.Entity, skill config.SkillConfig, level int, groupID string, hits map[string]uint8, alreadyHit map[string]bool, tick uint64, tickRate int) (int, map[string]bool) {
 	heroHits := 0
+	hitIDs := map[string]bool{}
 	for targetID, mark := range hits {
 		target := w.EntityByID(targetID)
 		if target == nil {
 			continue
 		}
-		damage := w.PhysicalDamageAfterResistance(entity, target, eRawDamage(entity, skill, state.Level), tick)
+		previouslyHit := alreadyHit[targetID]
+		hitIDs[targetID] = true
 		target.Combat.LastHitTick = tick
 		wasAlive := target.Stats.HP > 0
-		if target.Kind == world.EntityKindDummy {
-			target.Combat.LastDamage = damage
-			target.Combat.LastDamageType = "physical"
-		} else {
-			w.ApplyAOEDamage(entity, target, damage, "physical", tickRate)
+		if !previouslyHit {
+			damage := w.PhysicalDamageAfterResistance(entity, target, eRawDamage(entity, skill, level), tick)
+			if target.Kind == world.EntityKindDummy {
+				target.Combat.LastDamage = damage
+				target.Combat.LastDamageType = "physical"
+			} else {
+				w.ApplyAOEDamage(entity, target, damage, "physical", tickRate)
+			}
 		}
 		if world.IsHeroUnit(target) {
 			heroHits++
@@ -206,28 +223,27 @@ func CastE(w *world.World, entity *world.Entity, cast protocol.CastInput, state 
 			}
 		}
 		if mark&2 != 0 {
-			slow := skillList(skill, "shadowSlow", state.Level, []float64{0.2, 0.25, 0.3, 0.35, 0.4})
-			if mark&1 != 0 {
-				slow = skillList(skill, "doubleSlow", state.Level, []float64{0.3, 0.375, 0.45, 0.45, 0.6})
+			slow := skillList(skill, "shadowSlow", level, []float64{0.2, 0.25, 0.3, 0.35, 0.4})
+			if previouslyHit || mark&1 != 0 {
+				slow = skillList(skill, "doubleSlow", level, []float64{0.3, 0.375, 0.45, 0.45, 0.6})
 			}
 			w.ApplyMoveSpeedSlow(target, slow, tick+secondsToTicks(skillMeta(skill, "slowSeconds", 1.5), tickRate))
 		}
-		if wasAlive && target.Stats.HP == 0 {
+		if !previouslyHit && wasAlive && target.Stats.HP == 0 {
 			w.ApplyKillReward(entity, target)
 			w.KillPlayer(target, tick, tickRate)
 			w.RemoveDeadUnit(target)
 		}
 	}
-	reduceWCooldown(entity, heroHits, tick, secondsToTicks(skillMeta(skill, "wCooldownRefundSeconds", 3), tickRate))
-	w.LockAttackAfterCast(entity, tick, tickRate)
+	return heroHits, hitIDs
 }
 
 func showERange(w *world.World, entity *world.Entity, skill config.SkillConfig, tick uint64, tickRate int) {
 	radius := skillRange(skill, 290)
 	expiresAt := tick + secondsToTicks(skillMeta(skill, "rangeDisplaySeconds", 0.35), tickRate)
 	putERangeEffect(w, entity, entity.Position, radius, tick, expiresAt)
-	if shadowActive(entity, tick) {
-		putERangeEffect(w, entity, entity.Ninja.ShadowPosition, radius, tick, expiresAt)
+	for _, position := range readyShadowPositions(entity, tick) {
+		putERangeEffect(w, entity, position, radius, tick, expiresAt)
 	}
 }
 
@@ -250,8 +266,8 @@ func eHits(w *world.World, entity *world.Entity, radius float64, tick uint64) ma
 	for _, target := range w.TargetsInRadius(entity, entity.Position, radius) {
 		hits[target.ID] |= 1
 	}
-	if shadowActive(entity, tick) {
-		for _, target := range w.TargetsInRadius(entity, entity.Ninja.ShadowPosition, radius) {
+	for _, position := range readyShadowPositions(entity, tick) {
+		for _, target := range w.TargetsInRadius(entity, position, radius) {
 			hits[target.ID] |= 2
 		}
 	}
@@ -319,18 +335,27 @@ func releaseQ(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, int(skillList(skill, "cooldownMs", level, []float64{6000, 6000, 6000, 6000, 6000})), tickRate)
 	entity.Skills[qID] = state
 
-	dx, dy := normalize(target.X-entity.Position.X, target.Y-entity.Position.Y)
-	if dx == 0 && dy == 0 {
-		dx = 1
-	}
 	groupID := w.NextProjectileID("projectile:ninja_q_group:")
 	entity.Ninja.SkillHitMarks = map[string]uint8{}
 	entity.Ninja.SkillEnergyRefunded = map[string]bool{}
-	fireShuriken(w, entity, entity.Position, world.Vector2{X: dx, Y: dy}, skill, level, groupID, false, tick, tickRate)
-	if shadowActive(entity, tick) {
-		fireShuriken(w, entity, entity.Ninja.ShadowPosition, world.Vector2{X: dx, Y: dy}, skill, level, groupID, true, tick, tickRate)
+	fireShurikenAt(w, entity, entity.Position, target, skill, level, groupID, false, tick, tickRate)
+	for _, position := range readyShadowPositions(entity, tick) {
+		fireShurikenAt(w, entity, position, target, skill, level, groupID, true, tick, tickRate)
+	}
+	if wShadowMoving(entity, tick) {
+		entity.Ninja.PendingShadowQTarget = target
+		entity.Ninja.PendingShadowQLevel = level
+		entity.Ninja.PendingShadowQGroup = groupID
 	}
 	w.LockAttackAfterCast(entity, tick, tickRate)
+}
+
+func fireShurikenAt(w *world.World, entity *world.Entity, start world.Vector2, target world.Vector2, skill config.SkillConfig, level int, groupID string, fromShadow bool, tick uint64, tickRate int) {
+	dx, dy := normalize(target.X-start.X, target.Y-start.Y)
+	if dx == 0 && dy == 0 {
+		dx = 1
+	}
+	fireShuriken(w, entity, start, world.Vector2{X: dx, Y: dy}, skill, level, groupID, fromShadow, tick, tickRate)
 }
 
 func fireShuriken(w *world.World, entity *world.Entity, start world.Vector2, dir world.Vector2, skill config.SkillConfig, level int, groupID string, fromShadow bool, tick uint64, tickRate int) {
@@ -352,7 +377,7 @@ func fireShuriken(w *world.World, entity *world.Entity, start world.Vector2, dir
 		Dir:          dir,
 		SpeedPerTick: speedPerTick,
 		Range:        qRange,
-		Radius:       skillMeta(skill, "projectileRadius", 35),
+		Radius:       skillMeta(skill, "projectileRadius", 87.5),
 		Damage:       level,
 		FromShadow:   fromShadow,
 		CreatedAt:    tick,
@@ -388,26 +413,37 @@ func CastW(w *world.World, entity *world.Entity, cast protocol.CastInput, state 
 		Y: entity.Position.Y + dy*dashRange,
 	})
 	entity.Ninja.ShadowExpiresAt = tick + secondsToTicks(skillMeta(skill, "shadowDurationSeconds", 5), tickRate)
+	entity.Ninja.ShadowReadyTick = tick + secondsToTicks(skillMeta(skill, "shadowDashSeconds", 0.25), tickRate)
 	entity.Ninja.ShadowRecastSkillID = wID
 	entity.Ninja.ShadowRecastUntil = entity.Ninja.ShadowExpiresAt
 	if entity.Ninja.ShadowEffectID == "" {
 		entity.Ninja.ShadowEffectID = w.NextEffectID("effect:ninja_shadow:")
 	}
-	putShadowEffect(w, entity, tick, entity.Position, shadowSpeedPerTick(entity.Position, entity.Ninja.ShadowPosition, skillMeta(skill, "shadowDashSeconds", 0.25), tickRate))
+	putShadowEffect(w, entity, entity.Ninja.ShadowEffectID, entity.Ninja.ShadowPosition, entity.Ninja.ShadowExpiresAt, tick, entity.Position, shadowSpeedPerTick(entity.Position, entity.Ninja.ShadowPosition, skillMeta(skill, "shadowDashSeconds", 0.25), tickRate))
 	w.LockAttackAfterCast(entity, tick, tickRate)
 }
 
 func SpecialRecast(w *world.World, entity *world.Entity, cast protocol.CastInput, state world.SkillState, skill config.SkillConfig, tick uint64, tickRate int) bool {
-	if entity == nil || (cast.SkillID != wID && cast.SkillID != rID) || !shadowActive(entity, tick) || entity.Ninja.ShadowRecastSkillID != cast.SkillID || tick >= entity.Ninja.ShadowRecastUntil {
+	if entity == nil {
 		return false
 	}
 	oldPosition := entity.Position
-	entity.Position = entity.Ninja.ShadowPosition
-	entity.Ninja.ShadowPosition = oldPosition
-	entity.Ninja.ShadowRecastSkillID = ""
-	entity.Ninja.ShadowRecastUntil = 0
-	putShadowEffect(w, entity, tick, entity.Ninja.ShadowPosition, 0)
-	return true
+	if cast.SkillID == wID && wShadowReady(entity, tick) && entity.Ninja.ShadowRecastSkillID == wID && tick < entity.Ninja.ShadowRecastUntil {
+		entity.Position = entity.Ninja.ShadowPosition
+		entity.Ninja.ShadowPosition = oldPosition
+		entity.Ninja.ShadowRecastSkillID = ""
+		entity.Ninja.ShadowRecastUntil = 0
+		putShadowEffect(w, entity, entity.Ninja.ShadowEffectID, entity.Ninja.ShadowPosition, entity.Ninja.ShadowExpiresAt, tick, entity.Ninja.ShadowPosition, 0)
+		return true
+	}
+	if cast.SkillID == rID && rShadowActive(entity, tick) && tick < entity.Ninja.RShadowRecastUntil {
+		entity.Position = entity.Ninja.RShadowPosition
+		entity.Ninja.RShadowPosition = oldPosition
+		entity.Ninja.RShadowRecastUntil = 0
+		putShadowEffect(w, entity, entity.Ninja.RShadowEffectID, entity.Ninja.RShadowPosition, entity.Ninja.RShadowExpiresAt, tick, entity.Ninja.RShadowPosition, 0)
+		return true
+	}
+	return false
 }
 
 func Tick(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
@@ -415,12 +451,47 @@ func Tick(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 		return
 	}
 	releaseQ(w, entity, tick, tickRate)
+	releasePendingShadowCopies(w, entity, tick, tickRate)
 	tickR(w, entity, tick, tickRate)
 	if entity.Ninja.ShadowExpiresAt > 0 && tick >= entity.Ninja.ShadowExpiresAt {
 		entity.Ninja.ShadowExpiresAt = 0
 		entity.Ninja.ShadowEffectID = ""
+		entity.Ninja.ShadowReadyTick = 0
 		entity.Ninja.ShadowRecastSkillID = ""
 		entity.Ninja.ShadowRecastUntil = 0
+		entity.Ninja.PendingShadowQLevel = 0
+		entity.Ninja.PendingShadowQGroup = ""
+		entity.Ninja.PendingShadowELevel = 0
+		entity.Ninja.PendingShadowEGroup = ""
+		entity.Ninja.PendingShadowEHitIDs = nil
+	}
+	if entity.Ninja.RShadowExpiresAt > 0 && tick >= entity.Ninja.RShadowExpiresAt {
+		entity.Ninja.RShadowExpiresAt = 0
+		entity.Ninja.RShadowEffectID = ""
+		entity.Ninja.RShadowRecastUntil = 0
+	}
+}
+
+func releasePendingShadowCopies(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
+	if !wShadowReady(entity, tick) {
+		return
+	}
+	if entity.Ninja.PendingShadowQLevel > 0 && entity.Ninja.PendingShadowQGroup != "" {
+		fireShurikenAt(w, entity, entity.Ninja.ShadowPosition, entity.Ninja.PendingShadowQTarget, w.SkillConfig(qID), entity.Ninja.PendingShadowQLevel, entity.Ninja.PendingShadowQGroup, true, tick, tickRate)
+		entity.Ninja.PendingShadowQLevel = 0
+		entity.Ninja.PendingShadowQGroup = ""
+	}
+	if entity.Ninja.PendingShadowELevel > 0 && entity.Ninja.PendingShadowEGroup != "" {
+		skill := w.SkillConfig(eID)
+		hits := map[string]uint8{}
+		for _, target := range w.TargetsInRadius(entity, entity.Ninja.ShadowPosition, skillRange(skill, 290)) {
+			hits[target.ID] = 2
+		}
+		heroHits, _ := applyEHits(w, entity, skill, entity.Ninja.PendingShadowELevel, entity.Ninja.PendingShadowEGroup, hits, entity.Ninja.PendingShadowEHitIDs, tick, tickRate)
+		reduceWCooldown(entity, heroHits, tick, secondsToTicks(skillMeta(skill, "wCooldownRefundSeconds", 3), tickRate))
+		entity.Ninja.PendingShadowELevel = 0
+		entity.Ninja.PendingShadowEGroup = ""
+		entity.Ninja.PendingShadowEHitIDs = nil
 	}
 }
 
@@ -443,20 +514,19 @@ func startRDash(w *world.World, entity *world.Entity, tick uint64, tickRate int)
 		entity.Control.UntargetableUntilTick = 0
 		return
 	}
-	entity.Ninja.ShadowPosition = entity.Position
+	entity.Ninja.RShadowPosition = entity.Position
 	skill := w.SkillConfig(rID)
-	entity.Ninja.ShadowExpiresAt = tick + secondsToTicks(skillMeta(skill, "shadowDurationSeconds", 7.5), tickRate)
-	entity.Ninja.ShadowRecastSkillID = rID
+	entity.Ninja.RShadowExpiresAt = tick + secondsToTicks(skillMeta(skill, "shadowDurationSeconds", 7.5), tickRate)
 	lingerTicks := secondsToTicks(skillMeta(skill, "shadowLingerSeconds", 1.5), tickRate)
-	if lingerTicks >= entity.Ninja.ShadowExpiresAt-tick {
-		entity.Ninja.ShadowRecastUntil = entity.Ninja.ShadowExpiresAt
+	if lingerTicks >= entity.Ninja.RShadowExpiresAt-tick {
+		entity.Ninja.RShadowRecastUntil = entity.Ninja.RShadowExpiresAt
 	} else {
-		entity.Ninja.ShadowRecastUntil = entity.Ninja.ShadowExpiresAt - lingerTicks
+		entity.Ninja.RShadowRecastUntil = entity.Ninja.RShadowExpiresAt - lingerTicks
 	}
-	if entity.Ninja.ShadowEffectID == "" {
-		entity.Ninja.ShadowEffectID = w.NextEffectID("effect:ninja_shadow:")
+	if entity.Ninja.RShadowEffectID == "" {
+		entity.Ninja.RShadowEffectID = w.NextEffectID("effect:ninja_shadow:")
 	}
-	putShadowEffect(w, entity, tick, entity.Ninja.ShadowPosition, 0)
+	putShadowEffect(w, entity, entity.Ninja.RShadowEffectID, entity.Ninja.RShadowPosition, entity.Ninja.RShadowExpiresAt, tick, entity.Ninja.RShadowPosition, 0)
 	entity.Control.DashStartTick = tick
 	entity.Control.DashStart = entity.Position
 	entity.Control.DashEnd = target.Position
@@ -519,21 +589,21 @@ func validRMarkedTarget(entity *world.Entity, target *world.Entity) bool {
 	return entity != nil && target != nil && world.IsHeroUnit(target) && entity.Team != target.Team && target.Stats.HP > 0
 }
 
-func putShadowEffect(w *world.World, entity *world.Entity, tick uint64, start world.Vector2, speed float64) {
-	dx, dy := normalize(entity.Ninja.ShadowPosition.X-start.X, entity.Ninja.ShadowPosition.Y-start.Y)
+func putShadowEffect(w *world.World, entity *world.Entity, id string, end world.Vector2, expiresAt uint64, tick uint64, start world.Vector2, speed float64) {
+	dx, dy := normalize(end.X-start.X, end.Y-start.Y)
 	w.PutSkillEffect(world.SkillEffect{
-		ID:           entity.Ninja.ShadowEffectID,
+		ID:           id,
 		Kind:         "ninja_shadow",
 		Team:         entity.Team,
 		SourceID:     entity.ID,
 		SourceHeroID: entity.HeroID,
 		Start:        start,
-		End:          entity.Ninja.ShadowPosition,
+		End:          end,
 		Dir:          world.Vector2{X: dx, Y: dy},
 		Radius:       entity.Radius,
 		Speed:        speed,
 		CreatedAt:    tick,
-		ExpiresAt:    entity.Ninja.ShadowExpiresAt,
+		ExpiresAt:    expiresAt,
 	})
 }
 
@@ -545,8 +615,31 @@ func shadowSpeedPerTick(start world.Vector2, end world.Vector2, seconds float64,
 	return distance(start, end) / float64(ticks)
 }
 
-func shadowActive(entity *world.Entity, tick uint64) bool {
+func wShadowActive(entity *world.Entity, tick uint64) bool {
 	return entity != nil && entity.Ninja.ShadowExpiresAt > tick
+}
+
+func wShadowReady(entity *world.Entity, tick uint64) bool {
+	return wShadowActive(entity, tick) && (entity.Ninja.ShadowReadyTick == 0 || tick >= entity.Ninja.ShadowReadyTick)
+}
+
+func wShadowMoving(entity *world.Entity, tick uint64) bool {
+	return wShadowActive(entity, tick) && entity.Ninja.ShadowReadyTick > tick
+}
+
+func rShadowActive(entity *world.Entity, tick uint64) bool {
+	return entity != nil && entity.Ninja.RShadowExpiresAt > tick
+}
+
+func readyShadowPositions(entity *world.Entity, tick uint64) []world.Vector2 {
+	positions := make([]world.Vector2, 0, 2)
+	if wShadowReady(entity, tick) {
+		positions = append(positions, entity.Ninja.ShadowPosition)
+	}
+	if rShadowActive(entity, tick) {
+		positions = append(positions, entity.Ninja.RShadowPosition)
+	}
+	return positions
 }
 
 func SkillHit(w *world.World, source *world.Entity, target *world.Entity, skillID string, groupID string, fromShadow bool, tick uint64, tickRate int) {

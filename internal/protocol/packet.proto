@@ -214,6 +214,7 @@ message DamageEventSnapshot {
   int32 damage = 1;
   string damage_type = 2;
   bool basic_attack = 3;
+  string source_id = 4;
 }
 
 message EffectSnapshot {
@@ -235,6 +236,7 @@ message EffectSnapshot {
   uint64 expires_at = 16;
   int32 count = 17;
   string source_hero_id = 18;
+  string source_id = 19;
 }
 
 message SkillSnapshot {
@@ -291,6 +293,12 @@ message NinjaSnapshot {
   double shadow_x = 1;
   double shadow_y = 2;
   uint64 shadow_expires_at = 3;
+  uint64 shadow_ready_tick = 4;
+  double r_shadow_x = 5;
+  double r_shadow_y = 6;
+  uint64 r_shadow_expires_at = 7;
+  string shadow_recast_skill_id = 8;
+  uint64 r_shadow_recast_until = 9;
 }
 
 message Error {

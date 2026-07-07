@@ -23,11 +23,16 @@ const state = {
   aimPoint: null,
   skillPreview: null,
   castWindups: [],
+  pendingSnapshot: null,
+  snapshotFrameScheduled: false,
   snapshotTick: 0,
   snapshotAtMs: 0,
   tickRate: 20,
   frame: { scale: 1, offsetX: 0, offsetY: 0 },
 };
+
+const maxDamageEventsPerTarget = 12;
+const maxActiveFloatingTexts = 120;
 
 const els = {
   serverUrl: document.querySelector("#serverUrl"),

@@ -79,6 +79,22 @@ func TestQReleasesProjectileAfterWindup(t *testing.T) {
 	if countNinjaShurikens(w) != 2 {
 		t.Fatalf("q shuriken count = %d, want 2", countNinjaShurikens(w))
 	}
+	shadowDirChecked := false
+	for _, effect := range w.SkillEffects() {
+		if effect.Kind == "ninja_shuriken" && effect.Radius != 87.5 {
+			t.Fatalf("q missile radius = %f, want 87.5", effect.Radius)
+		}
+		if effect.Kind == "ninja_shuriken" && effect.Start.Y == 200 {
+			shadowDirChecked = true
+			want := -100 / math.Hypot(900, -100)
+			if math.Abs(effect.Dir.Y-want) > 0.000001 {
+				t.Fatalf("shadow q dirY = %f, want %f", effect.Dir.Y, want)
+			}
+		}
+	}
+	if !shadowDirChecked {
+		t.Fatal("missing shadow q projectile")
+	}
 	if source.Ninja.QPending {
 		t.Fatal("q pending should be cleared after release")
 	}
@@ -115,6 +131,12 @@ func TestWCreatesShadowAndRecastSwaps(t *testing.T) {
 		t.Fatalf("shadow effect start=%+v end=%+v speed=%f, want x 100->750 speed 130", effect.Start, effect.End, effect.Speed)
 	}
 
+	if SpecialRecast(w, source, protocolCast(0, 0), source.Skills[wID], wSkill(), 12, 20) {
+		t.Fatal("w recast should wait until shadow arrives")
+	}
+	if source.Position.X != 100 || source.Ninja.ShadowPosition.X != 750 {
+		t.Fatalf("early recast moved source=%+v shadow=%+v", source.Position, source.Ninja.ShadowPosition)
+	}
 	if !SpecialRecast(w, source, protocolCast(0, 0), source.Skills[wID], wSkill(), 20, 20) {
 		t.Fatal("w recast should swap")
 	}
@@ -128,6 +150,42 @@ func TestWCreatesShadowAndRecastSwaps(t *testing.T) {
 	Tick(w, source, 110, 20)
 	if source.Ninja.ShadowExpiresAt != 0 {
 		t.Fatalf("shadow did not expire: %+v", source.Ninja)
+	}
+}
+
+func TestWMovingShadowDelaysCopiedE(t *testing.T) {
+	w := world.NewWorld(nil, nil, nil, nil, nil)
+	source := &world.Entity{
+		ID:       "ninja",
+		HeroID:   heroID,
+		Team:     world.TeamBlue,
+		Position: world.Vector2{X: 1000, Y: 1000},
+		Radius:   16,
+		Stats:    world.Stats{MP: 200, MaxMP: 200, BonusAttack: 10, AttackSpeed: 1},
+		Skills: map[string]world.SkillState{
+			wID: {SkillID: wID, Level: 1},
+			eID: {SkillID: eID, Level: 1},
+		},
+	}
+	bodyID, _ := w.SpawnObject(world.EntityKindEnemyHero, world.TeamRed, 1100, 1000)
+	shadowID, _ := w.SpawnObject(world.EntityKindEnemyHero, world.TeamRed, 1550, 1000)
+	bodyTarget := w.EntityByID(bodyID)
+	shadowTarget := w.EntityByID(shadowID)
+	bodyTarget.Stats.HP, bodyTarget.Stats.MaxHP, bodyTarget.Stats.PhysicalDefense = 1000, 1000, 0
+	shadowTarget.Stats.HP, shadowTarget.Stats.MaxHP, shadowTarget.Stats.PhysicalDefense = 1000, 1000, 0
+
+	CastW(w, source, protocolCast(1650, 1000), source.Skills[wID], wSkill(), 10, 20)
+	CastE(w, source, protocol.CastInput{}, source.Skills[eID], eSkill(), 12, 20)
+
+	if bodyTarget.Stats.HP != 923 {
+		t.Fatalf("body e hp = %d, want 923", bodyTarget.Stats.HP)
+	}
+	if shadowTarget.Stats.HP != 1000 {
+		t.Fatalf("moving shadow should not e yet, hp = %d", shadowTarget.Stats.HP)
+	}
+	Tick(w, source, 15, 20)
+	if shadowTarget.Stats.HP != 923 {
+		t.Fatalf("delayed shadow e hp = %d, want 923", shadowTarget.Stats.HP)
 	}
 }
 
@@ -219,6 +277,7 @@ func TestRWindupDashMarkDamageAndRecast(t *testing.T) {
 	source.Radius = 16
 	source.Stats = world.Stats{HP: 1000, MaxHP: 1000, Attack: 100, AttackSpeed: 1}
 	source.Skills = map[string]world.SkillState{rID: {SkillID: rID, Level: 2}}
+	source.Intent.MoveTarget = &world.Vector2{X: 900, Y: 900}
 	target.Stats.HP = 1000
 	target.Stats.MaxHP = 1000
 	target.Stats.PhysicalDefense = 0
@@ -227,6 +286,9 @@ func TestRWindupDashMarkDamageAndRecast(t *testing.T) {
 
 	if source.Ninja.RReleaseTick != 22 || source.Ninja.RDashEndTick != 29 {
 		t.Fatalf("r timing release=%d dashEnd=%d, want 22/29", source.Ninja.RReleaseTick, source.Ninja.RDashEndTick)
+	}
+	if source.Intent.MoveTarget != nil {
+		t.Fatalf("r should clear move target, got %+v", source.Intent.MoveTarget)
 	}
 	if source.Control.UntargetableUntilTick != 29 || source.Control.ActionLockedUntilTick != 29 {
 		t.Fatalf("r control untargetable=%d locked=%d, want 29/29", source.Control.UntargetableUntilTick, source.Control.ActionLockedUntilTick)
@@ -238,12 +300,19 @@ func TestRWindupDashMarkDamageAndRecast(t *testing.T) {
 		t.Fatalf("untargetable source should not be targetable, got %d hits", len(hits))
 	}
 
+	source.Ninja.ShadowPosition = world.Vector2{X: 25, Y: 25}
+	source.Ninja.ShadowExpiresAt = 200
+	source.Ninja.ShadowRecastSkillID = wID
+	source.Ninja.ShadowRecastUntil = 200
 	Tick(w, source, 22, 20)
 	if source.Control.DashUntilTick != 29 {
 		t.Fatalf("dash until = %d, want 29", source.Control.DashUntilTick)
 	}
-	if source.Ninja.ShadowPosition.X != 100 || source.Ninja.ShadowExpiresAt != 172 || source.Ninja.ShadowRecastUntil != 142 {
-		t.Fatalf("r shadow = %+v expires %d recastUntil %d, want x=100 expires=172 recastUntil=142", source.Ninja.ShadowPosition, source.Ninja.ShadowExpiresAt, source.Ninja.ShadowRecastUntil)
+	if source.Ninja.ShadowPosition.X != 25 || source.Ninja.ShadowRecastSkillID != wID {
+		t.Fatalf("r should not overwrite w shadow: %+v", source.Ninja)
+	}
+	if source.Ninja.RShadowPosition.X != 100 || source.Ninja.RShadowExpiresAt != 172 || source.Ninja.RShadowRecastUntil != 142 {
+		t.Fatalf("r shadow = %+v expires %d recastUntil %d, want x=100 expires=172 recastUntil=142", source.Ninja.RShadowPosition, source.Ninja.RShadowExpiresAt, source.Ninja.RShadowRecastUntil)
 	}
 
 	Tick(w, source, 29, 20)
@@ -267,8 +336,8 @@ func TestRWindupDashMarkDamageAndRecast(t *testing.T) {
 	if !SpecialRecast(w, source, protocol.CastInput{SkillID: rID}, source.Skills[rID], rSkill(), 90, 20) {
 		t.Fatal("r recast should swap with shadow")
 	}
-	if source.Position.X != 100 || source.Ninja.ShadowPosition.X != 500 {
-		t.Fatalf("r recast positions source=%+v shadow=%+v, want source x=100 shadow x=500", source.Position, source.Ninja.ShadowPosition)
+	if source.Position.X != 100 || source.Ninja.RShadowPosition.X != 500 {
+		t.Fatalf("r recast positions source=%+v shadow=%+v, want source x=100 shadow x=500", source.Position, source.Ninja.RShadowPosition)
 	}
 	if SpecialRecast(w, source, protocol.CastInput{SkillID: rID}, source.Skills[rID], rSkill(), 142, 20) {
 		t.Fatal("r recast should be closed during final shadow linger")
@@ -397,7 +466,9 @@ func protocolCast(x float64, y float64) protocol.CastInput {
 
 func qSkill() config.SkillConfig {
 	return config.SkillConfig{
+		Range: 900,
 		Meta: map[string]float64{
+			"projectileRadius":  87.5,
 			"castWindupSeconds": 0.25,
 			"firstBonusAdRatio": 1,
 			"laterBonusAdRatio": 0.6,

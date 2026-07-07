@@ -153,11 +153,25 @@ function drawBerserkerRWindup(windup, frame, color, alpha) {
 function drawNinjaQWindup(windup, frame, color, alpha) {
   drawDirectionalWindup(windup, frame, color, alpha, 10);
   const self = state.players.get(state.playerId);
-  if (!self || (self.ninja?.shadowExpiresAt || 0) <= interpolatedTick()) {
+  if (!self) {
     return;
   }
+  const tick = interpolatedTick();
+  if ((self.ninja?.shadowReadyTick || 0) <= tick) {
+    drawNinjaQShadowWindup(self.ninja?.shadowX, self.ninja?.shadowY, self.ninja?.shadowExpiresAt, windup, frame, color, alpha, tick);
+  }
+  drawNinjaQShadowWindup(self.ninja?.rShadowX, self.ninja?.rShadowY, self.ninja?.rShadowExpiresAt, windup, frame, color, alpha, tick);
+}
+
+function drawNinjaQShadowWindup(x, y, expiresAt, windup, frame, color, alpha, tick) {
+  if (!expiresAt || expiresAt <= tick) {
+    return;
+  }
+  const dx = windup.targetX - x;
+  const dy = windup.targetY - y;
+  const len = Math.hypot(dx, dy) || 1;
   drawDirectionalWindup(
-    { ...windup, x: self.ninja.shadowX, y: self.ninja.shadowY },
+    { ...windup, x, y, dirX: dx / len, dirY: dy / len },
     frame,
     color,
     alpha,

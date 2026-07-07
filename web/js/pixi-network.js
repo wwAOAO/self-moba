@@ -26,7 +26,7 @@ function connect() {
   socket.addEventListener("message", (event) => {
     const packet = JSON.parse(event.data);
     if (packet.type === "snapshot") {
-      applySnapshot(packet.payload);
+      queueSnapshot(packet.payload);
     }
     if (packet.type === "error") {
       setStatus(packet.payload?.message || "服务器错误");
@@ -40,8 +40,33 @@ function connect() {
   socket.addEventListener("error", () => setStatus("连接错误"));
 }
 
+function queueSnapshot(snapshot) {
+  state.pendingSnapshot = snapshot;
+  if (document.hidden || state.snapshotFrameScheduled) {
+    return;
+  }
+  state.snapshotFrameScheduled = true;
+  requestAnimationFrame(flushPendingSnapshot);
+}
+
+function flushPendingSnapshot() {
+  state.snapshotFrameScheduled = false;
+  const snapshot = state.pendingSnapshot;
+  state.pendingSnapshot = null;
+  if (snapshot) {
+    applySnapshot(snapshot);
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && state.pendingSnapshot) {
+    flushPendingSnapshot();
+  }
+});
+
 function applySnapshot(snapshot) {
   const previousTargets = targetMap();
+  const previousPlayers = state.players;
   state.map = snapshot.map;
   state.players = new Map(
     snapshot.players.map((player) => [
@@ -69,6 +94,7 @@ function applySnapshot(snapshot) {
   ) {
     state.attackTargetId = "";
   }
+  updateRewardTexts(previousPlayers, state.players);
   updateDamageEffects(previousTargets, currentTargets, snapshot.tick);
   state.snapshotTick = snapshot.tick;
   state.snapshotAtMs = performance.now();
@@ -90,6 +116,29 @@ function cleanupHiddenEffects(effects) {
   }
 }
 
+function updateRewardTexts(previousPlayers, currentPlayers) {
+  for (const [playerId, current] of currentPlayers) {
+    const previous = previousPlayers.get(playerId);
+    if (!previous) {
+      continue;
+    }
+    const expGain = (current.totalExp || 0) - (previous.totalExp || 0);
+    const goldGain = (current.gold || 0) - (previous.gold || 0);
+    if (expGain > 0) {
+      spawnRewardText(current, `+${formatRewardAmount(expGain)} exp`, "exp");
+    }
+    if (goldGain > 0) {
+      spawnRewardText(current, `+${formatRewardAmount(goldGain)} G`, "gold");
+    }
+  }
+}
+
+function formatRewardAmount(value) {
+  return Number.isInteger(value)
+    ? String(value)
+    : String(Math.round(value * 100) / 100);
+}
+
 function updateEffectFlashes(effects) {
   const visibleEffectIds = new Set();
   for (const effect of effects) {
@@ -101,11 +150,11 @@ function updateEffectFlashes(effects) {
       continue;
     }
     state.seenEffectIds.add(effect.id);
-    if (effect.kind === "basic_arrow" && effect.sourceHeroId) {
-      const self = state.players.get(state.playerId);
+    const self = state.players.get(state.playerId);
+    if (effect.kind === "basic_arrow" && effect.sourceId === self?.id) {
       state.attackFlash = {
-        x: effect.x,
-        y: effect.y,
+        x: self.x,
+        y: self.y,
         radius: effect.width || self?.stats?.attackRange || 600,
         until: performance.now() + 220,
       };
@@ -150,7 +199,7 @@ function showTargetDamage(id, target) {
   if (
     id === state.attackTargetId &&
     self?.heroId !== "archer" &&
-    damageEvents.some((event) => event.basicAttack)
+    damageEvents.some((event) => event.basicAttack && event.sourceId === self?.id)
   ) {
     state.attackFlash = {
       x: self.x,
@@ -159,7 +208,7 @@ function showTargetDamage(id, target) {
       until: performance.now() + 180,
     };
   }
-  for (const event of damageEvents) {
+  for (const event of damageEvents.slice(-maxDamageEventsPerTarget)) {
     spawnDamageText(target, event.damage || 0, event.damageType || "physical");
   }
 }
@@ -201,6 +250,8 @@ function resetClientState() {
   state.castWindups = [];
   state.snapshotTick = 0;
   state.snapshotAtMs = 0;
+  state.pendingSnapshot = null;
+  state.snapshotFrameScheduled = false;
 
   for (const effect of state.damageTexts) {
     effectLayer.removeChild(effect.node);
@@ -266,7 +317,17 @@ function castSkill(slot) {
 }
 
 function isNinjaShadowRecast(player, skillId) {
-  return player?.heroId === "ninja" && (skillId === "ninja_w" || skillId === "ninja_r");
+  const tick = Number(els.tick.textContent || 0);
+  return (
+    player?.heroId === "ninja" &&
+    ((skillId === "ninja_w" &&
+      player.ninja?.shadowRecastSkillId === skillId &&
+      (player.ninja?.shadowReadyTick || 0) <= tick &&
+      (player.ninja?.shadowExpiresAt || 0) > tick) ||
+      (skillId === "ninja_r" &&
+        (player.ninja?.rShadowRecastUntil || 0) > tick &&
+        (player.ninja?.rShadowExpiresAt || 0) > tick))
+  );
 }
 
 function addCastWindup(self, skillId, target, selectedTarget) {
@@ -330,7 +391,7 @@ function upgradeSkill(slot) {
     return;
   }
   const skill = skillState(self, skillId);
-  if ((skill?.level || 0) >= maxSkillLevel(slot)) {
+  if (!canUpgradeSkill(self, slot, skill?.level || 0)) {
     return;
   }
   sendPacket("input", {

@@ -170,6 +170,7 @@ type DamageEventSnapshot struct {
 	Damage      int    `json:"damage"`
 	DamageType  string `json:"damageType"`
 	BasicAttack bool   `json:"basicAttack,omitempty"`
+	SourceID    string `json:"sourceId,omitempty"`
 }
 
 type EquipmentSlot struct {
@@ -182,6 +183,7 @@ type EffectSnapshot struct {
 	ID           string  `json:"id"`
 	Kind         string  `json:"kind"`
 	Team         string  `json:"team"`
+	SourceID     string  `json:"sourceId,omitempty"`
 	SourceHeroID string  `json:"sourceHeroId,omitempty"`
 	X            float64 `json:"x"`
 	Y            float64 `json:"y"`
@@ -285,9 +287,15 @@ type SwordSnapshot struct {
 }
 
 type NinjaSnapshot struct {
-	ShadowX         float64 `json:"shadowX"`
-	ShadowY         float64 `json:"shadowY"`
-	ShadowExpiresAt uint64  `json:"shadowExpiresAt"`
+	ShadowX             float64 `json:"shadowX"`
+	ShadowY             float64 `json:"shadowY"`
+	ShadowExpiresAt     uint64  `json:"shadowExpiresAt"`
+	ShadowReadyTick     uint64  `json:"shadowReadyTick,omitempty"`
+	RShadowX            float64 `json:"rShadowX"`
+	RShadowY            float64 `json:"rShadowY"`
+	RShadowExpiresAt    uint64  `json:"rShadowExpiresAt"`
+	ShadowRecastSkillID string  `json:"shadowRecastSkillId,omitempty"`
+	RShadowRecastUntil  uint64  `json:"rShadowRecastUntil,omitempty"`
 }
 
 type Error struct {

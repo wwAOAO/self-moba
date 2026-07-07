@@ -35,6 +35,7 @@ func (w *World) SkillEffects() []SkillEffect {
 			ID:           projectile.ID,
 			Kind:         projectile.Kind,
 			Team:         projectile.Team,
+			SourceID:     projectile.SourceID,
 			SourceHeroID: sourceHeroID,
 			Start:        start,
 			Dir:          projectile.Dir,

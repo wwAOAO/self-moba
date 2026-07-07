@@ -112,11 +112,12 @@ func TestMinionKillRewardGrantsGold(t *testing.T) {
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
 	target := &Entity{
-		ID:     "minion:test-melee",
-		Kind:   EntityKindMeleeMinion,
-		Team:   TeamRed,
-		Stats:  Stats{HP: 1, MaxHP: 1},
-		Radius: 14,
+		ID:       "minion:test-melee",
+		Kind:     EntityKindMeleeMinion,
+		Team:     TeamRed,
+		Position: player.Position,
+		Stats:    Stats{HP: 1, MaxHP: 1},
+		Radius:   14,
 	}
 
 	w.applyKillReward(player, target)
@@ -126,6 +127,65 @@ func TestMinionKillRewardGrantsGold(t *testing.T) {
 	}
 	if player.Gold != 20 {
 		t.Fatalf("gold = %f, want 20", player.Gold)
+	}
+}
+
+func TestNearbyHeroGetsMinionExperienceWithoutLastHit(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	w.SpawnHero("p2", hero, TeamBlue)
+	w.SpawnHero("red", hero, TeamRed)
+	player := w.entities[playerEntityID("p1")]
+	farAlly := w.entities[playerEntityID("p2")]
+	enemy := w.entities[playerEntityID("red")]
+	placeEntity(player, 2000, 2000)
+	placeEntity(farAlly, 4000, 4000)
+	placeEntity(enemy, 2000, 2000)
+	killer := &Entity{ID: "minion:blue-last-hit", Kind: EntityKindMeleeMinion, Team: TeamBlue, Stats: Stats{HP: 1, MaxHP: 1}}
+	target := &Entity{ID: "minion:red-dead", Kind: EntityKindMeleeMinion, Team: TeamRed, Position: player.Position, Stats: Stats{HP: 0, MaxHP: 1}, Radius: 14}
+
+	w.applyKillReward(killer, target)
+
+	if player.TotalExp != 58.88 {
+		t.Fatalf("nearby player exp = %f, want 58.88", player.TotalExp)
+	}
+	if farAlly.TotalExp != 0 {
+		t.Fatalf("far ally exp = %f, want 0", farAlly.TotalExp)
+	}
+	if enemy.TotalExp != 0 {
+		t.Fatalf("same-side enemy exp = %f, want 0", enemy.TotalExp)
+	}
+	if player.Gold != 0 {
+		t.Fatalf("nearby player gold = %f, want 0", player.Gold)
+	}
+}
+
+func TestNearbyMinionExperienceIsSharedButGoldIsLastHitOnly(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	w.SpawnHero("p2", hero, TeamBlue)
+	killer := w.entities[playerEntityID("p1")]
+	ally := w.entities[playerEntityID("p2")]
+	placeEntity(killer, 2000, 2000)
+	placeEntity(ally, 2000, 2100)
+	target := &Entity{ID: "minion:red-shared", Kind: EntityKindMeleeMinion, Team: TeamRed, Position: killer.Position, Stats: Stats{HP: 0, MaxHP: 1}, Radius: 14}
+
+	w.applyKillReward(killer, target)
+
+	wantExp := 58.88 * 1.24 / 2
+	if killer.TotalExp != wantExp {
+		t.Fatalf("killer exp = %f, want %f", killer.TotalExp, wantExp)
+	}
+	if ally.TotalExp != wantExp {
+		t.Fatalf("ally exp = %f, want %f", ally.TotalExp, wantExp)
+	}
+	if killer.Gold != 20 {
+		t.Fatalf("killer gold = %f, want 20", killer.Gold)
+	}
+	if ally.Gold != 0 {
+		t.Fatalf("ally gold = %f, want 0", ally.Gold)
 	}
 }
 
@@ -214,6 +274,7 @@ func TestUpgradeSkillUsesSkillPointAndCapsBySlot(t *testing.T) {
 	hero.Skills.R = swordRSkillID
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]
+	player.Level = 16
 	player.SkillPoints = 10
 
 	for i := 0; i < 6; i++ {
@@ -231,6 +292,48 @@ func TestUpgradeSkillUsesSkillPointAndCapsBySlot(t *testing.T) {
 	}
 	if player.SkillPoints != 2 {
 		t.Fatalf("skill points = %d, want 2", player.SkillPoints)
+	}
+}
+
+func TestUpgradeUltimateRequiresHeroLevels(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.HeroID = swordHeroID
+	hero.Skills.R = swordRSkillID
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.SkillPoints = 10
+
+	player.Level = 5
+	w.ApplyInput("p1", protocolPlayerInputUpgrade("r"), 1, nil, 20)
+	if player.Skills[swordRSkillID].Level != 0 || player.SkillPoints != 10 {
+		t.Fatalf("r at level 5 = %d points %d, want 0/10", player.Skills[swordRSkillID].Level, player.SkillPoints)
+	}
+
+	player.Level = 6
+	w.ApplyInput("p1", protocolPlayerInputUpgrade("r"), 2, nil, 20)
+	if player.Skills[swordRSkillID].Level != 1 || player.SkillPoints != 9 {
+		t.Fatalf("r at level 6 = %d points %d, want 1/9", player.Skills[swordRSkillID].Level, player.SkillPoints)
+	}
+
+	player.Level = 10
+	w.ApplyInput("p1", protocolPlayerInputUpgrade("r"), 3, nil, 20)
+	if player.Skills[swordRSkillID].Level != 1 || player.SkillPoints != 9 {
+		t.Fatalf("r at level 10 = %d points %d, want 1/9", player.Skills[swordRSkillID].Level, player.SkillPoints)
+	}
+
+	player.Level = 11
+	w.ApplyInput("p1", protocolPlayerInputUpgrade("r"), 4, nil, 20)
+	player.Level = 15
+	w.ApplyInput("p1", protocolPlayerInputUpgrade("r"), 5, nil, 20)
+	if player.Skills[swordRSkillID].Level != 2 || player.SkillPoints != 8 {
+		t.Fatalf("r before level 16 = %d points %d, want 2/8", player.Skills[swordRSkillID].Level, player.SkillPoints)
+	}
+
+	player.Level = 16
+	w.ApplyInput("p1", protocolPlayerInputUpgrade("r"), 6, nil, 20)
+	if player.Skills[swordRSkillID].Level != 3 || player.SkillPoints != 7 {
+		t.Fatalf("r at level 16 = %d points %d, want 3/7", player.Skills[swordRSkillID].Level, player.SkillPoints)
 	}
 }
 

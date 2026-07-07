@@ -25,6 +25,7 @@
     age: 0,
     lifetime: 720,
   });
+  trimFloatingTexts();
 }
 
 function damageTextColor(damageType) {
@@ -42,6 +43,40 @@ function damageTextStrokeColor(damageType) {
     return 0x111827;
   }
   return 0xffffff;
+}
+
+function spawnRewardText(target, textValue, kind) {
+  const sameFrameOffset = state.damageTexts.filter(
+    (effect) => effect.targetId === (target.id || target.playerId),
+  ).length;
+  const text = new PIXI.Text({
+    text: textValue,
+    style: {
+      fill: kind === "gold" ? 0xfacc15 : 0x22c55e,
+      fontFamily: "Arial",
+      fontSize: 15,
+      fontWeight: "900",
+      stroke: { color: 0x111827, width: 2 },
+    },
+  });
+  text.anchor.set(0.5, 0.5);
+  effectLayer.addChild(text);
+  state.damageTexts.push({
+    node: text,
+    targetId: target.id || target.playerId,
+    x: target.x,
+    y: target.y - 42 - sameFrameOffset * 100,
+    age: 0,
+    lifetime: 720,
+  });
+  trimFloatingTexts();
+}
+
+function trimFloatingTexts() {
+  while (state.damageTexts.length > maxActiveFloatingTexts) {
+    const effect = state.damageTexts.shift();
+    effectLayer.removeChild(effect.node);
+  }
 }
 
 function syncDamageTexts(frame, deltaMS) {

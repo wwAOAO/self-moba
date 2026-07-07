@@ -5,10 +5,6 @@
     if (targetId) {
       state.selectedTargetId = targetId;
       setTargetCard(currentTarget());
-      if (state.attackMoveArmed) {
-        attackTarget(targetId);
-        state.attackMoveArmed = false;
-      }
       return;
     }
     state.selectedTargetId = "";
@@ -20,7 +16,7 @@
     return;
   }
   const point = screenToWorld(event);
-  const targetId = pickTargetUnit(event);
+  const targetId = pickAttackTargetUnit(event);
   if (targetId) {
     state.selectedTargetId = targetId;
     setTargetCard(currentTarget());
@@ -74,6 +70,24 @@ function moveToPoint(point) {
   clearAttackTarget();
 }
 
+function attackMoveAtPoint(point) {
+  const self = state.players.get(state.playerId);
+  if (self?.dead) {
+    return;
+  }
+  const targetId = nearestAttackTarget(
+    point,
+    Math.max(500, self?.stats?.attackRange || 0),
+  );
+  if (!targetId) {
+    return;
+  }
+  state.selectedTargetId = targetId;
+  setTargetCard(currentTarget());
+  attackTarget(targetId);
+  state.attackMoveArmed = false;
+}
+
 function clearAttackTarget() {
   sendPacket("input", {
     attack: {
@@ -82,4 +96,3 @@ function clearAttackTarget() {
     clientSeq: state.seq,
   });
 }
-

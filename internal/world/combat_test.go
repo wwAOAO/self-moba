@@ -620,6 +620,8 @@ func TestGunnerRChannelsConeWaves(t *testing.T) {
 	w.SpawnHero("gunner", hero, TeamBlue)
 	gunner := w.entities[playerEntityID("gunner")]
 	target := w.entities["enemy:hero-1"]
+	insideID, _ := w.SpawnObject(EntityKindEnemyHero, TeamRed, 1800, 1100)
+	inside := w.entities[insideID]
 	sideID, _ := w.SpawnObject(EntityKindEnemyHero, TeamRed, 1000, 1800)
 	side := w.entities[sideID]
 	placeEntity(gunner, 1000, 1000)
@@ -628,6 +630,9 @@ func TestGunnerRChannelsConeWaves(t *testing.T) {
 	target.Stats.HP = 3000
 	target.Stats.MaxHP = 3000
 	target.Stats.PhysicalDefense = 0
+	inside.Stats.HP = 3000
+	inside.Stats.MaxHP = 3000
+	inside.Stats.PhysicalDefense = 0
 	side.Stats.PhysicalDefense = 0
 	learnSkill(gunner, "gunner_r", 1)
 
@@ -641,6 +646,9 @@ func TestGunnerRChannelsConeWaves(t *testing.T) {
 
 	if got := 3000 - target.Stats.HP; got != 1120 {
 		t.Fatalf("r total damage = %d, want 1120", got)
+	}
+	if got := 3000 - inside.Stats.HP; got != 1120 {
+		t.Fatalf("r inside cone damage = %d, want 1120", got)
 	}
 	if got := side.Combat.LastDamage; got != 0 {
 		t.Fatalf("side target damage = %d, want 0", got)

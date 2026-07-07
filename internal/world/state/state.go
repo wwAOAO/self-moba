@@ -117,6 +117,7 @@ type DamageEvent struct {
 	Damage      int
 	DamageType  string
 	BasicAttack bool
+	SourceID    string
 }
 
 type ControlState struct {
@@ -253,29 +254,40 @@ type BerserkerState struct {
 }
 
 type NinjaState struct {
-	ShadowPosition      geom.Vector2
-	ShadowExpiresAt     uint64
-	ShadowEffectID      string
-	ShadowRecastSkillID string
-	ShadowRecastUntil   uint64
-	QPending            bool
-	QReleaseTick        uint64
-	QTarget             geom.Vector2
-	QLevel              int
-	SkillHitMarks       map[string]uint8
-	SkillEnergyRefunded map[string]bool
-	RPending            bool
-	RCastPending        bool
-	RCastTargetID       string
-	RCastLevel          int
-	RReleaseTick        uint64
-	RDashEndTick        uint64
-	RTargetID           string
-	RLevel              int
-	RMarkTargetID       string
-	RMarkTriggerTick    uint64
-	RMarkDamage         float64
-	RMarkLevel          int
+	ShadowPosition       geom.Vector2
+	ShadowExpiresAt      uint64
+	ShadowEffectID       string
+	ShadowReadyTick      uint64
+	ShadowRecastSkillID  string
+	ShadowRecastUntil    uint64
+	RShadowPosition      geom.Vector2
+	RShadowExpiresAt     uint64
+	RShadowEffectID      string
+	RShadowRecastUntil   uint64
+	QPending             bool
+	QReleaseTick         uint64
+	QTarget              geom.Vector2
+	QLevel               int
+	PendingShadowQTarget geom.Vector2
+	PendingShadowQLevel  int
+	PendingShadowQGroup  string
+	PendingShadowELevel  int
+	PendingShadowEGroup  string
+	PendingShadowEHitIDs map[string]bool
+	SkillHitMarks        map[string]uint8
+	SkillEnergyRefunded  map[string]bool
+	RPending             bool
+	RCastPending         bool
+	RCastTargetID        string
+	RCastLevel           int
+	RReleaseTick         uint64
+	RDashEndTick         uint64
+	RTargetID            string
+	RLevel               int
+	RMarkTargetID        string
+	RMarkTriggerTick     uint64
+	RMarkDamage          float64
+	RMarkLevel           int
 }
 
 type PassiveState struct {

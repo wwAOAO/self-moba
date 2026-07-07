@@ -1,4 +1,4 @@
-const version = "20260703-1";
+const version = "20260707-1";
 
 const scripts = [
   "https://cdn.jsdelivr.net/npm/pixi.js@8.2.6/dist/pixi.min.js",

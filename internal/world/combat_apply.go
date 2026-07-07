@@ -43,7 +43,11 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 		target.Combat.DamageEvents = nil
 		target.Combat.DamageEventsTick = target.Combat.LastHitTick
 	}
-	target.Combat.DamageEvents = append(target.Combat.DamageEvents, DamageEvent{Damage: damage, DamageType: damageType, BasicAttack: context.BasicAttack})
+	sourceID := ""
+	if source != nil {
+		sourceID = source.ID
+	}
+	target.Combat.DamageEvents = append(target.Combat.DamageEvents, DamageEvent{Damage: damage, DamageType: damageType, BasicAttack: context.BasicAttack, SourceID: sourceID})
 	w.applyArcherFrostShot(source, target, target.Combat.LastHitTick, tickRate)
 	w.breakTankGraniteShield(target, target.Combat.LastHitTick)
 	if damage <= 0 {

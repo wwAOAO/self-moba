@@ -117,6 +117,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			ID:           effect.ID,
 			Kind:         effect.Kind,
 			Team:         string(effect.Team),
+			SourceID:     effect.SourceID,
 			SourceHeroID: effect.SourceHeroID,
 			X:            effect.Start.X,
 			Y:            effect.Start.Y,
@@ -164,6 +165,7 @@ func buildDamageEventSnapshots(events []world.DamageEvent) []protocol.DamageEven
 			Damage:      event.Damage,
 			DamageType:  event.DamageType,
 			BasicAttack: event.BasicAttack,
+			SourceID:    event.SourceID,
 		})
 	}
 	return snapshots
@@ -296,9 +298,15 @@ func buildSwordSnapshot(state world.SwordState) protocol.SwordSnapshot {
 
 func buildNinjaSnapshot(state world.NinjaState) protocol.NinjaSnapshot {
 	return protocol.NinjaSnapshot{
-		ShadowX:         state.ShadowPosition.X,
-		ShadowY:         state.ShadowPosition.Y,
-		ShadowExpiresAt: state.ShadowExpiresAt,
+		ShadowX:             state.ShadowPosition.X,
+		ShadowY:             state.ShadowPosition.Y,
+		ShadowExpiresAt:     state.ShadowExpiresAt,
+		ShadowReadyTick:     state.ShadowReadyTick,
+		RShadowX:            state.RShadowPosition.X,
+		RShadowY:            state.RShadowPosition.Y,
+		RShadowExpiresAt:    state.RShadowExpiresAt,
+		ShadowRecastSkillID: state.ShadowRecastSkillID,
+		RShadowRecastUntil:  state.RShadowRecastUntil,
 	}
 }
 

@@ -15,10 +15,6 @@ function pickTargetUnit(event) {
   const targets = [...targetMap().values()]
     .filter((target) => target.id !== self?.id)
     .filter((target) => !target.dead)
-    .filter(
-      (target) =>
-        !self || target.team !== self.team || target.team === "neutral",
-    )
     .sort(
       (a, b) =>
         screenDistanceToTarget(screenPoint, a) -
@@ -30,6 +26,42 @@ function pickTargetUnit(event) {
     }
   }
   return "";
+}
+
+function pickAttackTargetUnit(event) {
+  const targetId = pickTargetUnit(event);
+  if (!targetId) {
+    return "";
+  }
+  const self = state.players.get(state.playerId);
+  const target = targetMap().get(targetId);
+  if (!self || !target || target.team !== self.team || target.team === "neutral") {
+    return targetId;
+  }
+  return "";
+}
+
+function nearestAttackTarget(point, range) {
+  const self = state.players.get(state.playerId);
+  if (!self) {
+    return "";
+  }
+  let best = null;
+  let bestDistance = Infinity;
+  for (const target of targetMap().values()) {
+    if (target.id === self.id || target.dead) {
+      continue;
+    }
+    if (target.team === self.team && target.team !== "neutral") {
+      continue;
+    }
+    const distance = Math.hypot(target.x - point.x, target.y - point.y);
+    if (distance <= range && distance < bestDistance) {
+      best = target;
+      bestDistance = distance;
+    }
+  }
+  return best?.id || "";
 }
 
 function hitTestUnit(screenPoint, worldPoint, unit) {
@@ -94,4 +126,3 @@ function targetSelectRadius(target, frame) {
   }
   return Math.max(14, (target.radius || 18) * frame.scale + 6);
 }
-

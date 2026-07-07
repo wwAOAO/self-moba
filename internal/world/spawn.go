@@ -4,6 +4,7 @@ import (
 	"l-battle/internal/config"
 	"math"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -222,6 +223,14 @@ func (w *World) SpawnBattleUnits() {
 		PhysicalDefense: 70,
 		MagicDefense:    70,
 	})
+}
+
+func (w *World) RemovePresetHiddenUnits() {
+	for id := range w.entities {
+		if strings.HasPrefix(id, "minion:") || strings.HasPrefix(id, "enemy:") || strings.HasPrefix(id, "structure:") {
+			delete(w.entities, id)
+		}
+	}
 }
 
 func (w *World) SpawnTrainingDummy() {

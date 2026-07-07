@@ -2,7 +2,7 @@
   const slot = event.key.toLowerCase();
   if (slot === "a") {
     event.preventDefault();
-    state.attackMoveArmed = true;
+    attackMoveAtPoint(state.aimPoint || state.moveTarget || { x: state.map.width / 2, y: state.map.height / 2 });
     return;
   }
   if (!["q", "w", "e", "r"].includes(slot)) {

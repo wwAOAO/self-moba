@@ -23,7 +23,7 @@
     "type": "projectile",
     "meta": {
       "projectileSpeed": 1700,
-      "projectileRadius": 35,
+      "projectileRadius": 87.5,
       "castWindupSeconds": 0.25,
       "firstBonusAdRatio": 1,
       "laterBonusAdRatio": 0.6

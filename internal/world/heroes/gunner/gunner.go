@@ -333,6 +333,7 @@ func fireRWave(w *world.World, entity *world.Entity, skill config.SkillConfig, l
 		Radius:       skillMeta(skill, "projectileRadius", 18),
 		Damage:       level,
 		EffectRatio:  skillMeta(skill, "coneAngleDegrees", 45),
+		DisplayCount: 5,
 		CreatedAt:    tick,
 		ExpiresAt:    tick + secondsToTicks(1, tickRate),
 		HitIDs:       make(map[string]bool),
