@@ -26,6 +26,12 @@
   if (player.heroId === "ninja") {
     return player.playerId === state.playerId ? 13 : 11;
   }
+  if (player.heroId === "explorer") {
+    return player.playerId === state.playerId ? 13 : 11;
+  }
+  if (player.heroId === "robot") {
+    return player.playerId === state.playerId ? 13 : 11;
+  }
   return player.playerId === state.playerId ? 10 : 8;
 }
 
@@ -56,6 +62,12 @@ function playerModelShape(player) {
   }
   if (player.heroId === "ninja") {
     return "ninja";
+  }
+  if (player.heroId === "explorer") {
+    return "explorer";
+  }
+  if (player.heroId === "robot") {
+    return "robot";
   }
   return "circle";
 }
@@ -280,6 +292,15 @@ function drawNinjaIcon(graphics, radius) {
   graphics.circle(0, 0, iconRadius * 0.3);
 }
 
+function drawExplorerHatIcon(graphics, radius) {
+  graphics.ellipse(0, radius * 0.38, radius * 1.48, radius * 0.34);
+  graphics.moveTo(-radius * 0.88, radius * 0.28);
+  graphics.quadraticCurveTo(-radius * 0.64, -radius * 0.74, 0, -radius * 0.86);
+  graphics.quadraticCurveTo(radius * 0.64, -radius * 0.74, radius * 0.88, radius * 0.28);
+  graphics.closePath();
+  graphics.rect(-radius * 0.78, -radius * 0.02, radius * 1.56, radius * 0.26);
+}
+
 function drawShurikenBlade(graphics, radius, angle) {
   const tip = pointAt(angle, radius * 1.65);
   const leftWing = pointAt(angle - 0.55, radius * 0.88);
@@ -415,6 +436,24 @@ function drawBerserkerIcon(graphics, radius) {
   graphics.closePath();
 }
 
+function drawRobotIcon(graphics, radius) {
+  graphics.roundRect(
+    -radius * 0.72,
+    -radius * 0.62,
+    radius * 1.44,
+    radius * 1.18,
+    radius * 0.16,
+  );
+  graphics.rect(-radius * 0.5, radius * 0.56, radius * 1, radius * 0.42);
+  graphics.rect(-radius * 0.14, -radius * 1.04, radius * 0.28, radius * 0.42);
+  graphics.circle(0, -radius * 1.14, radius * 0.16);
+  graphics.circle(-radius * 0.36, -radius * 0.2, radius * 0.16);
+  graphics.circle(radius * 0.36, -radius * 0.2, radius * 0.16);
+  graphics.rect(-radius * 0.32, radius * 0.2, radius * 0.64, radius * 0.12);
+  graphics.rect(-radius * 1.12, -radius * 0.22, radius * 0.36, radius * 0.72);
+  graphics.rect(radius * 0.76, -radius * 0.22, radius * 0.36, radius * 0.72);
+}
+
 function drawMageIcon(graphics, radius) {
   graphics.circle(0, -radius * 0.38, radius * 0.48);
   graphics.circle(0, -radius * 0.38, radius * 0.24);
@@ -495,4 +534,3 @@ function unitCollisionRadius(unit) {
 function unitHitRadius(unit) {
   return unitModelDisplayRadius(unit) + 8;
 }
-

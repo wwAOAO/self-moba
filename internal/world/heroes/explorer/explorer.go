@@ -74,6 +74,7 @@ func releaseQ(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 	if entity.Stats.HP <= 0 || entity.Death.Dead {
 		return
 	}
+	entity.Combat.NextAttackTick = tick
 	dx, dy := normalize(target.X-entity.Position.X, target.Y-entity.Position.Y)
 	if dx == 0 && dy == 0 {
 		dx = 1

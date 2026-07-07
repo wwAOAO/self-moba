@@ -364,6 +364,7 @@ func TestLaneMinionWalksAroundBlockingAlly(t *testing.T) {
 	dx, dy := normalize(routeEnd.X-routeStart.X, routeEnd.Y-routeStart.Y)
 	start := Vector2{X: routeStart.X + dx*500, Y: routeStart.Y + dy*500}
 	blockerPosition := Vector2{X: start.X + dx*45, Y: start.Y + dy*45}
+	targetPosition := Vector2{X: start.X + dx*260, Y: start.Y + dy*260}
 	minion := &Entity{
 		ID:       "spawn:test-blue-runner",
 		Kind:     EntityKindMeleeMinion,
@@ -371,6 +372,7 @@ func TestLaneMinionWalksAroundBlockingAlly(t *testing.T) {
 		Position: start,
 		Radius:   20,
 		Stats:    Stats{HP: 445, MaxHP: 445, MoveSpeed: laneMinionMoveSpeed, AttackRange: 125, AttackSpeed: 1.25},
+		Intent:   IntentState{AttackTargetID: "spawn:test-red-target"},
 		Lane:     LaneState{Active: true, RouteTarget: routeEnd, LastOnLaneTick: 1},
 	}
 	blocker := &Entity{
@@ -381,8 +383,17 @@ func TestLaneMinionWalksAroundBlockingAlly(t *testing.T) {
 		Radius:   20,
 		Stats:    Stats{HP: 445, MaxHP: 445},
 	}
+	target := &Entity{
+		ID:       "spawn:test-red-target",
+		Kind:     EntityKindMeleeMinion,
+		Team:     TeamRed,
+		Position: targetPosition,
+		Radius:   20,
+		Stats:    Stats{HP: 445, MaxHP: 445},
+	}
 	w.entities[minion.ID] = minion
 	w.entities[blocker.ID] = blocker
+	w.entities[target.ID] = target
 	blockerProgress := (blockerPosition.X-routeStart.X)*dx + (blockerPosition.Y-routeStart.Y)*dy
 
 	for tick := uint64(2); tick <= 80; tick++ {

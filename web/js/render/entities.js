@@ -165,10 +165,14 @@ function redrawPlayerBody(sprite, player) {
     drawGunnerIcon(sprite.body, radius);
   } else if (shape === "ninja") {
     drawNinjaIcon(sprite.body, radius);
+  } else if (shape === "explorer") {
+    drawExplorerHatIcon(sprite.body, radius);
   } else if (shape === "blade") {
     drawBladeIcon(sprite.body, radius);
   } else if (shape === "berserker") {
     drawBerserkerIcon(sprite.body, radius);
+  } else if (shape === "robot") {
+    drawRobotIcon(sprite.body, radius);
   } else {
     sprite.body.circle(0, 0, radius);
   }
@@ -177,12 +181,17 @@ function redrawPlayerBody(sprite, player) {
     sprite.body.stroke({
       color: player.dead
         ? 0x111827
-        : shape === "gunner" || shape === "berserker" || shape === "blade"
+        : shape === "gunner" || shape === "berserker" || shape === "blade" || shape === "robot" || shape === "explorer"
           ? 0x000000
           : isSelf
             ? 0xffffff
             : 0x172026,
-      width: shape === "gunner" || shape === "berserker" || shape === "blade" ? 1 : isSelf ? 2 : 1,
+      width:
+        shape === "gunner" || shape === "berserker" || shape === "blade" || shape === "robot" || shape === "explorer"
+          ? 1
+          : isSelf
+            ? 2
+            : 1,
       alpha: player.dead ? 0.45 : 1,
     });
   }

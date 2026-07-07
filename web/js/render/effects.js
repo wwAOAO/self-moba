@@ -394,7 +394,6 @@ function drawExplorerEEffect(effect, frame) {
 function drawExplorerREffect(effect, frame) {
   const position = projectileDrawPosition(effect, { fromSnapshot: true });
   const radius = Math.max(26, (effect.radius || 160) * frame.scale);
-  drawProjectileSweepArea(effect, frame, position, radius, 0x38bdf8, 0x0ea5e9);
   drawExplorerMoonArcEffect(effect, frame, position, radius);
 }
 

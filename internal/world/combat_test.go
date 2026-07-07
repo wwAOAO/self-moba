@@ -392,6 +392,35 @@ func TestExplorerQHitsAppliesOnHitAndReducesCooldowns(t *testing.T) {
 	}
 }
 
+func TestExplorerQResetsBasicAttack(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(explorerHeroID)
+	if !ok {
+		t.Fatal("explorer hero not found")
+	}
+	w.SpawnHero("explorer", hero, TeamBlue)
+	explorer := w.entities[playerEntityID("explorer")]
+	learnSkill(explorer, explorerQSkillID, 1)
+	target := w.entities["enemy:hero-1"]
+	placeEntity(explorer, 1000, 1000)
+	placeEntity(target, 1300, 1000)
+	explorer.Intent.AttackTargetID = target.ID
+	explorer.Combat.NextAttackTick = 80
+
+	w.ApplyInput("explorer", protocolPlayerInputCast(explorerQSkillID, target.Position.X, target.Position.Y), 10, nil, 20)
+	w.Tick(15, 20)
+
+	if got, want := explorer.Combat.NextAttackTick, uint64(47); got != want {
+		t.Fatalf("next attack tick after q reset = %d, want %d", got, want)
+	}
+	if got := explorer.Combat.PendingAttackTargetID; got != target.ID {
+		t.Fatalf("pending attack after q reset = %q, want %q", got, target.ID)
+	}
+	if got, want := explorer.Combat.AttackReleaseTick, uint64(20); got != want {
+		t.Fatalf("attack release tick after q reset = %d, want %d", got, want)
+	}
+}
+
 func TestExplorerWAttachesAndSkillDetonatesWithManaRefund(t *testing.T) {
 	w := testWorld(t)
 	hero, ok := w.heroes.Get(explorerHeroID)

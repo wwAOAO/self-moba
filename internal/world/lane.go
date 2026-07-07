@@ -135,7 +135,8 @@ func (w *World) tickLaneMinion(minion *Entity, tick uint64, tickRate int) {
 		minion.Intent.AttackTargetID = ""
 		minion.Combat.PendingAttackTargetID = ""
 		minion.Combat.AttackReleaseTick = 0
-		w.moveToward(minion, w.laneMoveTargetAvoidingAllies(minion, routeStart, routeEnd), movementStepAtTick(minion, tickRate, tick), 8)
+		destination := laneMoveTarget(minion.Position, routeStart, routeEnd)
+		w.moveToward(minion, w.laneMoveTargetAvoidingAllies(minion, destination), movementStepAtTick(minion, tickRate, tick), 8)
 		return
 	}
 
@@ -153,10 +154,11 @@ func (w *World) tickLaneMinion(minion *Entity, tick uint64, tickRate int) {
 			w.applyAttack(minion, target, tick, tickRate)
 			return
 		}
-		w.moveToward(minion, target.Position, movementStepAtTick(minion, tickRate, tick), 0)
+		w.moveToward(minion, w.laneMoveTargetAvoidingAllies(minion, target.Position), movementStepAtTick(minion, tickRate, tick), 0)
 		return
 	}
-	w.moveToward(minion, w.laneMoveTargetAvoidingAllies(minion, routeStart, routeEnd), movementStepAtTick(minion, tickRate, tick), 8)
+	destination := laneMoveTarget(minion.Position, routeStart, routeEnd)
+	w.moveToward(minion, w.laneMoveTargetAvoidingAllies(minion, destination), movementStepAtTick(minion, tickRate, tick), 8)
 }
 
 func (w *World) nearestLaneTarget(minion *Entity) *Entity {
@@ -193,15 +195,13 @@ func laneMoveTarget(position Vector2, routeStart Vector2, routeEnd Vector2) Vect
 	return routeEnd
 }
 
-func (w *World) laneMoveTargetAvoidingAllies(minion *Entity, routeStart Vector2, routeEnd Vector2) Vector2 {
-	target := laneMoveTarget(minion.Position, routeStart, routeEnd)
+func (w *World) laneMoveTargetAvoidingAllies(minion *Entity, target Vector2) Vector2 {
 	dx, dy := normalize(target.X-minion.Position.X, target.Y-minion.Position.Y)
 	if dx == 0 && dy == 0 {
 		return target
 	}
 	perpX, perpY := -dy, dx
 	bestForward := math.MaxFloat64
-	bestSide := 0.0
 	bestClearance := 0.0
 	for _, other := range w.entities {
 		if other == nil || other.ID == minion.ID || other.Team != minion.Team || !isCollisionEntity(other) {
@@ -219,18 +219,21 @@ func (w *World) laneMoveTargetAvoidingAllies(minion *Entity, routeStart Vector2,
 			continue
 		}
 		bestForward = forward
-		bestSide = side
 		bestClearance = clearance
 	}
 	if bestForward == math.MaxFloat64 {
 		return target
 	}
-	sideStep := bestClearance
-	if bestSide >= 0 {
-		sideStep = -bestClearance
-	}
+	sideStep := bestClearance * laneMinionAvoidSide(minion)
 	return Vector2{
 		X: clamp(minion.Position.X+dx*laneMinionAvoidLookahead+perpX*sideStep, 0, w.width),
 		Y: clamp(minion.Position.Y+dy*laneMinionAvoidLookahead+perpY*sideStep, 0, w.height),
 	}
+}
+
+func laneMinionAvoidSide(minion *Entity) float64 {
+	if len(minion.ID) > 0 && minion.ID[len(minion.ID)-1]%2 == 0 {
+		return 1
+	}
+	return -1
 }
