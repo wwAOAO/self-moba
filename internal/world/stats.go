@@ -4,7 +4,6 @@ import (
 	"l-battle/internal/config"
 	"l-battle/internal/world/formula"
 	"l-battle/internal/world/statcalc"
-	"math"
 )
 
 func normalize(x float64, y float64) (float64, float64) {
@@ -89,15 +88,10 @@ func (w *World) tickBaseRegen(entity *Entity, tickRate int) {
 	}
 	beforeHP := entity.Stats.HP
 	if entity.Stats.HP < entity.Stats.MaxHP && entity.Stats.HPRegen5 > 0 {
-		entity.Regen.HPRemainder += entity.Stats.HPRegen5 / 5 / float64(tickRate)
-		heal := int(math.Floor(entity.Regen.HPRemainder + 0.000000001))
-		if heal > 0 {
-			entity.Stats.HP += heal
-			entity.Regen.HPRemainder -= float64(heal)
-			if entity.Stats.HP > entity.Stats.MaxHP {
-				entity.Stats.HP = entity.Stats.MaxHP
-				entity.Regen.HPRemainder = 0
-			}
+		entity.Stats.HP += entity.Stats.HPRegen5 / 5 / float64(tickRate)
+		if entity.Stats.HP > entity.Stats.MaxHP {
+			entity.Stats.HP = entity.Stats.MaxHP
+			entity.Regen.HPRemainder = 0
 		}
 	} else {
 		entity.Regen.HPRemainder = 0

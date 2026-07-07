@@ -120,7 +120,7 @@ func warriorCourageDamageReductionAtTick(state WarriorState, tick uint64) float6
 
 func warriorWShieldValue(entity *Entity, skill config.SkillConfig, skillLevel int) int {
 	baseShield := skillMetaListByLevel(skill, "shieldValue", skillLevel, []float64{70, 95, 120, 145, 170})
-	return int(math.Round(baseShield + float64(entity.Stats.BonusHP)*skillMetaRange(skill, "bonusHealthRatio", 0.2)))
+	return int(math.Round(baseShield + entity.Stats.BonusHP*skillMetaRange(skill, "bonusHealthRatio", 0.2)))
 }
 
 func effectiveResistance(resistance float64, percentPen float64, flatPen float64) float64 {

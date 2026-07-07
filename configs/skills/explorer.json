@@ -1,0 +1,165 @@
+[
+  {
+    "skillId": "explorer_passive",
+    "name": "Explorer Passive",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive",
+    "meta": {
+      "attackSpeedPerStack": 0.1,
+      "durationSeconds": 6,
+      "maxStacks": 5
+    }
+  },
+  {
+    "skillId": "explorer_q",
+    "name": "Mystic Shot",
+    "cooldownMs": 5500,
+    "range": 1200,
+    "type": "projectile",
+    "meta": {
+      "apRatio": 0.4,
+      "castWindupSeconds": 0.25,
+      "cooldownRefundSeconds": 1.5,
+      "projectileRadius": 60,
+      "projectileSpeed": 2000,
+      "totalAdRatio": 1.3
+    },
+    "metaLists": {
+      "baseDamage": [
+        20,
+        45,
+        70,
+        95,
+        120
+      ],
+      "cooldownMs": [
+        5500,
+        5250,
+        5000,
+        4750,
+        4500
+      ],
+      "manaCost": [
+        28,
+        31,
+        34,
+        37,
+        40
+      ]
+    }
+  },
+  {
+    "skillId": "explorer_w",
+    "name": "Essence Flux",
+    "cooldownMs": 8000,
+    "range": 1200,
+    "type": "mark_projectile",
+    "meta": {
+      "apRatio": 0.9,
+      "bonusAdRatio": 1,
+      "castWindupSeconds": 0.25,
+      "durationSeconds": 4,
+      "manaRefundBonus": 60,
+      "projectileRadius": 80,
+      "projectileSpeed": 1700
+    },
+    "metaLists": {
+      "baseDamage": [
+        80,
+        135,
+        190,
+        245,
+        300
+      ],
+      "cooldownMs": [
+        8000,
+        8000,
+        8000,
+        8000,
+        8000
+      ],
+      "manaCost": [
+        50,
+        50,
+        50,
+        50,
+        50
+      ]
+    }
+  },
+  {
+    "skillId": "explorer_e",
+    "name": "Arcane Shift",
+    "cooldownMs": 26000,
+    "range": 475,
+    "type": "blink_projectile",
+    "meta": {
+      "apRatio": 0.75,
+      "bonusAdRatio": 0.6,
+      "castWindupSeconds": 0.25,
+      "projectileRadius": 60,
+      "projectileSpeed": 2000,
+      "targetRange": 750
+    },
+    "metaLists": {
+      "baseDamage": [
+        80,
+        130,
+        180,
+        230,
+        280
+      ],
+      "cooldownMs": [
+        26000,
+        23000,
+        20000,
+        17000,
+        14000
+      ],
+      "manaCost": [
+        70,
+        70,
+        70,
+        70,
+        70
+      ]
+    }
+  },
+  {
+    "skillId": "explorer_r",
+    "name": "Trueshot Barrage",
+    "cooldownMs": 120000,
+    "range": 0,
+    "type": "global_projectile",
+    "meta": {
+      "apRatio": 1.1,
+      "bonusAdRatio": 1,
+      "castWindupSeconds": 1,
+      "projectileRadius": 160,
+      "projectileSpeed": 2000
+    },
+    "metaLists": {
+      "baseDamage": [
+        350,
+        550,
+        750
+      ],
+      "cooldownMs": [
+        120000,
+        105000,
+        90000
+      ],
+      "manaCost": [
+        100,
+        100,
+        100
+      ],
+      "reducedBaseDamage": [
+        150,
+        225,
+        300
+      ]
+    }
+  }
+]

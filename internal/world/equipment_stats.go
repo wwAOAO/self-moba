@@ -54,7 +54,7 @@ func applyControlStats(entity *Entity, stats *Stats) {
 	}
 }
 
-func (w *World) refreshPlayerStatsAfterHPChange(entity *Entity, beforeHP int) {
+func (w *World) refreshPlayerStatsAfterHPChange(entity *Entity, beforeHP float64) {
 	if entity == nil || entity.Kind != EntityKindPlayer || entity.Stats.HP <= 0 || entity.Stats.HP == beforeHP {
 		return
 	}

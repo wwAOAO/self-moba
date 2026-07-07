@@ -1,0 +1,44 @@
+[
+  {
+    "heroId": "fire_mage",
+    "name": "\u706b\u7130\u6cd5\u5e08",
+    "resource": "mp",
+    "base": {
+      "hp": 520,
+      "mp": 469,
+      "hpRegen5": 5.5,
+      "mpRegen5": 10.665,
+      "attack": 57.04,
+      "abilityHaste": 0,
+      "physicalDefense": 21.88,
+      "magicDefense": 30,
+      "moveSpeed": 340,
+      "attackRange": 550,
+      "attackSpeed": 0.625,
+      "attackWindupSeconds": 0.25,
+      "attackSpeedRatio": 0.625,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 88,
+      "mp": 21,
+      "hpRegen5": 0.55,
+      "mpRegen5": 0.6,
+      "attack": 3,
+      "physicalDefense": 3.5,
+      "magicDefense": 0.5,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.0136,
+      "critChance": 0
+    },
+    "radius": 16,
+    "skills": {
+      "passive": "fire_mage_passive",
+      "q": "fire_mage_q",
+      "w": "fire_mage_w",
+      "e": "fire_mage_e",
+      "r": "fire_mage_r"
+    }
+  }
+]

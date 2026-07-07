@@ -18,7 +18,7 @@ func (w *World) moveProjectile(projectile *Projectile, tickRate int) Vector2 {
 	if step > remaining {
 		step = remaining
 	}
-	if projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" {
+	if projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == explorerESkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" {
 		updateTrackingProjectileDir(projectile, w.entities[projectile.TargetID])
 	}
 	previousPosition := projectile.Position

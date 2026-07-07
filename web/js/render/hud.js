@@ -52,7 +52,7 @@ function spawnRewardText(target, textValue, kind) {
   const text = new PIXI.Text({
     text: textValue,
     style: {
-      fill: kind === "gold" ? 0xfacc15 : 0x22c55e,
+      fill: kind === "gold" ? 0xffd700 : 0x3b82f6,
       fontFamily: "Arial",
       fontSize: 15,
       fontWeight: "900",

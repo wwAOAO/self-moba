@@ -1,0 +1,44 @@
+[
+  {
+    "heroId": "explorer",
+    "name": "Explorer",
+    "resource": "mp",
+    "base": {
+      "hp": 530,
+      "mp": 375,
+      "hpRegen5": 4,
+      "mpRegen5": 8.5,
+      "attack": 60,
+      "abilityHaste": 0,
+      "physicalDefense": 22,
+      "magicDefense": 30,
+      "moveSpeed": 325,
+      "attackRange": 550,
+      "attackSpeed": 0.625,
+      "attackWindupSeconds": 0.25,
+      "attackSpeedRatio": 0.638,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 88,
+      "mp": 70,
+      "hpRegen5": 0.55,
+      "mpRegen5": 0.65,
+      "attack": 2.75,
+      "physicalDefense": 3.5,
+      "magicDefense": 0.5,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.025,
+      "critChance": 0
+    },
+    "radius": 16,
+    "skills": {
+      "passive": "explorer_passive",
+      "q": "explorer_q",
+      "w": "explorer_w",
+      "e": "explorer_e",
+      "r": "explorer_r"
+    }
+  }
+]

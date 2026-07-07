@@ -11,7 +11,7 @@ func (w *World) refreshStoneplateShield(entity *Entity) {
 		if equipped.StoneplateShieldRatio <= 0 || equipped.StoneplateShieldActive || equipped.StoneplateCooldownUntil > 0 {
 			continue
 		}
-		shield := int(math.Round(float64(entity.Stats.MaxHP) * equipped.StoneplateShieldRatio))
+		shield := int(math.Round(entity.Stats.MaxHP * equipped.StoneplateShieldRatio))
 		if shield <= 0 {
 			continue
 		}

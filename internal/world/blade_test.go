@@ -48,10 +48,10 @@ func TestBladeQConsumesRageAndHeals(t *testing.T) {
 		t.Fatalf("rage after q = %f, want 0", player.Stats.MP)
 	}
 	if got, want := player.Stats.HP, player.Stats.MaxHP-200+93; got != want {
-		t.Fatalf("hp after q = %d, want %d", got, want)
+		t.Fatalf("hp after q = %f, want %f", got, want)
 	}
 	if got, want := player.Skills["blade_q"].CooldownUntilTick, uint64(250); got != want {
-		t.Fatalf("cooldown tick = %d, want %d", got, want)
+		t.Fatalf("cooldown tick = %v, want %v", got, want)
 	}
 }
 
@@ -76,7 +76,7 @@ func TestBladeWReducesEnemyHeroAttackAndSlows(t *testing.T) {
 		t.Fatalf("target attack during windup = %f, want %f", got, baseAttack)
 	}
 	if got, want := blade.Skills["blade_w"].StacksExpireTick, uint64(16); got != want {
-		t.Fatalf("w release tick = %d, want %d", got, want)
+		t.Fatalf("w release tick = %v, want %v", got, want)
 	}
 
 	w.Tick(16, 20)
@@ -88,7 +88,7 @@ func TestBladeWReducesEnemyHeroAttackAndSlows(t *testing.T) {
 		t.Fatalf("target slow = %f, want %f", got, want)
 	}
 	if got, want := blade.Skills["blade_w"].CooldownUntilTick, uint64(296); got != want {
-		t.Fatalf("cooldown tick = %d, want %d", got, want)
+		t.Fatalf("cooldown tick = %v, want %v", got, want)
 	}
 
 	w.Tick(96, 20)
@@ -113,7 +113,7 @@ func TestBladeWRequiresNearbyEnemyHero(t *testing.T) {
 	w.ApplyInput("blade", protocolPlayerInputCast("blade_w", blade.Position.X, blade.Position.Y), 10, nil, 20)
 
 	if got := blade.Skills["blade_w"].CooldownUntilTick; got != 0 {
-		t.Fatalf("cooldown tick = %d, want 0", got)
+		t.Fatalf("cooldown tick = %v, want 0", got)
 	}
 	if got := minion.Control.MoveSpeedSlow; got != 0 {
 		t.Fatalf("minion slow = %f, want 0", got)
@@ -139,7 +139,7 @@ func TestBladeWWindupIgnoresAttackSpeedAndAbilityHaste(t *testing.T) {
 	w.ApplyInput("blade", protocolPlayerInputCast("blade_w", blade.Position.X, blade.Position.Y), 10, nil, 20)
 
 	if got, want := blade.Skills["blade_w"].StacksExpireTick, uint64(16); got != want {
-		t.Fatalf("w release tick = %d, want fixed %d", got, want)
+		t.Fatalf("w release tick = %v, want fixed %v", got, want)
 	}
 }
 
@@ -163,10 +163,10 @@ func TestBladeEDashesDamagesPathAndGainsRage(t *testing.T) {
 	w.ApplyInput("blade", protocolPlayerInputCast("blade_e", 1650, 1000), 10, nil, 20)
 
 	if target.Stats.HP >= targetHP {
-		t.Fatalf("path target hp = %d, want below %d", target.Stats.HP, targetHP)
+		t.Fatalf("path target hp = %v, want below %v", target.Stats.HP, targetHP)
 	}
 	if offPath.Stats.HP != offPathHP {
-		t.Fatalf("off path hp = %d, want %d", offPath.Stats.HP, offPathHP)
+		t.Fatalf("off path hp = %v, want %v", offPath.Stats.HP, offPathHP)
 	}
 	if blade.Stats.MP != 2 {
 		t.Fatalf("rage after e = %f, want 2", blade.Stats.MP)
@@ -175,7 +175,7 @@ func TestBladeEDashesDamagesPathAndGainsRage(t *testing.T) {
 		t.Fatalf("dash end = %+v, want %+v", got, want)
 	}
 	if got, want := blade.Skills["blade_e"].CooldownUntilTick, uint64(250); got != want {
-		t.Fatalf("cooldown tick = %d, want %d", got, want)
+		t.Fatalf("cooldown tick = %v, want %v", got, want)
 	}
 }
 
@@ -197,14 +197,14 @@ func TestBladeBasicAttackCritRefundsECooldown(t *testing.T) {
 	w.onHeroBasicHit(blade, target, 20, 20)
 
 	if got, want := blade.Skills["blade_e"].CooldownUntilTick, uint64(185); got != want {
-		t.Fatalf("minion crit refunded cooldown to %d, want %d", got, want)
+		t.Fatalf("minion crit refunded cooldown to %v, want %v", got, want)
 	}
 
 	heroTarget := w.entities["enemy:hero-1"]
 	heroTarget.Team = TeamRed
 	w.onHeroBasicHit(blade, heroTarget, 40, 20)
 	if got, want := blade.Skills["blade_e"].CooldownUntilTick, uint64(155); got != want {
-		t.Fatalf("hero crit refunded cooldown to %d, want %d", got, want)
+		t.Fatalf("hero crit refunded cooldown to %v, want %v", got, want)
 	}
 }
 
@@ -225,19 +225,19 @@ func TestBladeRGrantsRageAndPreventsDeath(t *testing.T) {
 		t.Fatalf("rage after r = %f, want %f", got, want)
 	}
 	if got, want := blade.Control.UndyingRageUntil, uint64(110); got != want {
-		t.Fatalf("undying until = %d, want %d", got, want)
+		t.Fatalf("undying until = %v, want %v", got, want)
 	}
-	if got, want := blade.Control.UndyingRageMinHP, 50; got != want {
-		t.Fatalf("min hp = %d, want %d", got, want)
+	if got, want := blade.Control.UndyingRageMinHP, 50.0; got != want {
+		t.Fatalf("min hp = %f, want %f", got, want)
 	}
 	if got, want := blade.Skills["blade_r"].CooldownUntilTick, uint64(2010); got != want {
-		t.Fatalf("cooldown tick = %d, want %d", got, want)
+		t.Fatalf("cooldown tick = %v, want %v", got, want)
 	}
 
 	blade.Combat.LastHitTick = 20
 	w.applyDamage(nil, blade, 1000, 20)
 	if blade.Stats.HP != 50 {
-		t.Fatalf("hp during r = %d, want 50", blade.Stats.HP)
+		t.Fatalf("hp during r = %v, want 50", blade.Stats.HP)
 	}
 	if blade.Death.Dead {
 		t.Fatal("blade should not die during r")
@@ -246,6 +246,6 @@ func TestBladeRGrantsRageAndPreventsDeath(t *testing.T) {
 	blade.Combat.LastHitTick = 111
 	w.applyDamage(nil, blade, 1000, 20)
 	if blade.Stats.HP != 0 {
-		t.Fatalf("hp after r expired = %d, want 0", blade.Stats.HP)
+		t.Fatalf("hp after r expired = %v, want 0", blade.Stats.HP)
 	}
 }

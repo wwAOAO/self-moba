@@ -202,9 +202,9 @@ type EffectSnapshot struct {
 }
 
 type StatsSnapshot struct {
-	HP                   int     `json:"hp"`
-	MaxHP                int     `json:"maxHp"`
-	BonusHP              int     `json:"bonusHp"`
+	HP                   float64 `json:"hp"`
+	MaxHP                float64 `json:"maxHp"`
+	BonusHP              float64 `json:"bonusHp"`
 	MP                   float64 `json:"mp"`
 	MaxMP                float64 `json:"maxMp"`
 	HPRegen5             float64 `json:"hpRegen5"`

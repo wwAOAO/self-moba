@@ -2,9 +2,13 @@
   "archer.json",
   "berserker.json",
   "blade.json",
+  "explorer.json",
+  "fire_mage.json",
+  "frostmage.json",
   "gunner.json",
   "mage.json",
   "ninja.json",
+  "robot.json",
   "sword.json",
   "tank.json",
   "warrior.json"

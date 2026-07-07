@@ -1,0 +1,37 @@
+[
+  {
+    "skillId": "frostmage_passive",
+    "name": "Frost Mage Passive",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive"
+  },
+  {
+    "skillId": "frostmage_q",
+    "name": "Frost Mage Q",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "frostmage_w",
+    "name": "Frost Mage W",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "frostmage_e",
+    "name": "Frost Mage E",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "frostmage_r",
+    "name": "Frost Mage R",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  }
+]

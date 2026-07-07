@@ -7,5 +7,9 @@
     "gunner.json",
     "blade.json",
     "berserker.json",
-    "ninja.json"
+    "ninja.json",
+    "explorer.json",
+    "robot.json",
+    "frostmage.json",
+    "fire_mage.json"
 ]

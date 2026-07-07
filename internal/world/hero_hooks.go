@@ -21,6 +21,7 @@ type HeroHooks struct {
 	TickEntity                     HeroTickHandler
 	OnBasicHit                     HeroHitHandler
 	OnDamage                       HeroDamageHandler
+	OnDamaged                      HeroDamageHandler
 	OnSkillHit                     HeroHitHandler
 	OnKill                         HeroKillHandler
 	OnSkillUpgrade                 HeroSkillUpgradeHandler
@@ -64,6 +65,14 @@ type HeroHooks struct {
 	RefreshGraniteMax func(w *World, entity *Entity)
 	WBonusDamage      func(w *World, attacker *Entity, tick uint64) float64
 	TankQDamage       func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int
+	RobotQDamage      func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int
+	ExplorerQDamage   func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int
+	ExplorerQHit      func(w *World, source *Entity, target *Entity, skill config.SkillConfig, tick uint64, tickRate int)
+	ExplorerWAttach   func(w *World, source *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64, tickRate int)
+	ExplorerEDamage   func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int
+	ExplorerEHit      func(w *World, source *Entity, target *Entity, skill config.SkillConfig, tick uint64, tickRate int)
+	ExplorerRDamage   func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int
+	ExplorerRHit      func(w *World, source *Entity, target *Entity, skill config.SkillConfig, tick uint64, tickRate int)
 	NinjaQDamage      func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, hitNumber int, tick uint64) int
 	NinjaSkillHit     func(w *World, source *Entity, target *Entity, skillID string, groupID string, fromShadow bool, tick uint64, tickRate int)
 
@@ -118,6 +127,12 @@ func (w *World) onHeroBasicHit(source *Entity, target *Entity, tick uint64, tick
 
 func (w *World) onHeroDamage(source *Entity, target *Entity, context sustainContext, tick uint64, tickRate int) {
 	if h := heroHooksForEntity(source).OnDamage; h != nil {
+		h(w, source, target, context.BasicAttack, context.Pet, context.SkipBerserkerBleed, tick, tickRate)
+	}
+}
+
+func (w *World) onHeroDamaged(source *Entity, target *Entity, context sustainContext, tick uint64, tickRate int) {
+	if h := heroHooksForEntity(target).OnDamaged; h != nil {
 		h(w, source, target, context.BasicAttack, context.Pet, context.SkipBerserkerBleed, tick, tickRate)
 	}
 }
@@ -367,6 +382,58 @@ func (w *World) TankTargetsInCone(entity *Entity, direction Vector2, coneRange f
 
 func (w *World) TankPhysicalDamageAfterResistance(source *Entity, target *Entity, raw float64, tick uint64) int {
 	return physicalDamageAfterResistance(source, target, raw, tick)
+}
+
+func (w *World) robotQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	if h := heroHooksFor("robot").RobotQDamage; h != nil {
+		return h(w, attacker, target, skill, skillLevel, tick)
+	}
+	return 0
+}
+
+func (w *World) explorerQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	if h := heroHooksFor(explorerHeroID).ExplorerQDamage; h != nil {
+		return h(w, attacker, target, skill, skillLevel, tick)
+	}
+	return 0
+}
+
+func (w *World) explorerQHit(source *Entity, target *Entity, skill config.SkillConfig, tick uint64, tickRate int) {
+	if h := heroHooksFor(explorerHeroID).ExplorerQHit; h != nil {
+		h(w, source, target, skill, tick, tickRate)
+	}
+}
+
+func (w *World) explorerWAttach(source *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64, tickRate int) {
+	if h := heroHooksFor(explorerHeroID).ExplorerWAttach; h != nil {
+		h(w, source, target, skill, skillLevel, tick, tickRate)
+	}
+}
+
+func (w *World) explorerEDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	if h := heroHooksFor(explorerHeroID).ExplorerEDamage; h != nil {
+		return h(w, attacker, target, skill, skillLevel, tick)
+	}
+	return 0
+}
+
+func (w *World) explorerEHit(source *Entity, target *Entity, skill config.SkillConfig, tick uint64, tickRate int) {
+	if h := heroHooksFor(explorerHeroID).ExplorerEHit; h != nil {
+		h(w, source, target, skill, tick, tickRate)
+	}
+}
+
+func (w *World) explorerRDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	if h := heroHooksFor(explorerHeroID).ExplorerRDamage; h != nil {
+		return h(w, attacker, target, skill, skillLevel, tick)
+	}
+	return 0
+}
+
+func (w *World) explorerRHit(source *Entity, target *Entity, skill config.SkillConfig, tick uint64, tickRate int) {
+	if h := heroHooksFor(explorerHeroID).ExplorerRHit; h != nil {
+		h(w, source, target, skill, tick, tickRate)
+	}
 }
 
 func (w *World) startTankRDash(entity *Entity, targetPoint Vector2, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) {

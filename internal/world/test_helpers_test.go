@@ -109,7 +109,7 @@ func tickSwordQRelease(t *testing.T, w *World, entity *Entity, tickRate int) uin
 	releaseTick := entity.Sword.QReleaseTick
 	w.Tick(releaseTick, tickRate)
 	if entity.Sword.QPending {
-		t.Fatalf("sword q still pending after release tick %d", releaseTick)
+		t.Fatalf("sword q still pending after release tick %v", releaseTick)
 	}
 	return releaseTick
 }
@@ -122,7 +122,7 @@ func tickAttackRelease(t *testing.T, w *World, entity *Entity, tickRate int) uin
 	releaseTick := entity.Combat.AttackReleaseTick
 	w.Tick(releaseTick, tickRate)
 	if entity.Combat.PendingAttackTargetID != "" {
-		t.Fatalf("basic attack still pending after release tick %d", releaseTick)
+		t.Fatalf("basic attack still pending after release tick %v", releaseTick)
 	}
 	return releaseTick
 }
@@ -135,7 +135,7 @@ func tickUntilDamage(t *testing.T, w *World, entity *Entity, from uint64, to uin
 			return
 		}
 	}
-	t.Fatalf("entity %s was not damaged by tick %d", entity.ID, to)
+	t.Fatalf("entity %s was not damaged by tick %v", entity.ID, to)
 }
 
 func countProjectilesByKind(w *World, kind string) int {
@@ -146,6 +146,15 @@ func countProjectilesByKind(w *World, kind string) int {
 		}
 	}
 	return count
+}
+
+func projectileByKind(w *World, kind string) *Projectile {
+	for _, projectile := range w.projectiles {
+		if projectile.Kind == kind {
+			return projectile
+		}
+	}
+	return nil
 }
 
 func placeEntity(entity *Entity, x float64, y float64) {

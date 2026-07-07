@@ -17,7 +17,7 @@ func (w *World) applyEquipmentLevelUpRestore(entity *Entity) {
 			continue
 		}
 		if item.Effects.LevelUpRestoreHPRatio > 0 {
-			entity.Stats.HP += int(math.Floor(float64(entity.Stats.MaxHP) * item.Effects.LevelUpRestoreHPRatio))
+			entity.Stats.HP += entity.Stats.MaxHP * item.Effects.LevelUpRestoreHPRatio
 			if entity.Stats.HP > entity.Stats.MaxHP {
 				entity.Stats.HP = entity.Stats.MaxHP
 			}

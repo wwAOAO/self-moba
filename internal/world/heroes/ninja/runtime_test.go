@@ -178,14 +178,14 @@ func TestWMovingShadowDelaysCopiedE(t *testing.T) {
 	CastE(w, source, protocol.CastInput{}, source.Skills[eID], eSkill(), 12, 20)
 
 	if bodyTarget.Stats.HP != 923 {
-		t.Fatalf("body e hp = %d, want 923", bodyTarget.Stats.HP)
+		t.Fatalf("body e hp = %f, want 923", bodyTarget.Stats.HP)
 	}
 	if shadowTarget.Stats.HP != 1000 {
-		t.Fatalf("moving shadow should not e yet, hp = %d", shadowTarget.Stats.HP)
+		t.Fatalf("moving shadow should not e yet, hp = %f", shadowTarget.Stats.HP)
 	}
 	Tick(w, source, 15, 20)
 	if shadowTarget.Stats.HP != 923 {
-		t.Fatalf("delayed shadow e hp = %d, want 923", shadowTarget.Stats.HP)
+		t.Fatalf("delayed shadow e hp = %f, want 923", shadowTarget.Stats.HP)
 	}
 }
 
@@ -244,7 +244,7 @@ func TestEDamagesOnceSlowsRefundsAndReducesWCooldown(t *testing.T) {
 		t.Fatalf("mp after e cost and refund = %f, want 95", source.Stats.MP)
 	}
 	if both.Stats.HP != 900 || shadowOnly.Stats.HP != 900 {
-		t.Fatalf("hp after e both=%d shadow=%d, want 900/900", both.Stats.HP, shadowOnly.Stats.HP)
+		t.Fatalf("hp after e both=%f shadow=%f, want 900/900", both.Stats.HP, shadowOnly.Stats.HP)
 	}
 	if both.Control.MoveSpeedSlow != 0.375 || shadowOnly.Control.MoveSpeedSlow != 0.25 {
 		t.Fatalf("slows both=%f shadow=%f", both.Control.MoveSpeedSlow, shadowOnly.Control.MoveSpeedSlow)
@@ -327,7 +327,7 @@ func TestRWindupDashMarkDamageAndRecast(t *testing.T) {
 	target.Control.UntargetableUntilTick = 200
 	Tick(w, source, 89, 20)
 	if target.Stats.HP != 760 {
-		t.Fatalf("target hp after mark = %d, want 760", target.Stats.HP)
+		t.Fatalf("target hp after mark = %f, want 760", target.Stats.HP)
 	}
 	if source.Ninja.RMarkTargetID != "" || source.Ninja.RMarkDamage != 0 {
 		t.Fatalf("mark state not cleared: %+v", source.Ninja)

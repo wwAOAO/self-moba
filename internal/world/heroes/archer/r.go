@@ -43,6 +43,7 @@ func ReleaseR(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 	if dx == 0 && dy == 0 {
 		dx = 1
 	}
+	projectileRange := w.MapExitRange(entity.Position, world.Vector2{X: dx, Y: dy})
 	minSpeed := skillMeta(skill, "projectileMinSpeed", 1500)
 	maxSpeed := skillMeta(skill, "projectileMaxSpeed", 2100)
 	speedPerTick := minSpeed
@@ -61,11 +62,11 @@ func ReleaseR(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 		SpeedPerTick: speedPerTick,
 		SpeedMin:     minSpeed,
 		SpeedMax:     maxSpeed,
-		Range:        skillRange(skill, world.DefaultMapWidth),
+		Range:        projectileRange,
 		Radius:       skillMeta(skill, "projectileRadius", 28),
 		Damage:       level,
 		CreatedAt:    tick,
-		ExpiresAt:    tick + secondsToTicks(skillRange(skill, world.DefaultMapWidth)/minSpeed+0.5, tickRate),
+		ExpiresAt:    tick + secondsToTicks(projectileRange/minSpeed+0.5, tickRate),
 		HitIDs:       make(map[string]bool),
 	})
 }

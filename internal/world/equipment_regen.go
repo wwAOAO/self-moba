@@ -1,7 +1,5 @@
 package world
 
-import "math"
-
 func (w *World) tickEquipmentPercentRegen(entity *Entity, tick uint64, tickRate int) {
 	if entity == nil || entity.Kind != EntityKindPlayer || entity.Stats.HP <= 0 || tickRate <= 0 || tick%uint64(5*tickRate) != 0 || w.equipment == nil {
 		return
@@ -9,7 +7,7 @@ func (w *World) tickEquipmentPercentRegen(entity *Entity, tick uint64, tickRate 
 	beforeHP := entity.Stats.HP
 	hpRatio, mpRatio := w.equipmentPercentRegenRatios(entity, tick, tickRate)
 	if hpRatio > 0 && entity.Stats.HP < entity.Stats.MaxHP {
-		entity.Stats.HP += int(math.Floor(float64(entity.Stats.MaxHP) * hpRatio))
+		entity.Stats.HP += entity.Stats.MaxHP * hpRatio
 		if entity.Stats.HP > entity.Stats.MaxHP {
 			entity.Stats.HP = entity.Stats.MaxHP
 		}

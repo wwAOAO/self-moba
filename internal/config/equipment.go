@@ -19,7 +19,7 @@ type EquipmentConfig struct {
 }
 
 type EquipmentStats struct {
-	HP               int     `json:"hp,omitempty"`
+	HP               float64 `json:"hp,omitempty"`
 	MP               float64 `json:"mp,omitempty"`
 	HPRegen5         float64 `json:"hpRegen5,omitempty"`
 	MPRegen5         float64 `json:"mpRegen5,omitempty"`

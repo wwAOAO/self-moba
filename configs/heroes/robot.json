@@ -1,0 +1,44 @@
+[
+  {
+    "heroId": "robot",
+    "name": "Robot",
+    "resource": "mp",
+    "base": {
+      "hp": 582.6,
+      "mp": 267.2,
+      "hpRegen5": 8.51,
+      "mpRegen5": 8.5,
+      "attack": 61.54,
+      "abilityHaste": 0,
+      "physicalDefense": 37,
+      "magicDefense": 32.1,
+      "moveSpeed": 325,
+      "attackRange": 125,
+      "attackSpeed": 0.625,
+      "attackWindupSeconds": 0.25,
+      "attackSpeedRatio": 0.7,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 95,
+      "mp": 40,
+      "hpRegen5": 0.75,
+      "mpRegen5": 0.8,
+      "attack": 3.5,
+      "physicalDefense": 3.5,
+      "magicDefense": 1.25,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.0113,
+      "critChance": 0
+    },
+    "radius": 18,
+    "skills": {
+      "passive": "robot_passive",
+      "q": "robot_q",
+      "w": "robot_w",
+      "e": "robot_e",
+      "r": "robot_r"
+    }
+  }
+]

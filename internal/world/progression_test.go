@@ -17,8 +17,8 @@ func TestHeroStatsAtMaxLevelUseGrowth(t *testing.T) {
 	steps := MaxHeroLevel - MinHeroLevel
 	stepValue := float64(steps)
 
-	if stats.MaxHP != hero.Base.HP+hero.Growth.HP*steps {
-		t.Fatalf("max hp = %d", stats.MaxHP)
+	if stats.MaxHP != hero.Base.HP+hero.Growth.HP*stepValue {
+		t.Fatalf("max hp = %f", stats.MaxHP)
 	}
 	if stats.Attack != hero.Base.Attack+hero.Growth.Attack*stepValue {
 		t.Fatalf("attack = %f", stats.Attack)
@@ -54,10 +54,10 @@ func TestHeroStatsLevelIsClamped(t *testing.T) {
 	high := heroStatsAtLevel(hero, 99)
 
 	if low.MaxHP != hero.Base.HP {
-		t.Fatalf("low level max hp = %d", low.MaxHP)
+		t.Fatalf("low level max hp = %f", low.MaxHP)
 	}
-	if high.MaxHP != hero.Base.HP+hero.Growth.HP*(MaxHeroLevel-MinHeroLevel) {
-		t.Fatalf("high level max hp = %d", high.MaxHP)
+	if high.MaxHP != hero.Base.HP+hero.Growth.HP*float64(MaxHeroLevel-MinHeroLevel) {
+		t.Fatalf("high level max hp = %f", high.MaxHP)
 	}
 }
 
@@ -250,7 +250,7 @@ func TestExperienceLevelsUpAndRecalculatesStats(t *testing.T) {
 	w.addExperience(player, 280)
 
 	if player.Level != 2 {
-		t.Fatalf("level = %d, want 2", player.Level)
+		t.Fatalf("level = %v, want 2", player.Level)
 	}
 	if player.Exp != 0 {
 		t.Fatalf("exp = %f, want 0", player.Exp)
@@ -259,10 +259,10 @@ func TestExperienceLevelsUpAndRecalculatesStats(t *testing.T) {
 		t.Fatalf("next level exp = %f, want 340", player.NextLevelExp)
 	}
 	if player.Stats.MaxHP <= startMaxHP {
-		t.Fatalf("max hp did not grow: got %d start %d", player.Stats.MaxHP, startMaxHP)
+		t.Fatalf("max hp did not grow: got %v start %v", player.Stats.MaxHP, startMaxHP)
 	}
 	if player.SkillPoints != 2 {
-		t.Fatalf("skill points = %d, want 2", player.SkillPoints)
+		t.Fatalf("skill points = %v, want 2", player.SkillPoints)
 	}
 }
 
@@ -285,13 +285,13 @@ func TestUpgradeSkillUsesSkillPointAndCapsBySlot(t *testing.T) {
 	}
 
 	if player.Skills[swordQSkillID].Level != MaxBasicSkillLevel {
-		t.Fatalf("q level = %d, want %d", player.Skills[swordQSkillID].Level, MaxBasicSkillLevel)
+		t.Fatalf("q level = %v, want %v", player.Skills[swordQSkillID].Level, MaxBasicSkillLevel)
 	}
 	if player.Skills[swordRSkillID].Level != MaxUltSkillLevel {
-		t.Fatalf("r level = %d, want %d", player.Skills[swordRSkillID].Level, MaxUltSkillLevel)
+		t.Fatalf("r level = %v, want %v", player.Skills[swordRSkillID].Level, MaxUltSkillLevel)
 	}
 	if player.SkillPoints != 2 {
-		t.Fatalf("skill points = %d, want 2", player.SkillPoints)
+		t.Fatalf("skill points = %v, want 2", player.SkillPoints)
 	}
 }
 
@@ -307,19 +307,19 @@ func TestUpgradeUltimateRequiresHeroLevels(t *testing.T) {
 	player.Level = 5
 	w.ApplyInput("p1", protocolPlayerInputUpgrade("r"), 1, nil, 20)
 	if player.Skills[swordRSkillID].Level != 0 || player.SkillPoints != 10 {
-		t.Fatalf("r at level 5 = %d points %d, want 0/10", player.Skills[swordRSkillID].Level, player.SkillPoints)
+		t.Fatalf("r at level 5 = %v points %v, want 0/10", player.Skills[swordRSkillID].Level, player.SkillPoints)
 	}
 
 	player.Level = 6
 	w.ApplyInput("p1", protocolPlayerInputUpgrade("r"), 2, nil, 20)
 	if player.Skills[swordRSkillID].Level != 1 || player.SkillPoints != 9 {
-		t.Fatalf("r at level 6 = %d points %d, want 1/9", player.Skills[swordRSkillID].Level, player.SkillPoints)
+		t.Fatalf("r at level 6 = %v points %v, want 1/9", player.Skills[swordRSkillID].Level, player.SkillPoints)
 	}
 
 	player.Level = 10
 	w.ApplyInput("p1", protocolPlayerInputUpgrade("r"), 3, nil, 20)
 	if player.Skills[swordRSkillID].Level != 1 || player.SkillPoints != 9 {
-		t.Fatalf("r at level 10 = %d points %d, want 1/9", player.Skills[swordRSkillID].Level, player.SkillPoints)
+		t.Fatalf("r at level 10 = %v points %v, want 1/9", player.Skills[swordRSkillID].Level, player.SkillPoints)
 	}
 
 	player.Level = 11
@@ -327,13 +327,13 @@ func TestUpgradeUltimateRequiresHeroLevels(t *testing.T) {
 	player.Level = 15
 	w.ApplyInput("p1", protocolPlayerInputUpgrade("r"), 5, nil, 20)
 	if player.Skills[swordRSkillID].Level != 2 || player.SkillPoints != 8 {
-		t.Fatalf("r before level 16 = %d points %d, want 2/8", player.Skills[swordRSkillID].Level, player.SkillPoints)
+		t.Fatalf("r before level 16 = %v points %v, want 2/8", player.Skills[swordRSkillID].Level, player.SkillPoints)
 	}
 
 	player.Level = 16
 	w.ApplyInput("p1", protocolPlayerInputUpgrade("r"), 6, nil, 20)
 	if player.Skills[swordRSkillID].Level != 3 || player.SkillPoints != 7 {
-		t.Fatalf("r at level 16 = %d points %d, want 3/7", player.Skills[swordRSkillID].Level, player.SkillPoints)
+		t.Fatalf("r at level 16 = %v points %v, want 3/7", player.Skills[swordRSkillID].Level, player.SkillPoints)
 	}
 }
 
@@ -349,10 +349,10 @@ func TestUpgradeSkillWorksWhileActionLocked(t *testing.T) {
 	w.ApplyInput("p1", protocolPlayerInputUpgrade("q"), 1, nil, 20)
 
 	if player.Skills[swordQSkillID].Level != 1 {
-		t.Fatalf("q level = %d, want 1", player.Skills[swordQSkillID].Level)
+		t.Fatalf("q level = %v, want 1", player.Skills[swordQSkillID].Level)
 	}
 	if player.SkillPoints != 0 {
-		t.Fatalf("skill points = %d, want 0", player.SkillPoints)
+		t.Fatalf("skill points = %v, want 0", player.SkillPoints)
 	}
 }
 
@@ -365,19 +365,19 @@ func TestDebugLevelUpRaisesHeroAndGrantsSkillPoint(t *testing.T) {
 	w.ApplyInput("p1", protocolPlayerInputDebugLevelUp(), 1, nil, 20)
 
 	if player.Level != 2 {
-		t.Fatalf("level = %d, want 2", player.Level)
+		t.Fatalf("level = %v, want 2", player.Level)
 	}
 	if player.SkillPoints != 2 {
-		t.Fatalf("skill points = %d, want 2", player.SkillPoints)
+		t.Fatalf("skill points = %v, want 2", player.SkillPoints)
 	}
 	player.Level = MaxHeroLevel
 	player.SkillPoints = 0
 	w.ApplyInput("p1", protocolPlayerInputDebugLevelUp(), 2, nil, 20)
 	if player.Level != MaxHeroLevel {
-		t.Fatalf("level = %d, want max %d", player.Level, MaxHeroLevel)
+		t.Fatalf("level = %v, want max %v", player.Level, MaxHeroLevel)
 	}
 	if player.SkillPoints != 0 {
-		t.Fatalf("skill points = %d, want unchanged 0", player.SkillPoints)
+		t.Fatalf("skill points = %v, want unchanged 0", player.SkillPoints)
 	}
 }
 
@@ -410,7 +410,7 @@ func TestSpawnObjectEnemyHeroHasLevelRewardData(t *testing.T) {
 		t.Fatalf("spawned enemy hero %s not found", id)
 	}
 	if entity.Level != MinHeroLevel {
-		t.Fatalf("enemy hero level = %d, want %d", entity.Level, MinHeroLevel)
+		t.Fatalf("enemy hero level = %v, want %v", entity.Level, MinHeroLevel)
 	}
 	if entity.NextLevelExp != 280 {
 		t.Fatalf("enemy hero next level exp = %f, want 280", entity.NextLevelExp)

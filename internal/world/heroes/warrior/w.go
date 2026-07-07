@@ -25,7 +25,7 @@ func ApplyW(w *world.World, entity *world.Entity, state world.SkillState, skill 
 
 func warriorWShieldValue(entity *world.Entity, skill config.SkillConfig, skillLevel int) int {
 	baseShield := skillList(skill, "shieldValue", skillLevel, []float64{70, 95, 120, 145, 170})
-	return int(math.Round(baseShield + float64(entity.Stats.BonusHP)*skillMeta(skill, "bonusHealthRatio", 0.2)))
+	return int(math.Round(baseShield + entity.Stats.BonusHP*skillMeta(skill, "bonusHealthRatio", 0.2)))
 }
 
 func ApplyWPassiveKill(w *world.World, killer *world.Entity, target *world.Entity) {

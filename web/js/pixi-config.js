@@ -199,6 +199,9 @@ function heroDisplayName(hero) {
     blade: "刀客",
     berserker: "狂战士",
     ninja: "忍者",
+    frostmage: "冰霜法师",
+    robot: "机器人",
+    explorer: "探险者",
   };
   return names[hero.heroId] || hero.name || hero.heroId;
 }

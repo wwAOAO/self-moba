@@ -48,6 +48,18 @@
       drawBasicArrowEffect(effect, frame);
       continue;
     }
+    if (effect.kind === "robot_q") {
+      drawRobotHookProjectile(effect, frame);
+      continue;
+    }
+    if (effect.kind === "robot_q_pull") {
+      drawRobotHookPullEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "robot_r") {
+      drawRobotRRangeEffect(effect, frame);
+      continue;
+    }
     if (effect.kind === "gunner_q") {
       drawGunnerQEffect(effect, frame);
       continue;
@@ -58,6 +70,22 @@
     }
     if (effect.kind === "gunner_e") {
       drawGunnerEEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "explorer_q") {
+      drawExplorerQEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "explorer_w") {
+      drawExplorerWEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "explorer_e") {
+      drawExplorerEEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "explorer_r") {
+      drawExplorerREffect(effect, frame);
       continue;
     }
     if (effect.kind === "archer_volley_arrow") {
@@ -242,6 +270,10 @@ function drawBasicArrowEffect(effect, frame) {
     drawMageBasicStarEffect(effect, frame);
     return;
   }
+  if (effect.sourceHeroId === "explorer") {
+    drawExplorerBasicEffect(effect, frame);
+    return;
+  }
   if (!effect.sourceHeroId) {
     drawMinionBasicProjectile(effect, frame);
     return;
@@ -327,6 +359,197 @@ function drawGunnerEEffect(effect, frame) {
   skillLayer.fill({ color: 0x38bdf8, alpha: 0.08 * alpha });
   skillLayer.circle(x, y, radius);
   skillLayer.stroke({ color: 0x0ea5e9, width: 3, alpha: 0.78 * alpha });
+}
+
+function drawExplorerBasicEffect(effect, frame) {
+  drawExplorerBoltEffect(effect, frame, 0x7dd3fc, 0xfef3c7, 0.68);
+}
+
+function drawExplorerQEffect(effect, frame) {
+  drawExplorerBoltEffect(effect, frame, 0x38bdf8, 0xffffff, 0.92);
+}
+
+function drawExplorerWEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(10, (effect.radius || 80) * frame.scale * 0.45);
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const tail = radius * 2.6;
+  skillLayer.moveTo(x - Math.cos(angle) * tail, y - Math.sin(angle) * tail);
+  skillLayer.lineTo(x, y);
+  skillLayer.stroke({ color: 0x60a5fa, width: Math.max(3, radius * 0.45), alpha: 0.5 });
+  skillLayer.circle(x, y, radius * 1.35);
+  skillLayer.fill({ color: 0x2563eb, alpha: 0.22 });
+  skillLayer.circle(x, y, radius * 0.9);
+  skillLayer.fill({ color: 0x93c5fd, alpha: 0.72 });
+  skillLayer.circle(x, y, radius * 0.34);
+  skillLayer.fill({ color: 0xffffff, alpha: 0.92 });
+}
+
+function drawExplorerEEffect(effect, frame) {
+  drawExplorerBoltEffect(effect, frame, 0xfbbf24, 0xffffff, 0.95, 1.25);
+}
+
+function drawExplorerREffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const radius = Math.max(26, (effect.radius || 160) * frame.scale);
+  drawProjectileSweepArea(effect, frame, position, radius, 0x38bdf8, 0x0ea5e9);
+  drawExplorerMoonArcEffect(effect, frame, position, radius);
+}
+
+function drawExplorerMoonArcEffect(effect, frame, position, radius) {
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const outerRadius = Math.max(34, radius * 0.86);
+  const innerRadius = outerRadius * 0.82;
+  const outerX = x - forwardX * outerRadius * 0.18;
+  const outerY = y - forwardY * outerRadius * 0.18;
+  const innerX = x + forwardX * outerRadius * 0.3;
+  const innerY = y + forwardY * outerRadius * 0.3;
+  const spread = 1.22;
+  const steps = 18;
+
+  for (let i = 0; i <= steps; i += 1) {
+    const t = angle - spread + (spread * 2 * i) / steps;
+    const px = outerX + Math.cos(t) * outerRadius;
+    const py = outerY + Math.sin(t) * outerRadius;
+    if (i === 0) {
+      skillLayer.moveTo(px, py);
+    } else {
+      skillLayer.lineTo(px, py);
+    }
+  }
+  for (let i = steps; i >= 0; i -= 1) {
+    const t = angle - spread + (spread * 2 * i) / steps;
+    skillLayer.lineTo(innerX + Math.cos(t) * innerRadius, innerY + Math.sin(t) * innerRadius);
+  }
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xfef3c7, alpha: 0.78 });
+  skillLayer.stroke({ color: 0x38bdf8, width: Math.max(2, radius * 0.08), alpha: 0.86 });
+
+  skillLayer.moveTo(
+    outerX + Math.cos(angle - spread) * outerRadius,
+    outerY + Math.sin(angle - spread) * outerRadius,
+  );
+  skillLayer.arc(outerX, outerY, outerRadius, angle - spread, angle + spread);
+  skillLayer.stroke({ color: 0xffffff, width: Math.max(2, radius * 0.04), alpha: 0.92 });
+}
+
+function drawExplorerBoltEffect(effect, frame, shaftColor, headColor, alpha, scale = 1) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const length = Math.max(18, (effect.radius || 40) * frame.scale * 0.78 * scale);
+  const width = Math.max(5, length * 0.22);
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const sideX = -forwardY;
+  const sideY = forwardX;
+  skillLayer.moveTo(x - forwardX * length * 0.9, y - forwardY * length * 0.9);
+  skillLayer.lineTo(x + forwardX * length * 0.38, y + forwardY * length * 0.38);
+  skillLayer.stroke({ color: shaftColor, width, alpha: 0.34 * alpha });
+  skillLayer.moveTo(x - forwardX * length * 0.52, y - forwardY * length * 0.52);
+  skillLayer.lineTo(x + forwardX * length * 0.58, y + forwardY * length * 0.58);
+  skillLayer.stroke({ color: shaftColor, width: Math.max(2, width * 0.42), alpha: 0.9 * alpha });
+  skillLayer
+    .moveTo(x + forwardX * length * 0.78, y + forwardY * length * 0.78)
+    .lineTo(x - forwardX * length * 0.1 + sideX * width, y - forwardY * length * 0.1 + sideY * width)
+    .lineTo(x + forwardX * length * 0.1, y + forwardY * length * 0.1)
+    .lineTo(x - forwardX * length * 0.1 - sideX * width, y - forwardY * length * 0.1 - sideY * width)
+    .closePath();
+  skillLayer.fill({ color: headColor, alpha: 0.92 * alpha });
+  skillLayer.stroke({ color: shaftColor, width: 2, alpha: 0.78 * alpha });
+}
+
+function drawRobotHookProjectile(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const source = effectSourcePosition(effect) || { x: effect.x, y: effect.y };
+  drawRobotChain(source, position, frame, 0.72);
+  drawRobotHookHead(position, effect, frame);
+}
+
+function drawRobotHookPullEffect(effect, frame) {
+  const alpha = effectAlpha(effect);
+  const start = effectSourcePosition(effect) || { x: effect.x, y: effect.y };
+  const end = { x: effect.endX || effect.x, y: effect.endY || effect.y };
+  drawRobotChain(start, end, frame, 0.85 * alpha);
+  drawRobotHookHead(end, effect, frame, alpha);
+}
+
+function drawRobotChain(start, end, frame, alpha) {
+  const sx = frame.offsetX + start.x * frame.scale;
+  const sy = frame.offsetY + start.y * frame.scale;
+  const ex = frame.offsetX + end.x * frame.scale;
+  const ey = frame.offsetY + end.y * frame.scale;
+  const dx = ex - sx;
+  const dy = ey - sy;
+  const length = Math.hypot(dx, dy);
+  if (length < 1) {
+    return;
+  }
+  const ux = dx / length;
+  const uy = dy / length;
+  const nx = -uy;
+  const ny = ux;
+  skillLayer.moveTo(sx, sy);
+  skillLayer.lineTo(ex, ey);
+  skillLayer.stroke({ color: 0x94a3b8, width: 5, alpha: 0.28 * alpha });
+  const step = Math.max(10, 16 * frame.scale);
+  const link = Math.max(4, 5 * frame.scale);
+  for (let d = step; d < length - step * 0.5; d += step) {
+    const cx = sx + ux * d;
+    const cy = sy + uy * d;
+    skillLayer.moveTo(cx - nx * link, cy - ny * link);
+    skillLayer.lineTo(cx + nx * link, cy + ny * link);
+  }
+  skillLayer.stroke({ color: 0xe5e7eb, width: 2, alpha: 0.85 * alpha });
+}
+
+function drawRobotHookHead(position, effect, frame, alpha = 1) {
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const sideX = -forwardY;
+  const sideY = forwardX;
+  const size = Math.max(9, (effect.radius || 70) * frame.scale * 0.22);
+  const back = size * 0.65;
+  const tipX = x + forwardX * size;
+  const tipY = y + forwardY * size;
+  const baseX = x - forwardX * back;
+  const baseY = y - forwardY * back;
+  skillLayer.moveTo(tipX, tipY);
+  skillLayer.lineTo(baseX + sideX * size * 0.72, baseY + sideY * size * 0.72);
+  skillLayer.lineTo(baseX + sideX * size * 0.22, baseY + sideY * size * 0.1);
+  skillLayer.lineTo(baseX, baseY);
+  skillLayer.lineTo(baseX - sideX * size * 0.22, baseY - sideY * size * 0.1);
+  skillLayer.lineTo(baseX - sideX * size * 0.72, baseY - sideY * size * 0.72);
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xd1d5db, alpha: 0.96 * alpha });
+  skillLayer.stroke({ color: 0x475569, width: 2, alpha: 0.9 * alpha });
+  skillLayer.circle(x, y, size * 0.32);
+  skillLayer.fill({ color: 0x38bdf8, alpha: 0.72 * alpha });
+}
+
+function drawRobotRRangeEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = (effect.radius || effect.range || 600) * frame.scale;
+  const alpha = effectAlpha(effect);
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x38bdf8, alpha: 0.09 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0xe0f2fe, width: 5, alpha: 0.38 * alpha });
+  skillLayer.circle(x, y, radius * 0.72);
+  skillLayer.stroke({ color: 0x0ea5e9, width: 2, alpha: 0.68 * alpha });
+  skillLayer.circle(x, y, Math.max(10, radius * 0.08));
+  skillLayer.fill({ color: 0xf8fafc, alpha: 0.32 * alpha });
 }
 
 function drawMinionBasicProjectile(effect, frame) {
@@ -747,6 +970,18 @@ function distancePointToSegment(point, start, end) {
 
 function targetScreenRadius(target, frame) {
   return (target.radius || 18) * frame.scale;
+}
+
+function effectSourcePosition(effect) {
+  if (!effect?.sourceId) {
+    return null;
+  }
+  for (const player of state.players.values()) {
+    if (player.id === effect.sourceId) {
+      return player;
+    }
+  }
+  return state.units.get(effect.sourceId) || null;
 }
 
 function drawTripleArrowProjectile(effect, frame, shaftColor, headColor, options = {}) {

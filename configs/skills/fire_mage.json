@@ -1,0 +1,37 @@
+[
+  {
+    "skillId": "fire_mage_passive",
+    "name": "Fire Mage Passive",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive"
+  },
+  {
+    "skillId": "fire_mage_q",
+    "name": "Fire Mage Q",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "fire_mage_w",
+    "name": "Fire Mage W",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "fire_mage_e",
+    "name": "Fire Mage E",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  },
+  {
+    "skillId": "fire_mage_r",
+    "name": "Fire Mage R",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "placeholder"
+  }
+]

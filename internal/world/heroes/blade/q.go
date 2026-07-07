@@ -16,7 +16,7 @@ func ApplyQ(w *world.World, entity *world.Entity, _ protocol.CastInput, state wo
 		float64(entity.Stats.AbilityPower)*skillMeta(skill, "apRatio", 1.5) +
 		rage*skillList(skill, "healPerRage", state.Level, []float64{0.5, 0.95, 1.4, 1.85, 2.3})
 	entity.Stats.MP = 0
-	if heal := int(math.Round(healValue)); heal > 0 {
+	if heal := math.Round(healValue); heal > 0 {
 		entity.Stats.HP += heal
 		if entity.Stats.HP > entity.Stats.MaxHP {
 			entity.Stats.HP = entity.Stats.MaxHP

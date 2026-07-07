@@ -110,7 +110,7 @@ func TestDeadPlayerStaysInWorldAndRespawnsAfter20Seconds(t *testing.T) {
 		t.Fatal("target should respawn after 20 seconds")
 	}
 	if target.Stats.HP != target.Stats.MaxHP {
-		t.Fatalf("respawn hp = %d, want %d", target.Stats.HP, target.Stats.MaxHP)
+		t.Fatalf("respawn hp = %v, want %v", target.Stats.HP, target.Stats.MaxHP)
 	}
 	spawn := w.spawnPosition(TeamRed)
 	if target.Position != spawn {
@@ -133,8 +133,8 @@ func TestBaseRegenRestoresHPAndMPOverTime(t *testing.T) {
 		w.Tick(tick, 20)
 	}
 
-	if player.Stats.HP != player.Stats.MaxHP-10 {
-		t.Fatalf("hp after 5s regen = %d, want %d", player.Stats.HP, player.Stats.MaxHP-10)
+	if math.Abs(player.Stats.HP-(player.Stats.MaxHP-10)) > 0.000001 {
+		t.Fatalf("hp after 5s regen = %v, want %v", player.Stats.HP, player.Stats.MaxHP-10)
 	}
 	if math.Abs(player.Stats.MP-(player.Stats.MaxMP-15)) > 0.000001 {
 		t.Fatalf("mp after 5s regen = %f, want %f", player.Stats.MP, player.Stats.MaxMP-15)
@@ -167,7 +167,7 @@ func TestFountainRegeneratesFriendlyHero(t *testing.T) {
 	w.Tick(1, 20)
 
 	if player.Stats.HP != player.Stats.MaxHP-80 {
-		t.Fatalf("hp = %d, want %d", player.Stats.HP, player.Stats.MaxHP-80)
+		t.Fatalf("hp = %v, want %v", player.Stats.HP, player.Stats.MaxHP-80)
 	}
 	if player.Stats.MP != player.Stats.MaxMP-98 {
 		t.Fatalf("mp = %f, want %f", player.Stats.MP, player.Stats.MaxMP-98)
@@ -196,7 +196,7 @@ func TestEnemyInFountainRangeGetsShot(t *testing.T) {
 	}
 
 	if target.Stats.HP != startHP-250 {
-		t.Fatalf("target hp = %d, want %d", target.Stats.HP, startHP-250)
+		t.Fatalf("target hp = %v, want %v", target.Stats.HP, startHP-250)
 	}
 	if len(target.Combat.DamageEvents) != 3 {
 		t.Fatalf("damage events = %+v, want 3", target.Combat.DamageEvents)
@@ -277,24 +277,24 @@ func TestMinionWavesSpawnEvery30Seconds(t *testing.T) {
 
 	w.Tick(599, 20)
 	if got := countLaneMinions(w); got != 0 {
-		t.Fatalf("lane minions before 30s = %d, want 0", got)
+		t.Fatalf("lane minions before 30s = %v, want 0", got)
 	}
 	w.Tick(600, 20)
 	if got := countLaneMinions(w); got != 2 {
-		t.Fatalf("lane minions immediately after first wave starts = %d, want 2", got)
+		t.Fatalf("lane minions immediately after first wave starts = %v, want 2", got)
 	}
 	for tick := uint64(601); tick <= 700; tick++ {
 		w.Tick(tick, 20)
 	}
 	if got := countLaneMinions(w); got != 14 {
-		t.Fatalf("lane minions after first wave finishes = %d, want 14", got)
+		t.Fatalf("lane minions after first wave finishes = %v, want 14", got)
 	}
 	w.Tick(1200, 20)
 	for tick := uint64(1201); tick <= 1300; tick++ {
 		w.Tick(tick, 20)
 	}
 	if got := countLaneMinions(w); got != 28 {
-		t.Fatalf("lane minions after second wave = %d, want 28", got)
+		t.Fatalf("lane minions after second wave = %v, want 28", got)
 	}
 }
 
@@ -418,7 +418,7 @@ func TestLaneMinionAttacksEnemyOnRoute(t *testing.T) {
 	}
 
 	if red.Stats.HP >= red.Stats.MaxHP {
-		t.Fatalf("red minion hp = %d, want damaged", red.Stats.HP)
+		t.Fatalf("red minion hp = %v, want damaged", red.Stats.HP)
 	}
 }
 
@@ -469,7 +469,7 @@ func TestBaseRegenDoesNotExceedMaxHPOrMP(t *testing.T) {
 	}
 
 	if player.Stats.HP != player.Stats.MaxHP {
-		t.Fatalf("hp after regen = %d, want max %d", player.Stats.HP, player.Stats.MaxHP)
+		t.Fatalf("hp after regen = %v, want max %v", player.Stats.HP, player.Stats.MaxHP)
 	}
 	if player.Stats.MP != player.Stats.MaxMP {
 		t.Fatalf("mp after regen = %f, want max %f", player.Stats.MP, player.Stats.MaxMP)

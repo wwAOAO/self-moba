@@ -1,6 +1,10 @@
 package world
 
 func (w *World) resolveProjectileTargets(id string, source *Entity, projectile *Projectile, previousPosition Vector2, tick uint64, tickRate int) {
+	if projectile.SkillID == robotQSkillID {
+		w.resolveRobotQTarget(id, source, projectile, previousPosition, tick, tickRate)
+		return
+	}
 	removeProjectile := false
 	for _, target := range w.entities {
 		canHit, shouldRemove := w.projectileCanHitTarget(id, source, projectile, previousPosition, target, tick)
@@ -37,7 +41,10 @@ func (w *World) projectileCanHitTarget(id string, source *Entity, projectile *Pr
 	if projectile.SkillID == archerRSkillID && target.Kind != EntityKindPlayer && target.Kind != EntityKindEnemyHero {
 		return false, false
 	}
-	if (projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot") && target.ID != projectile.TargetID {
+	if projectile.SkillID == explorerWSkillID && !canAttachExplorerW(target) {
+		return false, false
+	}
+	if (projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == explorerESkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot") && target.ID != projectile.TargetID {
 		return false, false
 	}
 	if projectile.HitIDs[target.ID] || !canAttackTarget(source, target) {
@@ -77,6 +84,12 @@ func (w *World) projectileDamage(source *Entity, target *Entity, projectile *Pro
 		damage = w.gunnerQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, crit, tick)
 	} else if projectile.SkillID == gunnerRSkillID && source != nil {
 		damage = w.gunnerRDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+	} else if projectile.SkillID == explorerQSkillID && source != nil {
+		damage = w.explorerQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+	} else if projectile.SkillID == explorerESkillID && source != nil {
+		damage = w.explorerEDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+	} else if projectile.SkillID == explorerRSkillID && source != nil {
+		damage = w.explorerRDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
 	} else if projectile.SkillID == mageQSkillID && source != nil {
 		hitNumber := len(projectile.HitIDs)
 		multiplier := 1.0
@@ -106,6 +119,27 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 		removeProjectile = true
 	} else if projectile.SkillID == gunnerRSkillID {
 		w.applyAOEDamage(source, target, damage, "physical", tickRate)
+	} else if projectile.SkillID == explorerQSkillID {
+		w.applyBasicAttackDamage(source, target, damage, tickRate)
+		w.explorerQHit(source, target, w.skillConfig(projectile.SkillID), tick, tickRate)
+		w.onHeroSkillHit(source, target, tick, tickRate)
+		delete(w.projectiles, id)
+		removeProjectile = true
+	} else if projectile.SkillID == explorerWSkillID {
+		w.onHeroSkillHit(source, target, tick, tickRate)
+		w.explorerWAttach(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick, tickRate)
+		delete(w.projectiles, id)
+		removeProjectile = true
+	} else if projectile.SkillID == explorerESkillID {
+		w.applyMagicDamage(source, target, damage, tickRate)
+		w.explorerEHit(source, target, w.skillConfig(projectile.SkillID), tick, tickRate)
+		w.onHeroSkillHit(source, target, tick, tickRate)
+		delete(w.projectiles, id)
+		removeProjectile = true
+	} else if projectile.SkillID == explorerRSkillID {
+		w.applyMagicDamage(source, target, damage, tickRate)
+		w.explorerRHit(source, target, w.skillConfig(projectile.SkillID), tick, tickRate)
+		w.onHeroSkillHit(source, target, tick, tickRate)
 	} else if projectile.SkillID == mageQSkillID {
 		w.applyMagicDamage(source, target, damage, tickRate)
 		target.Control.RootedUntilTick = tick + controlTicksAfterTenacity(target, projectile.EffectTicks, tick)
@@ -183,9 +217,39 @@ func (w *World) resolveProjectileDummyHit(id string, source *Entity, target *Ent
 		}
 		return false
 	}
+	if projectile.SkillID == explorerQSkillID {
+		w.explorerQHit(source, target, w.skillConfig(projectile.SkillID), tick, tickRate)
+		w.onHeroSkillHit(source, target, tick, tickRate)
+		delete(w.projectiles, id)
+		return true
+	}
+	if projectile.SkillID == explorerWSkillID {
+		w.onHeroSkillHit(source, target, tick, tickRate)
+		w.explorerWAttach(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick, tickRate)
+		delete(w.projectiles, id)
+		return true
+	}
+	if projectile.SkillID == explorerESkillID {
+		w.explorerEHit(source, target, w.skillConfig(projectile.SkillID), tick, tickRate)
+		w.onHeroSkillHit(source, target, tick, tickRate)
+		delete(w.projectiles, id)
+		return true
+	}
+	if projectile.SkillID == explorerRSkillID {
+		w.explorerRHit(source, target, w.skillConfig(projectile.SkillID), tick, tickRate)
+		w.onHeroSkillHit(source, target, tick, tickRate)
+		return false
+	}
 	if projectile.SkillID == archerRSkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" || projectile.SkillID == archerWSkillID {
 		delete(w.projectiles, id)
 		return true
 	}
 	return false
+}
+
+func canAttachExplorerW(target *Entity) bool {
+	if target == nil {
+		return false
+	}
+	return IsHeroUnit(target) || target.Kind == EntityKindTower || target.Kind == EntityKindBarracks || target.Kind == EntityKindCrystal || target.Kind == EntityKindBaronNashor
 }

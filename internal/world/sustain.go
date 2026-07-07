@@ -36,7 +36,7 @@ func (w *World) applySustain(source *Entity, actualDamage int, context sustainCo
 	if heal <= 0 {
 		return
 	}
-	source.Stats.HP += heal
+	source.Stats.HP += float64(heal)
 	if source.Stats.HP > source.Stats.MaxHP {
 		source.Stats.HP = source.Stats.MaxHP
 	}

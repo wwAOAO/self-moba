@@ -346,7 +346,7 @@ func (w *World) tickFountainForTarget(target *Entity, tick uint64, tickRate int)
 		return
 	}
 	beforeHP := target.Stats.HP
-	target.Stats.HP += int(math.Floor(float64(target.Stats.MaxHP) * fountainRegenRatio))
+	target.Stats.HP += target.Stats.MaxHP * fountainRegenRatio
 	if target.Stats.HP > target.Stats.MaxHP {
 		target.Stats.HP = target.Stats.MaxHP
 	}

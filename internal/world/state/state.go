@@ -49,9 +49,9 @@ type EquipmentSlot struct {
 }
 
 type Stats struct {
-	HP                   int
-	MaxHP                int
-	BonusHP              int
+	HP                   float64
+	MaxHP                float64
+	BonusHP              float64
 	MP                   float64
 	MaxMP                float64
 	HPRegen5             float64
@@ -138,7 +138,7 @@ type ControlState struct {
 	AttackDamageReduction   float64
 	AttackDamageReduceUntil uint64
 	UndyingRageUntil        uint64
-	UndyingRageMinHP        int
+	UndyingRageMinHP        float64
 	RootedUntilTick         uint64
 	AttackSpeedSlow         float64
 	AttackSpeedSlowUntil    uint64
@@ -310,6 +310,34 @@ type PassiveState struct {
 	GunnerRWaves       int
 	GunnerRWaveCount   int
 	GunnerREffectID    string
+	RobotShieldUntil   uint64
+	RobotShieldCDUntil uint64
+	RobotShieldMana    int
+	RobotQPending      bool
+	RobotQReleaseTick  uint64
+	RobotQTarget       geom.Vector2
+	RobotQLevel        int
+	RobotWStartTick    uint64
+	RobotWUntil        uint64
+	RobotWLevel        int
+	RobotWMoveSpeed    float64
+	RobotArcMarks      map[string]RobotArcState
+	ExplorerSpellForce []uint64
+	ExplorerFluxMarks  map[string]ExplorerFluxState
+	ExplorerQPending   bool
+	ExplorerQRelease   uint64
+	ExplorerQTarget    geom.Vector2
+	ExplorerQLevel     int
+	ExplorerWTarget    geom.Vector2
+	ExplorerWLevel     int
+	ExplorerEPending   bool
+	ExplorerERelease   uint64
+	ExplorerETarget    geom.Vector2
+	ExplorerELevel     int
+	ExplorerRPending   bool
+	ExplorerRRelease   uint64
+	ExplorerRTarget    geom.Vector2
+	ExplorerRLevel     int
 	NinjaSoulCooldowns map[string]uint64
 	Shield             int
 	MaxShield          int
@@ -326,6 +354,16 @@ type BleedState struct {
 	ExpiresAtTick uint64
 	NextTick      uint64
 	Remainder     float64
+}
+
+type RobotArcState struct {
+	Stacks      int
+	TriggerTick uint64
+}
+
+type ExplorerFluxState struct {
+	Level     int
+	ExpiresAt uint64
 }
 
 type ShieldLayer struct {

@@ -100,7 +100,7 @@ func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64
 }
 
 func isRangedBasicAttacker(attacker *Entity) bool {
-	return attacker != nil && (attacker.HeroID == archerHeroID || attacker.HeroID == mageHeroID || attacker.HeroID == gunnerHeroID || attacker.Kind == EntityKindRangedMinion || attacker.Kind == EntityKindSiegeMinion)
+	return attacker != nil && (attacker.HeroID == archerHeroID || attacker.HeroID == mageHeroID || attacker.HeroID == gunnerHeroID || attacker.HeroID == explorerHeroID || attacker.HeroID == frostmageHeroID || attacker.HeroID == fireMageHeroID || attacker.Kind == EntityKindRangedMinion || attacker.Kind == EntityKindSiegeMinion)
 }
 
 func canBasicAttack(entity *Entity) bool {
@@ -192,7 +192,7 @@ func minionBasicAttackRawDamage(attacker *Entity, target *Entity, rawPhysical fl
 		} else if attacker.Kind == EntityKindSiegeMinion {
 			ratio = 0.05
 		}
-		rawPhysical += float64(target.Stats.HP) * ratio
+		rawPhysical += target.Stats.HP * ratio
 	}
 	return rawPhysical
 }

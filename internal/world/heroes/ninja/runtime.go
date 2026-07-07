@@ -717,7 +717,7 @@ func passiveRawDamage(attacker *world.Entity, target *world.Entity, skill config
 		}
 		attacker.Passive.NinjaSoulCooldowns[target.ID] = tick + secondsToTicks(skillMeta(skill, "heroCooldownSeconds", 10), tickRate)
 	}
-	rawDamage := float64(target.Stats.MaxHP) * skillCurve(skill, "maxHPRatio", "maxHPRatioLevels", attacker.Level, 0.05)
+	rawDamage := target.Stats.MaxHP * skillCurve(skill, "maxHPRatio", "maxHPRatioLevels", attacker.Level, 0.05)
 	if world.IsMonster(target) {
 		rawDamage *= skillMeta(skill, "monsterDamageMultiplier", 0.75)
 		if target.Kind == world.EntityKindBaronNashor {

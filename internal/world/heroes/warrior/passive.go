@@ -26,11 +26,11 @@ func TickToughness(w *world.World, entity *world.Entity, tick uint64, tickRate i
 		return
 	}
 	ratio := ToughnessRegenRatio(entity.Level, skill)
-	heal := int(math.Round(float64(entity.Stats.MaxHP) * ratio))
+	heal := int(math.Round(entity.Stats.MaxHP * ratio))
 	if heal < 1 {
 		heal = 1
 	}
-	entity.Stats.HP += heal
+	entity.Stats.HP += float64(heal)
 	if entity.Stats.HP > entity.Stats.MaxHP {
 		entity.Stats.HP = entity.Stats.MaxHP
 	}

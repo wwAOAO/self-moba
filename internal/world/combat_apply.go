@@ -54,16 +54,16 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 		return
 	}
 	beforeHP := target.Stats.HP
-	sourceBeforeHP := 0
+	sourceBeforeHP := 0.0
 	if source != nil {
 		sourceBeforeHP = source.Stats.HP
 	}
-	target.Stats.HP -= damage
+	target.Stats.HP -= float64(damage)
 	minHP := undyingRageMinHP(target, target.Combat.LastHitTick)
 	if target.Stats.HP < minHP {
 		target.Stats.HP = minHP
 	}
-	actualDamage := beforeHP - target.Stats.HP
+	actualDamage := int(math.Round(beforeHP - target.Stats.HP))
 	target.Combat.LastDamage = actualDamage
 	if len(target.Combat.DamageEvents) > 0 {
 		target.Combat.DamageEvents[len(target.Combat.DamageEvents)-1].Damage = actualDamage
@@ -83,6 +83,7 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 	}
 	w.applySustain(source, actualDamage, context)
 	w.onHeroDamage(source, target, context, target.Combat.LastHitTick, tickRate)
+	w.onHeroDamaged(source, target, context, target.Combat.LastHitTick, tickRate)
 	w.refreshPlayerStatsAfterHPChange(source, sourceBeforeHP)
 	if damageType == "physical" {
 		w.triggerEquipmentPhysicalDamageEffects(source, target, actualDamage, target.Combat.LastHitTick, tickRate)
@@ -94,7 +95,7 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 	w.refreshPlayerStatsAfterHPChange(target, beforeHP)
 }
 
-func undyingRageMinHP(target *Entity, tick uint64) int {
+func undyingRageMinHP(target *Entity, tick uint64) float64 {
 	if target == nil || target.Control.UndyingRageUntil == 0 || tick >= target.Control.UndyingRageUntil {
 		return 0
 	}

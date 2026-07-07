@@ -22,7 +22,7 @@ func (w *World) triggerEquipmentLowHealthShield(target *Entity, tickRate int) {
 		if threshold <= 0 {
 			threshold = 0.3
 		}
-		if float64(target.Stats.HP)/float64(target.Stats.MaxHP) > threshold {
+		if target.Stats.HP/target.Stats.MaxHP > threshold {
 			continue
 		}
 		shield := equipmentShieldByLevel(target.Level, equipped.LowHealthShieldMin, equipped.LowHealthShieldMax)
@@ -79,7 +79,7 @@ func (w *World) triggerEquipmentHeroHitHeal(source *Entity, target *Entity) {
 	if heal <= 0 || target.Stats.HP <= 0 {
 		return
 	}
-	target.Stats.HP += heal
+	target.Stats.HP += float64(heal)
 	if target.Stats.HP > target.Stats.MaxHP {
 		target.Stats.HP = target.Stats.MaxHP
 	}

@@ -56,6 +56,6 @@ func RefreshGraniteMax(w *world.World, entity *world.Entity) {
 	}
 }
 
-func graniteShieldValue(maxHP int, skill config.SkillConfig) int {
-	return int(math.Round(float64(maxHP) * skillMeta(skill, "shieldMaxHPRatio", 0.1)))
+func graniteShieldValue(maxHP float64, skill config.SkillConfig) int {
+	return int(math.Round(maxHP * skillMeta(skill, "shieldMaxHPRatio", 0.1)))
 }

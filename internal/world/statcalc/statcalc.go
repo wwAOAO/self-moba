@@ -10,8 +10,8 @@ func HeroStatsAtLevel(hero config.HeroConfig, level int, minLevel int, maxLevel 
 	level = formula.ClampInt(level, minLevel, maxLevel)
 	growthSteps := level - minLevel
 	growthStepValue := float64(growthSteps)
-	bonusHP := hero.Base.BonusHP + hero.Growth.BonusHP*growthSteps
-	hp := hero.Base.HP + hero.Growth.HP*growthSteps + bonusHP
+	bonusHP := hero.Base.BonusHP + hero.Growth.BonusHP*growthStepValue
+	hp := hero.Base.HP + hero.Growth.HP*growthStepValue + bonusHP
 	mp := hero.Base.MP + hero.Growth.MP*growthStepValue
 	baseAttackSpeed := hero.Base.AttackSpeed * (1 + hero.Growth.AttackSpeed*growthStepValue)
 	attackSpeedRatio := hero.Base.AttackSpeedRatio

@@ -4,7 +4,7 @@ func (w *World) applyFountainShotDamage(source *Entity, target *Entity, projecti
 	if source == nil || target == nil || projectile == nil {
 		return
 	}
-	maxHP := float64(target.Stats.MaxHP)
+	maxHP := target.Stats.MaxHP
 	trueDamage := trueDamageAfterReduction(target, fountainShotTrueBase+maxHP*fountainShotTrueRate, target.Combat.LastHitTick)
 	magicDamage := magicDamageAfterResistance(source, target, fountainShotMagicBase+maxHP*fountainShotMagicRate, target.Combat.LastHitTick)
 	physicalDamage := physicalDamageAfterResistance(source, target, fountainShotPhysBase+maxHP*fountainShotPhysRate, target.Combat.LastHitTick)

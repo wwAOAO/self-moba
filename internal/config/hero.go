@@ -13,8 +13,8 @@ type HeroConfig struct {
 }
 
 type BaseStats struct {
-	HP                   int     `json:"hp"`
-	BonusHP              int     `json:"bonusHp"`
+	HP                   float64 `json:"hp"`
+	BonusHP              float64 `json:"bonusHp"`
 	MP                   float64 `json:"mp"`
 	HPRegen5             float64 `json:"hpRegen5"`
 	MPRegen5             float64 `json:"mpRegen5"`

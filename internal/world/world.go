@@ -17,6 +17,9 @@ const (
 	tankHeroID         = "tank"
 	mageHeroID         = "mage"
 	gunnerHeroID       = "gunner"
+	explorerHeroID     = "explorer"
+	frostmageHeroID    = "frostmage"
+	fireMageHeroID     = "fire_mage"
 	bladeHeroID        = "blade"
 	berserkerHeroID    = "berserker"
 	ninjaHeroID        = "ninja"
@@ -49,6 +52,11 @@ const (
 	gunnerQSkillID     = "gunner_q"
 	gunnerWSkillID     = "gunner_w"
 	gunnerRSkillID     = "gunner_r"
+	robotQSkillID      = "robot_q"
+	explorerQSkillID   = "explorer_q"
+	explorerWSkillID   = "explorer_w"
+	explorerESkillID   = "explorer_e"
+	explorerRSkillID   = "explorer_r"
 	ninjaQSkillID      = "ninja_q"
 	ninjaRSkillID      = "ninja_r"
 	windWallDuration   = 4
@@ -109,6 +117,7 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		w.tickUntargetable(entity, tick)
 		w.tickPhysicalDefenseShred(entity, tick)
 		w.tickAttackDamageReduction(entity, tick)
+		w.tickDashMovement(entity, tick, tickRate)
 		w.tickSwordShield(entity, tick)
 		tickEquipmentPhysicalDamageShield(entity, tick)
 		w.tickStoneplateShield(entity, tick)
@@ -124,7 +133,6 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		}
 		w.tickEquipmentStacks(entity, tick)
 		w.tickHero(entity, tick, tickRate)
-		w.tickDashMovement(entity, tick, tickRate)
 		w.releasePendingAttack(entity, tick, tickRate)
 		w.tickRespawn(entity, tick)
 		if entity.Death.Dead || entity.Stats.HP <= 0 {
@@ -213,6 +221,33 @@ func (w *World) tickRespawn(entity *Entity, tick uint64) {
 	entity.Passive.GunnerRWaves = 0
 	entity.Passive.GunnerRWaveCount = 0
 	entity.Passive.GunnerREffectID = ""
+	entity.Passive.RobotShieldUntil = 0
+	entity.Passive.RobotShieldMana = 0
+	entity.Passive.RobotQPending = false
+	entity.Passive.RobotQReleaseTick = 0
+	entity.Passive.RobotQTarget = Vector2{}
+	entity.Passive.RobotQLevel = 0
+	entity.Passive.RobotWStartTick = 0
+	entity.Passive.RobotWUntil = 0
+	entity.Passive.RobotWLevel = 0
+	entity.Passive.RobotWMoveSpeed = 0
+	entity.Passive.RobotArcMarks = nil
+	entity.Passive.ExplorerSpellForce = nil
+	entity.Passive.ExplorerFluxMarks = nil
+	entity.Passive.ExplorerQPending = false
+	entity.Passive.ExplorerQRelease = 0
+	entity.Passive.ExplorerQTarget = Vector2{}
+	entity.Passive.ExplorerQLevel = 0
+	entity.Passive.ExplorerWTarget = Vector2{}
+	entity.Passive.ExplorerWLevel = 0
+	entity.Passive.ExplorerEPending = false
+	entity.Passive.ExplorerERelease = 0
+	entity.Passive.ExplorerETarget = Vector2{}
+	entity.Passive.ExplorerELevel = 0
+	entity.Passive.ExplorerRPending = false
+	entity.Passive.ExplorerRRelease = 0
+	entity.Passive.ExplorerRTarget = Vector2{}
+	entity.Passive.ExplorerRLevel = 0
 	entity.Passive.Shield = 0
 	entity.Passive.MaxShield = 0
 	entity.Passive.ShieldExpireTick = 0

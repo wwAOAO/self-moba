@@ -102,6 +102,24 @@ function drawCastWindup(windup, frame, now) {
     drawDirectionalWindup(windup, frame, color, alpha, 10);
     return;
   }
+  if (windup.skillId === "explorer_e") {
+    drawDirectionalWindup(windup, frame, color, alpha, 14);
+    return;
+  }
+  if (windup.skillId === "explorer_q") {
+    drawDirectionalWindup(windup, frame, color, alpha, 10);
+    return;
+  }
+  if (windup.skillId === "explorer_r") {
+    drawDirectionalWindup(
+      { ...windup, range: Math.hypot(state.map.width || 6000, state.map.height || 6000) },
+      frame,
+      color,
+      alpha,
+      34,
+    );
+    return;
+  }
   if (windup.skillId === "mage_r") {
     drawMageFinalSparkWindup(windup, frame, alpha);
   }
@@ -260,6 +278,9 @@ function castWindupColor(skillId) {
   }
   if (skillId === "arrow_rain") {
     return 0xa78bfa;
+  }
+  if (skillId === "explorer_q" || skillId === "explorer_e" || skillId === "explorer_r") {
+    return 0x38bdf8;
   }
   if (skillId === "berserker_q") {
     return 0xf97316;

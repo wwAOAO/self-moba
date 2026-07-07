@@ -2,6 +2,7 @@ package world
 
 import (
 	"l-battle/internal/config"
+	"math"
 	"strconv"
 )
 
@@ -35,6 +36,27 @@ func (w *World) ClampWorldPoint(point Vector2) Vector2 {
 	}
 }
 
+func (w *World) MapExitRange(start Vector2, dir Vector2) float64 {
+	if w == nil {
+		return 0
+	}
+	best := math.Inf(1)
+	if dir.X > 0 {
+		best = math.Min(best, (w.width-start.X)/dir.X)
+	} else if dir.X < 0 {
+		best = math.Min(best, -start.X/dir.X)
+	}
+	if dir.Y > 0 {
+		best = math.Min(best, (w.height-start.Y)/dir.Y)
+	} else if dir.Y < 0 {
+		best = math.Min(best, -start.Y/dir.Y)
+	}
+	if math.IsInf(best, 1) || best < 0 {
+		return 0
+	}
+	return best
+}
+
 func (w *World) NextProjectileID(prefix string) string {
 	w.nextProjectileID++
 	return prefix + strconv.Itoa(w.nextProjectileID)
@@ -65,6 +87,39 @@ func (w *World) RemoveSkillEffect(id string) {
 
 func (w *World) LockAttackAfterCast(entity *Entity, tick uint64, tickRate int) {
 	w.lockAttackAfterCast(entity, tick, tickRate)
+}
+
+func (w *World) InterruptControl(entity *Entity) {
+	if entity == nil {
+		return
+	}
+	entity.Intent = IntentState{}
+	entity.Combat.PendingAttackTargetID = ""
+	entity.Combat.AttackReleaseTick = 0
+	entity.Control.DashUntilTick = 0
+	entity.Control.DashStartTick = 0
+	entity.Control.ActionLockedUntilTick = 0
+}
+
+func (w *World) RemoveAllShields(entity *Entity) {
+	if entity == nil {
+		return
+	}
+	entity.Passive.Shield = 0
+	entity.Passive.MaxShield = 0
+	entity.Passive.ShieldExpireTick = 0
+	entity.Passive.ShieldLayers = nil
+	entity.Passive.RobotShieldUntil = 0
+	entity.Passive.RobotShieldMana = 0
+	if deactivateStoneplateShield(entity) {
+		w.recalculatePlayerStats(entity)
+	}
+	for index := range entity.Equipment {
+		entity.Equipment[index].PhysicalShieldMaxAmount = 0
+		entity.Equipment[index].PhysicalShieldAmount = 0
+		entity.Equipment[index].PhysicalShieldStartTick = 0
+		entity.Equipment[index].PhysicalShieldExpireTick = 0
+	}
 }
 
 func (w *World) RefreshPlayerStats(entity *Entity) {
@@ -120,7 +175,7 @@ func (w *World) TrueDamageAfterReduction(target *Entity, rawDamage float64, tick
 	return trueDamageAfterReduction(target, rawDamage, tick)
 }
 
-func (w *World) RefreshStatsAfterHPChange(entity *Entity, beforeHP int) {
+func (w *World) RefreshStatsAfterHPChange(entity *Entity, beforeHP float64) {
 	w.refreshPlayerStatsAfterHPChange(entity, beforeHP)
 }
 
@@ -134,6 +189,14 @@ func (w *World) TargetsInCone(entity *Entity, direction Vector2, coneRange float
 
 func (w *World) ApplyAttackSpeedSlow(target *Entity, slow float64, until uint64) {
 	applyAttackSpeedSlow(target, slow, until)
+}
+
+func (w *World) EquipmentBasicAttackBonus(attacker *Entity, damageType string) float64 {
+	return w.equipmentBasicAttackBonus(attacker, damageType)
+}
+
+func (w *World) EquipmentMinionBasicAttackBonus(attacker *Entity, damageType string) float64 {
+	return w.equipmentMinionBasicAttackBonus(attacker, damageType)
 }
 
 func ControlTicksAfterTenacity(target *Entity, ticks uint64, now uint64) uint64 {

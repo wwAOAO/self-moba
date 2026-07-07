@@ -1,0 +1,44 @@
+[
+  {
+    "heroId": "frostmage",
+    "name": "Frost Mage",
+    "resource": "mp",
+    "base": {
+      "hp": 506,
+      "mp": 304,
+      "hpRegen5": 6.92,
+      "mpRegen5": 5.67,
+      "attack": 50.536,
+      "abilityHaste": 0,
+      "physicalDefense": 20.216,
+      "magicDefense": 20.216,
+      "moveSpeed": 325,
+      "attackRange": 550,
+      "attackSpeed": 0.625,
+      "attackWindupSeconds": 0.25,
+      "attackSpeedRatio": 0.625,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 84,
+      "mp": 50,
+      "hpRegen5": 0.55,
+      "mpRegen5": 0.4,
+      "attack": 2.7,
+      "physicalDefense": 3.7,
+      "magicDefense": 3.7,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.0136,
+      "critChance": 0
+    },
+    "radius": 16,
+    "skills": {
+      "passive": "frostmage_passive",
+      "q": "frostmage_q",
+      "w": "frostmage_w",
+      "e": "frostmage_e",
+      "r": "frostmage_r"
+    }
+  }
+]

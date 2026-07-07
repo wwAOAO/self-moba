@@ -23,7 +23,7 @@ func TestBuyEquipmentSpendsGoldAndAppliesStats(t *testing.T) {
 		t.Fatalf("attack = %f, want %f", player.Stats.Attack, baseAttack+8)
 	}
 	if player.Stats.MaxHP != baseMaxHP+80 {
-		t.Fatalf("max hp = %d, want %d", player.Stats.MaxHP, baseMaxHP+80)
+		t.Fatalf("max hp = %v, want %v", player.Stats.MaxHP, baseMaxHP+80)
 	}
 	if player.Stats.Omnivamp != 0.025 {
 		t.Fatalf("omnivamp = %f, want 0.025", player.Stats.Omnivamp)
@@ -64,7 +64,7 @@ func TestBuyEquipmentStopsAtSixSlots(t *testing.T) {
 	}
 
 	if len(player.Equipment) != 6 {
-		t.Fatalf("equipment slots = %d, want 6", len(player.Equipment))
+		t.Fatalf("equipment slots = %v, want 6", len(player.Equipment))
 	}
 	if player.Gold != 7600 {
 		t.Fatalf("gold = %f, want 7600", player.Gold)
@@ -83,7 +83,7 @@ func TestBuyEquipmentAllowsOnlyOneShoesCategory(t *testing.T) {
 	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("boots"), 2, nil, 20)
 
 	if len(player.Equipment) != 1 {
-		t.Fatalf("equipment slots = %d, want 1", len(player.Equipment))
+		t.Fatalf("equipment slots = %v, want 1", len(player.Equipment))
 	}
 	if player.Gold != 650 {
 		t.Fatalf("gold = %f, want 650", player.Gold)
@@ -123,10 +123,10 @@ func TestShoeDefensiveEffectsApply(t *testing.T) {
 	target.Combat.LastHitTick = 1
 	w.applyBasicAttackDamage(source, target, 100, 20)
 	if target.Stats.HP != 912 {
-		t.Fatalf("hp after basic attack block = %d, want 912", target.Stats.HP)
+		t.Fatalf("hp after basic attack block = %v, want 912", target.Stats.HP)
 	}
 	if got := controlTicksAfterTenacity(target, 20, 1); got != 14 {
-		t.Fatalf("tenacity ticks = %d, want 14", got)
+		t.Fatalf("tenacity ticks = %v, want 14", got)
 	}
 	applyMoveSpeedSlow(target, 0.4, 20)
 	if target.Control.MoveSpeedSlow < 0.299 || target.Control.MoveSpeedSlow > 0.301 {
@@ -144,7 +144,7 @@ func TestRanduinsOmenReducesCritDamageAndSlowsBasicAttacker(t *testing.T) {
 	attacker := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
 
 	if got := reduceCritDamage(player, 100, true); got != 80 {
-		t.Fatalf("reduced crit damage = %d, want 80", got)
+		t.Fatalf("reduced crit damage = %v, want 80", got)
 	}
 	player.Combat.LastHitTick = 10
 	w.applyBasicAttackDamage(attacker, player, 10, 20)
@@ -189,7 +189,7 @@ func TestGargoyleStoneplateShieldCooldownAndResists(t *testing.T) {
 	attacker := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
 
 	if player.Passive.Shield != 270 {
-		t.Fatalf("shield = %d, want 270", player.Passive.Shield)
+		t.Fatalf("shield = %v, want 270", player.Passive.Shield)
 	}
 	if player.Stats.PhysicalDefense != 52.5 || player.Stats.MagicDefense != 52.5 {
 		t.Fatalf("resists = %f/%f, want 52.5/52.5", player.Stats.PhysicalDefense, player.Stats.MagicDefense)
@@ -198,7 +198,7 @@ func TestGargoyleStoneplateShieldCooldownAndResists(t *testing.T) {
 	player.Combat.LastHitTick = 10
 	w.applyDamage(attacker, player, 300, 20)
 	if player.Passive.Shield != 0 || player.Equipment[0].StoneplateShieldActive {
-		t.Fatalf("shield active after break = %d/%v, want 0/false", player.Passive.Shield, player.Equipment[0].StoneplateShieldActive)
+		t.Fatalf("shield active after break = %v/%v, want 0/false", player.Passive.Shield, player.Equipment[0].StoneplateShieldActive)
 	}
 	if player.Stats.PhysicalDefense != 50 || player.Stats.MagicDefense != 50 {
 		t.Fatalf("resists after break = %f/%f, want 50/50", player.Stats.PhysicalDefense, player.Stats.MagicDefense)
@@ -206,7 +206,7 @@ func TestGargoyleStoneplateShieldCooldownAndResists(t *testing.T) {
 
 	w.tickStoneplateShield(player, player.Equipment[0].StoneplateCooldownUntil)
 	if player.Passive.Shield != 270 || !player.Equipment[0].StoneplateShieldActive {
-		t.Fatalf("shield after cooldown = %d/%v, want 270/true", player.Passive.Shield, player.Equipment[0].StoneplateShieldActive)
+		t.Fatalf("shield after cooldown = %v/%v, want 270/true", player.Passive.Shield, player.Equipment[0].StoneplateShieldActive)
 	}
 }
 
@@ -223,12 +223,12 @@ func TestGargoyleStoneplateShieldBreaksFiveSecondsAfterDamage(t *testing.T) {
 	w.applyDamage(attacker, player, 1, 20)
 	w.tickStoneplateShield(player, 109)
 	if player.Passive.Shield <= 0 || !player.Equipment[0].StoneplateShieldActive {
-		t.Fatalf("shield before 5s break = %d/%v, want active", player.Passive.Shield, player.Equipment[0].StoneplateShieldActive)
+		t.Fatalf("shield before 5s break = %v/%v, want active", player.Passive.Shield, player.Equipment[0].StoneplateShieldActive)
 	}
 
 	w.tickStoneplateShield(player, 110)
 	if player.Passive.Shield != 0 || player.Equipment[0].StoneplateShieldActive {
-		t.Fatalf("shield after 5s break = %d/%v, want 0/false", player.Passive.Shield, player.Equipment[0].StoneplateShieldActive)
+		t.Fatalf("shield after 5s break = %v/%v, want 0/false", player.Passive.Shield, player.Equipment[0].StoneplateShieldActive)
 	}
 }
 
@@ -243,7 +243,7 @@ func TestSellingGargoyleStoneplateRemovesShield(t *testing.T) {
 	w.ApplyInput("p1", protocolPlayerInputSellEquipment(1), 2, nil, 20)
 
 	if player.Passive.Shield != 0 || player.Passive.MaxShield != 0 {
-		t.Fatalf("shield after sell = %d/%d, want 0/0", player.Passive.Shield, player.Passive.MaxShield)
+		t.Fatalf("shield after sell = %v/%v, want 0/0", player.Passive.Shield, player.Passive.MaxShield)
 	}
 	if len(player.Equipment) != 0 {
 		t.Fatalf("equipment after sell = %+v, want empty", player.Equipment)
@@ -325,7 +325,7 @@ func TestBuyCompositeEquipmentShowsNotEnoughGold(t *testing.T) {
 		t.Fatalf("equipment = %+v, want empty", player.Equipment)
 	}
 	if player.Message != "金币不足" || player.MessageTick != 7 {
-		t.Fatalf("message = %q tick=%d, want 金币不足 tick=7", player.Message, player.MessageTick)
+		t.Fatalf("message = %q tick=%v, want 金币不足 tick=7", player.Message, player.MessageTick)
 	}
 }
 
@@ -393,7 +393,7 @@ func TestDuplicateInfinityEdgeCritDamageOnlyAppliesOnce(t *testing.T) {
 	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("infinity_edge"), 2, nil, 20)
 
 	if len(player.Equipment) != 2 {
-		t.Fatalf("equipment slots = %d, want 2", len(player.Equipment))
+		t.Fatalf("equipment slots = %v, want 2", len(player.Equipment))
 	}
 	if got := w.critDamageMultiplier(player); got != 2.5 {
 		t.Fatalf("crit damage multiplier = %f, want 2.5", got)
@@ -439,13 +439,13 @@ func TestPhantomDancerLowHealthShieldAndDamageReduction(t *testing.T) {
 	player := w.entities[playerEntityID("p1")]
 	player.Gold = 2800
 	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("phantom_dancer"), 1, nil, 20)
-	player.Stats.HP = int(float64(player.Stats.MaxHP) * 0.31)
+	player.Stats.HP = player.Stats.MaxHP * 0.31
 	attacker := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
 
 	w.applyDamage(attacker, player, 20, 20)
 
 	if player.Passive.Shield != 200 {
-		t.Fatalf("shield = %d, want 200", player.Passive.Shield)
+		t.Fatalf("shield = %v, want 200", player.Passive.Shield)
 	}
 	if got := equipmentLowHealthDamageReduce(player); got != 0.1 {
 		t.Fatalf("damage reduce = %f, want 0.1", got)
@@ -455,7 +455,7 @@ func TestPhantomDancerLowHealthShieldAndDamageReduction(t *testing.T) {
 	damage := physicalDamageAfterResistance(attacker, player, 100, player.Combat.LastHitTick)
 	w.applyResolvedDamage(attacker, player, damage, "physical", sustainSingleTargetSkill, 20)
 	if player.Passive.Shield != beforeShield-90 {
-		t.Fatalf("shield after reduced damage = %d, want %d", player.Passive.Shield, beforeShield-90)
+		t.Fatalf("shield after reduced damage = %v, want %v", player.Passive.Shield, beforeShield-90)
 	}
 }
 
@@ -472,7 +472,7 @@ func TestCatalystRestoresHpAndMpOnLevelUp(t *testing.T) {
 	w.debugLevelUp(player)
 
 	if player.Stats.HP <= 100 {
-		t.Fatalf("hp = %d, want restored above 100", player.Stats.HP)
+		t.Fatalf("hp = %v, want restored above 100", player.Stats.HP)
 	}
 	if player.Stats.MP <= 50 {
 		t.Fatalf("mp = %f, want restored above 50", player.Stats.MP)
@@ -489,7 +489,7 @@ func TestRabadonsDeathcapIncreasesTotalAbilityPower(t *testing.T) {
 	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("rabadons_deathcap"), 1, nil, 20)
 
 	if player.Stats.AbilityPower != 162 {
-		t.Fatalf("ability power = %d, want 162", player.Stats.AbilityPower)
+		t.Fatalf("ability power = %v, want 162", player.Stats.AbilityPower)
 	}
 }
 
@@ -510,7 +510,7 @@ func TestLiandrysAnguishBurnsAfterSkillDamage(t *testing.T) {
 	}
 
 	if target.Stats.HP != 1000-1-3*40 {
-		t.Fatalf("target hp = %d, want %d", target.Stats.HP, 1000-1-3*40)
+		t.Fatalf("target hp = %v, want %v", target.Stats.HP, 1000-1-3*40)
 	}
 }
 
@@ -531,7 +531,7 @@ func TestAthenesUnholyGrailStatsAndPercentRegen(t *testing.T) {
 	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("athenes_unholy_grail"), 1, nil, 20)
 
 	if player.Stats.AbilityPower != baseAP+30 || player.Stats.MagicDefense != baseMR+30 || player.Stats.AbilityHaste != baseHaste+10 {
-		t.Fatalf("stats ap/mr/haste = %d/%f/%f, want %d/%f/%f", player.Stats.AbilityPower, player.Stats.MagicDefense, player.Stats.AbilityHaste, baseAP+30, baseMR+30, baseHaste+10)
+		t.Fatalf("stats ap/mr/haste = %v/%f/%f, want %v/%f/%f", player.Stats.AbilityPower, player.Stats.MagicDefense, player.Stats.AbilityHaste, baseAP+30, baseMR+30, baseHaste+10)
 	}
 	if player.Stats.MPRegen5 != baseMPRegen*2 {
 		t.Fatalf("mp regen = %f, want %f", player.Stats.MPRegen5, baseMPRegen*2)
@@ -540,21 +540,21 @@ func TestAthenesUnholyGrailStatsAndPercentRegen(t *testing.T) {
 	player.Stats.HP = player.Stats.MaxHP - 100
 	player.Stats.MP = 50
 	player.Combat.LastHitTick = 50
-	wantCombatHP := player.Stats.HP + int(float64(player.Stats.MaxHP)*0.01)
+	wantCombatHP := player.Stats.HP + player.Stats.MaxHP*0.01
 	wantCombatMP := player.Stats.MP + player.Stats.MaxMP*0.01
 	w.tickEquipmentPercentRegen(player, 100, 20)
 	if player.Stats.HP != wantCombatHP || player.Stats.MP != wantCombatMP {
-		t.Fatalf("combat regen hp/mp = %d/%f, want %d/%f", player.Stats.HP, player.Stats.MP, wantCombatHP, wantCombatMP)
+		t.Fatalf("combat regen hp/mp = %v/%f, want %v/%f", player.Stats.HP, player.Stats.MP, wantCombatHP, wantCombatMP)
 	}
 
 	player.Stats.HP = player.Stats.MaxHP - 100
 	player.Stats.MP = 50
 	player.Combat.LastHitTick = 0
-	wantOutHP := player.Stats.HP + int(float64(player.Stats.MaxHP)*0.05)
+	wantOutHP := player.Stats.HP + player.Stats.MaxHP*0.05
 	wantOutMP := player.Stats.MP + player.Stats.MaxMP*0.05
 	w.tickEquipmentPercentRegen(player, 100, 20)
 	if player.Stats.HP != wantOutHP || player.Stats.MP != wantOutMP {
-		t.Fatalf("out of combat regen hp/mp = %d/%f, want %d/%f", player.Stats.HP, player.Stats.MP, wantOutHP, wantOutMP)
+		t.Fatalf("out of combat regen hp/mp = %v/%f, want %v/%f", player.Stats.HP, player.Stats.MP, wantOutHP, wantOutMP)
 	}
 }
 
@@ -587,7 +587,7 @@ func TestDuplicateEquipmentEffectsOnlyApplyOnce(t *testing.T) {
 	baseMoveSpeed := player.Stats.MoveSpeed
 
 	if len(player.Equipment) != 2 {
-		t.Fatalf("equipment slots = %d, want 2", len(player.Equipment))
+		t.Fatalf("equipment slots = %v, want 2", len(player.Equipment))
 	}
 	if got := EffectiveMoveSpeedAtTick(player, 200); got != baseMoveSpeed+20 {
 		t.Fatalf("out of combat move speed = %f, want %f", got, baseMoveSpeed+20)
@@ -632,7 +632,7 @@ func TestSeekersArmguardGainsStatsOnUnitKill(t *testing.T) {
 		t.Fatalf("physical defense = %f, want %f", player.Stats.PhysicalDefense, baseArmor+1)
 	}
 	if player.Stats.AbilityPower != baseAP+1 {
-		t.Fatalf("ability power = %d, want %d", player.Stats.AbilityPower, baseAP+1)
+		t.Fatalf("ability power = %v, want %v", player.Stats.AbilityPower, baseAP+1)
 	}
 }
 
@@ -669,7 +669,7 @@ func TestWoodenShieldHealsAfterHeroHit(t *testing.T) {
 	w.applyDamage(attacker, player, 100, 20)
 
 	if player.Stats.HP != 405 {
-		t.Fatalf("hp after hero hit heal = %d, want 405", player.Stats.HP)
+		t.Fatalf("hp after hero hit heal = %v, want 405", player.Stats.HP)
 	}
 }
 
@@ -690,13 +690,13 @@ func TestHarmonyChaliceConvertsManaToShieldAfterHeroDamage(t *testing.T) {
 		t.Fatalf("mp = %f, want 160", player.Stats.MP)
 	}
 	if player.Passive.Shield != 40 {
-		t.Fatalf("shield = %d, want 40", player.Passive.Shield)
+		t.Fatalf("shield = %v, want 40", player.Passive.Shield)
 	}
 
 	player.Combat.LastHitTick = 11
 	w.applyDamage(attacker, player, 1, 20)
 	if player.Passive.Shield != 39 {
-		t.Fatalf("shield during cooldown = %d, want 39", player.Passive.Shield)
+		t.Fatalf("shield during cooldown = %v, want 39", player.Passive.Shield)
 	}
 }
 
@@ -714,7 +714,7 @@ func TestDuplicateWoodenShieldHeroHitHealOnlyAppliesOnce(t *testing.T) {
 	w.applyDamage(attacker, player, 100, 20)
 
 	if player.Stats.HP != 405 {
-		t.Fatalf("hp after duplicate hero hit heal = %d, want 405", player.Stats.HP)
+		t.Fatalf("hp after duplicate hero hit heal = %v, want 405", player.Stats.HP)
 	}
 }
 
@@ -731,7 +731,7 @@ func TestEquipmentOmnivampHealsFromActualDamage(t *testing.T) {
 	w.applyDamage(player, target, 200, 20)
 
 	if player.Stats.HP != 505 {
-		t.Fatalf("hp after omnivamp = %d, want 505", player.Stats.HP)
+		t.Fatalf("hp after omnivamp = %v, want 505", player.Stats.HP)
 	}
 }
 
@@ -754,7 +754,7 @@ func TestAOEOmnivampUsesDecayHealingPowerAndGrievousWounds(t *testing.T) {
 	w.applyAOEDamage(source, target, 200, "magic", 20)
 
 	if source.Stats.HP != 510 {
-		t.Fatalf("hp after aoe omnivamp = %d, want 510", source.Stats.HP)
+		t.Fatalf("hp after aoe omnivamp = %v, want 510", source.Stats.HP)
 	}
 }
 
@@ -774,11 +774,11 @@ func TestLifeStealOnlyAppliesToBasicAttacks(t *testing.T) {
 
 	w.applyDamage(source, target, 100, 20)
 	if source.Stats.HP != 500 {
-		t.Fatalf("hp after skill with life steal = %d, want 500", source.Stats.HP)
+		t.Fatalf("hp after skill with life steal = %v, want 500", source.Stats.HP)
 	}
 	w.applyBasicAttackDamage(source, target, 100, 20)
 	if source.Stats.HP != 520 {
-		t.Fatalf("hp after basic attack life steal = %d, want 520", source.Stats.HP)
+		t.Fatalf("hp after basic attack life steal = %v, want 520", source.Stats.HP)
 	}
 }
 
@@ -797,10 +797,10 @@ func TestBlackCleaverShredsArmorOnPhysicalHeroDamage(t *testing.T) {
 	}
 
 	if target.Combat.BlackCleaverStacks != 6 {
-		t.Fatalf("black cleaver stacks = %d, want 6", target.Combat.BlackCleaverStacks)
+		t.Fatalf("black cleaver stacks = %v, want 6", target.Combat.BlackCleaverStacks)
 	}
 	if got := physicalDamageAfterResistance(player, target, 100, 6); got != 59 {
-		t.Fatalf("damage with shred = %d, want 59", got)
+		t.Fatalf("damage with shred = %v, want 59", got)
 	}
 }
 
@@ -842,7 +842,7 @@ func TestSunfireAegisBurnsNearbyEnemies(t *testing.T) {
 	w.tickSunfire(player, 21, 20)
 
 	if target.Stats.HP >= 999 {
-		t.Fatalf("target hp = %d, want sunfire damage", target.Stats.HP)
+		t.Fatalf("target hp = %v, want sunfire damage", target.Stats.HP)
 	}
 }
 
@@ -858,16 +858,16 @@ func TestSunfireBladePhysicalDamageShieldDecays(t *testing.T) {
 	target.Combat.LastHitTick = 1
 	w.applyDamage(player, target, 100, 20)
 	if player.Passive.Shield != 10 {
-		t.Fatalf("shield after physical damage = %d, want 10", player.Passive.Shield)
+		t.Fatalf("shield after physical damage = %v, want 10", player.Passive.Shield)
 	}
 
 	tickEquipmentPhysicalDamageShield(player, 31)
 	if player.Passive.Shield != 5 {
-		t.Fatalf("shield halfway = %d, want 5", player.Passive.Shield)
+		t.Fatalf("shield halfway = %v, want 5", player.Passive.Shield)
 	}
 
 	tickEquipmentPhysicalDamageShield(player, 61)
 	if player.Passive.Shield != 0 {
-		t.Fatalf("shield after decay = %d, want 0", player.Passive.Shield)
+		t.Fatalf("shield after decay = %v, want 0", player.Passive.Shield)
 	}
 }

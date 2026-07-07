@@ -57,14 +57,14 @@ func TestBerserkerQOuterRingBleedsAndHeals(t *testing.T) {
 	w.ApplyInput("berserker", protocolPlayerInputCast(berserkerQSkillID, source.Position.X, source.Position.Y), 10, nil, 20)
 
 	if got := outerHero.Stats.HP; got != 1000 {
-		t.Fatalf("outer hero hp during windup = %d, want 1000", got)
+		t.Fatalf("outer hero hp during windup = %v, want 1000", got)
 	}
 	if got := source.Stats.MP; got != 70 {
 		t.Fatalf("mp after q cast = %f, want 70", got)
 	}
 	effect := onlyBerserkerQEffect(t, w)
 	if got, want := effect.ExpiresAt, uint64(25); got != want {
-		t.Fatalf("q range expires = %d, want %d", got, want)
+		t.Fatalf("q range expires = %v, want %v", got, want)
 	}
 	if got, want := effect.Range, 425.0; got != want {
 		t.Fatalf("q outer range = %f, want %f", got, want)
@@ -79,31 +79,31 @@ func TestBerserkerQOuterRingBleedsAndHeals(t *testing.T) {
 		t.Fatalf("q range after release = %+v, want nil", *effect)
 	}
 	if got := outerHero.Stats.HP; got != 886 {
-		t.Fatalf("outer hero hp = %d, want 886", got)
+		t.Fatalf("outer hero hp = %v, want 886", got)
 	}
 	if got := bandHero.Stats.HP; got != 886 {
-		t.Fatalf("band hero hp = %d, want 886", got)
+		t.Fatalf("band hero hp = %v, want 886", got)
 	}
 	if got := outsideHero.Stats.HP; got != 1000 {
-		t.Fatalf("outside hero hp = %d, want 1000", got)
+		t.Fatalf("outside hero hp = %v, want 1000", got)
 	}
 	if got := innerMinion.Stats.HP; got != 960 {
-		t.Fatalf("inner minion hp = %d, want 960", got)
+		t.Fatalf("inner minion hp = %v, want 960", got)
 	}
 	if got := outerHero.Passive.Bleeds[source.ID].Stacks; got != 1 {
-		t.Fatalf("outer bleed stacks = %d, want 1", got)
+		t.Fatalf("outer bleed stacks = %v, want 1", got)
 	}
 	if got := bandHero.Passive.Bleeds[source.ID].Stacks; got != 1 {
-		t.Fatalf("band bleed stacks = %d, want 1", got)
+		t.Fatalf("band bleed stacks = %v, want 1", got)
 	}
 	if got := innerMinion.Passive.Bleeds[source.ID].Stacks; got != 0 {
-		t.Fatalf("inner bleed stacks = %d, want 0", got)
+		t.Fatalf("inner bleed stacks = %v, want 0", got)
 	}
-	if got, want := source.Stats.HP, source.Stats.MaxHP-245; got != want {
-		t.Fatalf("hp after q heal = %d, want %d", got, want)
+	if got := source.Stats.HP; got < 407.09 || got > 407.11 {
+		t.Fatalf("hp after q heal = %v, want about 407.1", got)
 	}
 	if got, want := source.Skills[berserkerQSkillID].CooldownUntilTick, uint64(205); got != want {
-		t.Fatalf("q cooldown = %d, want %d", got, want)
+		t.Fatalf("q cooldown = %v, want %v", got, want)
 	}
 }
 
@@ -204,7 +204,7 @@ func TestBerserkerWEmpowersNextAttackSlowsAndBleedReducesCooldown(t *testing.T) 
 		t.Fatalf("mp after w cast = %f, want 70", got)
 	}
 	if got := source.Skills[berserkerWSkillID].Stacks; got != 1 {
-		t.Fatalf("w stacks after cast = %d, want 1", got)
+		t.Fatalf("w stacks after cast = %v, want 1", got)
 	}
 
 	w.ApplyInput("berserker", protocolPlayerInputAttack(target.ID), 11, nil, 20)
@@ -212,13 +212,13 @@ func TestBerserkerWEmpowersNextAttackSlowsAndBleedReducesCooldown(t *testing.T) 
 	w.Tick(source.Combat.AttackReleaseTick, 20)
 
 	if got := target.Stats.HP; got != 898 {
-		t.Fatalf("target hp = %d, want 898", got)
+		t.Fatalf("target hp = %v, want 898", got)
 	}
 	if got := target.Passive.Bleeds[source.ID].Stacks; got != 3 {
-		t.Fatalf("bleed stacks = %d, want 3", got)
+		t.Fatalf("bleed stacks = %v, want 3", got)
 	}
 	if got, want := source.Skills[berserkerWSkillID].CooldownUntilTick, uint64(97); got != want {
-		t.Fatalf("w cooldown = %d, want %d", got, want)
+		t.Fatalf("w cooldown = %v, want %v", got, want)
 	}
 	if got := target.Control.MoveSpeedSlow; got != 0.3 {
 		t.Fatalf("move slow = %f, want 0.3", got)
@@ -248,7 +248,7 @@ func TestBerserkerWResetsBasicAttack(t *testing.T) {
 	w.Tick(10, 20)
 	tickAttackRelease(t, w, source, 20)
 	if got, want := source.Combat.NextAttackTick, uint64(30); got != want {
-		t.Fatalf("next attack after first hit = %d, want %d", got, want)
+		t.Fatalf("next attack after first hit = %v, want %v", got, want)
 	}
 
 	w.ApplyInput("berserker", protocolPlayerInputCast(berserkerWSkillID, target.Position.X, target.Position.Y), 16, nil, 20)
@@ -258,7 +258,7 @@ func TestBerserkerWResetsBasicAttack(t *testing.T) {
 		t.Fatalf("pending attack after w reset = %q, want %q", got, target.ID)
 	}
 	if got, want := source.Combat.AttackReleaseTick, uint64(21); got != want {
-		t.Fatalf("second attack release tick = %d, want %d", got, want)
+		t.Fatalf("second attack release tick = %v, want %v", got, want)
 	}
 }
 
@@ -274,7 +274,7 @@ func TestBerserkerEPassiveGrantsArmorPenOnUpgrade(t *testing.T) {
 	w.ApplyInput("berserker", protocolPlayerInputUpgrade("e"), 1, nil, 20)
 
 	if got := source.Skills[berserkerESkillID].Level; got != 1 {
-		t.Fatalf("e level = %d, want 1", got)
+		t.Fatalf("e level = %v, want 1", got)
 	}
 	if got := source.Stats.PhysicalPenPercent; got != 0.2 {
 		t.Fatalf("armor pen = %f, want 0.2", got)
@@ -326,13 +326,13 @@ func TestBerserkerEPullsConeTargetsAndSlows(t *testing.T) {
 		t.Fatalf("target slow = %f, want 0.4", got)
 	}
 	if got, want := target.Control.MoveSpeedSlowUntil, uint64(35); got != want {
-		t.Fatalf("slow until = %d, want %d", got, want)
+		t.Fatalf("slow until = %v, want %v", got, want)
 	}
 	if got, want := target.Control.AirborneUntilTick, uint64(20); got != want {
-		t.Fatalf("airborne until = %d, want %d", got, want)
+		t.Fatalf("airborne until = %v, want %v", got, want)
 	}
 	if got := target.Passive.Bleeds[source.ID].Stacks; got != 0 {
-		t.Fatalf("bleed stacks = %d, want 0", got)
+		t.Fatalf("bleed stacks = %v, want 0", got)
 	}
 	if got := offCone.Position; got != (Vector2{X: 1000, Y: 1300}) {
 		t.Fatalf("off cone moved to %+v", got)
@@ -344,7 +344,7 @@ func TestBerserkerEPullsConeTargetsAndSlows(t *testing.T) {
 		t.Fatalf("baron moved to %+v", got)
 	}
 	if got, want := source.Skills[berserkerESkillID].CooldownUntilTick, uint64(435); got != want {
-		t.Fatalf("e cooldown = %d, want %d", got, want)
+		t.Fatalf("e cooldown = %v, want %v", got, want)
 	}
 }
 
@@ -375,7 +375,7 @@ func TestBerserkerRExecutesRefreshesAndGrantsVision(t *testing.T) {
 	w.ApplyInput("berserker", protocolPlayerInputCast(berserkerRSkillID, target.Position.X, target.Position.Y), 10, nil, 20)
 
 	if got := target.Stats.HP; got != 200 {
-		t.Fatalf("target hp during r windup = %d, want 200", got)
+		t.Fatalf("target hp during r windup = %v, want 200", got)
 	}
 	if got := source.Stats.MP; got != 0 {
 		t.Fatalf("mp after r cast = %f, want 0", got)
@@ -384,19 +384,19 @@ func TestBerserkerRExecutesRefreshesAndGrantsVision(t *testing.T) {
 	w.Tick(20, 20)
 
 	if target.Stats.HP != 0 {
-		t.Fatalf("target hp after r = %d, want 0", target.Stats.HP)
+		t.Fatalf("target hp after r = %v, want 0", target.Stats.HP)
 	}
 	if got, want := source.Berserker.BloodRageUntil, uint64(120); got != want {
-		t.Fatalf("blood rage until = %d, want %d", got, want)
+		t.Fatalf("blood rage until = %v, want %v", got, want)
 	}
 	if got, want := source.Berserker.NoxianGuillotineRecast, uint64(420); got != want {
-		t.Fatalf("r recast until = %d, want %d", got, want)
+		t.Fatalf("r recast until = %v, want %v", got, want)
 	}
 	if got, want := distance(source.Position, target.Position), 175.0; got != want {
 		t.Fatalf("r jump distance = %f, want %f", got, want)
 	}
 	if got, want := source.Skills[berserkerRSkillID].CooldownUntilTick, uint64(2420); got != want {
-		t.Fatalf("r cooldown after execute = %d, want %d", got, want)
+		t.Fatalf("r cooldown after execute = %v, want %v", got, want)
 	}
 	assertBuff(t, w.ActiveBuffs(source, 20), "berserker_noxian_guillotine_recast")
 	if len(w.skillEffects) == 0 {
@@ -410,10 +410,10 @@ func TestBerserkerRExecutesRefreshesAndGrantsVision(t *testing.T) {
 	}
 	w.Tick(40, 20)
 	if nextTarget.Stats.HP != 0 {
-		t.Fatalf("next target hp after recast = %d, want 0", nextTarget.Stats.HP)
+		t.Fatalf("next target hp after recast = %v, want 0", nextTarget.Stats.HP)
 	}
 	if got, want := source.Skills[berserkerRSkillID].CooldownUntilTick, uint64(2440); got != want {
-		t.Fatalf("r cooldown after recast execute = %d, want %d", got, want)
+		t.Fatalf("r cooldown after recast execute = %v, want %v", got, want)
 	}
 }
 
@@ -455,14 +455,14 @@ func TestBerserkerRWalksIntoRangeBeforeWindup(t *testing.T) {
 		t.Fatalf("mp after r windup starts = %f, want 0", got)
 	}
 	if got := source.Skills[berserkerRSkillID].Stacks; got != 1 {
-		t.Fatalf("r stacks after range = %d, want 1", got)
+		t.Fatalf("r stacks after range = %v, want 1", got)
 	}
 	effect := findBerserkerREffect(w)
 	if effect == nil {
 		t.Fatal("missing r range effect after range")
 	}
 	if got, want := effect.ExpiresAt, uint64(21); got != want {
-		t.Fatalf("r range expires = %d, want %d", got, want)
+		t.Fatalf("r range expires = %v, want %v", got, want)
 	}
 }
 
@@ -490,7 +490,7 @@ func TestBerserkerRPreparedCastCancelsOnMove(t *testing.T) {
 		t.Fatalf("mp after cancel = %f, want 100", got)
 	}
 	if got := source.Skills[berserkerRSkillID].Stacks; got != 0 {
-		t.Fatalf("r stacks after cancel = %d, want 0", got)
+		t.Fatalf("r stacks after cancel = %v, want 0", got)
 	}
 }
 
@@ -516,10 +516,10 @@ func TestBerserkerRLevelThreeKillPermanentlyRefreshesCooldown(t *testing.T) {
 	w.Tick(20, 20)
 
 	if got, want := source.Skills[berserkerRSkillID].CooldownUntilTick, uint64(20); got != want {
-		t.Fatalf("r cooldown after rank 3 execute = %d, want %d", got, want)
+		t.Fatalf("r cooldown after rank 3 execute = %v, want %v", got, want)
 	}
 	if got := source.Berserker.NoxianGuillotineRecast; got != 0 {
-		t.Fatalf("rank 3 recast window = %d, want 0", got)
+		t.Fatalf("rank 3 recast window = %v, want 0", got)
 	}
 }
 
@@ -541,10 +541,10 @@ func TestBerserkerBleedStacksBloodRageAndTicks(t *testing.T) {
 
 	bleed := target.Passive.Bleeds[source.ID]
 	if bleed.Stacks != 5 {
-		t.Fatalf("bleed stacks = %d, want 5", bleed.Stacks)
+		t.Fatalf("bleed stacks = %v, want 5", bleed.Stacks)
 	}
 	if got, want := source.Berserker.BloodRageUntil, uint64(105); got != want {
-		t.Fatalf("blood rage until = %d, want %d", got, want)
+		t.Fatalf("blood rage until = %v, want %v", got, want)
 	}
 	if got, want := source.Stats.Attack, baseAttack+30; got != want {
 		t.Fatalf("blood rage attack = %f, want %f", got, want)
@@ -553,7 +553,7 @@ func TestBerserkerBleedStacksBloodRageAndTicks(t *testing.T) {
 	beforeHP := target.Stats.HP
 	w.Tick(21, 20)
 	if target.Stats.HP >= beforeHP {
-		t.Fatalf("bleed tick hp = %d, want below %d", target.Stats.HP, beforeHP)
+		t.Fatalf("bleed tick hp = %v, want below %v", target.Stats.HP, beforeHP)
 	}
 	if len(target.Combat.DamageEvents) != 1 || target.Combat.DamageEvents[0].BasicAttack {
 		t.Fatalf("bleed damage events = %+v", target.Combat.DamageEvents)
@@ -582,8 +582,8 @@ func TestBerserkerBleedDealsBonusDamageToMonsters(t *testing.T) {
 
 	w.Tick(21, 20)
 
-	if got, want := monster.Stats.HP, 994; got != want {
-		t.Fatalf("monster hp after bleed tick = %d, want %d", got, want)
+	if got, want := monster.Stats.HP, 994.0; got != want {
+		t.Fatalf("monster hp after bleed tick = %f, want %f", got, want)
 	}
 }
 
@@ -603,7 +603,7 @@ func TestBerserkerBloodRageDamageAppliesFullBleed(t *testing.T) {
 	w.applyDamage(source, target, 1, 20)
 
 	if got := target.Passive.Bleeds[source.ID].Stacks; got != 5 {
-		t.Fatalf("bleed stacks during blood rage = %d, want 5", got)
+		t.Fatalf("bleed stacks during blood rage = %v, want 5", got)
 	}
 }
 
@@ -623,9 +623,9 @@ func TestBerserkerMinionBleedDoesNotTriggerBloodRage(t *testing.T) {
 	}
 
 	if got := target.Passive.Bleeds[source.ID].Stacks; got != 5 {
-		t.Fatalf("minion bleed stacks = %d, want 5", got)
+		t.Fatalf("minion bleed stacks = %v, want 5", got)
 	}
 	if got := source.Berserker.BloodRageUntil; got != 0 {
-		t.Fatalf("blood rage from minion = %d, want 0", got)
+		t.Fatalf("blood rage from minion = %v, want 0", got)
 	}
 }

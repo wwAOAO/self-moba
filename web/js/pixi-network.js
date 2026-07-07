@@ -287,6 +287,8 @@ function castSkill(slot) {
   const selected = currentTarget();
   const useAimPointFirst =
     skillId.startsWith("mage_") ||
+    skillId === "robot_q" ||
+    skillId.startsWith("explorer_") ||
     skillId === "berserker_e" ||
     skillId === "berserker_r" ||
     skillId === "ninja_q" ||

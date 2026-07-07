@@ -43,7 +43,7 @@ func (w *World) tickEquipmentBurns(tick uint64, tickRate int) {
 		if tick < burn.NextTick {
 			continue
 		}
-		rawDamage := burn.FlatDamage + float64(target.Stats.MaxHP)*(burn.BaseMaxHPRatio+float64(source.Stats.AbilityPower)/100*burn.APMaxHPRatioPer100)
+		rawDamage := burn.FlatDamage + target.Stats.MaxHP*(burn.BaseMaxHPRatio+float64(source.Stats.AbilityPower)/100*burn.APMaxHPRatioPer100)
 		damage := magicDamageAfterResistance(source, target, rawDamage, tick)
 		target.Combat.LastHitTick = tick
 		wasAlive := target.Stats.HP > 0

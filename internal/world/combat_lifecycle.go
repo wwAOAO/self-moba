@@ -17,6 +17,13 @@ func (w *World) killPlayer(target *Entity, tick uint64, tickRate int) {
 	target.Passive.Shield = 0
 	target.Passive.MaxShield = 0
 	target.Passive.ShieldExpireTick = 0
+	target.Passive.RobotShieldUntil = 0
+	target.Passive.RobotShieldMana = 0
+	target.Passive.RobotWStartTick = 0
+	target.Passive.RobotWUntil = 0
+	target.Passive.RobotWLevel = 0
+	target.Passive.RobotWMoveSpeed = 0
+	target.Passive.RobotArcMarks = nil
 	target.Passive.Bleeds = nil
 	for _, entity := range w.entities {
 		if entity.Intent.AttackTargetID == target.ID {
@@ -41,11 +48,17 @@ func (w *World) applyShield(source *Entity, target *Entity, damage int, tickRate
 	}
 	consumeShieldLayers(target, absorbed)
 	consumeEquipmentPhysicalDamageShield(target, absorbed)
+	if target.Passive.RobotShieldMana > absorbed {
+		target.Passive.RobotShieldMana -= absorbed
+	} else {
+		target.Passive.RobotShieldMana = 0
+	}
 	target.Passive.Shield -= absorbed
 	if absorbed > 0 {
 		w.triggerStoneplateCooldown(target, tickRate)
 	}
 	if target.Passive.Shield <= 0 {
+		target.Passive.RobotShieldUntil = 0
 		if deactivateStoneplateShield(target) {
 			w.recalculatePlayerStats(target)
 		}

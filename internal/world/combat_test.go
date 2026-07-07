@@ -39,7 +39,7 @@ func TestOpposingTeamPlayersCanAttackEachOther(t *testing.T) {
 	tickAttackRelease(t, w, attacker, 20)
 
 	if target.Stats.HP >= startHP {
-		t.Fatalf("target hp = %d, start hp = %d; opposing player was not damaged", target.Stats.HP, startHP)
+		t.Fatalf("target hp = %v, start hp = %v; opposing player was not damaged", target.Stats.HP, startHP)
 	}
 }
 
@@ -89,7 +89,7 @@ func TestEnemyHeroCanBeBasicAttacked(t *testing.T) {
 	tickAttackRelease(t, w, player, 20)
 
 	if target.Stats.HP >= startHP {
-		t.Fatalf("enemy hero hp = %d, want below %d after basic attack", target.Stats.HP, startHP)
+		t.Fatalf("enemy hero hp = %v, want below %v after basic attack", target.Stats.HP, startHP)
 	}
 }
 
@@ -109,7 +109,7 @@ func TestDamageAfterResistanceUsesPercentageReduction(t *testing.T) {
 	}
 	for _, tt := range tests {
 		if got := damageAfterResistance(100, tt.resistance, 0); got != tt.want {
-			t.Fatalf("damage after %f resistance = %d, want %d", tt.resistance, got, tt.want)
+			t.Fatalf("damage after %f resistance = %v, want %v", tt.resistance, got, tt.want)
 		}
 	}
 }
@@ -120,7 +120,7 @@ func TestPenetrationAppliesPercentBeforeFlatAndCannotCreateNegativeResistance(t 
 		t.Fatalf("effective resistance = %f, want 55", effective)
 	}
 	if got := damageAfterResistance(100, effective, 0); got != 65 {
-		t.Fatalf("damage after penetration = %d, want 65", got)
+		t.Fatalf("damage after penetration = %v, want 65", got)
 	}
 	if effective := effectiveResistance(20, 0.5, 40); effective != 0 {
 		t.Fatalf("penetration-created resistance = %f, want 0", effective)
@@ -132,7 +132,7 @@ func TestPenetrationAppliesPercentBeforeFlatAndCannotCreateNegativeResistance(t 
 
 func TestDamageReductionAppliesAfterResistance(t *testing.T) {
 	if got := damageAfterResistance(100, 100, 0.6); got != 20 {
-		t.Fatalf("damage after resistance and reduction = %d, want 20", got)
+		t.Fatalf("damage after resistance and reduction = %v, want 20", got)
 	}
 }
 
@@ -142,7 +142,7 @@ func TestDamageReductionStacksMultiplicatively(t *testing.T) {
 		t.Fatalf("stacked reduction = %f, want 0.6", reduction)
 	}
 	if got := damageAfterResistance(100, 0, reduction); got != 40 {
-		t.Fatalf("damage after stacked reduction = %d, want 40", got)
+		t.Fatalf("damage after stacked reduction = %v, want 40", got)
 	}
 }
 
@@ -161,7 +161,7 @@ func TestTrueDamageIgnoresResistanceAndUsesDamageReduction(t *testing.T) {
 	w.applyTrueDamage(nil, target, 100, 20)
 
 	if target.Stats.HP != 925 {
-		t.Fatalf("hp after true damage = %d, want 925", target.Stats.HP)
+		t.Fatalf("hp after true damage = %v, want 925", target.Stats.HP)
 	}
 }
 
@@ -215,7 +215,7 @@ func TestAbilityHasteReducesSkillCooldowns(t *testing.T) {
 	w.ApplyInput("p1", protocolPlayerInputCast(warriorQSkillID, player.Position.X, player.Position.Y), 10, w.skills, 20)
 
 	if got := player.Skills[warriorQSkillID].CooldownUntilTick; got != 90 {
-		t.Fatalf("warrior q cooldown with 100 haste = %d, want 90", got)
+		t.Fatalf("warrior q cooldown with 100 haste = %v, want 90", got)
 	}
 }
 
@@ -238,7 +238,7 @@ func TestWarriorQResetsBasicAttack(t *testing.T) {
 	w.Tick(10, 20)
 	tickAttackRelease(t, w, player, 20)
 	if got, want := player.Combat.NextAttackTick, uint64(30); got != want {
-		t.Fatalf("next attack after first hit = %d, want %d", got, want)
+		t.Fatalf("next attack after first hit = %v, want %v", got, want)
 	}
 
 	w.ApplyInput("warrior", protocolPlayerInputCast(warriorQSkillID, target.Position.X, target.Position.Y), 16, nil, 20)
@@ -248,7 +248,7 @@ func TestWarriorQResetsBasicAttack(t *testing.T) {
 		t.Fatalf("pending attack after q reset = %q, want %q", got, target.ID)
 	}
 	if got, want := player.Combat.AttackReleaseTick, uint64(22); got != want {
-		t.Fatalf("second attack release tick = %d, want %d", got, want)
+		t.Fatalf("second attack release tick = %v, want %v", got, want)
 	}
 }
 
@@ -266,7 +266,7 @@ func TestBasicAttackUsesWindupBeforeDamage(t *testing.T) {
 	w.ApplyInput("p1", protocolPlayerInputAttack(target.ID), 10, nil, 20)
 	w.Tick(10, 20)
 	if target.Combat.LastDamage != 0 {
-		t.Fatalf("damage during attack windup = %d, want 0", target.Combat.LastDamage)
+		t.Fatalf("damage during attack windup = %v, want 0", target.Combat.LastDamage)
 	}
 	w.Tick(15, 20)
 	if target.Combat.LastDamage <= 0 {
@@ -276,7 +276,7 @@ func TestBasicAttackUsesWindupBeforeDamage(t *testing.T) {
 		t.Fatalf("basic attack damage events = %+v", target.Combat.DamageEvents)
 	}
 	if player.Combat.NextAttackTick != 30 {
-		t.Fatalf("next attack tick = %d, want 30", player.Combat.NextAttackTick)
+		t.Fatalf("next attack tick = %v, want 30", player.Combat.NextAttackTick)
 	}
 }
 
@@ -317,11 +317,384 @@ func TestRangedBasicAttackFiresProjectileAfterWindup(t *testing.T) {
 	w.ApplyInput("archer", protocolPlayerInputAttack(target.ID), 10, nil, 20)
 	w.Tick(10, 20)
 	if got := countProjectilesByKind(w, "basic_arrow"); got != 0 {
-		t.Fatalf("basic arrows during attack windup = %d, want 0", got)
+		t.Fatalf("basic arrows during attack windup = %v, want 0", got)
 	}
 	tickAttackRelease(t, w, player, 20)
 	if got := countProjectilesByKind(w, "basic_arrow"); got == 0 {
 		t.Fatal("ranged basic attack should fire projectile after windup")
+	}
+}
+
+func TestExplorerBasicAttackFiresProjectile(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(explorerHeroID)
+	if !ok {
+		t.Fatal("explorer hero not found")
+	}
+	w.SpawnHero("explorer", hero, TeamBlue)
+	player := w.entities[playerEntityID("explorer")]
+	target := w.entities["enemy:hero-1"]
+	target.Team = TeamRed
+	target.Position = Vector2{X: player.Position.X + 300, Y: player.Position.Y}
+
+	w.ApplyInput("explorer", protocolPlayerInputAttack(target.ID), 10, nil, 20)
+	w.Tick(10, 20)
+	tickAttackRelease(t, w, player, 20)
+
+	if got := countProjectilesByKind(w, "basic_arrow"); got == 0 {
+		t.Fatal("explorer basic attack should fire projectile")
+	}
+}
+
+func TestExplorerQHitsAppliesOnHitAndReducesCooldowns(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(explorerHeroID)
+	if !ok {
+		t.Fatal("explorer hero not found")
+	}
+	w.SpawnHero("explorer", hero, TeamBlue)
+	explorer := w.entities[playerEntityID("explorer")]
+	explorer.Stats.Attack = 100
+	explorer.Stats.AbilityPower = 50
+	learnSkill(explorer, explorerQSkillID, 1)
+	target := w.entities["enemy:hero-1"]
+	placeEntity(explorer, 1000, 1000)
+	placeEntity(target, 1300, 1000)
+	target.Stats.HP = 1000
+	target.Stats.MaxHP = 1000
+	target.Stats.PhysicalDefense = 0
+
+	w.ApplyInput("explorer", protocolPlayerInputCast(explorerQSkillID, target.Position.X, target.Position.Y), 10, nil, 20)
+	if got := explorer.Stats.MP; got != 347 {
+		t.Fatalf("mp after q cast = %f, want 347", got)
+	}
+	w.Tick(14, 20)
+	if got := countProjectilesByKind(w, "explorer_q"); got != 0 {
+		t.Fatalf("q projectile during windup = %d, want 0", got)
+	}
+	w.Tick(15, 20)
+	if got := countProjectilesByKind(w, "explorer_q"); got != 1 {
+		t.Fatalf("q projectile after windup = %d, want 1", got)
+	}
+	tickUntilDamage(t, w, target, 15, 30, 20)
+
+	if got := target.Combat.LastDamage; got != 170 {
+		t.Fatalf("q damage = %d, want 170", got)
+	}
+	if len(target.Combat.DamageEvents) != 1 || !target.Combat.DamageEvents[0].BasicAttack {
+		t.Fatalf("q should apply on-hit basic attack context: %+v", target.Combat.DamageEvents)
+	}
+	if got := explorer.Skills[explorerQSkillID].CooldownUntilTick; got != 90 {
+		t.Fatalf("q cooldown after refund = %d, want 90", got)
+	}
+	if got := explorer.Stats.AttackSpeedBonus; math.Abs(got-0.1) > 0.000001 {
+		t.Fatalf("passive attack speed bonus = %f, want 0.1", got)
+	}
+}
+
+func TestExplorerWAttachesAndSkillDetonatesWithManaRefund(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(explorerHeroID)
+	if !ok {
+		t.Fatal("explorer hero not found")
+	}
+	w.SpawnHero("explorer", hero, TeamBlue)
+	explorer := w.entities[playerEntityID("explorer")]
+	explorer.Stats.MP = 200
+	explorer.Stats.MaxMP = 375
+	explorer.Stats.Attack = 100
+	explorer.Stats.BonusAttack = 20
+	explorer.Stats.AbilityPower = 100
+	learnSkill(explorer, explorerQSkillID, 1)
+	learnSkill(explorer, explorerWSkillID, 1)
+	target := w.entities["enemy:hero-1"]
+	placeEntity(explorer, 1000, 1000)
+	placeEntity(target, 1300, 1000)
+	target.Stats.HP = 1000
+	target.Stats.MaxHP = 1000
+	target.Stats.PhysicalDefense = 0
+	target.Stats.MagicDefense = 0
+
+	w.ApplyInput("explorer", protocolPlayerInputCast(explorerWSkillID, target.Position.X, target.Position.Y), 10, nil, 20)
+	if got := countProjectilesByKind(w, "explorer_w"); got != 0 {
+		t.Fatalf("w projectile during windup = %d, want 0", got)
+	}
+	for tick := uint64(11); tick <= 30 && len(target.Passive.ExplorerFluxMarks) == 0; tick++ {
+		w.Tick(tick, 20)
+	}
+	if len(target.Passive.ExplorerFluxMarks) != 1 {
+		t.Fatalf("w mark missing: %+v", target.Passive.ExplorerFluxMarks)
+	}
+	if target.Combat.LastDamage != 0 {
+		t.Fatalf("w attach damage = %d, want 0", target.Combat.LastDamage)
+	}
+	explorer.Stats.Attack = 100
+	explorer.Stats.BonusAttack = 20
+	explorer.Stats.AbilityPower = 100
+
+	w.ApplyInput("explorer", protocolPlayerInputCast(explorerQSkillID, target.Position.X, target.Position.Y), 31, nil, 20)
+	tickUntilDamage(t, w, target, 31, 50, 20)
+
+	if _, ok := target.Passive.ExplorerFluxMarks[explorer.ID]; ok {
+		t.Fatal("w mark should be consumed")
+	}
+	if got := target.Combat.LastDamage; got != 190 {
+		t.Fatalf("w detonation damage = %d, want 190", got)
+	}
+	if got := explorer.Stats.MP; got < 211 || got > 212 {
+		t.Fatalf("mp after skill detonation refund = %f, want about 211", got)
+	}
+	if len(target.Combat.DamageEvents) != 2 || !target.Combat.DamageEvents[0].BasicAttack || target.Combat.DamageEvents[1].DamageType != "magic" {
+		t.Fatalf("damage events = %+v, want q on-hit then w magic", target.Combat.DamageEvents)
+	}
+}
+
+func TestExplorerEReleasesAfterWindupAndPrioritizesWTarget(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(explorerHeroID)
+	if !ok {
+		t.Fatal("explorer hero not found")
+	}
+	w.SpawnHero("explorer", hero, TeamBlue)
+	explorer := w.entities[playerEntityID("explorer")]
+	explorer.Stats.MP = 200
+	explorer.Stats.MaxMP = 375
+	explorer.Stats.BonusAttack = 20
+	explorer.Stats.AbilityPower = 100
+	learnSkill(explorer, explorerWSkillID, 1)
+	learnSkill(explorer, explorerESkillID, 1)
+	near := w.entities["enemy:hero-1"]
+	markedID, _ := w.SpawnObject(EntityKindEnemyHero, TeamRed, 1800, 1000)
+	marked := w.entities[markedID]
+	placeEntity(explorer, 1000, 1000)
+	placeEntity(near, 1575, 1000)
+	placeEntity(marked, 1800, 1000)
+	near.Stats.HP = 1000
+	near.Stats.MaxHP = 1000
+	near.Stats.MagicDefense = 0
+	marked.Stats.HP = 1000
+	marked.Stats.MaxHP = 1000
+	marked.Stats.MagicDefense = 0
+	marked.Passive.ExplorerFluxMarks = map[string]ExplorerFluxState{
+		explorer.ID: {Level: 1, ExpiresAt: 100},
+	}
+
+	w.ApplyInput("explorer", protocolPlayerInputCast(explorerESkillID, 1475, 1000), 10, nil, 20)
+	if got := explorer.Position.X; got != 1000 {
+		t.Fatalf("e should not blink during windup, x=%f", got)
+	}
+	w.Tick(14, 20)
+	if got := countProjectilesByKind(w, "explorer_e"); got != 0 {
+		t.Fatalf("e projectile during windup = %d, want 0", got)
+	}
+	w.Tick(15, 20)
+	if got := explorer.Position.X; got != 1475 {
+		t.Fatalf("e blink x = %f, want 1475", got)
+	}
+	if got := countProjectilesByKind(w, "explorer_e"); got != 1 {
+		t.Fatalf("e projectile after windup = %d, want 1", got)
+	}
+	tickUntilDamage(t, w, marked, 15, 30, 20)
+
+	if near.Combat.LastDamage != 0 {
+		t.Fatalf("near unmarked target damage = %d, want 0", near.Combat.LastDamage)
+	}
+	if _, ok := marked.Passive.ExplorerFluxMarks[explorer.ID]; ok {
+		t.Fatal("w mark should be consumed by e")
+	}
+	if len(marked.Combat.DamageEvents) != 2 || marked.Combat.DamageEvents[0].Damage != 167 || marked.Combat.DamageEvents[1].Damage != 190 {
+		t.Fatalf("marked damage events = %+v, want e magic then w detonation", marked.Combat.DamageEvents)
+	}
+	if got := explorer.Stats.AttackSpeedBonus; math.Abs(got-0.1) > 0.000001 {
+		t.Fatalf("passive attack speed bonus = %f, want 0.1", got)
+	}
+}
+
+func TestExplorerEInterruptedDuringWindupDoesNotBlinkOrFire(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(explorerHeroID)
+	if !ok {
+		t.Fatal("explorer hero not found")
+	}
+	w.SpawnHero("explorer", hero, TeamBlue)
+	explorer := w.entities[playerEntityID("explorer")]
+	learnSkill(explorer, explorerESkillID, 1)
+	placeEntity(explorer, 1000, 1000)
+
+	w.ApplyInput("explorer", protocolPlayerInputCast(explorerESkillID, 1475, 1000), 10, nil, 20)
+	explorer.Control.StunnedUntilTick = 20
+	w.Tick(11, 20)
+	w.Tick(15, 20)
+
+	if explorer.Passive.ExplorerEPending {
+		t.Fatal("e pending should be cleared after interrupt")
+	}
+	if got := explorer.Position.X; got != 1000 {
+		t.Fatalf("interrupted e blink x = %f, want 1000", got)
+	}
+	if got := countProjectilesByKind(w, "explorer_e"); got != 0 {
+		t.Fatalf("interrupted e projectiles = %d, want 0", got)
+	}
+}
+
+func TestExplorerEUsesRawMouseDirection(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(explorerHeroID)
+	if !ok {
+		t.Fatal("explorer hero not found")
+	}
+	w.SpawnHero("explorer", hero, TeamBlue)
+	explorer := w.entities[playerEntityID("explorer")]
+	learnSkill(explorer, explorerESkillID, 1)
+	placeEntity(explorer, 1000, 1000)
+
+	w.ApplyInput("explorer", protocolPlayerInputCast(explorerESkillID, 100000, 1000), 10, nil, 20)
+	w.Tick(15, 20)
+
+	if got := explorer.Position.X; got != 1475 {
+		t.Fatalf("e blink x = %f, want 1475", got)
+	}
+	if got := explorer.Position.Y; got != 1000 {
+		t.Fatalf("e blink y = %f, want 1000", got)
+	}
+}
+
+func TestExplorerRDealsReducedDamageToMinionsAndNonEpicMonsters(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(explorerHeroID)
+	if !ok {
+		t.Fatal("explorer hero not found")
+	}
+	w.SpawnHero("explorer", hero, TeamBlue)
+	explorer := w.entities[playerEntityID("explorer")]
+	explorer.Stats.MP = 300
+	learnSkill(explorer, explorerRSkillID, 1)
+	target := w.entities["enemy:hero-1"]
+	minion := w.entities["minion:red-melee-1"]
+	monster := &Entity{
+		ID:       "spawn:test-gromp",
+		Kind:     EntityKindGromp,
+		Team:     TeamNeutral,
+		Position: Vector2{X: 1900, Y: 1000},
+		Radius:   40,
+		Stats:    Stats{HP: 1000, MaxHP: 1000},
+	}
+	w.entities[monster.ID] = monster
+	placeEntity(explorer, 1000, 1000)
+	placeEntity(target, 1500, 1000)
+	placeEntity(minion, 1700, 1000)
+	target.Stats.HP = 2000
+	target.Stats.MaxHP = 2000
+	target.Stats.MagicDefense = 0
+	minion.Stats.HP = 1000
+	minion.Stats.MaxHP = 1000
+	minion.Stats.MagicDefense = 0
+
+	w.ApplyInput("explorer", protocolPlayerInputCast(explorerRSkillID, 3000, 1000), 10, nil, 20)
+	if got := explorer.Stats.MP; got != 200 {
+		t.Fatalf("mp after r cast = %f, want 200", got)
+	}
+	w.Tick(29, 20)
+	if got := countProjectilesByKind(w, "explorer_r"); got != 0 {
+		t.Fatalf("r projectile before channel completes = %d, want 0", got)
+	}
+	w.Tick(30, 20)
+	if got := countProjectilesByKind(w, "explorer_r"); got != 1 {
+		t.Fatalf("r projectile after channel = %d, want 1", got)
+	}
+	if projectile := projectileByKind(w, "explorer_r"); projectile == nil || projectile.Range != 5000 {
+		t.Fatalf("r projectile range = %+v, want map edge range 5000", projectile)
+	}
+	for tick := uint64(31); tick <= 50 && (target.Combat.LastDamage == 0 || minion.Combat.LastDamage == 0 || monster.Combat.LastDamage == 0); tick++ {
+		w.Tick(tick, 20)
+	}
+	if target.Combat.LastDamage == 0 || minion.Combat.LastDamage == 0 || monster.Combat.LastDamage == 0 {
+		t.Fatalf("r did not hit all targets: hero=%d minion=%d monster=%d", target.Combat.LastDamage, minion.Combat.LastDamage, monster.Combat.LastDamage)
+	}
+
+	if got := target.Combat.LastDamage; got != 350 {
+		t.Fatalf("r hero damage = %d, want 350", got)
+	}
+	if got := minion.Combat.LastDamage; got != 150 {
+		t.Fatalf("r minion damage = %d, want 150", got)
+	}
+	if got := monster.Combat.LastDamage; got != 150 {
+		t.Fatalf("r monster damage = %d, want 150", got)
+	}
+	if got := explorer.Skills[explorerRSkillID].CooldownUntilTick; got != 2410 {
+		t.Fatalf("r cooldown = %d, want 2410", got)
+	}
+	if got := explorer.Stats.AttackSpeedBonus; math.Abs(got-0.3) > 0.000001 {
+		t.Fatalf("passive attack speed bonus = %f, want 0.3", got)
+	}
+}
+
+func TestArcherRUsesMapEdgeRange(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(archerHeroID)
+	if !ok {
+		t.Fatal("archer hero not found")
+	}
+	w.SpawnHero("archer", hero, TeamBlue)
+	archer := w.entities[playerEntityID("archer")]
+	archer.Stats.MP = 200
+	learnSkill(archer, archerRSkillID, 1)
+	placeEntity(archer, 1000, 1000)
+
+	w.ApplyInput("archer", protocolPlayerInputCast(archerRSkillID, 100000, 1000), 10, nil, 20)
+	w.Tick(14, 20)
+	if got := countProjectilesByKind(w, "archer_crystal_arrow"); got != 0 {
+		t.Fatalf("archer r projectile before release = %d, want 0", got)
+	}
+	w.Tick(15, 20)
+	projectile := projectileByKind(w, "archer_crystal_arrow")
+	if projectile == nil {
+		t.Fatal("archer r projectile missing after release")
+	}
+	if got := projectile.Range; got != 5000 {
+		t.Fatalf("archer r range = %f, want map edge range 5000", got)
+	}
+}
+
+func TestFrostMageBasicAttackFiresProjectile(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(frostmageHeroID)
+	if !ok {
+		t.Fatal("frost mage hero not found")
+	}
+	w.SpawnHero("frostmage", hero, TeamBlue)
+	player := w.entities[playerEntityID("frostmage")]
+	target := w.entities["enemy:hero-1"]
+	target.Team = TeamRed
+	target.Position = Vector2{X: player.Position.X + 300, Y: player.Position.Y}
+
+	w.ApplyInput("frostmage", protocolPlayerInputAttack(target.ID), 10, nil, 20)
+	w.Tick(10, 20)
+	tickAttackRelease(t, w, player, 20)
+
+	if got := countProjectilesByKind(w, "basic_arrow"); got == 0 {
+		t.Fatal("frost mage basic attack should fire projectile")
+	}
+}
+
+func TestFireMageBasicAttackFiresProjectile(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(fireMageHeroID)
+	if !ok {
+		t.Fatal("fire mage hero not found")
+	}
+	w.SpawnHero("fire_mage", hero, TeamBlue)
+	player := w.entities[playerEntityID("fire_mage")]
+	target := w.entities["enemy:hero-1"]
+	target.Team = TeamRed
+	target.Position = Vector2{X: player.Position.X + 300, Y: player.Position.Y}
+
+	w.ApplyInput("fire_mage", protocolPlayerInputAttack(target.ID), 10, nil, 20)
+	w.Tick(10, 20)
+	tickAttackRelease(t, w, player, 20)
+
+	if got := countProjectilesByKind(w, "basic_arrow"); got == 0 {
+		t.Fatal("fire mage basic attack should fire projectile")
 	}
 }
 
@@ -342,13 +715,13 @@ func TestTargetedProjectileDisappearsWhenTargetDies(t *testing.T) {
 	w.Tick(10, 20)
 	tickAttackRelease(t, w, archer, 20)
 	if got := countProjectilesByKind(w, "basic_arrow"); got != 1 {
-		t.Fatalf("basic arrows after release = %d, want 1", got)
+		t.Fatalf("basic arrows after release = %v, want 1", got)
 	}
 
 	w.killPlayer(target, 17, 20)
 
 	if got := countProjectilesByKind(w, "basic_arrow"); got != 0 {
-		t.Fatalf("basic arrows after target death = %d, want 0", got)
+		t.Fatalf("basic arrows after target death = %v, want 0", got)
 	}
 }
 
@@ -371,11 +744,11 @@ func TestCastingSkillLocksAutoAttackForAttackInterval(t *testing.T) {
 	w.Tick(1, 20)
 
 	if target.Combat.LastHitTick != qDamageTick {
-		t.Fatalf("auto attack should not fire on same tick as skill cast: got hit tick %d want %d", target.Combat.LastHitTick, qDamageTick)
+		t.Fatalf("auto attack should not fire on same tick as skill cast: got hit tick %v want %v", target.Combat.LastHitTick, qDamageTick)
 	}
 	tickSwordQRelease(t, w, player, 20)
 	if player.Combat.NextAttackTick != 28 {
-		t.Fatalf("next attack tick = %d, want 28", player.Combat.NextAttackTick)
+		t.Fatalf("next attack tick = %v, want 28", player.Combat.NextAttackTick)
 	}
 }
 
@@ -392,15 +765,15 @@ func TestGunnerPassiveDamagesOnlyNewTargetsAndReducesWCooldown(t *testing.T) {
 	target.Stats.PhysicalDefense = 0
 
 	if got := w.attackDamage(gunner, target, 10, 20); got != 150 {
-		t.Fatalf("first target damage = %d, want 150", got)
+		t.Fatalf("first target damage = %v, want 150", got)
 	}
 	gunner.Skills[gunnerWSkillID] = SkillState{SkillID: gunnerWSkillID, CooldownUntilTick: 100}
 	w.onHeroBasicHit(gunner, target, 10, 20)
 	if got := gunner.Skills[gunnerWSkillID].CooldownUntilTick; got != 60 {
-		t.Fatalf("w cooldown after passive = %d, want 60", got)
+		t.Fatalf("w cooldown after passive = %v, want 60", got)
 	}
 	if got := w.attackDamage(gunner, target, 20, 20); got != 100 {
-		t.Fatalf("same target damage = %d, want 100", got)
+		t.Fatalf("same target damage = %v, want 100", got)
 	}
 }
 
@@ -418,7 +791,7 @@ func TestGunnerPassiveUsesLowerMinionDamage(t *testing.T) {
 	target.Stats.PhysicalDefense = 0
 
 	if got := w.attackDamage(gunner, target, 10, 20); got != 150 {
-		t.Fatalf("max-level minion damage = %d, want 150", got)
+		t.Fatalf("max-level minion damage = %v, want 150", got)
 	}
 }
 
@@ -442,19 +815,19 @@ func TestGunnerQBouncesToEnemyBehindTarget(t *testing.T) {
 
 	w.ApplyInput("gunner", protocolPlayerInputCastTarget("gunner_q", first.ID, first.Position.X, first.Position.Y), 10, nil, 20)
 	if got := first.Combat.LastDamage; got != 0 {
-		t.Fatalf("first q damage before projectile hit = %d, want 0", got)
+		t.Fatalf("first q damage before projectile hit = %v, want 0", got)
 	}
 	tickUntilDamage(t, w, first, 10, 40, 20)
 	tickUntilDamage(t, w, second, 10, 40, 20)
 
 	if got := first.Combat.LastDamage; got != 120 {
-		t.Fatalf("first q damage = %d, want 120", got)
+		t.Fatalf("first q damage = %v, want 120", got)
 	}
 	if got := second.Combat.LastDamage; got != 120 {
-		t.Fatalf("second q damage = %d, want 120", got)
+		t.Fatalf("second q damage = %v, want 120", got)
 	}
 	if got := gunner.Skills["gunner_q"].CooldownUntilTick; got != 150 {
-		t.Fatalf("q cooldown = %d, want 150", got)
+		t.Fatalf("q cooldown = %v, want 150", got)
 	}
 }
 
@@ -480,10 +853,10 @@ func TestGunnerQDoesNotBounceWithoutEnemyBehindTarget(t *testing.T) {
 	tickUntilDamage(t, w, first, 10, 40, 20)
 
 	if got := first.Combat.LastDamage; got != 120 {
-		t.Fatalf("first q damage = %d, want 120", got)
+		t.Fatalf("first q damage = %v, want 120", got)
 	}
 	if got := second.Combat.LastDamage; got != 0 {
-		t.Fatalf("second q damage = %d, want 0", got)
+		t.Fatalf("second q damage = %v, want 0", got)
 	}
 }
 
@@ -510,7 +883,7 @@ func TestGunnerQSecondHitCritsWhenFirstHitKills(t *testing.T) {
 	tickUntilDamage(t, w, second, 10, 40, 20)
 
 	if got := second.Combat.LastDamage; got != 240 {
-		t.Fatalf("second q crit damage = %d, want 240", got)
+		t.Fatalf("second q crit damage = %v, want 240", got)
 	}
 }
 
@@ -561,7 +934,7 @@ func TestGunnerWActiveGrantsFullMoveSpeedAndAttackSpeed(t *testing.T) {
 		t.Fatalf("w active attack speed = %f, want %f", got, baseAttackSpeed*1.4)
 	}
 	if got := gunner.Skills[gunnerWSkillID].CooldownUntilTick; got != 250 {
-		t.Fatalf("w cooldown = %d, want 250", got)
+		t.Fatalf("w cooldown = %v, want 250", got)
 	}
 	assertBuff(t, w.ActiveBuffs(gunner, 10), "gunner_w_active")
 }
@@ -585,13 +958,13 @@ func TestGunnerEDealsAreaDamageSlowAndExpires(t *testing.T) {
 	w.ApplyInput("gunner", protocolPlayerInputCast("gunner_e", target.Position.X, target.Position.Y), 10, nil, 20)
 
 	if got := target.Combat.LastDamage; got != 24 {
-		t.Fatalf("first e tick damage = %d, want 24", got)
+		t.Fatalf("first e tick damage = %v, want 24", got)
 	}
 	if math.Abs(target.Control.MoveSpeedSlow-0.46) > 0.000001 {
 		t.Fatalf("e slow = %f, want 0.46", target.Control.MoveSpeedSlow)
 	}
 	if got := gunner.Skills["gunner_e"].CooldownUntilTick; got != 370 {
-		t.Fatalf("e cooldown = %d, want 370", got)
+		t.Fatalf("e cooldown = %v, want 370", got)
 	}
 	if len(w.SkillEffects()) == 0 {
 		t.Fatal("e should create a visible area effect")
@@ -601,7 +974,7 @@ func TestGunnerEDealsAreaDamageSlowAndExpires(t *testing.T) {
 		w.Tick(tick, 20)
 	}
 	if got := startHP - target.Stats.HP; got != 192 {
-		t.Fatalf("total e damage after 8 ticks = %d, want 192", got)
+		t.Fatalf("total e damage after 8 ticks = %v, want 192", got)
 	}
 	w.Tick(50, 20)
 	for _, effect := range w.SkillEffects() {
@@ -638,26 +1011,26 @@ func TestGunnerRChannelsConeWaves(t *testing.T) {
 
 	w.ApplyInput("gunner", protocolPlayerInputCast("gunner_r", 2000, 1000), 10, nil, 20)
 	if target.Combat.LastDamage != 0 {
-		t.Fatalf("r should not damage before projectile flight, got %d", target.Combat.LastDamage)
+		t.Fatalf("r should not damage before projectile flight, got %v", target.Combat.LastDamage)
 	}
 	for tick := uint64(11); tick <= 90; tick++ {
 		w.Tick(tick, 20)
 	}
 
 	if got := 3000 - target.Stats.HP; got != 1120 {
-		t.Fatalf("r total damage = %d, want 1120", got)
+		t.Fatalf("r total damage = %v, want 1120", got)
 	}
 	if got := 3000 - inside.Stats.HP; got != 1120 {
-		t.Fatalf("r inside cone damage = %d, want 1120", got)
+		t.Fatalf("r inside cone damage = %v, want 1120", got)
 	}
 	if got := side.Combat.LastDamage; got != 0 {
-		t.Fatalf("side target damage = %d, want 0", got)
+		t.Fatalf("side target damage = %v, want 0", got)
 	}
 	if got := gunner.Skills["gunner_r"].CooldownUntilTick; got != 2410 {
-		t.Fatalf("r cooldown = %d, want 2410", got)
+		t.Fatalf("r cooldown = %v, want 2410", got)
 	}
 	if gunner.Passive.GunnerRExpireTick != 0 {
-		t.Fatalf("r state should be cleared: expire=%d", gunner.Passive.GunnerRExpireTick)
+		t.Fatalf("r state should be cleared: expire=%v", gunner.Passive.GunnerRExpireTick)
 	}
 }
 
@@ -681,6 +1054,6 @@ func TestGunnerRWaveCanCrit(t *testing.T) {
 	tickUntilDamage(t, w, target, 10, 30, 20)
 
 	if got := target.Combat.LastDamage; got != 160 {
-		t.Fatalf("r crit wave damage = %d, want 160", got)
+		t.Fatalf("r crit wave damage = %v, want 160", got)
 	}
 }

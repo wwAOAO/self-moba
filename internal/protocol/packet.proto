@@ -139,9 +139,9 @@ message EquipmentSlot {
 
 message StatsSnapshot {
   // Health and resources.
-  int32 hp = 1;
-  int32 max_hp = 2;
-  int32 bonus_hp = 3;
+  double hp = 1;
+  double max_hp = 2;
+  double bonus_hp = 3;
   double mp = 4;
   double max_mp = 5;
   double hp_regen5 = 6;

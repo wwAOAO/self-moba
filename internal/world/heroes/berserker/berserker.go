@@ -123,7 +123,7 @@ func healQ(w *world.World, entity *world.Entity, skill config.SkillConfig, hits 
 		return
 	}
 	beforeHP := entity.Stats.HP
-	entity.Stats.HP += int(math.Floor(float64(entity.Stats.MaxHP-entity.Stats.HP) * ratio))
+	entity.Stats.HP += math.Floor((entity.Stats.MaxHP - entity.Stats.HP) * ratio)
 	if entity.Stats.HP > entity.Stats.MaxHP {
 		entity.Stats.HP = entity.Stats.MaxHP
 	}
