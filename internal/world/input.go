@@ -36,6 +36,10 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	if input.SellEquipment != nil {
 		w.sellEquipment(entity, input.SellEquipment.Slot)
 	}
+	moving := input.Move != nil || (input.MoveX != 0 || input.MoveY != 0)
+	if moving {
+		w.cancelGunnerRChannel(entity)
+	}
 	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick || tick < entity.Control.StunnedUntilTick {
 		return
 	}
@@ -82,11 +86,21 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 		}
 	}
 	if input.Cast != nil {
+		if !canCastDuringSwordEDash(entity, tick, tickRate) {
+			return
+		}
 		if skills == nil {
 			skills = w.skills
 		}
 		w.applyCast(entity, *input.Cast, tick, skills, tickRate)
 	}
+}
+
+func canCastDuringSwordEDash(entity *Entity, tick uint64, tickRate int) bool {
+	if entity == nil || entity.HeroID != swordHeroID || tick >= entity.Control.DashUntilTick {
+		return true
+	}
+	return entity.Control.DashUntilTick-tick <= secondsToTicks(0.2, tickRate)
 }
 
 func (w *World) tickPlayer(entity *Entity, tick uint64, tickRate int) {
@@ -97,6 +111,9 @@ func (w *World) tickPlayer(entity *Entity, tick uint64, tickRate int) {
 		return
 	}
 	rooted := tick < entity.Control.RootedUntilTick
+	if entity.Combat.PendingAttackTargetID != "" {
+		return
+	}
 	target := w.entities[entity.Intent.AttackTargetID]
 	attackPaused := tick < entity.Intent.AttackPausedTill
 	if !attackPaused && canAttackTarget(entity, target) {

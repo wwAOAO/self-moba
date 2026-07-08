@@ -239,6 +239,7 @@ function resetClientState() {
   state.effects = [];
   state.seenEffectIds.clear();
   state.hiddenEffectIds.clear();
+  state.servantEffectPositions.clear();
   state.lastDamageByTarget.clear();
   state.moveTarget = null;
   state.selectedTargetId = "";
@@ -281,7 +282,14 @@ function castSkill(slot) {
   if (!isSkillLearned(self, skillId)) {
     return;
   }
-  if (isSkillOnCooldown(self, skillId) && !isNinjaShadowRecast(self, skillId)) {
+  if (
+    isSkillOnCooldown(self, skillId) &&
+    !isNinjaShadowRecast(self, skillId) &&
+    !isFrostMageERecast(self, skillId)
+  ) {
+    return;
+  }
+  if (!canCastDuringSwordEDash(self)) {
     return;
   }
   const selected = currentTarget();
@@ -307,6 +315,9 @@ function castSkill(slot) {
     : selected || state.aimPoint || fallbackTarget;
   if (slot === "e" && skillId === "taunt") {
     showTankEPreview(self);
+  }
+  if (skillId === "frostmage_r") {
+    showFrostMageRPreview(self);
   }
   addCastWindup(self, skillId, target, selected);
   sendPacket("input", {
@@ -334,13 +345,36 @@ function isNinjaShadowRecast(player, skillId) {
   );
 }
 
+function isFrostMageERecast(player, skillId) {
+  if (player?.heroId !== "frostmage" || skillId !== "frostmage_e") {
+    return false;
+  }
+  const tick = Number(els.tick.textContent || 0);
+  const recastTicks = (skillClientConfig.frostmage_e?.recastDelaySeconds || 0.5) * state.tickRate;
+  return state.effects.some(
+    (effect) =>
+      effect.kind === "frostmage_e" &&
+      effect.sourceId === player.id &&
+      (effect.expiresAt || 0) > tick &&
+      (effect.createdAt || 0) + recastTicks <= tick,
+  );
+}
+
+function canCastDuringSwordEDash(player) {
+  if (player?.heroId !== "sword") {
+    return true;
+  }
+  const tick = Number(els.tick.textContent || 0);
+  const dashUntilTick = player.control?.dashUntilTick || 0;
+  if (dashUntilTick <= tick) {
+    return true;
+  }
+  return dashUntilTick - tick <= 0.2 * state.tickRate;
+}
+
 function addCastWindup(self, skillId, target, selectedTarget) {
   const config = skillClientConfig[skillId] || {};
-  if (
-    skillId === "berserker_r" &&
-    Math.hypot((target?.x ?? self.x) - self.x, (target?.y ?? self.y) - self.y) >
-      (config.range || 460)
-  ) {
+  if (skillId === "berserker_r") {
     return;
   }
   const windupSeconds =

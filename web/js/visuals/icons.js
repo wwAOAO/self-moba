@@ -54,6 +54,9 @@ function playerModelShape(player) {
   if (player.heroId === "fire_mage") {
     return "fire";
   }
+  if (player.heroId === "frostmage") {
+    return "snowflake";
+  }
   if (player.heroId === "gunner") {
     return "gunner";
   }
@@ -508,6 +511,49 @@ function drawFireIcon(graphics, radius, dead, teamColor) {
   graphics.quadraticCurveTo(radius * 0.28, radius * 0.14, 0, radius * 0.68);
   graphics.closePath();
   graphics.fill(inner);
+}
+
+function drawSnowflakeIcon(graphics, radius, dead, teamColor) {
+  const color = dead ? 0x9ca3af : teamColor;
+  const ice = dead ? 0xd1d5db : 0xe0faff;
+  const edge = dead ? 0x374151 : 0xa5f3fc;
+  const point = (angle, forward, side, scale) => ({
+    x: Math.cos(angle) * radius * forward * scale + Math.cos(angle + Math.PI / 2) * radius * side * scale,
+    y: Math.sin(angle) * radius * forward * scale + Math.sin(angle + Math.PI / 2) * radius * side * scale,
+  });
+  const drawCrystal = (offset = 0, scale = 1) => {
+    for (let i = 0; i < 6; i++) {
+      const angle = -Math.PI / 2 + offset + (Math.PI * i) / 3;
+      const points = [
+        point(angle, 0.05, -0.04, scale),
+        point(angle, 0.5, -0.18, scale),
+        point(angle, 0.8, -0.38, scale),
+        point(angle, 0.73, -0.18, scale),
+        point(angle, 1.26, -0.22, scale),
+        point(angle, 1.58, 0, scale),
+        point(angle, 1.26, 0.22, scale),
+        point(angle, 0.73, 0.18, scale),
+        point(angle, 0.8, 0.38, scale),
+        point(angle, 0.5, 0.18, scale),
+        point(angle, 0.05, 0.04, scale),
+      ];
+      graphics.moveTo(points[0].x, points[0].y);
+      for (const p of points.slice(1)) {
+        graphics.lineTo(p.x, p.y);
+      }
+      graphics.closePath();
+    }
+  };
+
+  graphics.circle(0, 0, radius * 1.55);
+  graphics.fill({ color: edge, alpha: dead ? 0.1 : 0.18 });
+  drawCrystal();
+  graphics.fill({ color, alpha: dead ? 0.72 : 0.96 });
+  graphics.stroke({ color: edge, width: Math.max(1, radius * 0.06), alpha: dead ? 0.45 : 0.85 });
+  drawCrystal(Math.PI / 6, 0.54);
+  graphics.fill({ color: ice, alpha: dead ? 0.38 : 0.58 });
+  graphics.circle(0, 0, radius * 0.12);
+  graphics.fill({ color: ice, alpha: dead ? 0.65 : 0.9 });
 }
 
 function drawMageWing(graphics, radius, side) {

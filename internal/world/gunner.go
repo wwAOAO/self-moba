@@ -2,6 +2,22 @@ package world
 
 import "math"
 
+func (w *World) cancelGunnerRChannel(entity *Entity) {
+	if entity == nil || entity.HeroID != gunnerHeroID || entity.Passive.GunnerRExpireTick == 0 {
+		return
+	}
+	w.RemoveSkillEffect(entity.Passive.GunnerREffectID)
+	entity.Passive.GunnerRDir = Vector2{}
+	entity.Passive.GunnerRStartTick = 0
+	entity.Passive.GunnerRExpireTick = 0
+	entity.Passive.GunnerRNextTick = 0
+	entity.Passive.GunnerRLevel = 0
+	entity.Passive.GunnerRWaves = 0
+	entity.Passive.GunnerRWaveCount = 0
+	entity.Passive.GunnerREffectID = ""
+	entity.Control.ActionLockedUntilTick = 0
+}
+
 func (w *World) fireGunnerQBounce(source *Entity, first *Entity, projectile *Projectile, forceCrit bool, tick uint64, tickRate int) {
 	if source == nil || first == nil || projectile == nil || tickRate <= 0 {
 		return

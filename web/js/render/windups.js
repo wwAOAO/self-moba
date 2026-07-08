@@ -383,6 +383,20 @@ function showTankEPreview(self) {
   };
 }
 
+function showFrostMageRPreview(self) {
+  const config = skillClientConfig.frostmage_r || {};
+  const previewMs = config.previewMs || 450;
+  state.skillPreview = {
+    kind: "frostmage_r",
+    form: "circle",
+    x: self.x,
+    y: self.y,
+    range: config.range || 550,
+    previewMs,
+    expiresAt: performance.now() + previewMs,
+  };
+}
+
 function swordEQWindowActive(player, config, tick) {
   const dashUntilTick = player.control?.dashUntilTick || 0;
   if (dashUntilTick <= tick) {

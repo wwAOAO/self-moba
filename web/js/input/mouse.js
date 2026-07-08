@@ -75,10 +75,13 @@ function attackMoveAtPoint(point) {
   if (!self || self.dead) {
     return;
   }
-  const targetId = nearestAttackTarget(
+  let targetId = nearestAttackTarget(
     point,
-    Math.max(500, self?.stats?.attackRange || 0),
+    Math.max(1000, self?.stats?.attackRange || 0),
   );
+  if (!targetId) {
+    targetId = nearestAttackTarget(self, Math.max(1000, self.stats?.attackRange || 0));
+  }
   if (!targetId) {
     moveToPoint({ x: self.x, y: self.y });
     return;

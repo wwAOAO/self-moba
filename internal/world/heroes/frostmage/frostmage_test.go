@@ -227,11 +227,26 @@ func TestIcebornSubjugationServantSlowsHeroAndExplodes(t *testing.T) {
 
 	w.Tick(90, 20)
 
-	if got := hero.Combat.LastDamage; got != 50 {
-		t.Fatalf("explosion damage = %d, want 50", got)
+	if got := hero.Combat.LastDamage; got != 170 {
+		t.Fatalf("explosion damage = %d, want 170", got)
 	}
 	if got := len(source.Passive.FrostServants); got != 0 {
 		t.Fatalf("servants after explosion = %d, want 0", got)
+	}
+}
+
+func TestIcebornSubjugationExplosionDamageScalesByLevel(t *testing.T) {
+	w, source := testWorld(t)
+	source.Stats.AbilityPower = 100
+	skill := w.SkillConfig(passiveID)
+
+	source.Level = 1
+	if got := passiveExplosionDamage(source, skill); got != 170 {
+		t.Fatalf("level 1 explosion raw damage = %v, want 170", got)
+	}
+	source.Level = 18
+	if got := passiveExplosionDamage(source, skill); got != 630 {
+		t.Fatalf("level 18 explosion raw damage = %v, want 630", got)
 	}
 }
 
@@ -310,6 +325,10 @@ func testWorld(t *testing.T) (*world.World, *world.Entity) {
 				"moveSpeed":       325,
 				"explosionRadius": 450,
 				"apRatio":         0.5,
+			},
+			MetaLists: map[string][]float64{
+				"explosionDamage":       {120, 580},
+				"explosionDamageLevels": {1, 18},
 			},
 		},
 		{

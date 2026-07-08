@@ -419,6 +419,35 @@ func TestBasicAttackUsesWindupBeforeDamage(t *testing.T) {
 	}
 }
 
+func TestBasicAttackWindupCompletesWhenTargetMovesOutOfRange(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.Base.AttackRange = 120
+	hero.Base.AttackSpeed = 1
+	hero.Base.MoveSpeed = 400
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	target := w.entities["enemy:hero-1"]
+	target.Team = TeamRed
+	target.Stats.PhysicalDefense = 0
+	placeEntity(player, 1000, 1000)
+	placeEntity(target, 1140, 1000)
+
+	w.ApplyInput("p1", protocolPlayerInputAttack(target.ID), 10, nil, 20)
+	w.Tick(10, 20)
+	placeEntity(target, 1800, 1000)
+	before := player.Position
+	w.Tick(11, 20)
+	if player.Position != before {
+		t.Fatalf("player moved during attack windup: got %+v want %+v", player.Position, before)
+	}
+	tickAttackRelease(t, w, player, 20)
+
+	if target.Combat.LastDamage <= 0 {
+		t.Fatal("basic attack should complete after windup even if target moved out of range")
+	}
+}
+
 func TestBasicAttackWindupUsesAttackSpeedBonus(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()
@@ -920,6 +949,36 @@ func TestCastingSkillLocksAutoAttackForAttackInterval(t *testing.T) {
 	}
 }
 
+func TestSwordEAllowsSkillCastsOnlyNearDashEnd(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(swordHeroID)
+	if !ok {
+		t.Fatal("sword hero not found")
+	}
+	w.SpawnHero("sword", hero, TeamBlue)
+	player := w.entities[playerEntityID("sword")]
+	target := w.entities["enemy:hero-1"]
+	placeEntity(player, 1000, 1000)
+	placeEntity(target, 1200, 1000)
+	learnSkill(player, swordQSkillID, 1)
+	learnSkill(player, swordESkillID, 1)
+
+	w.ApplyInput("sword", protocolPlayerInputCast(swordESkillID, target.Position.X, target.Position.Y), 10, nil, 20)
+	w.ApplyInput("sword", protocolPlayerInputCast(swordQSkillID, target.Position.X, target.Position.Y), 11, nil, 20)
+	if player.Sword.QPending {
+		t.Fatal("sword q should not cast before final 0.2s of e dash")
+	}
+
+	w.ApplyInput("sword", protocolPlayerInputCast(swordQSkillID, target.Position.X, target.Position.Y), 13, nil, 20)
+
+	if !player.Sword.QPending {
+		t.Fatal("sword q should be pending during eq combo")
+	}
+	if got := player.Sword.QForm; got != "circle" {
+		t.Fatalf("sword q form = %q, want circle", got)
+	}
+}
+
 func TestGunnerPassiveDamagesOnlyNewTargetsAndReducesWCooldown(t *testing.T) {
 	w := testWorld(t)
 	hero, ok := w.heroes.Get(gunnerHeroID)
@@ -1199,6 +1258,35 @@ func TestGunnerRChannelsConeWaves(t *testing.T) {
 	}
 	if gunner.Passive.GunnerRExpireTick != 0 {
 		t.Fatalf("r state should be cleared: expire=%v", gunner.Passive.GunnerRExpireTick)
+	}
+}
+
+func TestGunnerRChannelCancelsOnMove(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(gunnerHeroID)
+	if !ok {
+		t.Fatal("gunner hero not found")
+	}
+	w.SpawnHero("gunner", hero, TeamBlue)
+	gunner := w.entities[playerEntityID("gunner")]
+	placeEntity(gunner, 1000, 1000)
+	learnSkill(gunner, "gunner_r", 1)
+
+	w.ApplyInput("gunner", protocolPlayerInputCast("gunner_r", 2000, 1000), 10, nil, 20)
+	firstWaveCount := countProjectilesByKind(w, "gunner_r")
+	w.ApplyInput("gunner", protocolPlayerInputMove(1200, 1000), 11, nil, 20)
+
+	if gunner.Passive.GunnerRExpireTick != 0 || gunner.Control.ActionLockedUntilTick != 0 {
+		t.Fatalf("r channel state expire=%d lock=%d, want canceled", gunner.Passive.GunnerRExpireTick, gunner.Control.ActionLockedUntilTick)
+	}
+	if gunner.Intent.MoveTarget == nil {
+		t.Fatal("move input should continue after canceling r")
+	}
+	for tick := uint64(12); tick <= 40; tick++ {
+		w.Tick(tick, 20)
+	}
+	if got := countProjectilesByKind(w, "gunner_r"); got != firstWaveCount {
+		t.Fatalf("gunner r waves after cancel = %d, want %d", got, firstWaveCount)
 	}
 }
 

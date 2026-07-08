@@ -629,7 +629,7 @@ func servantTarget(w *world.World, source *world.Entity, position world.Vector2,
 }
 
 func explode(w *world.World, source *world.Entity, center world.Vector2, skill config.SkillConfig, tick uint64, tickRate int) {
-	raw := float64(source.Stats.AbilityPower) * skillMeta(skill, "apRatio", 0.5)
+	raw := passiveExplosionDamage(source, skill)
 	for _, target := range w.TargetsInRadius(source, center, skillMeta(skill, "explosionRadius", 280)) {
 		damage := w.MagicDamageAfterResistance(source, target, raw, tick)
 		target.Combat.LastHitTick = tick
@@ -646,6 +646,16 @@ func explode(w *world.World, source *world.Entity, center world.Vector2, skill c
 			w.RemoveDeadUnit(target)
 		}
 	}
+}
+
+func passiveExplosionDamage(source *world.Entity, skill config.SkillConfig) float64 {
+	level := world.MinHeroLevel
+	ap := 0.0
+	if source != nil {
+		level = source.Level
+		ap = float64(source.Stats.AbilityPower)
+	}
+	return skillCurve(skill, "explosionDamage", "explosionDamageLevels", level, 120) + ap*skillMeta(skill, "apRatio", 0.5)
 }
 
 func putServantEffect(w *world.World, source *world.Entity, id string, position world.Vector2, skill config.SkillConfig, tick uint64) {
@@ -723,6 +733,48 @@ func skillList(skill config.SkillConfig, key string, level int, fallback []float
 		level = len(values)
 	}
 	return values[level-1]
+}
+
+func skillCurve(skill config.SkillConfig, valueKey string, levelKey string, level int, fallback float64) float64 {
+	if skill.MetaLists == nil {
+		return fallback
+	}
+	values := skill.MetaLists[valueKey]
+	levels := skill.MetaLists[levelKey]
+	if len(values) == 0 || len(values) != len(levels) {
+		return fallback
+	}
+	currentLevel := float64(clampInt(level, world.MinHeroLevel, world.MaxHeroLevel))
+	if currentLevel <= levels[0] {
+		return values[0]
+	}
+	last := len(values) - 1
+	if currentLevel >= levels[last] {
+		return values[last]
+	}
+	for i := 1; i < len(values); i++ {
+		if currentLevel > levels[i] {
+			continue
+		}
+		fromLevel := levels[i-1]
+		toLevel := levels[i]
+		if toLevel <= fromLevel {
+			return values[i]
+		}
+		t := (currentLevel - fromLevel) / (toLevel - fromLevel)
+		return values[i-1] + (values[i]-values[i-1])*t
+	}
+	return values[last]
+}
+
+func clampInt(value int, min int, max int) int {
+	if value < min {
+		return min
+	}
+	if value > max {
+		return max
+	}
+	return value
 }
 
 func secondsToTicks(seconds float64, tickRate int) uint64 {

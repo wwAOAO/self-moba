@@ -28,12 +28,12 @@ function setTargetCard(target) {
     <div class="stats-grid">
       <span>攻击力 ${formatAttack(stats)}</span>
       <span>法术强度 ${stats.abilityPower || 0}</span>
-      <span>攻击速度 ${stats.attackSpeed}</span>
+      <span>攻击速度 ${formatNumber(stats.attackSpeed)}</span>
       <span>技能急速 ${formatNumber(stats.abilityHaste || 0)}</span>
       <span>物理防御 ${formatDefenseTip(stats.physicalDefense || 0, "物理")} ${formatPhysicalDefense(stats)}</span>
       <span>魔法防御 ${formatDefenseTip(stats.magicDefense || 0, "魔法")} ${formatMagicDefense(stats)}</span>
-      <span>移动速度 ${stats.moveSpeed}</span>
-      <span>攻击距离 ${stats.attackRange}</span>
+      <span>移动速度 ${formatNumber(stats.moveSpeed)}</span>
+      <span>攻击距离 ${formatNumber(stats.attackRange)}</span>
       <span>暴击率 ${formatCritChance(target)}${formatCritChanceTip(target)}</span>
     </div>
   `);

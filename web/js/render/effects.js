@@ -7,6 +7,7 @@
   drawCastWindups(frame);
   drawSkillPreview(frame);
 
+  const visibleServants = new Set();
   for (const effect of state.effects) {
     if (effect.kind === "sword_whirlwind") {
       drawSwordWhirlwindEffect(effect, frame);
@@ -67,6 +68,27 @@
     }
     if (effect.kind === "fire_mage_r") {
       drawFireMageREffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "frostmage_w") {
+      drawFrostMageWEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "frostmage_q" || effect.kind === "frostmage_q_shard") {
+      drawFrostMageQEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "frostmage_e") {
+      drawFrostMageEEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "frostmage_r_enemy" || effect.kind === "frostmage_r_self") {
+      drawFrostMageREffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "frostmage_servant") {
+      visibleServants.add(servantEffectID(effect));
+      drawFrostMageServantEffect(effect, frame);
       continue;
     }
     if (effect.kind === "robot_q") {
@@ -173,6 +195,11 @@
     skillLayer.moveTo(startX, startY);
     skillLayer.lineTo(endX, endY);
     skillLayer.stroke({ color: 0x0e7490, width: 2, alpha: 0.9 });
+  }
+  for (const id of state.servantEffectPositions.keys()) {
+    if (!visibleServants.has(id)) {
+      state.servantEffectPositions.delete(id);
+    }
   }
 }
 
@@ -295,6 +322,18 @@ function drawBasicArrowEffect(effect, frame) {
     drawExplorerBasicEffect(effect, frame);
     return;
   }
+  if (effect.sourceHeroId === "frostmage") {
+    drawArrowProjectile(effect, frame, 0xbae6fd, 0x38bdf8, {
+      fromSnapshot: true,
+    });
+    return;
+  }
+  if (effect.sourceHeroId === "fire_mage") {
+    drawArrowProjectile(effect, frame, 0xf97316, 0xef4444, {
+      fromSnapshot: true,
+    });
+    return;
+  }
   if (!effect.sourceHeroId) {
     drawMinionBasicProjectile(effect, frame);
     return;
@@ -345,6 +384,115 @@ function drawFireMageWEffect(effect, frame) {
   skillLayer.stroke({ color: 0xef4444, width: 3, alpha: 0.75 * alpha });
   skillLayer.circle(x, y, Math.max(8, radius * 0.12));
   skillLayer.fill({ color: 0xfef3c7, alpha: 0.22 * alpha });
+}
+
+function drawFrostMageWEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = (effect.radius || 450) * frame.scale;
+  const alpha = effectAlpha(effect);
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x7dd3fc, alpha: 0.08 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0x38bdf8, width: 3, alpha: 0.78 * alpha });
+  skillLayer.circle(x, y, Math.max(8, radius * 0.08));
+  skillLayer.fill({ color: 0xe0f2fe, alpha: 0.35 * alpha });
+}
+
+function drawFrostMageQEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(7, (effect.radius || 75) * frame.scale * 0.38);
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const tail = radius * 3.8;
+  skillLayer.moveTo(x - Math.cos(angle) * tail, y - Math.sin(angle) * tail);
+  skillLayer.lineTo(x, y);
+  skillLayer.stroke({ color: 0x7dd3fc, width: Math.max(4, radius * 0.9), alpha: 0.42 });
+  skillLayer.moveTo(x + Math.cos(angle) * radius * 1.7, y + Math.sin(angle) * radius * 1.7);
+  skillLayer.lineTo(x - Math.cos(angle) * radius * 1.1 - Math.sin(angle) * radius * 0.5, y - Math.sin(angle) * radius * 1.1 + Math.cos(angle) * radius * 0.5);
+  skillLayer.lineTo(x - Math.cos(angle) * radius * 0.6, y - Math.sin(angle) * radius * 0.6);
+  skillLayer.lineTo(x - Math.cos(angle) * radius * 1.1 + Math.sin(angle) * radius * 0.5, y - Math.sin(angle) * radius * 1.1 - Math.cos(angle) * radius * 0.5);
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xbfdbfe, alpha: 0.9 });
+  skillLayer.stroke({ color: 0x0ea5e9, width: 2, alpha: 0.85 });
+}
+
+function drawFrostMageEEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(10, (effect.radius || 90) * frame.scale * 0.45);
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const sideX = -forwardY;
+  const sideY = forwardX;
+  drawProjectileSweepArea(effect, frame, position, radius, 0x7dd3fc, 0x38bdf8);
+  skillLayer.moveTo(x + forwardX * radius * 1.35, y + forwardY * radius * 1.35);
+  skillLayer.lineTo(x - forwardX * radius * 0.45 + sideX * radius * 0.95, y - forwardY * radius * 0.45 + sideY * radius * 0.95);
+  skillLayer.lineTo(x - forwardX * radius * 0.15, y - forwardY * radius * 0.15);
+  skillLayer.lineTo(x - forwardX * radius * 0.45 - sideX * radius * 0.95, y - forwardY * radius * 0.45 - sideY * radius * 0.95);
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xbae6fd, alpha: 0.86 });
+  skillLayer.stroke({ color: 0x0284c7, width: 2, alpha: 0.9 });
+}
+
+function drawFrostMageREffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = (effect.radius || 550) * frame.scale;
+  const alpha = effectAlpha(effect);
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x93c5fd, alpha: 0.1 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0x60a5fa, width: 4, alpha: 0.82 * alpha });
+  skillLayer.circle(x, y, Math.max(12, radius * 0.11));
+  skillLayer.fill({ color: 0xe0f2fe, alpha: 0.45 * alpha });
+}
+
+function drawFrostMageServantEffect(effect, frame) {
+  const position = smoothedServantEffectPosition(effect);
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = (effect.radius || 450) * frame.scale;
+  const alpha = 1;
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x7dd3fc, alpha: 0.06 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.62 * alpha });
+  skillLayer.circle(x, y, 16);
+  skillLayer.fill({ color: colorForTeam(effect.team), alpha: 0.72 });
+  skillLayer.circle(x, y, 10);
+  skillLayer.fill({ color: 0xe0f2fe, alpha: 0.9 });
+  skillLayer.moveTo(x, y - 18);
+  skillLayer.lineTo(x + 10, y);
+  skillLayer.lineTo(x, y + 18);
+  skillLayer.lineTo(x - 10, y);
+  skillLayer.closePath();
+  skillLayer.stroke({ color: 0x0284c7, width: 2, alpha: 0.9 });
+}
+
+function smoothedServantEffectPosition(effect) {
+  const id = servantEffectID(effect);
+  const now = performance.now();
+  const targetX = effect.x || 0;
+  const targetY = effect.y || 0;
+  let position = state.servantEffectPositions.get(id);
+  if (!position) {
+    position = { x: targetX, y: targetY, lastMs: now };
+    state.servantEffectPositions.set(id, position);
+    return position;
+  }
+  const smoothing = 1 - Math.exp(-(now - position.lastMs) / 80);
+  position.x += (targetX - position.x) * smoothing;
+  position.y += (targetY - position.y) * smoothing;
+  position.lastMs = now;
+  return position;
+}
+
+function servantEffectID(effect) {
+  return effect.id || `${effect.sourceId || "frostmage_servant"}:${effect.createdAt || 0}`;
 }
 
 function drawFireMageEEffect(effect, frame) {

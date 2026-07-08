@@ -15,6 +15,10 @@
       "moveSpeed": 325,
       "explosionRadius": 450,
       "apRatio": 0.5
+    },
+    "metaLists": {
+      "explosionDamage": [120, 580],
+      "explosionDamageLevels": [1, 18]
     }
   },
   {

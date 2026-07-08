@@ -164,6 +164,9 @@ function redrawPlayerBody(sprite, player) {
   } else if (shape === "fire") {
     drawFireIcon(sprite.body, radius, player.dead, colorForTeam(player.team));
     return;
+  } else if (shape === "snowflake") {
+    drawSnowflakeIcon(sprite.body, radius, player.dead, colorForTeam(player.team));
+    return;
   } else if (shape === "gunner") {
     drawGunnerIcon(sprite.body, radius);
   } else if (shape === "ninja") {

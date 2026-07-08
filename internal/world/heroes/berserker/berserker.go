@@ -588,6 +588,10 @@ func applyBleedStack(w *world.World, source *world.Entity, target *world.Entity,
 		bleed.NextTick = tick + secondsToTicks(tickSeconds, tickRate)
 	}
 	target.Passive.Bleeds[source.ID] = bleed
+	if fullStacks && oldStacks >= maxStacks {
+		activateBloodRage(w, source, tick, tickRate)
+		return
+	}
 	if oldStacks < maxStacks && bleed.Stacks >= maxStacks && world.IsHeroUnit(target) {
 		activateBloodRage(w, source, tick, tickRate)
 	}

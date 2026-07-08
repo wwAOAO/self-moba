@@ -176,26 +176,60 @@ function renderHeroOptions(heroes) {
     return;
   }
   const selected = els.heroId.value;
-  els.heroId.innerHTML = heroes
-    .map(
-      (hero) =>
-        `<option value="${escapeHtml(hero.heroId)}">${escapeHtml(heroDisplayName(hero))}</option>`,
-    )
+  els.heroId.innerHTML = heroRoleGroups
+    .map(([label, role]) => {
+      const options = heroes.filter((hero) => heroRole(hero) === role);
+      return options.length
+        ? `<optgroup label="${label}">${options.map(renderHeroOption).join("")}</optgroup>`
+        : "";
+    })
     .join("");
   if (heroClientConfig[selected]) {
     els.heroId.value = selected;
   }
 }
 
+const heroRoleGroups = [
+  ["法师", "mage"],
+  ["射手", "marksman"],
+  ["刺客", "assassin"],
+  ["战士", "fighter"],
+  ["坦克", "tank"],
+];
+
+function renderHeroOption(hero) {
+  return `<option value="${escapeHtml(hero.heroId)}">${escapeHtml(heroDisplayName(hero))}</option>`;
+}
+
+function heroRole(hero) {
+  return (
+    {
+      mage: "mage",
+      frostmage: "mage",
+      fire_mage: "mage",
+      archer: "marksman",
+      gunner: "marksman",
+      explorer: "marksman",
+      blade: "fighter",
+      ninja: "assassin",
+      sword: "fighter",
+      warrior: "fighter",
+      berserker: "fighter",
+      tank: "tank",
+      robot: "tank",
+    }[hero.heroId] || "fighter"
+  );
+}
+
 function heroDisplayName(hero) {
   const names = {
     sword: "剑客",
-    warrior: "战士",
-    warriors: "战士",
-    archer: "弓手",
-    mage: "法师",
-    tank: "坦克",
-    gunner: "枪手",
+    warrior: "圣骑士",
+    warriors: "圣骑士",
+    archer: "弓箭手",
+    mage: "光明法师",
+    tank: "石头人",
+    gunner: "手枪手",
     blade: "刀客",
     berserker: "狂战士",
     ninja: "忍者",

@@ -607,6 +607,28 @@ func TestBerserkerBloodRageDamageAppliesFullBleed(t *testing.T) {
 	}
 }
 
+func TestBerserkerBloodRageRefreshesOnFiveStackDamage(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(berserkerHeroID)
+	if !ok {
+		t.Fatal("berserker hero not found")
+	}
+	w.SpawnHero("berserker", hero, TeamBlue)
+	source := w.entities[playerEntityID("berserker")]
+	target := w.entities["enemy:hero-1"]
+	source.Berserker.BloodRageUntil = 90
+	target.Passive.Bleeds = map[string]BleedState{
+		source.ID: {Stacks: 5, ExpiresAtTick: 90, NextTick: 90},
+	}
+
+	target.Combat.LastHitTick = 50
+	w.applyDamage(source, target, 1, 20)
+
+	if got, want := source.Berserker.BloodRageUntil, uint64(150); got != want {
+		t.Fatalf("blood rage refresh = %v, want %v", got, want)
+	}
+}
+
 func TestBerserkerMinionBleedDoesNotTriggerBloodRage(t *testing.T) {
 	w := testWorld(t)
 	hero, ok := w.heroes.Get(berserkerHeroID)

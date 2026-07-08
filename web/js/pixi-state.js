@@ -10,6 +10,7 @@ const state = {
   effects: [],
   seenEffectIds: new Set(),
   hiddenEffectIds: new Set(),
+  servantEffectPositions: new Map(),
   lastDamageByTarget: new Map(),
   sprites: new Map(),
   unitSprites: new Map(),
@@ -174,6 +175,7 @@ let skillClientConfig = {
     range: 475,
     whirlwindRange: 900,
     eqRadius: 375,
+    eqWindowSeconds: 0.35,
     previewMs: 450,
   },
 };

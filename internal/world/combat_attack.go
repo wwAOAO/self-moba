@@ -83,9 +83,6 @@ func (w *World) releasePendingAttack(attacker *Entity, tick uint64, tickRate int
 	if attacker.HeroID == warriorHeroID && tick < attacker.Warrior.JudgmentUntilTick {
 		return
 	}
-	if distance(attacker.Position, target.Position) > w.attackReachAtTick(attacker, target, tick) {
-		return
-	}
 	w.resolveBasicAttack(attacker, target, tick, tickRate)
 }
 
