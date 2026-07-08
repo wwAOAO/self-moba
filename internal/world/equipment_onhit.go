@@ -2,6 +2,36 @@ package world
 
 import "math"
 
+func (w *World) applyEquipmentDamageMultiplier(source *Entity, target *Entity, damage int) int {
+	if source == nil || target == nil || damage <= 0 || source.Kind != EntityKindPlayer || !IsHeroUnit(target) || w.equipment == nil {
+		return damage
+	}
+	bonus := 0.0
+	seen := make(map[string]bool, len(source.Equipment))
+	for _, equipped := range source.Equipment {
+		if seen[equipped.EquipmentID] {
+			continue
+		}
+		seen[equipped.EquipmentID] = true
+		item, ok := w.equipment.Get(equipped.EquipmentID)
+		if !ok || item.Effects.TargetBonusHPDamageMaxRatio <= bonus {
+			continue
+		}
+		fullAt := item.Effects.TargetBonusHPDamageFullAt
+		if fullAt <= 0 {
+			fullAt = 1500
+		}
+		ratio := clamp(target.Stats.BonusHP/fullAt, 0, 1) * item.Effects.TargetBonusHPDamageMaxRatio
+		if ratio > bonus {
+			bonus = ratio
+		}
+	}
+	if bonus <= 0 {
+		return damage
+	}
+	return int(math.Round(float64(damage) * (1 + bonus)))
+}
+
 func (w *World) equipmentBasicAttackBonus(attacker *Entity, damageType string) float64 {
 	if attacker == nil || w.equipment == nil {
 		return 0

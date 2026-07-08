@@ -20,33 +20,41 @@ type RegenState struct {
 }
 
 type EquipmentSlot struct {
-	EquipmentID              string
-	Name                     string
-	Stacks                   float64
-	LowHealthShieldUsed      bool
-	LowHealthDamageReduce    float64
-	LowHealthShieldThreshold float64
-	LowHealthShieldMin       int
-	LowHealthShieldMax       int
-	OutOfCombatMoveSpeed     float64
-	OutOfCombatRequiredTicks uint64
-	ManaShieldCooldownUntil  uint64
-	RagebladeHitCount        int
-	StackExpireTick          uint64
-	SunfireActiveUntil       uint64
-	SunfireNextTick          uint64
-	SunfireStackExpireTick   uint64
-	PhysicalShieldMaxAmount  int
-	PhysicalShieldAmount     int
-	PhysicalShieldStartTick  uint64
-	PhysicalShieldExpireTick uint64
-	StoneplateShieldRatio    float64
-	StoneplateResistPercent  float64
-	StoneplateCooldownTicks  uint64
-	StoneplateCooldownUntil  uint64
-	StoneplateBreakTick      uint64
-	StoneplateShieldActive   bool
-	StoneplateShieldAmount   int
+	EquipmentID               string
+	Name                      string
+	Stacks                    float64
+	LowHealthShieldUsed       bool
+	LowHealthDamageReduce     float64
+	LowHealthShieldThreshold  float64
+	LowHealthShieldMin        int
+	LowHealthShieldMax        int
+	OutOfCombatMoveSpeed      float64
+	OutOfCombatRequiredTicks  uint64
+	ManaShieldCooldownUntil   uint64
+	RagebladeHitCount         int
+	StackExpireTick           uint64
+	SunfireActiveUntil        uint64
+	SunfireNextTick           uint64
+	SunfireStackExpireTick    uint64
+	WarmogNextTick            uint64
+	WarmogRequiredTicks       uint64
+	EndlessDespairActiveUntil uint64
+	EndlessDespairNextTick    uint64
+	PhysicalShieldMaxAmount   int
+	PhysicalShieldAmount      int
+	PhysicalShieldStartTick   uint64
+	PhysicalShieldExpireTick  uint64
+	LifeStealOverhealShield   int
+	StoneplateShieldRatio     float64
+	StoneplateResistPercent   float64
+	StoneplateCooldownTicks   uint64
+	StoneplateCooldownUntil   uint64
+	StoneplateBreakTick       uint64
+	StoneplateShieldActive    bool
+	StoneplateShieldAmount    int
+	HeroDamageBonusUntil      uint64
+	EchoCharge                float64
+	EchoCooldownUntil         uint64
 }
 
 type Stats struct {
@@ -144,6 +152,8 @@ type ControlState struct {
 	RootedUntilTick         uint64
 	AttackSpeedSlow         float64
 	AttackSpeedSlowUntil    uint64
+	GrievousWounds          float64
+	GrievousWoundsUntil     uint64
 	MageIlluminationUntil   uint64
 	MageIlluminationBy      string
 	MageFinalSparkBy        string
@@ -293,80 +303,101 @@ type NinjaState struct {
 }
 
 type PassiveState struct {
-	SwordIntent        float64
-	MaxSwordIntent     float64
-	GunnerTargetID     string
-	GunnerWActiveUntil uint64
-	GunnerWAttackSpeed float64
-	GunnerWMoveSpeed   float64
-	GunnerECenter      geom.Vector2
-	GunnerEExpireTick  uint64
-	GunnerENextTick    uint64
-	GunnerELevel       int
-	GunnerEEffectID    string
-	GunnerRDir         geom.Vector2
-	GunnerRStartTick   uint64
-	GunnerRExpireTick  uint64
-	GunnerRNextTick    uint64
-	GunnerRLevel       int
-	GunnerRWaves       int
-	GunnerRWaveCount   int
-	GunnerREffectID    string
-	RobotShieldUntil   uint64
-	RobotShieldCDUntil uint64
-	RobotShieldMana    int
-	RobotQPending      bool
-	RobotQReleaseTick  uint64
-	RobotQTarget       geom.Vector2
-	RobotQLevel        int
-	RobotWStartTick    uint64
-	RobotWUntil        uint64
-	RobotWLevel        int
-	RobotWMoveSpeed    float64
-	RobotArcMarks      map[string]RobotArcState
-	ExplorerSpellForce []uint64
-	ExplorerFluxMarks  map[string]ExplorerFluxState
-	ExplorerQPending   bool
-	ExplorerQRelease   uint64
-	ExplorerQTarget    geom.Vector2
-	ExplorerQLevel     int
-	ExplorerWTarget    geom.Vector2
-	ExplorerWLevel     int
-	ExplorerEPending   bool
-	ExplorerERelease   uint64
-	ExplorerETarget    geom.Vector2
-	ExplorerELevel     int
-	ExplorerRPending   bool
-	ExplorerRRelease   uint64
-	ExplorerRTarget    geom.Vector2
-	ExplorerRLevel     int
-	FireBurns          map[string]FireBurnState
-	FireManaUntil      uint64
-	FireManaNextTick   uint64
-	FireQPending       bool
-	FireQReleaseTick   uint64
-	FireQTarget        geom.Vector2
-	FireQLevel         int
-	FireWPending       bool
-	FireWTriggerTick   uint64
-	FireWCenter        geom.Vector2
-	FireWLevel         int
-	FireWCastPending   bool
-	FireWCastTarget    geom.Vector2
-	FireWCastLevel     int
-	FireRPending       bool
-	FireRReleaseTick   uint64
-	FireRTargetID      string
-	FireRLevel         int
-	NinjaSoulCooldowns map[string]uint64
-	Shield             int
-	MaxShield          int
-	ShieldExpireTick   uint64
-	ShieldLayers       []ShieldLayer
-	LastRegenBreakTick uint64
-	NextRegenTick      uint64
-	NextFountainTick   uint64
-	Bleeds             map[string]BleedState
+	SwordIntent           float64
+	MaxSwordIntent        float64
+	GunnerTargetID        string
+	GunnerWActiveUntil    uint64
+	GunnerWAttackSpeed    float64
+	GunnerWMoveSpeed      float64
+	GunnerECenter         geom.Vector2
+	GunnerEExpireTick     uint64
+	GunnerENextTick       uint64
+	GunnerELevel          int
+	GunnerEEffectID       string
+	GunnerRDir            geom.Vector2
+	GunnerRStartTick      uint64
+	GunnerRExpireTick     uint64
+	GunnerRNextTick       uint64
+	GunnerRLevel          int
+	GunnerRWaves          int
+	GunnerRWaveCount      int
+	GunnerREffectID       string
+	RobotShieldUntil      uint64
+	RobotShieldCDUntil    uint64
+	RobotShieldMana       int
+	RobotQPending         bool
+	RobotQReleaseTick     uint64
+	RobotQTarget          geom.Vector2
+	RobotQLevel           int
+	RobotWStartTick       uint64
+	RobotWUntil           uint64
+	RobotWLevel           int
+	RobotWMoveSpeed       float64
+	RobotArcMarks         map[string]RobotArcState
+	ExplorerSpellForce    []uint64
+	ExplorerFluxMarks     map[string]ExplorerFluxState
+	ExplorerQPending      bool
+	ExplorerQRelease      uint64
+	ExplorerQTarget       geom.Vector2
+	ExplorerQLevel        int
+	ExplorerWTarget       geom.Vector2
+	ExplorerWLevel        int
+	ExplorerEPending      bool
+	ExplorerERelease      uint64
+	ExplorerETarget       geom.Vector2
+	ExplorerELevel        int
+	ExplorerRPending      bool
+	ExplorerRRelease      uint64
+	ExplorerRTarget       geom.Vector2
+	ExplorerRLevel        int
+	FrostServants         []FrostServantState
+	FrostQPending         bool
+	FrostQRelease         uint64
+	FrostQTarget          geom.Vector2
+	FrostQLevel           int
+	FrostEPending         bool
+	FrostERelease         uint64
+	FrostETarget          geom.Vector2
+	FrostELevel           int
+	FrostEProjectileID    string
+	FrostERecastTick      uint64
+	FrostRPending         bool
+	FrostRRelease         uint64
+	FrostRTargetID        string
+	FrostRLevel           int
+	FrostRSelfUntil       uint64
+	FrostRSelfLevel       int
+	FrostRSelfEffectID    string
+	FrostRSelfHealLeft    float64
+	FrostRSelfHealTicks   uint64
+	FrostROldDamageReduce float64
+	FireBurns             map[string]FireBurnState
+	FireManaUntil         uint64
+	FireManaNextTick      uint64
+	FireQPending          bool
+	FireQReleaseTick      uint64
+	FireQTarget           geom.Vector2
+	FireQLevel            int
+	FireWPending          bool
+	FireWTriggerTick      uint64
+	FireWCenter           geom.Vector2
+	FireWLevel            int
+	FireWCastPending      bool
+	FireWCastTarget       geom.Vector2
+	FireWCastLevel        int
+	FireRPending          bool
+	FireRReleaseTick      uint64
+	FireRTargetID         string
+	FireRLevel            int
+	NinjaSoulCooldowns    map[string]uint64
+	Shield                int
+	MaxShield             int
+	ShieldExpireTick      uint64
+	ShieldLayers          []ShieldLayer
+	LastRegenBreakTick    uint64
+	NextRegenTick         uint64
+	NextFountainTick      uint64
+	Bleeds                map[string]BleedState
 }
 
 type BleedState struct {
@@ -391,6 +422,13 @@ type FireBurnState struct {
 	ExpiresAtTick   uint64
 	NextTick        uint64
 	ExplosionAtTick uint64
+}
+
+type FrostServantState struct {
+	ID        string
+	Position  geom.Vector2
+	ExpiresAt uint64
+	EffectID  string
 }
 
 type ShieldLayer struct {

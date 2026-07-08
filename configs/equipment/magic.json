@@ -27,13 +27,33 @@
     "name": "典籍",
     "category": "magic",
     "tier": 1,
-    "price": 435,
+    "price": 400,
     "sellRatio": 0.5,
     "stats": {
       "abilityPower": 20
     },
     "description": [
       "法术强度 +20"
+    ]
+  },
+  {
+    "equipmentId": "blighting_jewel",
+    "name": "枯萎珠宝",
+    "category": "magic",
+    "tier": 2,
+    "price": 1100,
+    "sellRatio": 0.5,
+    "uniqueGroup": "penetration_item",
+    "components": [
+      "amplifying_tome"
+    ],
+    "stats": {
+      "abilityPower": 25,
+      "magicPenPercent": 0.13
+    },
+    "description": [
+      "法术强度 +25",
+      "法术穿透 +13%"
     ]
   },
   {
@@ -51,11 +71,34 @@
     ]
   },
   {
+    "equipmentId": "hextech_alternator",
+    "name": "海克斯科技发电机",
+    "category": "magic",
+    "tier": 2,
+    "price": 1100,
+    "sellRatio": 0.5,
+    "components": [
+      "amplifying_tome",
+      "amplifying_tome"
+    ],
+    "stats": {
+      "abilityPower": 45
+    },
+    "effects": {
+      "heroDamageBonusMagicDamage": 65,
+      "heroDamageBonusCooldownSeconds": 40
+    },
+    "description": [
+      "法术强度 +45",
+      "被动 - 转速加快：对英雄造成伤害时附加 65 额外魔法伤害（冷却40秒）"
+    ]
+  },
+  {
     "equipmentId": "needlessly_large_rod",
     "name": "大棒",
     "category": "magic",
     "tier": 1,
-    "price": 1250,
+    "price": 1200,
     "sellRatio": 0.5,
     "stats": {
       "abilityPower": 60
@@ -84,6 +127,115 @@
     "description": [
       "法术强度 +120",
       "总法术强度 +35%"
+    ]
+  },
+  {
+    "equipmentId": "shadowflame",
+    "name": "影焰",
+    "category": "magic",
+    "tier": 3,
+    "price": 3200,
+    "sellRatio": 0.5,
+    "components": [
+      "hextech_alternator",
+      "needlessly_large_rod"
+    ],
+    "stats": {
+      "abilityPower": 110,
+      "magicPenFlat": 15
+    },
+    "effects": {
+      "lowHealthMagicTrueDamageBonus": 0.2,
+      "lowHealthDotPetDamageBonus": 0.25,
+      "lowHealthDamageThreshold": 0.4
+    },
+    "description": [
+      "法术强度 +110",
+      "法术穿透 +15",
+      "唯一被动 - 余烬绽放：魔法伤害和真实伤害会对生命值低于40%的敌人造成20%提升伤害；持续伤害和宠物伤害提升25%"
+    ]
+  },
+  {
+    "equipmentId": "ludens_echo",
+    "name": "卢登的回声",
+    "category": "magic",
+    "tier": 3,
+    "price": 2750,
+    "sellRatio": 0.5,
+    "components": [
+      "lost_chapter",
+      "hextech_alternator"
+    ],
+    "stats": {
+      "abilityPower": 100,
+      "mp": 600,
+      "abilityHaste": 10
+    },
+    "effects": {
+      "echoDamage": 75,
+      "echoApRatio": 0.05,
+      "echoCooldownSeconds": 12,
+      "echoBounceRadius": 600,
+      "echoCastCharge": 10,
+      "echoMoveDistancePerCharge": 35,
+      "echoChargePerStack": 100,
+      "echoMaxStacks": 6
+    },
+    "description": [
+      "法术强度 +100",
+      "法力值 +600",
+      "技能急速 +10",
+      "唯一被动 - 回声：移动和施法充能，每100充能获得1层（最多6层）；技能造成伤害时消耗所有层数，造成 75 (+5%法术强度) 额外魔法伤害，并按额外层数弹射附近敌人（冷却12秒）"
+    ]
+  },
+  {
+    "equipmentId": "void_staff",
+    "name": "虚空之杖",
+    "category": "magic",
+    "tier": 3,
+    "price": 3000,
+    "sellRatio": 0.5,
+    "uniqueGroup": "penetration_item",
+    "components": [
+      "blighting_jewel",
+      "blasting_wand"
+    ],
+    "stats": {
+      "abilityPower": 95,
+      "magicPenPercent": 0.4
+    },
+    "description": [
+      "法术强度 +95",
+      "法术穿透 +40%",
+      "唯一被动 - 溶解：提供40%法术穿透"
+    ]
+  },
+  {
+    "equipmentId": "rylais_crystal_scepter",
+    "name": "瑞莱的冰晶节杖",
+    "category": "magic",
+    "tier": 3,
+    "price": 2600,
+    "sellRatio": 0.5,
+    "uniqueGroup": "rylais_crystal_scepter",
+    "components": [
+      "blasting_wand",
+      "amplifying_tome",
+      "giant_belt"
+    ],
+    "stats": {
+      "abilityPower": 65,
+      "hp": 400
+    },
+    "effects": {
+      "skillDamageLowHealthSlow": 0.3,
+      "skillDamageLowHealthSlowThreshold": 1.01,
+      "skillDamageLowHealthSlowSeconds": 1
+    },
+    "description": [
+      "法术强度 +65",
+      "生命值 +400",
+      "唯一被动 - 凝霜：伤害型技能会使敌人减速30%，持续1秒；持续伤害会持续刷新"
     ]
   },
   {
@@ -141,7 +293,7 @@
     "name": "遗失的章节",
     "category": "magic",
     "tier": 2,
-    "price": 1450,
+    "price": 1200,
     "sellRatio": 0.5,
     "components": [
       "blasting_wand",

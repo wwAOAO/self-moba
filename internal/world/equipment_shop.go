@@ -44,6 +44,10 @@ func (w *World) buyCompositeEquipment(entity *Entity, item config.EquipmentConfi
 		combineCost = 0
 	}
 	if len(componentIndexes) > 0 && entity.Gold >= combineCost {
+		if w.hasUniqueEquipmentGroupOutsideIndexes(entity, item.UniqueGroup, componentIndexes) || (item.Category == "shoes" && w.hasEquipmentCategoryOutsideIndexes(entity, "shoes", componentIndexes)) {
+			w.setMessage(entity, "该类型装备只能装备一件", tick)
+			return
+		}
 		w.replaceComponentsWithEquipment(entity, item, componentIndexes, combineCost)
 		return
 	}
@@ -94,6 +98,10 @@ func equipmentSlotFromConfig(item config.EquipmentConfig) EquipmentSlot {
 	if seconds <= 0 {
 		seconds = 5
 	}
+	warmogSeconds := item.Effects.WarmogOutOfCombatSeconds
+	if warmogSeconds <= 0 {
+		warmogSeconds = 8
+	}
 	return EquipmentSlot{
 		EquipmentID:              item.EquipmentID,
 		Name:                     item.Name,
@@ -103,6 +111,7 @@ func equipmentSlotFromConfig(item config.EquipmentConfig) EquipmentSlot {
 		LowHealthShieldMax:       item.Effects.LowHealthShieldMax,
 		OutOfCombatMoveSpeed:     item.Effects.OutOfCombatMoveSpeed,
 		OutOfCombatRequiredTicks: uint64(math.Ceil(seconds * 20)),
+		WarmogRequiredTicks:      uint64(math.Ceil(warmogSeconds * 20)),
 		StoneplateShieldRatio:    item.Effects.StoneplateShieldMaxHPRatio,
 		StoneplateResistPercent:  item.Effects.StoneplateResistPercent,
 		StoneplateCooldownTicks:  uint64(math.Ceil(item.Effects.StoneplateCooldownSeconds * 20)),
@@ -189,6 +198,7 @@ func (w *World) sellEquipment(entity *Entity, slot int) {
 	entity.Gold += math.Floor(float64(item.Price)*item.SellRatio + 0.000000001)
 	removeStoneplateShieldFromSlot(entity, index)
 	removePhysicalDamageShieldFromSlot(entity, index)
+	removeLifeStealOverhealShieldFromSlot(entity, index)
 	entity.Equipment = append(entity.Equipment[:index], entity.Equipment[index+1:]...)
 	w.recalculatePlayerStats(entity)
 	w.refreshStoneplateShield(entity)

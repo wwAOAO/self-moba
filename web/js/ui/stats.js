@@ -21,6 +21,7 @@
     els.statMoveSpeed.textContent = "-";
     els.statAttackRange.textContent = "-";
     els.statAttackSpeed.textContent = "-";
+    setHtmlIfChanged(els.statCritChanceTip, "");
     els.statCritChance.textContent = "-";
     els.statOmnivamp.textContent = "-";
     els.statLifeSteal.textContent = "-";
@@ -71,7 +72,8 @@
   els.statMoveSpeed.textContent = formatNumber(stats.moveSpeed);
   els.statAttackRange.textContent = formatNumber(stats.attackRange);
   els.statAttackSpeed.textContent = formatNumber(stats.attackSpeed);
-  els.statCritChance.textContent = `${Math.round((stats.critChance || 0) * 1000) / 10}%`;
+  setHtmlIfChanged(els.statCritChanceTip, formatCritChanceTip(player));
+  els.statCritChance.textContent = formatCritChance(player);
   els.statOmnivamp.textContent = formatPercent(stats.omnivamp || 0);
   els.statLifeSteal.textContent = formatPercent(stats.lifeSteal || 0);
   els.statHealingPower.textContent = formatPercent(stats.healingPower || 0);

@@ -47,7 +47,7 @@
   },
   {
     "equipmentId": "short_sword",
-    "name": "小剑",
+    "name": "长剑",
     "category": "physical",
     "tier": 1,
     "price": 350,
@@ -88,11 +88,27 @@
     ]
   },
   {
+    "equipmentId": "vampiric_scepter",
+    "name": "吸血鬼节杖",
+    "category": "physical",
+    "tier": 1,
+    "price": 900,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 15,
+      "lifeSteal": 0.07
+    },
+    "description": [
+      "攻击力 +15",
+      "生命偷取 +7%"
+    ]
+  },
+  {
     "equipmentId": "caulfields_warhammer",
     "name": "考尔菲德的战锤",
     "category": "physical",
     "tier": 2,
-    "price": 1100,
+    "price": 1050,
     "sellRatio": 0.5,
     "components": [
       "short_sword"
@@ -104,6 +120,47 @@
     "description": [
       "攻击力 +25",
       "技能急速 +10"
+    ]
+  },
+  {
+    "equipmentId": "last_whisper",
+    "name": "最后的轻语",
+    "category": "physical",
+    "tier": 2,
+    "price": 1450,
+    "sellRatio": 0.5,
+    "uniqueGroup": "penetration_item",
+    "components": [
+      "short_sword",
+      "short_sword"
+    ],
+    "stats": {
+      "attack": 20,
+      "physicalPenPercent": 0.18
+    },
+    "description": [
+      "攻击力 +20",
+      "护甲穿透 +18%"
+    ]
+  },
+  {
+    "equipmentId": "noonquiver",
+    "name": "正午箭袋",
+    "category": "physical",
+    "tier": 2,
+    "price": 1300,
+    "sellRatio": 0.5,
+    "components": [
+      "short_sword",
+      "cloak_of_agility"
+    ],
+    "stats": {
+      "attack": 15,
+      "critChance": 0.2
+    },
+    "description": [
+      "攻击力 +15",
+      "暴击几率 +20%"
     ]
   },
   {
@@ -168,6 +225,7 @@
     "tier": 3,
     "price": 3300,
     "sellRatio": 0.5,
+    "uniqueGroup": "penetration_item",
     "components": [
       "caulfields_warhammer",
       "kindlegem"
@@ -255,6 +313,89 @@
     ]
   },
   {
+    "equipmentId": "lord_dominiks_regards",
+    "name": "多米尼克领主的致意",
+    "category": "physical",
+    "tier": 3,
+    "price": 3300,
+    "sellRatio": 0.5,
+    "uniqueGroup": "penetration_item",
+    "components": [
+      "last_whisper",
+      "noonquiver"
+    ],
+    "stats": {
+      "attack": 35,
+      "physicalPenPercent": 0.35,
+      "critChance": 0.25
+    },
+    "effects": {
+      "targetBonusHpDamageMaxRatio": 0.15,
+      "targetBonusHpDamageFullAt": 1500
+    },
+    "description": [
+      "攻击力 +35",
+      "护甲穿透 +35%",
+      "暴击几率 +25%",
+      "巨人杀手：基于敌方英雄的额外生命值，最多造成15%额外伤害，在1500额外生命值时达到最大值"
+    ]
+  },
+  {
+    "equipmentId": "seryldas_grudge",
+    "name": "赛瑞尔达的怨恨",
+    "category": "physical",
+    "tier": 3,
+    "price": 3000,
+    "sellRatio": 0.5,
+    "uniqueGroup": "penetration_item",
+    "components": [
+      "caulfields_warhammer",
+      "last_whisper"
+    ],
+    "stats": {
+      "attack": 45,
+      "physicalPenPercent": 0.35,
+      "abilityHaste": 15
+    },
+    "effects": {
+      "skillDamageLowHealthSlow": 0.3,
+      "skillDamageLowHealthSlowThreshold": 0.5,
+      "skillDamageLowHealthSlowSeconds": 1
+    },
+    "description": [
+      "攻击力 +45",
+      "护甲穿透 +35%",
+      "技能急速 +15",
+      "严寒：伤害型技能命中生命值低于50%的敌人时，施加持续1秒的30%减速；持续伤害会不断刷新"
+    ]
+  },
+  {
+    "equipmentId": "bloodthirster",
+    "name": "饮血剑",
+    "category": "physical",
+    "tier": 3,
+    "price": 3400,
+    "sellRatio": 0.5,
+    "components": [
+      "bf_sword",
+      "pickaxe",
+      "vampiric_scepter"
+    ],
+    "stats": {
+      "attack": 80,
+      "lifeSteal": 0.15
+    },
+    "effects": {
+      "lifeStealOverhealShieldMin": 180,
+      "lifeStealOverhealShieldMax": 380
+    },
+    "description": [
+      "攻击力 +80",
+      "生命偷取 +15%",
+      "唯一被动 - 灵液护盾：由生命偷取产生的过量治疗会转化为一个护盾，护盾值为 180-380（基于英雄等级）"
+    ]
+  },
+  {
     "equipmentId": "dagger",
     "name": "短剑",
     "category": "physical",
@@ -307,10 +448,10 @@
   },
   {
     "equipmentId": "cloak_of_agility",
-    "name": "披风",
+    "name": "灵巧披风",
     "category": "physical",
     "tier": 1,
-    "price": 800,
+    "price": 600,
     "sellRatio": 0.5,
     "stats": {
       "critChance": 0.2

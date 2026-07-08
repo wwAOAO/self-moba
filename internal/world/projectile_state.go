@@ -13,6 +13,18 @@ func updateMageWProjectileSpeed(projectile *Projectile) {
 	proj.UpdateMageWProjectileSpeed(projectile)
 }
 
+func updateFrostMageEProjectileSpeed(projectile *Projectile, tickRate int) {
+	if projectile == nil || projectile.SpeedMin <= 0 || projectile.SpeedMax <= projectile.SpeedMin || projectile.Range <= 0 {
+		return
+	}
+	progress := clamp(projectile.Traveled/projectile.Range, 0, 1)
+	speed := projectile.SpeedMax - (projectile.SpeedMax-projectile.SpeedMin)*progress
+	if tickRate > 0 {
+		speed /= float64(tickRate)
+	}
+	projectile.SpeedPerTick = speed
+}
+
 func (w *World) projectileGroupHit(projectile *Projectile, targetID string) bool {
 	if projectile == nil || projectile.GroupID == "" || targetID == "" {
 		return false

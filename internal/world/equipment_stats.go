@@ -41,16 +41,21 @@ func (w *World) recalculatePlayerStats(entity *Entity) {
 }
 
 func applyControlStats(entity *Entity, stats *Stats) {
-	if entity == nil || stats == nil || entity.Control.AttackDamageReduceUntil == 0 || entity.Control.AttackDamageReduction <= 0 {
+	if entity == nil || stats == nil {
 		return
 	}
-	stats.Attack -= entity.Control.AttackDamageReduction
-	if stats.Attack < 0 {
-		stats.Attack = 0
+	if entity.Control.AttackDamageReduceUntil > 0 && entity.Control.AttackDamageReduction > 0 {
+		stats.Attack -= entity.Control.AttackDamageReduction
+		if stats.Attack < 0 {
+			stats.Attack = 0
+		}
+		stats.BonusAttack -= entity.Control.AttackDamageReduction
+		if stats.BonusAttack < 0 {
+			stats.BonusAttack = 0
+		}
 	}
-	stats.BonusAttack -= entity.Control.AttackDamageReduction
-	if stats.BonusAttack < 0 {
-		stats.BonusAttack = 0
+	if entity.Control.GrievousWoundsUntil > 0 && entity.Control.GrievousWounds > stats.GrievousWounds {
+		stats.GrievousWounds = entity.Control.GrievousWounds
 	}
 }
 
@@ -68,8 +73,12 @@ func (w *World) applyEquipmentStats(entity *Entity, stats *Stats) {
 	if entity == nil || stats == nil || w.equipment == nil {
 		return
 	}
+	baseHPRegen5 := stats.HPRegen5
 	baseMPRegen5 := stats.MPRegen5
+	baseHPRegenBonus := 0.0
 	baseMPRegenBonus := 0.0
+	equipmentHP := 0.0
+	equipmentHPMultiplier := 0.0
 	for _, equipped := range entity.Equipment {
 		item, ok := w.equipment.Get(equipped.EquipmentID)
 		if !ok {
@@ -77,10 +86,15 @@ func (w *World) applyEquipmentStats(entity *Entity, stats *Stats) {
 		}
 		stats.MaxHP += item.Stats.HP
 		stats.BonusHP += item.Stats.HP
+		equipmentHP += item.Stats.HP
 		stats.MaxMP += item.Stats.MP
 		stats.HPRegen5 += item.Stats.HPRegen5
 		stats.MPRegen5 += item.Stats.MPRegen5
+		baseHPRegenBonus += item.Stats.BaseHPRegenBonus
 		baseMPRegenBonus += item.Stats.BaseMPRegenBonus
+		if item.Effects.EquipmentHPMultiplier > equipmentHPMultiplier {
+			equipmentHPMultiplier = item.Effects.EquipmentHPMultiplier
+		}
 		stats.Attack += item.Stats.Attack
 		stats.BonusAttack += item.Stats.Attack
 		stats.AbilityPower += item.Stats.AbilityPower
@@ -89,6 +103,8 @@ func (w *World) applyEquipmentStats(entity *Entity, stats *Stats) {
 		stats.BonusPhysicalDefense += item.Stats.PhysicalDefense
 		stats.MagicDefense += item.Stats.MagicDefense
 		stats.BonusMagicDefense += item.Stats.MagicDefense
+		stats.PhysicalPenPercent += item.Stats.PhysicalPenPercent
+		stats.MagicPenPercent += item.Stats.MagicPenPercent
 		stats.MagicPenFlat += item.Stats.MagicPenFlat
 		stats.Tenacity += item.Stats.Tenacity
 		stats.SlowResist += item.Stats.SlowResist
@@ -111,6 +127,10 @@ func (w *World) applyEquipmentStats(entity *Entity, stats *Stats) {
 	if equipmentZeroesCritChance(entity, w.equipment) {
 		stats.CritChance = 0
 	}
+	extraEquipmentHP := equipmentHP * equipmentHPMultiplier
+	stats.MaxHP += extraEquipmentHP
+	stats.BonusHP += extraEquipmentHP
+	stats.HPRegen5 += baseHPRegen5 * baseHPRegenBonus
 	stats.MPRegen5 += baseMPRegen5 * baseMPRegenBonus
 	stats.AbilityPower = int(math.Round(float64(stats.AbilityPower) * (1 + equipmentAbilityPowerMultiplier(entity, w.equipment))))
 	w.applyStoneplateResists(entity, stats)
@@ -141,6 +161,46 @@ func (w *World) hasEquipmentCategory(entity *Entity, category string) bool {
 		return false
 	}
 	for _, equipped := range entity.Equipment {
+		item, ok := w.equipment.Get(equipped.EquipmentID)
+		if ok && item.Category == category {
+			return true
+		}
+	}
+	return false
+}
+
+func (w *World) hasUniqueEquipmentGroupOutsideIndexes(entity *Entity, group string, ignored []int) bool {
+	if entity == nil || group == "" || w.equipment == nil {
+		return false
+	}
+	ignore := make(map[int]bool, len(ignored))
+	for _, index := range ignored {
+		ignore[index] = true
+	}
+	for index, equipped := range entity.Equipment {
+		if ignore[index] {
+			continue
+		}
+		item, ok := w.equipment.Get(equipped.EquipmentID)
+		if ok && item.UniqueGroup == group {
+			return true
+		}
+	}
+	return false
+}
+
+func (w *World) hasEquipmentCategoryOutsideIndexes(entity *Entity, category string, ignored []int) bool {
+	if entity == nil || category == "" || w.equipment == nil {
+		return false
+	}
+	ignore := make(map[int]bool, len(ignored))
+	for _, index := range ignored {
+		ignore[index] = true
+	}
+	for index, equipped := range entity.Equipment {
+		if ignore[index] {
+			continue
+		}
 		item, ok := w.equipment.Get(equipped.EquipmentID)
 		if ok && item.Category == category {
 			return true

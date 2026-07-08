@@ -73,6 +73,8 @@ type HeroHooks struct {
 	ExplorerEHit      func(w *World, source *Entity, target *Entity, skill config.SkillConfig, tick uint64, tickRate int)
 	ExplorerRDamage   func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int
 	ExplorerRHit      func(w *World, source *Entity, target *Entity, skill config.SkillConfig, tick uint64, tickRate int)
+	FrostQDamage      func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int
+	FrostQHit         func(w *World, source *Entity, target *Entity, projectile *Projectile, damage int, tick uint64, tickRate int)
 	NinjaQDamage      func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, hitNumber int, tick uint64) int
 	NinjaSkillHit     func(w *World, source *Entity, target *Entity, skillID string, groupID string, fromShadow bool, tick uint64, tickRate int)
 
@@ -433,6 +435,19 @@ func (w *World) explorerRDamage(attacker *Entity, target *Entity, skill config.S
 func (w *World) explorerRHit(source *Entity, target *Entity, skill config.SkillConfig, tick uint64, tickRate int) {
 	if h := heroHooksFor(explorerHeroID).ExplorerRHit; h != nil {
 		h(w, source, target, skill, tick, tickRate)
+	}
+}
+
+func (w *World) frostQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	if h := heroHooksFor(frostmageHeroID).FrostQDamage; h != nil {
+		return h(w, attacker, target, skill, skillLevel, tick)
+	}
+	return 0
+}
+
+func (w *World) frostQHit(source *Entity, target *Entity, projectile *Projectile, damage int, tick uint64, tickRate int) {
+	if h := heroHooksFor(frostmageHeroID).FrostQHit; h != nil {
+		h(w, source, target, projectile, damage, tick, tickRate)
 	}
 }
 

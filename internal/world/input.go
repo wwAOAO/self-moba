@@ -62,7 +62,9 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 			X: clamp(entity.Position.X+dx*step, 0, w.width),
 			Y: clamp(entity.Position.Y+dy*step, 0, w.height),
 		})
-		w.chargeSwordIntent(entity, distance(before, entity.Position))
+		moved := distance(before, entity.Position)
+		w.chargeSwordIntent(entity, moved)
+		w.chargeEquipmentOnMove(entity, moved)
 	}
 	if input.Attack != nil {
 		if input.Attack.Clear {
@@ -177,7 +179,9 @@ func (w *World) moveToward(entity *Entity, destination Vector2, step float64, st
 			X: clamp(entity.Position.X+dx*ratio, 0, w.width),
 			Y: clamp(entity.Position.Y+dy*ratio, 0, w.height),
 		})
-		w.chargeSwordIntent(entity, distance(before, entity.Position))
+		moved := distance(before, entity.Position)
+		w.chargeSwordIntent(entity, moved)
+		w.chargeEquipmentOnMove(entity, moved)
 		return true
 	}
 	before := entity.Position
@@ -185,7 +189,9 @@ func (w *World) moveToward(entity *Entity, destination Vector2, step float64, st
 		X: clamp(entity.Position.X+dx/dist*step, 0, w.width),
 		Y: clamp(entity.Position.Y+dy/dist*step, 0, w.height),
 	})
-	w.chargeSwordIntent(entity, distance(before, entity.Position))
+	moved := distance(before, entity.Position)
+	w.chargeSwordIntent(entity, moved)
+	w.chargeEquipmentOnMove(entity, moved)
 	return false
 }
 

@@ -1225,3 +1225,29 @@ func TestGunnerRWaveCanCrit(t *testing.T) {
 		t.Fatalf("r crit wave damage = %v, want 160", got)
 	}
 }
+
+func TestGunnerRProjectileEffectCarriesConeSpread(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(gunnerHeroID)
+	if !ok {
+		t.Fatal("gunner hero not found")
+	}
+	w.SpawnHero("gunner", hero, TeamBlue)
+	gunner := w.entities[playerEntityID("gunner")]
+	placeEntity(gunner, 1000, 1000)
+	learnSkill(gunner, "gunner_r", 1)
+
+	w.ApplyInput("gunner", protocolPlayerInputCast("gunner_r", 2000, 1000), 10, nil, 20)
+	w.Tick(12, 20)
+
+	for _, effect := range w.SkillEffects() {
+		if effect.Kind != "gunner_r" || effect.Speed == 0 {
+			continue
+		}
+		if effect.Width != 33.75 || effect.Count != 7 || effect.End != gunner.Position {
+			t.Fatalf("r projectile effect = %+v, want width 33.75 count 7 end %+v", effect, gunner.Position)
+		}
+		return
+	}
+	t.Fatal("gunner r projectile effect missing")
+}

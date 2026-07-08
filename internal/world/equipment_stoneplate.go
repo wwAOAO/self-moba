@@ -134,6 +134,27 @@ func removePhysicalDamageShieldFromSlot(entity *Entity, index int) {
 	entity.Equipment[index].PhysicalShieldMaxAmount = 0
 }
 
+func removeLifeStealOverhealShieldFromSlot(entity *Entity, index int) {
+	if entity == nil || index < 0 || index >= len(entity.Equipment) {
+		return
+	}
+	removed := entity.Equipment[index].LifeStealOverhealShield
+	if removed <= 0 {
+		return
+	}
+	if removed > entity.Passive.Shield {
+		removed = entity.Passive.Shield
+	}
+	entity.Passive.Shield -= removed
+	if entity.Passive.Shield < 0 {
+		entity.Passive.Shield = 0
+	}
+	if entity.Passive.MaxShield > entity.Passive.Shield {
+		entity.Passive.MaxShield = entity.Passive.Shield
+	}
+	entity.Equipment[index].LifeStealOverhealShield = 0
+}
+
 func (w *World) applyStoneplateResists(entity *Entity, stats *Stats) {
 	if entity == nil || stats == nil {
 		return

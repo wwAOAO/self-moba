@@ -35,6 +35,7 @@ type BleedState = state.BleedState
 type RobotArcState = state.RobotArcState
 type ExplorerFluxState = state.ExplorerFluxState
 type FireBurnState = state.FireBurnState
+type FrostServantState = state.FrostServantState
 type ShieldLayer = state.ShieldLayer
 type DeathState = state.DeathState
 type IntentState = state.IntentState

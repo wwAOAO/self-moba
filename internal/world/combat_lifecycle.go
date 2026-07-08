@@ -48,6 +48,7 @@ func (w *World) applyShield(source *Entity, target *Entity, damage int, tickRate
 	}
 	consumeShieldLayers(target, absorbed)
 	consumeEquipmentPhysicalDamageShield(target, absorbed)
+	consumeEquipmentLifeStealOverhealShield(target, absorbed)
 	if target.Passive.RobotShieldMana > absorbed {
 		target.Passive.RobotShieldMana -= absorbed
 	} else {

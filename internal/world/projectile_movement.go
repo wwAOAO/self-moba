@@ -4,7 +4,10 @@ func (w *World) moveProjectile(projectile *Projectile, tickRate int) Vector2 {
 	if projectile.SkillID == mageWSkillID {
 		updateMageWProjectileSpeed(projectile)
 	}
-	if projectile.SkillID != mageWSkillID {
+	if projectile.SkillID == frostmageESkillID {
+		updateFrostMageEProjectileSpeed(projectile, tickRate)
+	}
+	if projectile.SkillID != mageWSkillID && projectile.SkillID != frostmageESkillID {
 		updateProjectileSpeed(projectile, tickRate)
 	}
 	step := projectile.SpeedPerTick
@@ -64,6 +67,10 @@ func (w *World) expireProjectileIfNeeded(id string, source *Entity, projectile *
 }
 
 func (w *World) finishProjectileIfNeeded(id string, source *Entity, projectile *Projectile, tick uint64, tickRate int) {
+	if projectile.SkillID == frostmageQSkillID && !projectile.Returning && projectile.EffectRatio > 0 && projectile.Traveled >= projectile.EffectRatio {
+		w.resolveFrostQShatter(id, source, projectile, tick, tickRate)
+		return
+	}
 	if projectile.SkillID == mageWSkillID && projectile.Returning && distance(projectile.Position, projectile.Start) <= 1 {
 		if source != nil {
 			w.addMageShieldLayer(source, mageWShieldValue(source, w.skillConfig(projectile.SkillID), projectile.Damage), tick+projectile.EffectTicks)

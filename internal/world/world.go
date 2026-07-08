@@ -51,6 +51,8 @@ const (
 	mageRSkillID       = "mage_r"
 	fireMageQSkillID   = "fire_mage_q"
 	fireMageRSkillID   = "fire_mage_r"
+	frostmageQSkillID  = "frostmage_q"
+	frostmageESkillID  = "frostmage_e"
 	gunnerQSkillID     = "gunner_q"
 	gunnerWSkillID     = "gunner_w"
 	gunnerRSkillID     = "gunner_r"
@@ -124,11 +126,13 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		w.tickUntargetable(entity, tick)
 		w.tickPhysicalDefenseShred(entity, tick)
 		w.tickAttackDamageReduction(entity, tick)
+		w.tickGrievousWounds(entity, tick)
 		w.tickDashMovement(entity, tick, tickRate)
 		w.tickSwordShield(entity, tick)
 		tickEquipmentPhysicalDamageShield(entity, tick)
 		w.tickStoneplateShield(entity, tick)
 		w.tickSunfire(entity, tick, tickRate)
+		w.tickEndlessDespair(entity, tick, tickRate)
 		w.tickFountainForTarget(entity, tick, tickRate)
 		if entity.Lane.Active {
 			w.releasePendingAttack(entity, tick, tickRate)
@@ -147,6 +151,7 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		}
 		w.tickBaseRegen(entity, tickRate)
 		w.tickEquipmentPercentRegen(entity, tick, tickRate)
+		w.tickWarmog(entity, tick, tickRate)
 		w.tickPlayer(entity, tick, tickRate)
 	}
 }
@@ -187,7 +192,9 @@ func (w *World) tickDashMovement(entity *Entity, tick uint64, tickRate int) {
 			Y: entity.Control.DashStart.Y + (entity.Control.DashEnd.Y-entity.Control.DashStart.Y)*progress,
 		}
 	}
-	w.chargeSwordIntent(entity, distance(before, entity.Position))
+	moved := distance(before, entity.Position)
+	w.chargeSwordIntent(entity, moved)
+	w.chargeEquipmentOnMove(entity, moved)
 }
 
 func (w *World) tickRespawn(entity *Entity, tick uint64) {
@@ -255,6 +262,27 @@ func (w *World) tickRespawn(entity *Entity, tick uint64) {
 	entity.Passive.ExplorerRRelease = 0
 	entity.Passive.ExplorerRTarget = Vector2{}
 	entity.Passive.ExplorerRLevel = 0
+	entity.Passive.FrostServants = nil
+	entity.Passive.FrostQPending = false
+	entity.Passive.FrostQRelease = 0
+	entity.Passive.FrostQTarget = Vector2{}
+	entity.Passive.FrostQLevel = 0
+	entity.Passive.FrostEPending = false
+	entity.Passive.FrostERelease = 0
+	entity.Passive.FrostETarget = Vector2{}
+	entity.Passive.FrostELevel = 0
+	entity.Passive.FrostEProjectileID = ""
+	entity.Passive.FrostERecastTick = 0
+	entity.Passive.FrostRPending = false
+	entity.Passive.FrostRRelease = 0
+	entity.Passive.FrostRTargetID = ""
+	entity.Passive.FrostRLevel = 0
+	entity.Passive.FrostRSelfUntil = 0
+	entity.Passive.FrostRSelfLevel = 0
+	entity.Passive.FrostRSelfEffectID = ""
+	entity.Passive.FrostRSelfHealLeft = 0
+	entity.Passive.FrostRSelfHealTicks = 0
+	entity.Passive.FrostROldDamageReduce = 0
 	entity.Passive.Shield = 0
 	entity.Passive.MaxShield = 0
 	entity.Passive.ShieldExpireTick = 0

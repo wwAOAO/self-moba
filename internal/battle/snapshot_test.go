@@ -102,6 +102,41 @@ func TestSnapshotIncludesNinjaShadow(t *testing.T) {
 	}
 }
 
+func TestRoomJoinGrantsStartingGold(t *testing.T) {
+	heroes, err := config.LoadHeroes("../../configs/heroes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	skills, err := config.LoadSkills("../../configs/skills")
+	if err != nil {
+		t.Fatal(err)
+	}
+	levels, err := config.LoadLevels("../../configs/levels.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rewards, err := config.LoadRewards("../../configs/rewards.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	equipment, err := config.LoadEquipment("../../configs/equipment")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hero, ok := heroes.Get("sword")
+	if !ok {
+		t.Fatal("missing sword hero")
+	}
+	room := NewRoom("room-1", nil, heroes, skills, levels, rewards, equipment)
+	room.Join("p1", hero, world.TeamBlue)
+
+	snapshot := BuildSnapshot("room-1", 1, room.world)
+
+	if got := snapshot.Players[0].Gold; got != 10000 {
+		t.Fatalf("starting gold = %f, want 10000", got)
+	}
+}
+
 func testSnapshotWorld(t *testing.T) (*world.World, *config.HeroStore) {
 	t.Helper()
 	heroes, err := config.LoadHeroes("../../configs/heroes")

@@ -27,6 +27,8 @@ type Room struct {
 	closed   bool
 }
 
+const startingRoomGold = 10000
+
 func NewRoom(id string, publisher *jetstream.Publisher, heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig, equipment *config.EquipmentStore) *Room {
 	w := world.NewWorld(heroes, skills, levels, rewards, equipment)
 	room := &Room{
@@ -52,6 +54,7 @@ func (r *Room) Join(playerID string, hero config.HeroConfig, team world.Team) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.world.SpawnHero(playerID, hero, team)
+	r.world.AddGold(playerID, startingRoomGold)
 }
 
 func (r *Room) AttachSession(playerID string, sender SnapshotSender) {

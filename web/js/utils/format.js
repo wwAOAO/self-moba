@@ -127,6 +127,23 @@ function formatPercent(value) {
   return `${formatNumber(value * 100)}%`;
 }
 
+function formatCritChance(entity) {
+  return `${Math.round((entity?.stats?.critChance || 0) * 1000) / 10}%`;
+}
+
+function formatCritChanceTip(entity) {
+  return `<span class="stat-tip" data-tip="${escapeHtml(`以${formatCritChance(entity)}的概率造成${formatPercent(2 + entityCritDamageBonus(entity))}伤害`)}">?</span>`;
+}
+
+function entityCritDamageBonus(entity) {
+  const equipment = Array.isArray(entity?.equipment) ? entity.equipment : [];
+  return equipment.reduce(
+    (bonus, item) =>
+      Math.max(bonus, equipmentConfig(item)?.effects?.critDamageBonus || 0),
+    0,
+  );
+}
+
 function formatBasePlusBonus(base, bonus) {
   if (bonus <= 0) {
     return formatNumber(base);

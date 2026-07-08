@@ -68,6 +68,20 @@ func (w *World) PutProjectile(projectile *Projectile) {
 	}
 }
 
+func (w *World) ProjectileByID(id string) *Projectile {
+	if w == nil || id == "" {
+		return nil
+	}
+	return w.projectiles[id]
+}
+
+func (w *World) RemoveProjectile(id string) {
+	if projectile := w.ProjectileByID(id); projectile != nil {
+		delete(w.projectiles, id)
+		w.cleanupProjectileGroup(projectile)
+	}
+}
+
 func (w *World) NextEffectID(prefix string) string {
 	w.nextEffectID++
 	return prefix + strconv.Itoa(w.nextEffectID)

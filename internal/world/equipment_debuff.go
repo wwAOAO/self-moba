@@ -45,3 +45,33 @@ func (w *World) triggerEquipmentMagicHitStacks(target *Entity) {
 		w.recalculatePlayerStats(target)
 	}
 }
+
+func (w *World) triggerEquipmentSkillDamageSlow(source *Entity, target *Entity, tick uint64, tickRate int) {
+	if source == nil || target == nil || source.Kind != EntityKindPlayer || target.Stats.MaxHP <= 0 || target.Stats.HP <= 0 || w.equipment == nil {
+		return
+	}
+	seen := make(map[string]bool, len(source.Equipment))
+	for _, equipped := range source.Equipment {
+		if seen[equipped.EquipmentID] {
+			continue
+		}
+		seen[equipped.EquipmentID] = true
+		item, ok := w.equipment.Get(equipped.EquipmentID)
+		if !ok || item.Effects.SkillDamageLowHealthSlow <= 0 {
+			continue
+		}
+		threshold := item.Effects.SkillDamageLowHealthSlowThreshold
+		if threshold <= 0 {
+			threshold = 0.5
+		}
+		if target.Stats.HP/target.Stats.MaxHP >= threshold {
+			continue
+		}
+		seconds := item.Effects.SkillDamageLowHealthSlowSeconds
+		if seconds <= 0 {
+			seconds = 1
+		}
+		applyMoveSpeedSlow(target, item.Effects.SkillDamageLowHealthSlow, tick+secondsToTicks(seconds, tickRate))
+		return
+	}
+}

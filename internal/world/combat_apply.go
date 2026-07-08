@@ -42,6 +42,8 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 			damage = 1
 		}
 	}
+	damage = w.applyEquipmentDamageMultiplier(source, target, damage)
+	damage = w.applyEquipmentLowHealthMagicTrueDamageBonus(source, target, damage, damageType, context)
 	damage = w.applyShield(source, target, damage, tickRate)
 	target.Combat.LastDamage = damage
 	target.Combat.LastDamageType = damageType
@@ -74,11 +76,13 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 	if len(target.Combat.DamageEvents) > 0 {
 		target.Combat.DamageEvents[len(target.Combat.DamageEvents)-1].Damage = actualDamage
 	}
+	w.triggerEquipmentDamageTaken(target, source, target.Combat.LastHitTick, tickRate)
 	w.triggerEquipmentLowHealthShield(target, tickRate)
 	w.triggerEquipmentHeroDamageManaShield(source, target, tickRate)
 	if context.BasicAttack {
 		w.triggerEquipmentBasicAttackAttackerSlow(source, target, tickRate)
 		w.triggerEquipmentBasicAttackStacks(source, target.Combat.LastHitTick, tickRate)
+		w.triggerEquipmentThorns(source, target, tickRate)
 	}
 	if damageType == "magic" {
 		w.triggerEquipmentMagicHitStacks(target)
@@ -86,6 +90,13 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 	w.triggerStoneplateCooldown(target, tickRate)
 	if !context.BasicAttack && !context.Pet {
 		w.applyEquipmentSkillBurn(source, target, target.Combat.LastHitTick, tickRate)
+	}
+	if !context.BasicAttack && !context.SkipEquipmentSkillSlow {
+		w.triggerEquipmentSkillDamageSlow(source, target, target.Combat.LastHitTick, tickRate)
+	}
+	if !context.SkipEquipmentEffects {
+		w.triggerEquipmentEcho(source, target, context, target.Combat.LastHitTick, tickRate)
+		w.triggerEquipmentHeroDamageBonus(source, target, tickRate)
 	}
 	w.applySustain(source, actualDamage, context)
 	w.onHeroDamage(source, target, context, target.Combat.LastHitTick, tickRate)
@@ -96,6 +107,7 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 	}
 	w.triggerSunfireCombat(source, target.Combat.LastHitTick, tickRate)
 	w.triggerSunfireCombat(target, target.Combat.LastHitTick, tickRate)
+	w.triggerEquipmentHeroCombat(source, target, target.Combat.LastHitTick, tickRate)
 	w.triggerEquipmentHeroHitHeal(source, target)
 	w.breakWarriorToughness(source, target, target.Combat.LastHitTick)
 	w.refreshPlayerStatsAfterHPChange(target, beforeHP)

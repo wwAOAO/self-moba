@@ -27,8 +27,13 @@ function formatSkillCooldowns(player, tick) {
     return "-";
   }
   const canSpend = (player.skillPoints || 0) > 0;
-  return `<div class="skill-list">${["q", "w", "e", "r"]
-    .map((slot) => {
+  const rows = [];
+  const passiveRow = formatPassiveSkillRow(player, slots.passive, tick);
+  if (passiveRow) {
+    rows.push(passiveRow);
+  }
+  rows.push(
+    ...["q", "w", "e", "r"].map((slot) => {
       const skill = skillState(player, slots[slot]);
       const remainTicks = Math.max(0, (skill?.cooldownUntilTick || 0) - tick);
       const remainSeconds = (remainTicks / state.tickRate).toFixed(1);
@@ -44,8 +49,25 @@ function formatSkillCooldowns(player, tick) {
                       <span>${timeText}</span>
                       <button type="button" class="icon-button" data-skill-upgrade="${slot}" ${disabled}>+</button>
                   </div>`;
-    })
-    .join("")}</div>`;
+    }),
+  );
+  return `<div class="skill-list">${rows.join("")}</div>`;
+}
+
+function formatPassiveSkillRow(player, skillId, tick) {
+  if (!skillId) {
+    return "";
+  }
+  const skill = skillState(player, skillId);
+  const remainTicks = Math.max(0, (skill?.cooldownUntilTick || 0) - tick);
+  const timeText =
+    remainTicks > 0 ? `${(remainTicks / state.tickRate).toFixed(1)}s` : "-";
+  return `<div class="skill-row">
+                      <strong>P</strong>
+                      <span>-</span>
+                      <span>${timeText}</span>
+                      <span></span>
+                  </div>`;
 }
 
 function formatSkillChargeText(player, slot, skill) {

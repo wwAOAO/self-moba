@@ -20,16 +20,20 @@ func (w *World) SkillEffects() []SkillEffect {
 	}
 	for _, projectile := range w.projectiles {
 		start := projectile.Start
+		end := Vector2{}
 		createdAt := projectile.CreatedAt
 		sourceHeroID := ""
 		if source := w.entities[projectile.SourceID]; source != nil {
 			sourceHeroID = source.HeroID
 		}
-		if projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == gunnerRSkillID || projectile.SkillID == robotQSkillID || projectile.SkillID == explorerQSkillID || projectile.SkillID == explorerWSkillID || projectile.SkillID == explorerESkillID || projectile.SkillID == explorerRSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID || projectile.SkillID == fireMageQSkillID || projectile.SkillID == fireMageRSkillID || projectile.SkillID == ninjaQSkillID || isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot" {
+		if projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == gunnerRSkillID || projectile.SkillID == robotQSkillID || projectile.SkillID == explorerQSkillID || projectile.SkillID == explorerWSkillID || projectile.SkillID == explorerESkillID || projectile.SkillID == explorerRSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID || projectile.SkillID == fireMageQSkillID || projectile.SkillID == fireMageRSkillID || projectile.SkillID == frostmageQSkillID || projectile.SkillID == frostmageESkillID || projectile.SkillID == ninjaQSkillID || isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot" {
 			start = projectile.Position
 		}
 		if projectile.SkillID == tankQSkillID {
 			createdAt = 0
+		}
+		if projectile.SkillID == gunnerRSkillID {
+			end = projectile.Start
 		}
 		effects = append(effects, SkillEffect{
 			ID:           projectile.ID,
@@ -38,6 +42,7 @@ func (w *World) SkillEffects() []SkillEffect {
 			SourceID:     projectile.SourceID,
 			SourceHeroID: sourceHeroID,
 			Start:        start,
+			End:          end,
 			Dir:          projectile.Dir,
 			Range:        projectile.Range,
 			Radius:       projectile.Radius,
@@ -65,7 +70,7 @@ func updateTrackingProjectileDir(projectile *Projectile, target *Entity) {
 }
 
 func projectileDamageType(skillID string) string {
-	if skillID == tankQSkillID || skillID == robotQSkillID || skillID == explorerESkillID || skillID == explorerRSkillID || skillID == mageQSkillID || skillID == mageESkillID || skillID == fireMageQSkillID || skillID == fireMageRSkillID {
+	if skillID == tankQSkillID || skillID == robotQSkillID || skillID == explorerESkillID || skillID == explorerRSkillID || skillID == mageQSkillID || skillID == mageESkillID || skillID == fireMageQSkillID || skillID == fireMageRSkillID || skillID == frostmageQSkillID || skillID == frostmageESkillID {
 		return "magic"
 	}
 	return "physical"

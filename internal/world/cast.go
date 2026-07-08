@@ -21,12 +21,14 @@ func (w *World) applyCast(entity *Entity, cast protocol.CastInput, tick uint64, 
 		return
 	}
 	if handler := heroCastHandlerFor(entity.HeroID, cast.SkillID); handler != nil {
+		w.chargeEquipmentOnCast(entity)
 		handler(w, entity, cast, state, skill, tick, tickRate)
 		return
 	}
 	if skill.SkillID == "" {
 		return
 	}
+	w.chargeEquipmentOnCast(entity)
 	w.lockAttackAfterCast(entity, tick, tickRate)
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skill.CooldownMS, tickRate)
 	entity.Skills[cast.SkillID] = state

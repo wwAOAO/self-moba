@@ -83,6 +83,33 @@ func applyAttackSpeedSlow(target *Entity, slow float64, until uint64) {
 	target.Control.AttackSpeedSlowUntil = until
 }
 
+func (w *World) applyGrievousWounds(target *Entity, value float64, until uint64) {
+	if target == nil || value <= 0 || until == 0 {
+		return
+	}
+	if until < target.Control.GrievousWoundsUntil && value <= target.Control.GrievousWounds {
+		return
+	}
+	target.Control.GrievousWounds = clamp(value, 0, 1)
+	target.Control.GrievousWoundsUntil = until
+	target.Stats.GrievousWounds = target.Control.GrievousWounds
+	if target.Kind == EntityKindPlayer {
+		w.recalculatePlayerStats(target)
+	}
+}
+
+func (w *World) tickGrievousWounds(entity *Entity, tick uint64) {
+	if entity == nil || entity.Control.GrievousWoundsUntil == 0 || tick < entity.Control.GrievousWoundsUntil {
+		return
+	}
+	entity.Control.GrievousWounds = 0
+	entity.Control.GrievousWoundsUntil = 0
+	entity.Stats.GrievousWounds = 0
+	if entity.Kind == EntityKindPlayer {
+		w.recalculatePlayerStats(entity)
+	}
+}
+
 func (w *World) ApplyAttackDamageReduction(target *Entity, amount float64, until uint64) {
 	if target == nil || amount <= 0 || until == 0 {
 		return

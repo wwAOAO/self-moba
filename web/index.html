@@ -207,13 +207,18 @@
         line-height: 1.45;
       }
 
-      .target-card {
+      .target-cards {
         position: absolute;
         display: none;
         right: 16px;
         top: 16px;
         z-index: 2;
-        width: 240px;
+        width: 280px;
+        gap: 8px;
+      }
+
+      .target-card,
+      .target-equipment-card {
         padding: 10px;
         border: 2px solid #ef4444;
         border-radius: 4px;
@@ -261,9 +266,19 @@
         line-height: 1.45;
       }
 
-      .target-card strong {
+      .target-card strong,
+      .target-equipment-card strong {
         display: block;
         margin-bottom: 4px;
+      }
+
+      .target-card .stats-grid {
+        grid-template-columns: max-content max-content;
+        column-gap: 18px;
+      }
+
+      .target-card .stats-grid span {
+        white-space: nowrap;
       }
 
       .stats-card strong,
@@ -507,7 +522,7 @@
               ><span id="statMagicDefense">-</span> <span>移动速度</span
               ><span id="statMoveSpeed">-</span> <span>攻击距离</span
               ><span id="statAttackRange">-</span> <span>攻击速度</span
-              ><span id="statAttackSpeed">-</span> <span>暴击率</span
+              ><span id="statAttackSpeed">-</span> <span>暴击率<span id="statCritChanceTip"></span></span
               ><span id="statCritChance">-</span>
               <span>全能吸血</span><span id="statOmnivamp">-</span>
               <span>生命偷取</span><span id="statLifeSteal">-</span>
@@ -531,9 +546,15 @@
             <div id="buffs">-</div>
           </div>
         </div>
-        <div class="target-card">
-          <strong>目标</strong>
-          <span id="target">-</span>
+        <div class="target-cards">
+          <div class="target-card">
+            <strong>目标</strong>
+            <span id="target">-</span>
+          </div>
+          <div class="target-equipment-card">
+            <strong>装备</strong>
+            <div id="targetEquipment">-</div>
+          </div>
         </div>
         <div class="right-bottom-cards">
           <div class="player-card">

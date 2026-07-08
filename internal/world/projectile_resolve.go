@@ -103,6 +103,12 @@ func (w *World) projectileDamage(source *Entity, target *Entity, projectile *Pro
 		damage = w.fireMageQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
 	} else if projectile.SkillID == fireMageRSkillID && source != nil {
 		damage = w.fireMageRDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+	} else if projectile.SkillID == frostmageQSkillID && source != nil {
+		damage = w.frostQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+	} else if projectile.SkillID == frostmageESkillID && source != nil {
+		skill := w.skillConfig(projectile.SkillID)
+		raw := skillMetaListByLevel(skill, "baseDamage", projectile.Damage, []float64{70, 105, 140, 175, 210}) + float64(source.Stats.AbilityPower)*skillMetaRange(skill, "apRatio", 0.6)
+		damage = magicDamageAfterResistance(source, target, raw, tick)
 	} else if projectile.SkillID == mageQSkillID && source != nil {
 		hitNumber := len(projectile.HitIDs)
 		multiplier := 1.0
@@ -175,6 +181,14 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 			delete(w.projectiles, id)
 		}
 		removeProjectile = true
+	} else if projectile.SkillID == frostmageQSkillID {
+		w.frostQHit(source, target, projectile, damage, tick, tickRate)
+		if !projectile.Returning {
+			delete(w.projectiles, id)
+			removeProjectile = true
+		}
+	} else if projectile.SkillID == frostmageESkillID {
+		w.applyMagicDamage(source, target, damage, tickRate)
 	} else if projectile.SkillID == mageQSkillID {
 		w.applyMagicDamage(source, target, damage, tickRate)
 		target.Control.RootedUntilTick = tick + controlTicksAfterTenacity(target, projectile.EffectTicks, tick)
@@ -300,6 +314,17 @@ func (w *World) resolveProjectileDummyHit(id string, source *Entity, target *Ent
 			delete(w.projectiles, id)
 		}
 		return true
+	}
+	if projectile.SkillID == frostmageQSkillID {
+		w.frostQHit(source, target, projectile, damage, tick, tickRate)
+		if !projectile.Returning {
+			delete(w.projectiles, id)
+			return true
+		}
+		return false
+	}
+	if projectile.SkillID == frostmageESkillID {
+		return false
 	}
 	if projectile.SkillID == archerRSkillID || isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot" || projectile.SkillID == archerWSkillID {
 		delete(w.projectiles, id)

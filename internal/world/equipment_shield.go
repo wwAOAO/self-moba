@@ -170,3 +170,57 @@ func consumeEquipmentPhysicalDamageShield(entity *Entity, absorbed int) {
 		return
 	}
 }
+
+func (w *World) applyEquipmentLifeStealOverhealShield(entity *Entity, amount int) {
+	if entity == nil || entity.Kind != EntityKindPlayer || amount <= 0 || w.equipment == nil {
+		return
+	}
+	seen := make(map[string]bool, len(entity.Equipment))
+	for index, equipped := range entity.Equipment {
+		if seen[equipped.EquipmentID] {
+			continue
+		}
+		seen[equipped.EquipmentID] = true
+		item, ok := w.equipment.Get(equipped.EquipmentID)
+		if !ok || item.Effects.LifeStealOverhealShieldMax <= 0 {
+			continue
+		}
+		maxShield := equipmentShieldByLevel(entity.Level, item.Effects.LifeStealOverhealShieldMin, item.Effects.LifeStealOverhealShieldMax)
+		added := amount
+		if added > maxShield-equipped.LifeStealOverhealShield {
+			added = maxShield - equipped.LifeStealOverhealShield
+		}
+		if added <= 0 {
+			return
+		}
+		entity.Passive.Shield += added
+		if entity.Passive.MaxShield < entity.Passive.Shield {
+			entity.Passive.MaxShield = entity.Passive.Shield
+		}
+		entity.Equipment[index].LifeStealOverhealShield += added
+		return
+	}
+}
+
+func consumeEquipmentLifeStealOverhealShield(entity *Entity, absorbed int) {
+	if entity == nil || absorbed <= 0 {
+		return
+	}
+	remaining := absorbed
+	for index := range entity.Equipment {
+		if remaining <= 0 {
+			return
+		}
+		equipped := &entity.Equipment[index]
+		if equipped.LifeStealOverhealShield <= 0 {
+			continue
+		}
+		if equipped.LifeStealOverhealShield <= remaining {
+			remaining -= equipped.LifeStealOverhealShield
+			equipped.LifeStealOverhealShield = 0
+			continue
+		}
+		equipped.LifeStealOverhealShield -= remaining
+		return
+	}
+}

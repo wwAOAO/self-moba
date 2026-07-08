@@ -380,57 +380,41 @@ function drawFireMageREffect(effect, frame) {
 
 function drawGunnerREffect(effect, frame) {
   if (!effect.speed) {
-    drawGunnerRRangeEffect(effect, frame);
     return;
   }
   const position = projectileDrawPosition(effect, { fromSnapshot: true });
-  const baseX = frame.offsetX + position.x * frame.scale;
-  const baseY = frame.offsetY + position.y * frame.scale;
   const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
   const count = Math.max(1, effect.count || 1);
   const center = (count - 1) / 2;
-  const spacing = Math.max(7, (effect.radius || 18) * frame.scale * 0.5);
   const length = Math.max(9, (effect.radius || 18) * frame.scale * 0.75);
   const spread = Math.max(3, (effect.radius || 18) * frame.scale * 0.28);
-  const sideX = -Math.sin(angle);
-  const sideY = Math.cos(angle);
-  const forwardX = Math.cos(angle);
-  const forwardY = Math.sin(angle);
+  const halfAngle = (((effect.width || 45) * Math.PI) / 180) * 0.5;
+  const origin =
+    effect.endX || effect.endY
+      ? { x: effect.endX, y: effect.endY }
+      : effectSourcePosition(effect);
+  const traveled = origin
+    ? Math.hypot(position.x - origin.x, position.y - origin.y)
+    : 0;
   for (let i = 0; i < count; i++) {
-    const side = (i - center) * spacing;
-    const stagger = Math.abs(i - center) * -1.5 * frame.scale;
-    const x = baseX + sideX * side + forwardX * stagger;
-    const y = baseY + sideY * side + forwardY * stagger;
+    const bulletAngle = angle + (center ? ((i - center) / center) * halfAngle : 0);
+    const forwardX = Math.cos(bulletAngle);
+    const forwardY = Math.sin(bulletAngle);
+    const x = frame.offsetX + (origin ? origin.x + forwardX * traveled : position.x) * frame.scale;
+    const y = frame.offsetY + (origin ? origin.y + forwardY * traveled : position.y) * frame.scale;
     skillLayer.moveTo(x + forwardX * length, y + forwardY * length);
     skillLayer.lineTo(
-      x + Math.cos(angle + 2.55) * spread,
-      y + Math.sin(angle + 2.55) * spread,
+      x + Math.cos(bulletAngle + 2.55) * spread,
+      y + Math.sin(bulletAngle + 2.55) * spread,
     );
     skillLayer.lineTo(
-      x + Math.cos(angle - 2.55) * spread,
-      y + Math.sin(angle - 2.55) * spread,
+      x + Math.cos(bulletAngle - 2.55) * spread,
+      y + Math.sin(bulletAngle - 2.55) * spread,
     );
     skillLayer.closePath();
     skillLayer.fill({ color: 0xfacc15, alpha: 0.62 });
     skillLayer.stroke({ color: 0xf97316, width: 1.25, alpha: 0.72 });
   }
-}
-
-function drawGunnerRRangeEffect(effect, frame) {
-  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
-  const halfAngle = (((effect.width || 45) * Math.PI) / 180) * 0.5;
-  const x = frame.offsetX + effect.x * frame.scale;
-  const y = frame.offsetY + effect.y * frame.scale;
-  const radius = (effect.range || 1400) * frame.scale;
-  const alpha = effectAlpha(effect);
-  skillLayer.moveTo(x, y);
-  skillLayer.arc(x, y, radius, angle - halfAngle, angle + halfAngle);
-  skillLayer.closePath();
-  skillLayer.fill({ color: 0xf59e0b, alpha: 0.11 * alpha });
-  skillLayer.moveTo(x, y);
-  skillLayer.arc(x, y, radius, angle - halfAngle, angle + halfAngle);
-  skillLayer.closePath();
-  skillLayer.stroke({ color: 0xf97316, width: 3, alpha: 0.72 * alpha });
 }
 
 function drawGunnerEEffect(effect, frame) {

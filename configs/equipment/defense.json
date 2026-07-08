@@ -63,6 +63,34 @@
     ]
   },
   {
+    "equipmentId": "rejuvenation_bead",
+    "name": "治疗宝珠",
+    "category": "defense",
+    "tier": 1,
+    "price": 150,
+    "sellRatio": 0.5,
+    "stats": {
+      "hpRegen5": 5
+    },
+    "description": [
+      "生命/5秒 +5"
+    ]
+  },
+  {
+    "equipmentId": "giant_belt",
+    "name": "巨人腰带",
+    "category": "defense",
+    "tier": 1,
+    "price": 900,
+    "sellRatio": 0.5,
+    "stats": {
+      "hp": 350
+    },
+    "description": [
+      "生命 +350"
+    ]
+  },
+  {
     "equipmentId": "kindlegem",
     "name": "燃烧宝石",
     "category": "defense",
@@ -111,6 +139,31 @@
     },
     "description": [
       "物理防御 +30"
+    ]
+  },
+  {
+    "equipmentId": "bramble_vest",
+    "name": "棘刺背心",
+    "category": "defense",
+    "tier": 2,
+    "price": 800,
+    "sellRatio": 0.5,
+    "components": [
+      "cloth_armor",
+      "cloth_armor"
+    ],
+    "stats": {
+      "physicalDefense": 30
+    },
+    "effects": {
+      "thornsDamageFlat": 4,
+      "thornsBonusArmorRatio": 0.1,
+      "thornsGrievousWounds": 0.25,
+      "thornsGrievousWoundsSeconds": 3
+    },
+    "description": [
+      "护甲 +30",
+      "荆棘：被普通攻击命中后，对攻击者造成 4 (+10%额外护甲) 魔法伤害；若攻击者是英雄，施加3秒25%重伤"
     ]
   },
   {
@@ -212,6 +265,26 @@
     ]
   },
   {
+    "equipmentId": "crystalline_bracer",
+    "name": "晶体护腕",
+    "category": "defense",
+    "tier": 2,
+    "price": 800,
+    "sellRatio": 0.5,
+    "components": [
+      "ruby_crystal",
+      "rejuvenation_bead"
+    ],
+    "stats": {
+      "hp": 200,
+      "baseHpRegenBonus": 1
+    },
+    "description": [
+      "生命值 +200",
+      "基础生命回复 +100%"
+    ]
+  },
+  {
     "equipmentId": "raptor_cloak",
     "name": "猛禽斗篷",
     "category": "defense",
@@ -293,6 +366,67 @@
     ]
   },
   {
+    "equipmentId": "warmogs_armor",
+    "name": "狂徒铠甲",
+    "category": "defense",
+    "tier": 3,
+    "price": 3100,
+    "sellRatio": 0.7,
+    "components": [
+      "giant_belt",
+      "giant_belt",
+      "crystalline_bracer"
+    ],
+    "stats": {
+      "hp": 1000,
+      "baseHpRegenBonus": 1
+    },
+    "effects": {
+      "equipmentHpMultiplier": 0.15,
+      "warmogRequiredBonusHp": 2000,
+      "warmogOutOfCombatSeconds": 8,
+      "warmogMinionOutOfCombatSeconds": 3,
+      "warmogHealMaxHpRatio": 0.05,
+      "warmogTickSeconds": 0.5
+    },
+    "description": [
+      "生命值 +1000",
+      "基础生命回复 +100%",
+      "狂徒之活力：获得相当于15%装备生命值的额外生命值",
+      "狂徒之心：至少2000额外生命值且8秒内未受伤害（小兵/野怪为3秒）后，每0.5秒回复5%最大生命值"
+    ]
+  },
+  {
+    "equipmentId": "unending_despair",
+    "name": "无终恨意",
+    "category": "defense",
+    "tier": 3,
+    "price": 2800,
+    "sellRatio": 0.5,
+    "components": [
+      "chain_vest",
+      "kindlegem",
+      "ruby_crystal"
+    ],
+    "stats": {
+      "hp": 400,
+      "physicalDefense": 50,
+      "abilityHaste": 15
+    },
+    "effects": {
+      "endlessDespairRadius": 650,
+      "endlessDespairTickSeconds": 4,
+      "endlessDespairBonusHpRatio": 0.03,
+      "endlessDespairHealDamageRatio": 2.5
+    },
+    "description": [
+      "生命值 +400",
+      "护甲 +50",
+      "技能急速 +15",
+      "苦楚：与英雄进入战斗后，每4秒对650码内敌方英雄造成3%额外生命值魔法伤害，并治疗250%已造成伤害"
+    ]
+  },
+  {
     "equipmentId": "gargoyle_stoneplate",
     "name": "石像鬼石板甲",
     "category": "defense",
@@ -359,6 +493,34 @@
       "承受/造成伤害后献祭周围敌人3秒：每秒造成20-40 +1%额外生命魔法伤害",
       "对小兵伤害 +50%，对野怪伤害 +200%",
       "献祭命中英雄/史诗野怪叠层，每层伤害 +12%，最多6层"
+    ]
+  },
+  {
+    "equipmentId": "thornmail",
+    "name": "荆棘之甲",
+    "category": "defense",
+    "tier": 3,
+    "price": 2450,
+    "sellRatio": 0.5,
+    "components": [
+      "bramble_vest",
+      "chain_vest",
+      "ruby_crystal"
+    ],
+    "stats": {
+      "hp": 150,
+      "physicalDefense": 100
+    },
+    "effects": {
+      "thornsDamageFlat": 20,
+      "thornsBonusArmorRatio": 0.1,
+      "thornsGrievousWounds": 0.4,
+      "thornsGrievousWoundsSeconds": 3
+    },
+    "description": [
+      "生命值 +150",
+      "护甲 +100",
+      "荆棘：被普通攻击命中后，对攻击者造成 20 (+10%额外护甲) 魔法伤害；若攻击者是英雄，施加3秒40%重伤"
     ]
   }
 ]

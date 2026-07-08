@@ -871,3 +871,408 @@ func TestSunfireBladePhysicalDamageShieldDecays(t *testing.T) {
 		t.Fatalf("shield after decay = %v, want 0", player.Passive.Shield)
 	}
 }
+
+func TestBloodthirsterOverhealShield(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3400
+	baseAttack := player.Stats.Attack
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("bf_sword"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("pickaxe"), 2, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("vampiric_scepter"), 3, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("bloodthirster"), 4, nil, 20)
+
+	if player.Gold != 0 {
+		t.Fatalf("gold = %f, want 0", player.Gold)
+	}
+	if len(player.Equipment) != 1 || player.Equipment[0].EquipmentID != "bloodthirster" {
+		t.Fatalf("equipment = %+v, want bloodthirster", player.Equipment)
+	}
+	if player.Stats.Attack != baseAttack+80 || player.Stats.LifeSteal != 0.15 {
+		t.Fatalf("stats attack/life steal = %f/%f, want %f/0.15", player.Stats.Attack, player.Stats.LifeSteal, baseAttack+80)
+	}
+
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 5000, MaxHP: 5000}}
+	w.applyBasicAttackDamage(player, target, 2000, 20)
+
+	if player.Passive.Shield != 180 {
+		t.Fatalf("shield = %v, want 180", player.Passive.Shield)
+	}
+	w.ApplyInput("p1", protocolPlayerInputSellEquipment(1), 5, nil, 20)
+	if player.Passive.Shield != 0 || player.Passive.MaxShield != 0 {
+		t.Fatalf("shield after sell = %v/%v, want 0/0", player.Passive.Shield, player.Passive.MaxShield)
+	}
+}
+
+func TestLastWhisperAndNoonquiverStats(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 1450
+	baseAttack := player.Stats.Attack
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("short_sword"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("short_sword"), 2, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("last_whisper"), 3, nil, 20)
+
+	if player.Gold != 0 || len(player.Equipment) != 1 || player.Equipment[0].EquipmentID != "last_whisper" {
+		t.Fatalf("last whisper buy gold/equipment = %f/%+v, want 0/last_whisper", player.Gold, player.Equipment)
+	}
+	if player.Stats.Attack != baseAttack+20 || player.Stats.PhysicalPenPercent != 0.18 {
+		t.Fatalf("last whisper stats = %f/%f, want %f/0.18", player.Stats.Attack, player.Stats.PhysicalPenPercent, baseAttack+20)
+	}
+
+	w = testWorld(t)
+	w.SpawnHero("p1", hero, TeamBlue)
+	player = w.entities[playerEntityID("p1")]
+	player.Gold = 1300
+	baseAttack = player.Stats.Attack
+	baseCrit := player.Stats.CritChance
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("short_sword"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("cloak_of_agility"), 2, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("noonquiver"), 3, nil, 20)
+
+	if player.Gold != 0 || len(player.Equipment) != 1 || player.Equipment[0].EquipmentID != "noonquiver" {
+		t.Fatalf("noonquiver buy gold/equipment = %f/%+v, want 0/noonquiver", player.Gold, player.Equipment)
+	}
+	if player.Stats.Attack != baseAttack+15 || player.Stats.CritChance != baseCrit+0.2 {
+		t.Fatalf("noonquiver stats = %f/%f, want %f/%f", player.Stats.Attack, player.Stats.CritChance, baseAttack+15, baseCrit+0.2)
+	}
+}
+
+func TestLordDominiksRegardsGiantSlayer(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3300
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("lord_dominiks_regards"), 1, nil, 20)
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 2500, MaxHP: 2500, BonusHP: 1500}}
+
+	w.applyDamage(player, target, 100, 20)
+
+	if target.Stats.HP != 2385 {
+		t.Fatalf("target hp = %v, want 2385", target.Stats.HP)
+	}
+}
+
+func TestSeryldasGrudgeSlowsLowHealthOnSkillDamage(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3000
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("caulfields_warhammer"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("last_whisper"), 2, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("seryldas_grudge"), 3, nil, 20)
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 400, MaxHP: 1000}}
+
+	target.Combat.LastHitTick = 10
+	w.applyDamage(player, target, 10, 20)
+	if target.Control.MoveSpeedSlow != 0.3 || target.Control.MoveSpeedSlowUntil != 30 {
+		t.Fatalf("slow after skill = %f/%d, want 0.3/30", target.Control.MoveSpeedSlow, target.Control.MoveSpeedSlowUntil)
+	}
+
+	target.Combat.LastHitTick = 20
+	w.applyResolvedDamage(player, target, 1, "magic", sustainPetDamage, 20)
+	if target.Control.MoveSpeedSlow != 0.3 || target.Control.MoveSpeedSlowUntil != 40 {
+		t.Fatalf("slow after dot refresh = %f/%d, want 0.3/40", target.Control.MoveSpeedSlow, target.Control.MoveSpeedSlowUntil)
+	}
+}
+
+func TestBlightingJewelAndVoidStaffMagicPen(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 1100
+	baseAP := player.Stats.AbilityPower
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("amplifying_tome"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("blighting_jewel"), 2, nil, 20)
+
+	if player.Gold != 0 || len(player.Equipment) != 1 || player.Equipment[0].EquipmentID != "blighting_jewel" {
+		t.Fatalf("blighting jewel buy gold/equipment = %f/%+v, want 0/blighting_jewel", player.Gold, player.Equipment)
+	}
+	if player.Stats.AbilityPower != baseAP+25 || player.Stats.MagicPenPercent != 0.13 {
+		t.Fatalf("blighting jewel stats = %d/%f, want %d/0.13", player.Stats.AbilityPower, player.Stats.MagicPenPercent, baseAP+25)
+	}
+
+	w = testWorld(t)
+	w.SpawnHero("p1", hero, TeamBlue)
+	player = w.entities[playerEntityID("p1")]
+	player.Gold = 3000
+	baseAP = player.Stats.AbilityPower
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("blighting_jewel"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("blasting_wand"), 2, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("void_staff"), 3, nil, 20)
+
+	if player.Gold != 0 || len(player.Equipment) != 1 || player.Equipment[0].EquipmentID != "void_staff" {
+		t.Fatalf("void staff buy gold/equipment = %f/%+v, want 0/void_staff", player.Gold, player.Equipment)
+	}
+	if player.Stats.AbilityPower != baseAP+95 || player.Stats.MagicPenPercent != 0.4 {
+		t.Fatalf("void staff stats = %d/%f, want %d/0.4", player.Stats.AbilityPower, player.Stats.MagicPenPercent, baseAP+95)
+	}
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000, MagicDefense: 100}}
+	if got := magicDamageAfterResistance(player, target, 100, 1); got != 63 {
+		t.Fatalf("magic damage with void staff = %d, want 63", got)
+	}
+}
+
+func TestRylaisCrystalScepterSlowAndUniqueLimit(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 2600
+	baseAP := player.Stats.AbilityPower
+	baseMaxHP := player.Stats.MaxHP
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("blasting_wand"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("amplifying_tome"), 2, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("giant_belt"), 3, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("rylais_crystal_scepter"), 4, nil, 20)
+
+	if player.Gold != 0 || len(player.Equipment) != 1 || player.Equipment[0].EquipmentID != "rylais_crystal_scepter" {
+		t.Fatalf("rylais buy gold/equipment = %f/%+v, want 0/rylais", player.Gold, player.Equipment)
+	}
+	if player.Stats.AbilityPower != baseAP+65 || player.Stats.MaxHP != baseMaxHP+400 {
+		t.Fatalf("rylais stats = %d/%f, want %d/%f", player.Stats.AbilityPower, player.Stats.MaxHP, baseAP+65, baseMaxHP+400)
+	}
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	target.Combat.LastHitTick = 10
+	w.applyBasicAttackDamage(player, target, 10, 20)
+	if target.Control.MoveSpeedSlow != 0 {
+		t.Fatalf("slow after basic attack = %f, want 0", target.Control.MoveSpeedSlow)
+	}
+	target.Combat.LastHitTick = 20
+	w.applyMagicDamage(player, target, 10, 20)
+	if target.Control.MoveSpeedSlow != 0.3 || target.Control.MoveSpeedSlowUntil != 40 {
+		t.Fatalf("slow after skill = %f/%d, want 0.3/40", target.Control.MoveSpeedSlow, target.Control.MoveSpeedSlowUntil)
+	}
+	target.Combat.LastHitTick = 30
+	w.applyResolvedDamage(player, target, 1, "magic", sustainPetDamage, 20)
+	if target.Control.MoveSpeedSlow != 0.3 || target.Control.MoveSpeedSlowUntil != 50 {
+		t.Fatalf("slow after dot refresh = %f/%d, want 0.3/50", target.Control.MoveSpeedSlow, target.Control.MoveSpeedSlowUntil)
+	}
+
+	player.Gold = 2600
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("blasting_wand"), 31, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("amplifying_tome"), 32, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("giant_belt"), 33, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("rylais_crystal_scepter"), 34, nil, 20)
+	if len(player.Equipment) != 4 || player.Equipment[3].EquipmentID != "giant_belt" {
+		t.Fatalf("equipment after blocked second rylais = %+v, want original plus three components", player.Equipment)
+	}
+}
+
+func TestPenetrationItemsAreMutuallyExclusive(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 10000
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("last_whisper"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("noonquiver"), 2, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("lord_dominiks_regards"), 3, nil, 20)
+
+	if len(player.Equipment) != 1 || player.Equipment[0].EquipmentID != "lord_dominiks_regards" {
+		t.Fatalf("equipment after upgrade = %+v, want lord_dominiks_regards", player.Equipment)
+	}
+	gold := player.Gold
+	for tick, equipmentID := range []string{"seryldas_grudge", "black_cleaver", "blighting_jewel", "void_staff"} {
+		w.ApplyInput("p1", protocolPlayerInputBuyEquipment(equipmentID), uint64(tick+4), nil, 20)
+	}
+	if len(player.Equipment) != 1 || player.Gold != gold {
+		t.Fatalf("blocked penetration buys equipment/gold = %+v/%f, want one item/%f", player.Equipment, player.Gold, gold)
+	}
+}
+
+func TestBrambleVestAndThornmailReflectBasicAttacks(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 800
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("cloth_armor"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("cloth_armor"), 2, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("bramble_vest"), 3, nil, 20)
+	attacker := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+
+	player.Combat.LastHitTick = 10
+	w.applyBasicAttackDamage(attacker, player, 1, 20)
+	if attacker.Stats.HP != 993 || attacker.Stats.GrievousWounds != 0.25 || attacker.Control.GrievousWoundsUntil != 70 {
+		t.Fatalf("bramble attacker hp/grievous = %v/%f/%d, want 993/0.25/70", attacker.Stats.HP, attacker.Stats.GrievousWounds, attacker.Control.GrievousWoundsUntil)
+	}
+
+	w = testWorld(t)
+	w.SpawnHero("p1", hero, TeamBlue)
+	player = w.entities[playerEntityID("p1")]
+	player.Gold = 2450
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("thornmail"), 1, nil, 20)
+	attacker = &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+
+	player.Combat.LastHitTick = 10
+	w.applyBasicAttackDamage(attacker, player, 1, 20)
+	if attacker.Stats.HP != 970 || attacker.Stats.GrievousWounds != 0.4 || attacker.Control.GrievousWoundsUntil != 70 {
+		t.Fatalf("thornmail attacker hp/grievous = %v/%f/%d, want 970/0.4/70", attacker.Stats.HP, attacker.Stats.GrievousWounds, attacker.Control.GrievousWoundsUntil)
+	}
+}
+
+func TestWarmogsArmorStatsAndRegen(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3100
+	baseMaxHP := player.Stats.MaxHP
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("giant_belt"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("giant_belt"), 2, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("crystalline_bracer"), 3, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("warmogs_armor"), 4, nil, 20)
+
+	if player.Gold != 0 || len(player.Equipment) != 1 || player.Equipment[0].EquipmentID != "warmogs_armor" {
+		t.Fatalf("warmog buy gold/equipment = %f/%+v, want 0/warmogs_armor", player.Gold, player.Equipment)
+	}
+	if player.Stats.MaxHP != baseMaxHP+1150 {
+		t.Fatalf("max hp = %v, want %v", player.Stats.MaxHP, baseMaxHP+1150)
+	}
+
+	player.Stats.BonusHP = 2000
+	player.Stats.MaxHP = 3000
+	player.Stats.HP = 1000
+	player.Combat.LastHitTick = 1
+	w.tickWarmog(player, 160, 20)
+	if player.Stats.HP != 1000 {
+		t.Fatalf("hp before warmog ready = %v, want 1000", player.Stats.HP)
+	}
+	w.tickWarmog(player, 161, 20)
+	if player.Stats.HP != 1150 {
+		t.Fatalf("hp after warmog tick = %v, want 1150", player.Stats.HP)
+	}
+}
+
+func TestUnendingDespairDamagesAndHealsInHeroCombat(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 2800
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("unending_despair"), 1, nil, 20)
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Position: player.Position, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	w.entities[target.ID] = target
+
+	target.Combat.LastHitTick = 1
+	w.applyDamage(player, target, 1, 20)
+	player.Stats.HP = player.Stats.MaxHP - 100
+	w.tickEndlessDespair(player, 81, 20)
+
+	if target.Stats.HP != 987 {
+		t.Fatalf("target hp = %v, want 987", target.Stats.HP)
+	}
+	if player.Stats.HP != player.Stats.MaxHP-70 {
+		t.Fatalf("player hp = %v, want %v", player.Stats.HP, player.Stats.MaxHP-70)
+	}
+}
+
+func TestHextechAlternatorStatsAndHeroDamageBonus(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 1100
+	baseAP := player.Stats.AbilityPower
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("amplifying_tome"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("amplifying_tome"), 2, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("hextech_alternator"), 3, nil, 20)
+
+	if player.Gold != 0 || len(player.Equipment) != 1 || player.Equipment[0].EquipmentID != "hextech_alternator" {
+		t.Fatalf("hextech buy gold/equipment = %f/%+v, want 0/hextech", player.Gold, player.Equipment)
+	}
+	if player.Stats.AbilityPower != baseAP+45 {
+		t.Fatalf("ability power = %d, want %d", player.Stats.AbilityPower, baseAP+45)
+	}
+
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	target.Combat.LastHitTick = 10
+	w.applyMagicDamage(player, target, 10, 20)
+	if target.Stats.HP != 925 {
+		t.Fatalf("target hp after hextech = %v, want 925", target.Stats.HP)
+	}
+	target.Combat.LastHitTick = 11
+	w.applyMagicDamage(player, target, 10, 20)
+	if target.Stats.HP != 915 {
+		t.Fatalf("target hp during cooldown = %v, want 915", target.Stats.HP)
+	}
+}
+
+func TestShadowflameLowHealthMagicAndPetDamageBonus(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3200
+	baseAP := player.Stats.AbilityPower
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("shadowflame"), 1, nil, 20)
+
+	if player.Stats.AbilityPower != baseAP+110 || player.Stats.MagicPenFlat != 15 {
+		t.Fatalf("shadowflame stats = %d/%f, want %d/15", player.Stats.AbilityPower, player.Stats.MagicPenFlat, baseAP+110)
+	}
+
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 500, MaxHP: 1000}}
+	w.applyMagicDamage(player, target, 100, 20)
+	if target.Stats.HP != 400 {
+		t.Fatalf("target hp above threshold = %v, want 400", target.Stats.HP)
+	}
+	target.Stats.HP = 399
+	w.applyMagicDamage(player, target, 100, 20)
+	if target.Stats.HP != 279 {
+		t.Fatalf("target hp after low health magic = %v, want 279", target.Stats.HP)
+	}
+	target.Stats.HP = 399
+	w.applyResolvedDamage(player, target, 100, "magic", sustainPetDamage, 20)
+	if target.Stats.HP != 274 {
+		t.Fatalf("target hp after low health pet = %v, want 274", target.Stats.HP)
+	}
+}
+
+func TestLudensEchoChargesTriggersAndBounces(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 2750
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("ludens_echo"), 1, nil, 20)
+
+	if len(player.Equipment) != 1 || player.Equipment[0].EquipmentID != "ludens_echo" || player.Stats.AbilityPower != 100 || player.Stats.MaxMP != 700 || player.Stats.AbilityHaste != 10 {
+		t.Fatalf("luden equipment/stats = %+v ap=%d mp=%f haste=%f", player.Equipment, player.Stats.AbilityPower, player.Stats.MaxMP, player.Stats.AbilityHaste)
+	}
+	w.chargeEquipmentOnMove(player, 3500)
+	if player.Equipment[0].Stacks != 1 {
+		t.Fatalf("luden stacks after movement = %f, want 1", player.Equipment[0].Stacks)
+	}
+
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	target.Combat.LastHitTick = 20
+	w.applyMagicDamage(player, target, 10, 20)
+	if target.Stats.HP != 910 || player.Equipment[0].Stacks != 0 {
+		t.Fatalf("target hp/stacks after luden = %v/%f, want 910/0", target.Stats.HP, player.Equipment[0].Stacks)
+	}
+
+	w.chargeEquipmentOnMove(player, 7000)
+	primary := &Entity{ID: "primary", Kind: EntityKindEnemyHero, Team: TeamRed, Position: Vector2{X: 100, Y: 100}, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	bounce := &Entity{ID: "bounce", Kind: EntityKindEnemyHero, Team: TeamRed, Position: Vector2{X: 200, Y: 100}, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	w.entities[primary.ID] = primary
+	w.entities[bounce.ID] = bounce
+	primary.Combat.LastHitTick = 30
+	w.applyMagicDamage(player, primary, 10, 20)
+	if primary.Stats.HP != 990 || bounce.Stats.HP != 1000 {
+		t.Fatalf("luden during cooldown primary/bounce hp = %v/%v, want 990/1000", primary.Stats.HP, bounce.Stats.HP)
+	}
+
+	primary.Combat.LastHitTick = 260
+	w.applyMagicDamage(player, primary, 10, 20)
+	if primary.Stats.HP != 900 || bounce.Stats.HP != 920 {
+		t.Fatalf("luden bounce hp primary/bounce = %v/%v, want 900/920", primary.Stats.HP, bounce.Stats.HP)
+	}
+}

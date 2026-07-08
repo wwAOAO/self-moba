@@ -113,6 +113,10 @@ func (w *World) addGold(entity *Entity, gold float64) {
 	entity.Gold += gold
 }
 
+func (w *World) AddGold(playerID string, gold float64) {
+	w.addGold(w.entities[playerEntityID(playerID)], gold)
+}
+
 func (w *World) tickPassiveGold(tick uint64, tickRate int) {
 	if tickRate <= 0 {
 		return

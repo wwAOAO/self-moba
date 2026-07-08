@@ -72,7 +72,7 @@ function moveToPoint(point) {
 
 function attackMoveAtPoint(point) {
   const self = state.players.get(state.playerId);
-  if (self?.dead) {
+  if (!self || self.dead) {
     return;
   }
   const targetId = nearestAttackTarget(
@@ -80,6 +80,7 @@ function attackMoveAtPoint(point) {
     Math.max(500, self?.stats?.attackRange || 0),
   );
   if (!targetId) {
+    moveToPoint({ x: self.x, y: self.y });
     return;
   }
   state.selectedTargetId = targetId;
