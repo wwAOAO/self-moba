@@ -1,5 +1,11 @@
 package world
 
+const (
+	passiveGoldStartSeconds    = 120
+	passiveGoldIntervalSeconds = 10
+	passiveGoldAmount          = 20.4
+)
+
 func (w *World) applyKillReward(killer *Entity, target *Entity) {
 	if target == nil {
 		return
@@ -105,6 +111,25 @@ func (w *World) addGold(entity *Entity, gold float64) {
 		return
 	}
 	entity.Gold += gold
+}
+
+func (w *World) tickPassiveGold(tick uint64, tickRate int) {
+	if tickRate <= 0 {
+		return
+	}
+	interval := secondsToTicks(passiveGoldIntervalSeconds, tickRate)
+	if interval == 0 {
+		return
+	}
+	if w.nextPassiveGoldTick == 0 {
+		w.nextPassiveGoldTick = secondsToTicks(passiveGoldStartSeconds, tickRate)
+	}
+	for tick >= w.nextPassiveGoldTick {
+		for _, entity := range w.entities {
+			w.addGold(entity, passiveGoldAmount)
+		}
+		w.nextPassiveGoldTick += interval
+	}
 }
 
 func (w *World) addExperience(entity *Entity, exp float64) {

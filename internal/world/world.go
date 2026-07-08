@@ -49,6 +49,8 @@ const (
 	mageWSkillID       = "mage_w"
 	mageESkillID       = "mage_e"
 	mageRSkillID       = "mage_r"
+	fireMageQSkillID   = "fire_mage_q"
+	fireMageRSkillID   = "fire_mage_r"
 	gunnerQSkillID     = "gunner_q"
 	gunnerWSkillID     = "gunner_w"
 	gunnerRSkillID     = "gunner_r"
@@ -75,11 +77,13 @@ type World struct {
 	nextWallID          int
 	nextProjectileID    int
 	nextEffectID        int
+	nextPassiveGoldTick uint64
 	windWalls           map[string]WindWall
 	projectiles         map[string]*Projectile
 	projectileHits      map[string]map[string]bool
 	skillEffects        map[string]SkillEffect
 	equipmentBurns      map[string]EquipmentBurn
+	siegeSplashBurns    map[string]EquipmentBurn
 	nextMinionWaveTick  uint64
 	minionWaveNumber    int
 	pendingMinionSpawns []PendingMinionSpawn
@@ -87,19 +91,20 @@ type World struct {
 
 func NewWorld(heroes *config.HeroStore, skills *config.SkillStore, levels *config.LevelConfig, rewards *config.RewardConfig, equipment *config.EquipmentStore) *World {
 	w := &World{
-		width:          DefaultMapWidth,
-		height:         DefaultMapHeight,
-		entities:       make(map[string]*Entity),
-		heroes:         heroes,
-		skills:         skills,
-		levels:         levels,
-		rewards:        rewards,
-		equipment:      equipment,
-		windWalls:      make(map[string]WindWall),
-		projectiles:    make(map[string]*Projectile),
-		projectileHits: make(map[string]map[string]bool),
-		skillEffects:   make(map[string]SkillEffect),
-		equipmentBurns: make(map[string]EquipmentBurn),
+		width:            DefaultMapWidth,
+		height:           DefaultMapHeight,
+		entities:         make(map[string]*Entity),
+		heroes:           heroes,
+		skills:           skills,
+		levels:           levels,
+		rewards:          rewards,
+		equipment:        equipment,
+		windWalls:        make(map[string]WindWall),
+		projectiles:      make(map[string]*Projectile),
+		projectileHits:   make(map[string]map[string]bool),
+		skillEffects:     make(map[string]SkillEffect),
+		equipmentBurns:   make(map[string]EquipmentBurn),
+		siegeSplashBurns: make(map[string]EquipmentBurn),
 	}
 	w.SpawnBattleUnits()
 	return w
@@ -111,7 +116,9 @@ func (w *World) Tick(tick uint64, tickRate int) {
 	w.tickMinionWaves(tick, tickRate)
 	w.tickProjectiles(tick, tickRate)
 	w.tickEquipmentBurns(tick, tickRate)
+	w.tickSiegeMinionSplashBurns(tick, tickRate)
 	w.tickFountains(tick, tickRate)
+	w.tickPassiveGold(tick, tickRate)
 	for _, entity := range w.entities {
 		w.tickHeroEntity(entity, tick, tickRate)
 		w.tickUntargetable(entity, tick)

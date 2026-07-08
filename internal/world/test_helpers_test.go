@@ -162,3 +162,47 @@ func placeEntity(entity *Entity, x float64, y float64) {
 		entity.Position = Vector2{X: x, Y: y}
 	}
 }
+
+func spawnPresetTestTargets(w *World) {
+	w.spawnUnit("enemy:hero-1", EntityKindEnemyHero, TeamRed, w.width/2+420, w.height/2-220, 18, Stats{
+		HP:              1200,
+		MaxHP:           1200,
+		MP:              500,
+		MaxMP:           500,
+		Attack:          82,
+		PhysicalDefense: 26,
+		MagicDefense:    18,
+		MoveSpeed:       350,
+		AttackRange:     150,
+		AttackSpeed:     1,
+	})
+	w.spawnUnit("minion:red-melee-1", EntityKindMeleeMinion, TeamRed, w.width/2+360, w.height/2-70, 20, Stats{
+		HP:              420,
+		MaxHP:           420,
+		Attack:          32,
+		PhysicalDefense: 8,
+		MagicDefense:    4,
+		MoveSpeed:       3,
+		AttackRange:     70,
+		AttackSpeed:     0.8,
+	})
+	w.spawnUnit("minion:red-ranged-1", EntityKindRangedMinion, TeamRed, w.width/2+430, w.height/2, 18, Stats{
+		HP:              300,
+		MaxHP:           300,
+		Attack:          38,
+		PhysicalDefense: 5,
+		MagicDefense:    5,
+		MoveSpeed:       3,
+		AttackRange:     360,
+		AttackSpeed:     0.7,
+	})
+	w.spawnUnit("structure:red-tower-1", EntityKindTower, TeamRed, w.width/2+700, w.height/2-240, 34, Stats{
+		HP:              2600,
+		MaxHP:           2600,
+		Attack:          180,
+		PhysicalDefense: 80,
+		MagicDefense:    60,
+		AttackRange:     620,
+		AttackSpeed:     0.75,
+	})
+}

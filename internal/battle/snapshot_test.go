@@ -40,7 +40,11 @@ func TestUnitSnapshotIncludesNegativeBuffs(t *testing.T) {
 	}
 	w.SpawnHero("darius", hero, world.TeamBlue)
 	source := w.EntityByID("player:darius")
-	target := w.EntityByID("enemy:hero-1")
+	targetID, ok := w.SpawnObject(world.EntityKindEnemyHero, world.TeamRed, 3000, 3000)
+	if !ok {
+		t.Fatal("spawn enemy hero failed")
+	}
+	target := w.EntityByID(targetID)
 	if source == nil || target == nil {
 		t.Fatal("missing test entities")
 	}

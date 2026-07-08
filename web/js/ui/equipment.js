@@ -17,10 +17,13 @@ function setEquipmentTip(tip, equipment) {
   }
   const text = formatEquipmentTip(equipment);
   if (!text) {
-    tip.innerHTML = "";
+    setHtmlIfChanged(tip, "");
     return;
   }
-  tip.innerHTML = `<span class="stat-tip" data-tip="${escapeHtml(text)}">?</span>`;
+  setHtmlIfChanged(
+    tip,
+    `<span class="stat-tip" data-tip="${escapeHtml(text)}">?</span>`,
+  );
 }
 
 function formatEquipmentTip(equipment) {

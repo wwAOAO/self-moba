@@ -129,6 +129,7 @@ message BuffSnapshot {
   uint64 expires_at_tick = 3;
   bool negative = 4;
   double ability_haste = 5;
+  uint64 explosion_at_tick = 6;
 }
 
 message EquipmentSlot {

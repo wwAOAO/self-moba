@@ -165,6 +165,145 @@ func TestTrueDamageIgnoresResistanceAndUsesDamageReduction(t *testing.T) {
 	}
 }
 
+func TestRangedMinionBasicAttackIsPhysicalWithMagicBonusAgainstNonHero(t *testing.T) {
+	w := testWorld(t)
+	attacker := &Entity{ID: "minion:ranged", Kind: EntityKindRangedMinion, Team: TeamBlue, Stats: Stats{HP: 1, MaxHP: 1, Attack: 100}}
+	target := &Entity{
+		ID:   "structure:target",
+		Kind: EntityKindCrystal,
+		Team: TeamRed,
+		Stats: Stats{
+			HP:              1000,
+			MaxHP:           1000,
+			PhysicalDefense: 0,
+			MagicDefense:    0,
+		},
+	}
+	target.Combat.LastHitTick = 10
+
+	w.applyMinionBasicAttackDamage(attacker, target, 10, 20)
+
+	if got := 1000 - target.Stats.HP; got != 120 {
+		t.Fatalf("ranged minion damage = %v, want 120", got)
+	}
+	wantTypes := []string{"physical", "magic"}
+	wantDamage := []int{100, 20}
+	if len(target.Combat.DamageEvents) != len(wantTypes) {
+		t.Fatalf("damage events = %+v, want 2 events", target.Combat.DamageEvents)
+	}
+	for i := range wantTypes {
+		event := target.Combat.DamageEvents[i]
+		if event.DamageType != wantTypes[i] || event.Damage != wantDamage[i] || !event.BasicAttack {
+			t.Fatalf("event %d = %+v, want %s/%d basic", i, event, wantTypes[i], wantDamage[i])
+		}
+	}
+}
+
+func TestRangedMinionBasicAttackIsOnlyPhysicalAgainstHero(t *testing.T) {
+	w := testWorld(t)
+	attacker := &Entity{ID: "minion:ranged", Kind: EntityKindRangedMinion, Team: TeamBlue, Stats: Stats{HP: 1, MaxHP: 1, Attack: 100}}
+	target := &Entity{ID: "hero:target", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	target.Combat.LastHitTick = 10
+
+	w.applyMinionBasicAttackDamage(attacker, target, 10, 20)
+
+	if got := 1000 - target.Stats.HP; got != 60 {
+		t.Fatalf("ranged minion hero damage = %v, want 60", got)
+	}
+	if len(target.Combat.DamageEvents) != 1 || target.Combat.DamageEvents[0].DamageType != "physical" {
+		t.Fatalf("damage events = %+v, want one physical event", target.Combat.DamageEvents)
+	}
+}
+
+func TestSiegeMinionBasicAttackIsPhysicalOnly(t *testing.T) {
+	w := testWorld(t)
+	attacker := &Entity{ID: "minion:siege", Kind: EntityKindSiegeMinion, Team: TeamBlue, Stats: Stats{HP: 1, MaxHP: 1, Attack: 100}}
+	target := &Entity{ID: "structure:target", Kind: EntityKindCrystal, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	target.Combat.LastHitTick = 10
+
+	w.applyMinionBasicAttackDamage(attacker, target, 10, 20)
+
+	if got := 1000 - target.Stats.HP; got != 100 {
+		t.Fatalf("siege minion damage = %v, want 100", got)
+	}
+	if len(target.Combat.DamageEvents) != 1 || target.Combat.DamageEvents[0].DamageType != "physical" || !target.Combat.DamageEvents[0].BasicAttack {
+		t.Fatalf("damage events = %+v, want one physical basic attack", target.Combat.DamageEvents)
+	}
+}
+
+func TestSiegeMinionBasicAttackSplashBurnsEverySecondForFiveSeconds(t *testing.T) {
+	w := testWorld(t)
+	attacker := &Entity{ID: "minion:siege", Kind: EntityKindSiegeMinion, Team: TeamBlue, Stats: Stats{HP: 1, MaxHP: 1, Attack: 100}}
+	target := &Entity{ID: "structure:target", Kind: EntityKindCrystal, Team: TeamRed, Position: Vector2{X: 1000, Y: 1000}, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	near := &Entity{ID: "structure:near", Kind: EntityKindCrystal, Team: TeamRed, Position: Vector2{X: 1200, Y: 1000}, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	far := &Entity{ID: "structure:far", Kind: EntityKindCrystal, Team: TeamRed, Position: Vector2{X: 1400, Y: 1000}, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	w.entities[attacker.ID] = attacker
+	w.entities[target.ID] = target
+	w.entities[near.ID] = near
+	w.entities[far.ID] = far
+	target.Combat.LastHitTick = 10
+
+	w.applyMinionBasicAttackDamage(attacker, target, 10, 20)
+
+	if got := 1000 - target.Stats.HP; got != 100 {
+		t.Fatalf("primary damage = %v, want 100", got)
+	}
+	if got := 1000 - near.Stats.HP; got != 0 {
+		t.Fatalf("near immediate splash damage = %v, want 0", got)
+	}
+	if got := 1000 - far.Stats.HP; got != 0 {
+		t.Fatalf("far splash damage = %v, want 0", got)
+	}
+
+	for tick := uint64(11); tick <= 10+secondsToTicks(5, 20); tick++ {
+		w.tickSiegeMinionSplashBurns(tick, 20)
+	}
+	if got := 1000 - near.Stats.HP; got != 550 {
+		t.Fatalf("near splash burn damage = %v, want 550", got)
+	}
+	if got := near.Combat.LastDamageType; got != "magic" {
+		t.Fatalf("near splash damage type = %q, want magic", got)
+	}
+}
+
+func TestSiegeMinionSplashAttackFiresCannonballProjectile(t *testing.T) {
+	w := testWorld(t)
+	attacker := &Entity{ID: "minion:siege", Kind: EntityKindSiegeMinion, Team: TeamBlue, Stats: Stats{HP: 1, MaxHP: 1, Attack: 100}}
+	target := &Entity{ID: "structure:target", Kind: EntityKindCrystal, Team: TeamRed, Position: Vector2{X: 1000, Y: 1000}, Stats: Stats{HP: 1000, MaxHP: 1000}}
+
+	w.fireBasicAttackProjectile(attacker, target, 10, 20)
+	if got := countProjectilesByKind(w, siegeCannonballProjectileKind); got != 1 {
+		t.Fatalf("ready siege projectile count = %v, want 1 cannonball", got)
+	}
+
+	w.projectiles = map[string]*Projectile{}
+	attacker.Combat.NextSiegeSplashTick = 20
+	w.fireBasicAttackProjectile(attacker, target, 11, 20)
+	if got := countProjectilesByKind(w, basicArrowProjectileKind); got != 1 {
+		t.Fatalf("cooling siege projectile count = %v, want 1 basic projectile", got)
+	}
+}
+
+func TestMeleeMinionReducesDamageFromNonHeroUnits(t *testing.T) {
+	w := testWorld(t)
+	target := &Entity{ID: "minion:melee", Kind: EntityKindMeleeMinion, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	minion := &Entity{ID: "minion:ranged", Kind: EntityKindRangedMinion, Team: TeamBlue, Stats: Stats{HP: 1, MaxHP: 1}}
+	hero := &Entity{ID: "hero:blue", Kind: EntityKindEnemyHero, Team: TeamBlue, Stats: Stats{HP: 1, MaxHP: 1}}
+
+	target.Combat.LastHitTick = 10
+	w.applyResolvedDamage(minion, target, 100, "physical", sustainSingleTargetSkill, 20)
+	if got := 1000 - target.Stats.HP; got != 85 {
+		t.Fatalf("non-hero damage = %v, want 85", got)
+	}
+
+	target.Stats.HP = 1000
+	target.Combat.LastHitTick = 20
+	w.applyResolvedDamage(hero, target, 100, "physical", sustainSingleTargetSkill, 20)
+	if got := 1000 - target.Stats.HP; got != 100 {
+		t.Fatalf("hero damage = %v, want 100", got)
+	}
+}
+
 func TestFinalAttackSpeedUsesBonusRatioSlowAndCap(t *testing.T) {
 	if got := finalAttackSpeed(0.65, 0.5, 0.7, 0); math.Abs(got-0.8775) > 0.000001 {
 		t.Fatalf("attack speed = %f, want 0.8775", got)

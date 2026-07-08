@@ -6,11 +6,12 @@ import (
 )
 
 type BuffState struct {
-	ID            string
-	Name          string
-	AbilityHaste  float64
-	ExpiresAtTick uint64
-	Negative      bool
+	ID              string
+	Name            string
+	AbilityHaste    float64
+	ExpiresAtTick   uint64
+	ExplosionAtTick uint64
+	Negative        bool
 }
 
 type RegenState struct {
@@ -107,6 +108,7 @@ type CombatState struct {
 	LastDamageType             string
 	DamageEvents               []DamageEvent
 	DamageEventsTick           uint64
+	NextSiegeSplashTick        uint64
 	PhysicalDefenseShredUntil  uint64
 	PhysicalDefenseShredAmount float64
 	BlackCleaverStacks         int
@@ -338,6 +340,24 @@ type PassiveState struct {
 	ExplorerRRelease   uint64
 	ExplorerRTarget    geom.Vector2
 	ExplorerRLevel     int
+	FireBurns          map[string]FireBurnState
+	FireManaUntil      uint64
+	FireManaNextTick   uint64
+	FireQPending       bool
+	FireQReleaseTick   uint64
+	FireQTarget        geom.Vector2
+	FireQLevel         int
+	FireWPending       bool
+	FireWTriggerTick   uint64
+	FireWCenter        geom.Vector2
+	FireWLevel         int
+	FireWCastPending   bool
+	FireWCastTarget    geom.Vector2
+	FireWCastLevel     int
+	FireRPending       bool
+	FireRReleaseTick   uint64
+	FireRTargetID      string
+	FireRLevel         int
 	NinjaSoulCooldowns map[string]uint64
 	Shield             int
 	MaxShield          int
@@ -364,6 +384,13 @@ type RobotArcState struct {
 type ExplorerFluxState struct {
 	Level     int
 	ExpiresAt uint64
+}
+
+type FireBurnState struct {
+	Stacks          int
+	ExpiresAtTick   uint64
+	NextTick        uint64
+	ExplosionAtTick uint64
 }
 
 type ShieldLayer struct {

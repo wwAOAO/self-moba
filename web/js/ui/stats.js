@@ -14,7 +14,7 @@
     els.statMpRegen5.textContent = "-";
     els.statAttack.textContent = "-";
     els.statAbilityPower.textContent = "-";
-    els.statAbilityHasteTip.innerHTML = "";
+    setHtmlIfChanged(els.statAbilityHasteTip, "");
     els.statAbilityHaste.textContent = "-";
     els.statPhysicalDefense.textContent = "-";
     els.statMagicDefense.textContent = "-";
@@ -53,19 +53,20 @@
     : "-";
   els.statAttack.textContent = formatAttack(stats);
   els.statAbilityPower.textContent = stats.abilityPower || 0;
-  els.statAbilityHasteTip.innerHTML = formatAbilityHasteTip(
-    stats.abilityHaste || 0,
+  setHtmlIfChanged(
+    els.statAbilityHasteTip,
+    formatAbilityHasteTip(stats.abilityHaste || 0),
   );
   els.statAbilityHaste.textContent = formatNumber(stats.abilityHaste || 0);
   els.statPhysicalDefense.textContent = formatPhysicalDefense(stats);
-  els.statPhysicalDefenseTip.innerHTML = formatDefenseTip(
-    stats.physicalDefense || 0,
-    "物理",
+  setHtmlIfChanged(
+    els.statPhysicalDefenseTip,
+    formatDefenseTip(stats.physicalDefense || 0, "物理"),
   );
   els.statMagicDefense.textContent = formatMagicDefense(stats);
-  els.statMagicDefenseTip.innerHTML = formatDefenseTip(
-    stats.magicDefense || 0,
-    "魔法",
+  setHtmlIfChanged(
+    els.statMagicDefenseTip,
+    formatDefenseTip(stats.magicDefense || 0, "魔法"),
   );
   els.statMoveSpeed.textContent = formatNumber(stats.moveSpeed);
   els.statAttackRange.textContent = formatNumber(stats.attackRange);

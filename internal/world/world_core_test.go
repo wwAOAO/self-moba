@@ -195,11 +195,38 @@ func TestEnemyInFountainRangeGetsShot(t *testing.T) {
 		}
 	}
 
-	if target.Stats.HP != startHP-250 {
-		t.Fatalf("target hp = %v, want %v", target.Stats.HP, startHP-250)
+	if target.Stats.HP != startHP-851 {
+		t.Fatalf("target hp = %v, want %v", target.Stats.HP, startHP-851)
 	}
 	if len(target.Combat.DamageEvents) != 3 {
 		t.Fatalf("damage events = %+v, want 3", target.Combat.DamageEvents)
+	}
+}
+
+func TestFountainShotUsesThirtyPercentPenetration(t *testing.T) {
+	w := testWorld(t)
+	fountain := w.entities["spawn:fountain:blue"]
+	target := &Entity{
+		ID:       "spawn:red-resistant-target",
+		Kind:     EntityKindEnemyHero,
+		Team:     TeamRed,
+		Position: fountain.Position,
+		Radius:   18,
+		Stats: Stats{
+			HP:              3000,
+			MaxHP:           1000,
+			PhysicalDefense: 100,
+			MagicDefense:    100,
+		},
+	}
+	w.entities[target.ID] = target
+	projectile := &Projectile{Kind: "fountain_shot"}
+	target.Combat.LastHitTick = 1
+
+	w.applyFountainShotDamage(fountain, target, projectile, 20)
+
+	if got := 3000 - target.Stats.HP; got != 551 {
+		t.Fatalf("fountain damage with penetration = %v, want 551", got)
 	}
 }
 
@@ -323,18 +350,18 @@ func TestMinionGrowthCaps(t *testing.T) {
 	melee, _, _ := unitTemplate(EntityKindMeleeMinion)
 	ranged, _, _ := unitTemplate(EntityKindRangedMinion)
 	siege, _, _ = unitTemplate(EntityKindSiegeMinion)
-	highTick := uint64(minionWaveIntervalSeconds) * 6 * 1000
+	highTick := uint64(minionWaveIntervalSeconds) * 6 * 10000
 	applyMinionGrowth(&melee, EntityKindMeleeMinion, highTick)
 	applyMinionGrowth(&ranged, EntityKindRangedMinion, highTick)
 	applyMinionGrowth(&siege, EntityKindSiegeMinion, highTick)
 
-	if melee.MaxHP != 3500 || melee.Attack != 120 || melee.PhysicalDefense != 40 || melee.MagicDefense != 30 {
+	if melee.MaxHP != 6650 || melee.Attack != 1200 || melee.PhysicalDefense != 450 || melee.MagicDefense != 400 {
 		t.Fatalf("melee capped stats = %+v", melee)
 	}
-	if ranged.MaxHP != 600 || ranged.Attack != 125 {
+	if ranged.MaxHP != 3600 || ranged.Attack != 2000 {
 		t.Fatalf("ranged capped stats = %+v", ranged)
 	}
-	if siege.MaxHP != 8850 || siege.Attack != 221 || siege.PhysicalDefense != 100 || siege.MagicDefense != 100 {
+	if siege.MaxHP != 15500 || siege.Attack != 2210 || siege.PhysicalDefense != 1200 || siege.MagicDefense != 1000 {
 		t.Fatalf("siege capped stats = %+v", siege)
 	}
 }
@@ -557,6 +584,7 @@ func testWorld(t *testing.T) *World {
 		t.Fatal(err)
 	}
 	w := NewWorld(heroes, skills, levels, rewards, equipment)
+	spawnPresetTestTargets(w)
 	w.SpawnTrainingDummy()
 	return w
 }

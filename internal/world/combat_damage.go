@@ -48,6 +48,18 @@ func (w *World) gunnerRDamage(attacker *Entity, target *Entity, skill config.Ski
 	return w.PhysicalCritDamageAfterResistance(attacker, target, rawDamage, w.attackCrits(attacker, target, tick), tick)
 }
 
+func (w *World) fireMageQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	rawDamage := skillMetaListByLevel(skill, "baseDamage", skillLevel, []float64{80, 110, 140, 170, 200})
+	rawDamage += float64(attacker.Stats.AbilityPower) * skillMetaRange(skill, "apRatio", 0.65)
+	return magicDamageAfterResistance(attacker, target, rawDamage, tick)
+}
+
+func (w *World) fireMageRDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	rawDamage := skillMetaListByLevel(skill, "baseDamage", skillLevel, []float64{150, 250, 350})
+	rawDamage += float64(attacker.Stats.AbilityPower) * skillMetaRange(skill, "apRatio", 0.6)
+	return magicDamageAfterResistance(attacker, target, rawDamage, tick)
+}
+
 func (w *World) ninjaSkillHit(source *Entity, target *Entity, skillID string, groupID string, fromShadow bool, tick uint64, tickRate int) {
 	if h := heroHooksFor(ninjaHeroID).NinjaSkillHit; h != nil {
 		h(w, source, target, skillID, groupID, fromShadow, tick, tickRate)

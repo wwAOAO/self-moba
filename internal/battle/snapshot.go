@@ -145,11 +145,12 @@ func buildBuffSnapshots(buffs []world.BuffState) []protocol.BuffSnapshot {
 	snapshots := make([]protocol.BuffSnapshot, 0, len(buffs))
 	for _, buff := range buffs {
 		snapshots = append(snapshots, protocol.BuffSnapshot{
-			ID:            buff.ID,
-			Name:          buff.Name,
-			ExpiresAtTick: buff.ExpiresAtTick,
-			Negative:      buff.Negative,
-			AbilityHaste:  buff.AbilityHaste,
+			ID:              buff.ID,
+			Name:            buff.Name,
+			ExpiresAtTick:   buff.ExpiresAtTick,
+			ExplosionAtTick: buff.ExplosionAtTick,
+			Negative:        buff.Negative,
+			AbilityHaste:    buff.AbilityHaste,
 		})
 	}
 	return snapshots

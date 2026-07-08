@@ -9,10 +9,10 @@
     text: `-${damage}`,
     style: {
       fill: damageTextColor(damageType),
-      fontFamily: "Arial",
-      fontSize: 15,
+      fontFamily: "Microsoft YaHei, PingFang SC, Noto Sans SC, Arial, sans-serif",
+      fontSize: 10,
       fontWeight: "900",
-      stroke: { color: damageTextStrokeColor(damageType), width: 2 },
+      // stroke: { color: 0x111827, width: 2 },
     },
   });
   text.anchor.set(0.5, 0.5);
@@ -23,7 +23,7 @@
     x: target.x,
     y: target.y - 42 - sameFrameOffset * 100,
     age: 0,
-    lifetime: 720,
+    lifetime: 1200,
   });
   trimFloatingTexts();
 }
@@ -38,13 +38,6 @@ function damageTextColor(damageType) {
   return 0xff3333;
 }
 
-function damageTextStrokeColor(damageType) {
-  if (damageType === "true") {
-    return 0x111827;
-  }
-  return 0xffffff;
-}
-
 function spawnRewardText(target, textValue, kind) {
   const sameFrameOffset = state.damageTexts.filter(
     (effect) => effect.targetId === (target.id || target.playerId),
@@ -53,10 +46,10 @@ function spawnRewardText(target, textValue, kind) {
     text: textValue,
     style: {
       fill: kind === "gold" ? 0xffd700 : 0x3b82f6,
-      fontFamily: "Arial",
-      fontSize: 15,
+      fontFamily: "Microsoft YaHei, PingFang SC, Noto Sans SC, Arial, sans-serif",
+      fontSize: 10,
       fontWeight: "900",
-      stroke: { color: 0x111827, width: 2 },
+      // stroke: { color: 0x111827, width: 2 },
     },
   });
   text.anchor.set(0.5, 0.5);
@@ -67,7 +60,7 @@ function spawnRewardText(target, textValue, kind) {
     x: target.x,
     y: target.y - 42 - sameFrameOffset * 100,
     age: 0,
-    lifetime: 720,
+    lifetime: 1200,
   });
   trimFloatingTexts();
 }

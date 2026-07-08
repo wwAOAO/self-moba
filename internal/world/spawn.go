@@ -4,18 +4,17 @@ import (
 	"l-battle/internal/config"
 	"math"
 	"strconv"
-	"strings"
 )
 
 const (
 	fountainRange          = 900
 	fountainRegenRatio     = 0.02
 	fountainShotTrueBase   = 100
-	fountainShotTrueRate   = 0.02
-	fountainShotMagicBase  = 50
-	fountainShotMagicRate  = 0.015
-	fountainShotPhysBase   = 50
-	fountainShotPhysRate   = 0.015
+	fountainShotTrueRate   = 0.025
+	fountainShotMagicBase  = 300
+	fountainShotMagicRate  = 0.0625
+	fountainShotPhysBase   = 300
+	fountainShotPhysRate   = 0.0625
 	fountainShotSpeed      = 1800
 	fountainShotIntervalS  = 0.25
 	fountainShotExpireSecs = 2
@@ -90,147 +89,17 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 
 func (w *World) SpawnBattleUnits() {
 	w.spawnUnit("spawn:fountain:blue", EntityKindFountain, TeamBlue, w.spawnPosition(TeamBlue).X, w.spawnPosition(TeamBlue).Y, 90, Stats{
-		HP:    99999,
-		MaxHP: 99999,
+		HP:                 99999,
+		MaxHP:              99999,
+		PhysicalPenPercent: 0.3,
+		MagicPenPercent:    0.3,
 	})
 	w.spawnUnit("spawn:fountain:red", EntityKindFountain, TeamRed, w.spawnPosition(TeamRed).X, w.spawnPosition(TeamRed).Y, 90, Stats{
-		HP:    99999,
-		MaxHP: 99999,
+		HP:                 99999,
+		MaxHP:              99999,
+		PhysicalPenPercent: 0.3,
+		MagicPenPercent:    0.3,
 	})
-	w.spawnUnit("enemy:blue-hero-1", EntityKindEnemyHero, TeamBlue, w.width/2-420, w.height/2+220, 18, Stats{
-		HP:              1200,
-		MaxHP:           1200,
-		MP:              500,
-		MaxMP:           500,
-		Attack:          82,
-		PhysicalDefense: 26,
-		MagicDefense:    18,
-		MoveSpeed:       4.2,
-		AttackRange:     150,
-		AttackSpeed:     1,
-	})
-	w.spawnUnit("minion:blue-melee-1", EntityKindMeleeMinion, TeamBlue, w.width/2-360, w.height/2+70, 20, Stats{
-		HP:              420,
-		MaxHP:           420,
-		Attack:          32,
-		PhysicalDefense: 8,
-		MagicDefense:    4,
-		MoveSpeed:       3,
-		AttackRange:     125,
-		AttackSpeed:     1.25,
-	})
-	w.spawnUnit("minion:blue-ranged-1", EntityKindRangedMinion, TeamBlue, w.width/2-430, w.height/2, 18, Stats{
-		HP:              300,
-		MaxHP:           300,
-		Attack:          38,
-		PhysicalDefense: 5,
-		MagicDefense:    5,
-		MoveSpeed:       3,
-		AttackRange:     550,
-		AttackSpeed:     0.67,
-	})
-	w.spawnUnit("minion:blue-siege-1", EntityKindSiegeMinion, TeamBlue, w.width/2-500, w.height/2-80, 26, Stats{
-		HP:              680,
-		MaxHP:           680,
-		Attack:          62,
-		PhysicalDefense: 14,
-		MagicDefense:    8,
-		MoveSpeed:       2.4,
-		AttackRange:     280,
-		AttackSpeed:     1,
-	})
-	w.spawnUnit("structure:blue-tower-1", EntityKindTower, TeamBlue, w.width/2-700, w.height/2+240, 34, Stats{
-		HP:              2600,
-		MaxHP:           2600,
-		Attack:          180,
-		PhysicalDefense: 80,
-		MagicDefense:    60,
-		AttackRange:     620,
-		AttackSpeed:     0.75,
-	})
-	w.spawnUnit("structure:blue-barracks-1", EntityKindBarracks, TeamBlue, w.width/2-760, w.height/2-80, 40, Stats{
-		HP:              3200,
-		MaxHP:           3200,
-		PhysicalDefense: 55,
-		MagicDefense:    45,
-	})
-	w.spawnUnit("structure:blue-crystal", EntityKindCrystal, TeamBlue, w.width/2-900, w.height/2-260, 48, Stats{
-		HP:              4500,
-		MaxHP:           4500,
-		PhysicalDefense: 70,
-		MagicDefense:    70,
-	})
-	w.spawnUnit("enemy:hero-1", EntityKindEnemyHero, TeamRed, w.width/2+420, w.height/2-220, 18, Stats{
-		HP:              1200,
-		MaxHP:           1200,
-		MP:              500,
-		MaxMP:           500,
-		Attack:          82,
-		PhysicalDefense: 26,
-		MagicDefense:    18,
-		MoveSpeed:       4.2,
-		AttackRange:     150,
-		AttackSpeed:     1,
-	})
-	w.spawnUnit("minion:red-melee-1", EntityKindMeleeMinion, TeamRed, w.width/2+360, w.height/2-70, 20, Stats{
-		HP:              420,
-		MaxHP:           420,
-		Attack:          32,
-		PhysicalDefense: 8,
-		MagicDefense:    4,
-		MoveSpeed:       3,
-		AttackRange:     70,
-		AttackSpeed:     0.8,
-	})
-	w.spawnUnit("minion:red-ranged-1", EntityKindRangedMinion, TeamRed, w.width/2+430, w.height/2, 18, Stats{
-		HP:              300,
-		MaxHP:           300,
-		Attack:          38,
-		PhysicalDefense: 5,
-		MagicDefense:    5,
-		MoveSpeed:       3,
-		AttackRange:     360,
-		AttackSpeed:     0.7,
-	})
-	w.spawnUnit("minion:red-siege-1", EntityKindSiegeMinion, TeamRed, w.width/2+500, w.height/2+80, 26, Stats{
-		HP:              680,
-		MaxHP:           680,
-		Attack:          62,
-		PhysicalDefense: 14,
-		MagicDefense:    8,
-		MoveSpeed:       2.4,
-		AttackRange:     430,
-		AttackSpeed:     0.55,
-	})
-	w.spawnUnit("structure:red-tower-1", EntityKindTower, TeamRed, w.width/2+700, w.height/2-240, 34, Stats{
-		HP:              2600,
-		MaxHP:           2600,
-		Attack:          180,
-		PhysicalDefense: 80,
-		MagicDefense:    60,
-		AttackRange:     620,
-		AttackSpeed:     0.75,
-	})
-	w.spawnUnit("structure:red-barracks-1", EntityKindBarracks, TeamRed, w.width/2+760, w.height/2+80, 40, Stats{
-		HP:              3200,
-		MaxHP:           3200,
-		PhysicalDefense: 55,
-		MagicDefense:    45,
-	})
-	w.spawnUnit("structure:red-crystal", EntityKindCrystal, TeamRed, w.width/2+900, w.height/2+260, 48, Stats{
-		HP:              4500,
-		MaxHP:           4500,
-		PhysicalDefense: 70,
-		MagicDefense:    70,
-	})
-}
-
-func (w *World) RemovePresetHiddenUnits() {
-	for id := range w.entities {
-		if strings.HasPrefix(id, "minion:") || strings.HasPrefix(id, "enemy:") || strings.HasPrefix(id, "structure:") {
-			delete(w.entities, id)
-		}
-	}
 }
 
 func (w *World) SpawnTrainingDummy() {
@@ -291,7 +160,7 @@ func unitTemplate(kind EntityKind) (Stats, float64, bool) {
 	case EntityKindDummy:
 		return Stats{HP: 3000, MaxHP: 3000, PhysicalDefense: 10, MagicDefense: 10}, 28, true
 	case EntityKindEnemyHero:
-		return Stats{HP: 1200, MaxHP: 1200, MP: 500, MaxMP: 500, Attack: 82, PhysicalDefense: 26, MagicDefense: 18, MoveSpeed: 4.2, AttackRange: 150, AttackSpeed: 1}, 18, true
+		return Stats{HP: 3200, MaxHP: 3200, MP: 500, MaxMP: 500, Attack: 82, PhysicalDefense: 52, MagicDefense: 36, MoveSpeed: 350, AttackRange: 150, AttackSpeed: 1}, 18, true
 	case EntityKindMeleeMinion:
 		return Stats{HP: 445, MaxHP: 445, Attack: 12, MoveSpeed: 3, AttackRange: 125, AttackSpeed: 1.25}, 20, true
 	case EntityKindRangedMinion:

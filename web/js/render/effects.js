@@ -3,6 +3,7 @@
   drawActiveSkillRanges(frame);
   drawSwordETargetCooldowns(frame);
   drawNinjaPassiveCooldowns(frame);
+  drawFireMageBlazeExplosions(frame);
   drawCastWindups(frame);
   drawSkillPreview(frame);
 
@@ -46,6 +47,26 @@
     }
     if (effect.kind === "basic_arrow") {
       drawBasicArrowEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "siege_cannonball") {
+      drawSiegeCannonballEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "fire_mage_q") {
+      drawFireMageQEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "fire_mage_w") {
+      drawFireMageWEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "fire_mage_e") {
+      drawFireMageEEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "fire_mage_r") {
+      drawFireMageREffect(effect, frame);
       continue;
     }
     if (effect.kind === "robot_q") {
@@ -293,6 +314,68 @@ function drawGunnerQEffect(effect, frame) {
   drawArrowProjectile(effect, frame, 0xfde68a, 0xf97316, {
     fromSnapshot: true,
   });
+}
+
+function drawFireMageQEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(8, (effect.radius || 28) * frame.scale * 0.55);
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const tail = radius * 3;
+  skillLayer.moveTo(x - Math.cos(angle) * tail, y - Math.sin(angle) * tail);
+  skillLayer.lineTo(x, y);
+  skillLayer.stroke({ color: 0xf97316, width: Math.max(3, radius), alpha: 0.42 });
+  skillLayer.circle(x, y, radius * 1.45);
+  skillLayer.fill({ color: 0xef4444, alpha: 0.28 });
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0xf97316, alpha: 0.86 });
+  skillLayer.circle(x + Math.cos(angle) * radius * 0.28, y + Math.sin(angle) * radius * 0.28, radius * 0.42);
+  skillLayer.fill({ color: 0xfef3c7, alpha: 0.92 });
+}
+
+function drawFireMageWEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = (effect.radius || 260) * frame.scale;
+  const alpha = effectAlpha(effect);
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0xf97316, alpha: 0.08 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0xef4444, width: 3, alpha: 0.75 * alpha });
+  skillLayer.circle(x, y, Math.max(8, radius * 0.12));
+  skillLayer.fill({ color: 0xfef3c7, alpha: 0.22 * alpha });
+}
+
+function drawFireMageEEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = (effect.radius || 600) * frame.scale;
+  const alpha = effectAlpha(effect);
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0xf97316, width: 2, alpha: 0.42 * alpha });
+  skillLayer.circle(x, y, Math.max(10, radius * 0.08));
+  skillLayer.fill({ color: 0xef4444, alpha: 0.28 * alpha });
+  skillLayer.circle(x, y, Math.max(5, radius * 0.035));
+  skillLayer.fill({ color: 0xfef3c7, alpha: 0.82 * alpha });
+}
+
+function drawFireMageREffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(12, (effect.radius || 36) * frame.scale * 0.62);
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const tail = radius * 3.4;
+  skillLayer.moveTo(x - Math.cos(angle) * tail, y - Math.sin(angle) * tail);
+  skillLayer.lineTo(x, y);
+  skillLayer.stroke({ color: 0xdc2626, width: Math.max(5, radius * 1.1), alpha: 0.46 });
+  skillLayer.circle(x, y, radius * 1.75);
+  skillLayer.fill({ color: 0xef4444, alpha: 0.26 });
+  skillLayer.circle(x, y, radius * 1.08);
+  skillLayer.fill({ color: 0xf97316, alpha: 0.9 });
+  skillLayer.circle(x + Math.cos(angle) * radius * 0.32, y + Math.sin(angle) * radius * 0.32, radius * 0.48);
+  skillLayer.fill({ color: 0xfef3c7, alpha: 0.94 });
 }
 
 function drawGunnerREffect(effect, frame) {
@@ -561,6 +644,24 @@ function drawMinionBasicProjectile(effect, frame) {
   skillLayer.fill({ color, alpha: 0.88 });
   skillLayer.circle(x, y, radius + 2);
   skillLayer.stroke({ color, width: 2, alpha: 0.55 });
+}
+
+function drawSiegeCannonballEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(5, (effect.radius || 14) * frame.scale * 0.55);
+  const tailX = x - (effect.dirX || 1) * radius * 2.2;
+  const tailY = y - (effect.dirY || 0) * radius * 2.2;
+  skillLayer.moveTo(tailX, tailY);
+  skillLayer.lineTo(x, y);
+  skillLayer.stroke({ color: 0x475569, width: Math.max(3, radius * 0.8), alpha: 0.45 });
+  skillLayer.circle(x, y, radius * 1.45);
+  skillLayer.fill({ color: 0x111827, alpha: 0.24 });
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x334155, alpha: 0.96 });
+  skillLayer.circle(x - radius * 0.25, y - radius * 0.25, radius * 0.28);
+  skillLayer.fill({ color: 0xe5e7eb, alpha: 0.45 });
 }
 
 function drawMageBasicStarEffect(effect, frame) {
@@ -1084,6 +1185,40 @@ function drawNinjaPassiveCooldowns(frame) {
     skillLayer.moveTo(startX, startY);
     skillLayer.arc(x, y, radius, startAngle, endAngle);
     skillLayer.stroke({ color: 0xa855f7, width: 4, alpha: 0.9 });
+  }
+}
+
+function drawFireMageBlazeExplosions(frame) {
+  const tick = interpolatedTick();
+  const durationTicks =
+    (skillClientConfig.fire_mage_passive?.explosionDelaySeconds || 2) *
+    state.tickRate;
+  for (const target of targetMap().values()) {
+    if (!target || target.dead) {
+      continue;
+    }
+    const burn = (target.buffs || []).find(
+      (buff) =>
+        buff.id?.startsWith("fire_mage_blaze:") &&
+        (buff.explosionAtTick || 0) > tick,
+    );
+    if (!burn) {
+      continue;
+    }
+    const remainingTicks = burn.explosionAtTick - tick;
+    const progress = ratio(remainingTicks, durationTicks);
+    const x = frame.offsetX + target.x * frame.scale;
+    const y = frame.offsetY + target.y * frame.scale;
+    const radius = targetSelectRadius(target, frame) + 10;
+    const startAngle = -Math.PI / 2;
+    const endAngle = startAngle + Math.PI * 2 * progress;
+    const startX = x + Math.cos(startAngle) * radius;
+    const startY = y + Math.sin(startAngle) * radius;
+    skillLayer.circle(x, y, radius);
+    skillLayer.stroke({ color: 0x7f1d1d, width: 4, alpha: 0.28 });
+    skillLayer.moveTo(startX, startY);
+    skillLayer.arc(x, y, radius, startAngle, endAngle);
+    skillLayer.stroke({ color: 0xef4444, width: 4, alpha: 0.9 });
   }
 }
 

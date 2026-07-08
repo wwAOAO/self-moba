@@ -94,6 +94,14 @@ function drawCastWindup(windup, frame, now) {
     drawBerserkerRWindup(windup, frame, color, alpha);
     return;
   }
+  if (windup.skillId === "fire_mage_q") {
+    drawDirectionalWindup(windup, frame, color, alpha, 10);
+    return;
+  }
+  if (windup.skillId === "fire_mage_r") {
+    drawFireMageRWindup(windup, frame, color, alpha);
+    return;
+  }
   if (windup.skillId === "ninja_q") {
     drawNinjaQWindup(windup, frame, color, alpha);
     return;
@@ -122,6 +130,7 @@ function drawCastWindup(windup, frame, now) {
   }
   if (windup.skillId === "mage_r") {
     drawMageFinalSparkWindup(windup, frame, alpha);
+    return;
   }
 }
 
@@ -165,6 +174,10 @@ function drawBerserkerEWindup(windup, frame, alpha) {
 function drawBerserkerRWindup(windup, frame, color, alpha) {
   const config = skillClientConfig.berserker_r || {};
   drawCircleWindup(windup, frame, color, alpha, config.range || windup.range || 460);
+  drawTargetLockWindup(windup, frame, color, alpha);
+}
+
+function drawFireMageRWindup(windup, frame, color, alpha) {
   drawTargetLockWindup(windup, frame, color, alpha);
 }
 
@@ -282,7 +295,10 @@ function castWindupColor(skillId) {
   if (skillId === "explorer_q" || skillId === "explorer_e" || skillId === "explorer_r") {
     return 0x38bdf8;
   }
-  if (skillId === "berserker_q") {
+  if (skillId === "berserker_q" || skillId === "fire_mage_r") {
+    return 0xf97316;
+  }
+  if (skillId === "fire_mage_q" || skillId === "fire_mage_w") {
     return 0xf97316;
   }
   if (skillId === "berserker_e") {

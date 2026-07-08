@@ -161,6 +161,9 @@ function redrawPlayerBody(sprite, player) {
     drawSwordIcon(sprite.body, radius);
   } else if (shape === "mage") {
     drawMageIcon(sprite.body, radius);
+  } else if (shape === "fire") {
+    drawFireIcon(sprite.body, radius, player.dead, colorForTeam(player.team));
+    return;
   } else if (shape === "gunner") {
     drawGunnerIcon(sprite.body, radius);
   } else if (shape === "ninja") {

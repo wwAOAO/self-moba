@@ -4,34 +4,98 @@
     "name": "Fire Mage Passive",
     "cooldownMs": 0,
     "range": 0,
-    "type": "passive"
+    "type": "passive",
+    "meta": {
+      "maxStacks": 3,
+      "durationSeconds": 4,
+      "tickSeconds": 1,
+      "burnMaxHPRatioPerSecond": 0.02,
+      "explosionDelaySeconds": 2,
+      "explosionRadius": 400,
+      "manaRestoreSeconds": 10,
+      "manaRestoreTickSeconds": 5
+    },
+    "metaLists": {
+      "explosionDamage": [120, 360],
+      "explosionDamageLevels": [1, 18],
+      "manaRestore": [30, 50],
+      "manaRestoreLevels": [1, 18]
+    }
   },
   {
     "skillId": "fire_mage_q",
-    "name": "Fire Mage Q",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "name": "Sear",
+    "cooldownMs": 8000,
+    "range": 1050,
+    "type": "projectile_line",
+    "meta": {
+      "manaCost": 50,
+      "apRatio": 0.65,
+      "projectileRadius": 28,
+      "projectileSpeed": 3000,
+      "castWindupSeconds": 0.25,
+      "stunSeconds": 2
+    },
+    "metaLists": {
+      "cooldownMs": [8000, 7500, 7000, 6500, 6000],
+      "baseDamage": [80, 110, 140, 170, 200]
+    }
   },
   {
     "skillId": "fire_mage_w",
-    "name": "Fire Mage W",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "name": "Pillar of Flame",
+    "cooldownMs": 10000,
+    "range": 900,
+    "type": "ground_aoe",
+    "meta": {
+      "apRatio": 0.6,
+      "castWindupSeconds": 0.25,
+      "landingDelaySeconds": 0.5,
+      "landingRadius": 260,
+      "burningDamageMultiplier": 1.25
+    },
+    "metaLists": {
+      "manaCost": [70, 80, 90, 100, 110],
+      "cooldownMs": [10000, 9500, 9000, 8500, 8000],
+      "baseDamage": [75, 120, 165, 210, 255]
+    }
   },
   {
     "skillId": "fire_mage_e",
-    "name": "Fire Mage E",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "name": "Conflagration",
+    "cooldownMs": 12000,
+    "range": 625,
+    "type": "targeted",
+    "meta": {
+      "apRatio": 0.5,
+      "spreadRadius": 600,
+      "targetPickPadding": 80
+    },
+    "metaLists": {
+      "manaCost": [70, 75, 80, 85, 90],
+      "cooldownMs": [12000, 11000, 10000, 9000, 8000],
+      "baseDamage": [70, 95, 120, 145, 170]
+    }
   },
   {
     "skillId": "fire_mage_r",
-    "name": "Fire Mage R",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "placeholder"
+    "name": "Pyroclasm",
+    "cooldownMs": 105000,
+    "range": 750,
+    "type": "targeted_projectile",
+    "meta": {
+      "manaCost": 100,
+      "apRatio": 0.6,
+      "castWindupSeconds": 0.2,
+      "bounceRange": 600,
+      "maxBounces": 4,
+      "projectileRadius": 36,
+      "projectileSpeed": 600,
+      "targetPickPadding": 80
+    },
+    "metaLists": {
+      "cooldownMs": [105000, 90000, 75000],
+      "baseDamage": [150, 250, 350]
+    }
   }
 ]

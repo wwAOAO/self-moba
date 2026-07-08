@@ -11,7 +11,7 @@
   if (player.heroId === "tank") {
     return player.playerId === state.playerId ? 13 : 11;
   }
-  if (player.heroId === "mage") {
+  if (player.heroId === "mage" || player.heroId === "fire_mage") {
     return player.playerId === state.playerId ? 13 : 11;
   }
   if (player.heroId === "gunner") {
@@ -50,6 +50,9 @@ function playerModelShape(player) {
   }
   if (player.heroId === "mage") {
     return "mage";
+  }
+  if (player.heroId === "fire_mage") {
+    return "fire";
   }
   if (player.heroId === "gunner") {
     return "gunner";
@@ -474,6 +477,37 @@ function drawMageIcon(graphics, radius) {
   drawMageStar(graphics, 0, -radius * 1.34, radius * 0.25);
   drawMageStar(graphics, -radius * 0.48, -radius * 1.05, radius * 0.14);
   drawMageStar(graphics, radius * 0.5, -radius * 1.04, radius * 0.13);
+}
+
+function drawFireIcon(graphics, radius, dead, teamColor) {
+  const outer = dead ? 0x6b7280 : teamColor;
+  const mid = dead ? 0x9ca3af : 0xf97316;
+  const inner = dead ? 0xd1d5db : 0xfef3c7;
+
+  graphics.moveTo(0, radius * 1.18);
+  graphics.quadraticCurveTo(-radius * 1.15, radius * 0.5, -radius * 0.74, -radius * 0.18);
+  graphics.quadraticCurveTo(-radius * 0.52, -radius * 0.54, -radius * 0.38, -radius * 1.1);
+  graphics.quadraticCurveTo(-radius * 0.08, -radius * 0.7, radius * 0.04, -radius * 1.55);
+  graphics.quadraticCurveTo(radius * 0.78, -radius * 0.82, radius * 0.62, -radius * 0.22);
+  graphics.quadraticCurveTo(radius * 1.08, radius * 0.02, radius * 0.96, radius * 0.58);
+  graphics.quadraticCurveTo(radius * 0.72, radius * 1.14, 0, radius * 1.18);
+  graphics.closePath();
+  graphics.fill(outer);
+  graphics.stroke({ color: dead ? 0x111827 : 0x7f1d1d, width: 1, alpha: dead ? 0.45 : 0.95 });
+
+  graphics.moveTo(0, radius * 0.92);
+  graphics.quadraticCurveTo(-radius * 0.58, radius * 0.46, -radius * 0.34, -radius * 0.12);
+  graphics.quadraticCurveTo(-radius * 0.18, -radius * 0.48, radius * 0.02, -radius * 0.86);
+  graphics.quadraticCurveTo(radius * 0.42, -radius * 0.36, radius * 0.34, radius * 0.02);
+  graphics.quadraticCurveTo(radius * 0.68, radius * 0.38, 0, radius * 0.92);
+  graphics.closePath();
+  graphics.fill(mid);
+
+  graphics.moveTo(0, radius * 0.68);
+  graphics.quadraticCurveTo(-radius * 0.24, radius * 0.28, radius * 0.02, -radius * 0.26);
+  graphics.quadraticCurveTo(radius * 0.28, radius * 0.14, 0, radius * 0.68);
+  graphics.closePath();
+  graphics.fill(inner);
 }
 
 function drawMageWing(graphics, radius, side) {

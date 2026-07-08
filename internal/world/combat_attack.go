@@ -5,6 +5,20 @@ import (
 	"strconv"
 )
 
+type basicAttackDamagePart struct {
+	damage     int
+	damageType string
+}
+
+const (
+	basicArrowProjectileKind      = "basic_arrow"
+	siegeCannonballProjectileKind = "siege_cannonball"
+	siegeMinionSplashRadius       = 300
+	siegeMinionSplashSeconds      = 5
+	siegeMinionSplashMaxHPRatio   = 0.01
+	siegeMinionSplashTickSeconds  = 1
+)
+
 func (w *World) applyAttack(attacker *Entity, target *Entity, tick uint64, tickRate int) {
 	if !canBasicAttack(attacker) || tick < attacker.Combat.NextAttackTick {
 		return
@@ -86,15 +100,16 @@ func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64
 	target.Combat.DamageEvents = nil
 	if target.Kind != EntityKindDummy {
 		wasAlive := target.Stats.HP > 0
-		w.applyBasicAttackDamage(attacker, target, damage, tickRate)
+		if !w.applyMinionBasicAttackDamage(attacker, target, tick, tickRate) {
+			w.applyBasicAttackDamage(attacker, target, damage, tickRate)
+		}
 		if wasAlive && target.Stats.HP == 0 {
 			w.applyKillReward(attacker, target)
 			w.killPlayer(target, tick, tickRate)
 			w.removeDeadUnit(target)
 		}
 	} else {
-		target.Combat.LastDamage = damage
-		target.Combat.LastDamageType = "physical"
+		w.recordDummyBasicAttackDamage(attacker, target, damage, tick)
 	}
 	w.onHeroBasicHit(attacker, target, tick, tickRate)
 }
@@ -119,15 +134,19 @@ func (w *World) fireBasicAttackProjectile(attacker *Entity, target *Entity, tick
 	if tickRate > 0 {
 		speedPerSecond /= float64(tickRate)
 	}
+	kind := basicArrowProjectileKind
+	if attacker.Kind == EntityKindSiegeMinion && tick >= attacker.Combat.NextSiegeSplashTick {
+		kind = siegeCannonballProjectileKind
+	}
 	w.nextProjectileID++
-	id := "projectile:basic_arrow:" + strconv.Itoa(w.nextProjectileID)
+	id := "projectile:" + kind + ":" + strconv.Itoa(w.nextProjectileID)
 	displayCount := 1
 	if attacker.HeroID == archerHeroID && tick < attacker.Archer.FocusActiveUntil {
 		displayCount = 3
 	}
 	w.projectiles[id] = &Projectile{
 		ID:           id,
-		Kind:         "basic_arrow",
+		Kind:         kind,
 		Team:         attacker.Team,
 		SourceID:     attacker.ID,
 		TargetID:     target.ID,
@@ -146,6 +165,13 @@ func (w *World) fireBasicAttackProjectile(attacker *Entity, target *Entity, tick
 }
 
 func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64, tickRate int) int {
+	if parts := w.minionBasicAttackDamageParts(attacker, target, tick); len(parts) > 0 {
+		total := 0
+		for _, part := range parts {
+			total += part.damage
+		}
+		return total
+	}
 	attack := attacker.Stats.Attack
 	crit := false
 	if attacker.HeroID == archerHeroID {
@@ -169,6 +195,105 @@ func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64, tick
 	}
 	damage += w.heroBasicAttackBonusMagicDamage(attacker, target, tick, tickRate)
 	return damage
+}
+
+func (w *World) applyMinionBasicAttackDamage(attacker *Entity, target *Entity, tick uint64, tickRate int) bool {
+	parts := w.minionBasicAttackDamageParts(attacker, target, tick)
+	if len(parts) == 0 {
+		return false
+	}
+	for _, part := range parts {
+		if target.Stats.HP <= 0 {
+			break
+		}
+		w.applyResolvedDamage(attacker, target, part.damage, part.damageType, sustainBasicAttack, tickRate)
+	}
+	w.applySiegeMinionSplash(attacker, target, tick, tickRate)
+	return true
+}
+
+func (w *World) minionBasicAttackDamageParts(attacker *Entity, target *Entity, tick uint64) []basicAttackDamagePart {
+	if attacker == nil || target == nil {
+		return nil
+	}
+	rawDamage := minionBasicAttackRawDamage(attacker, target, attacker.Stats.Attack)
+	switch attacker.Kind {
+	case EntityKindRangedMinion:
+		physicalDamage := physicalDamageAfterResistance(attacker, target, rawDamage, tick)
+		parts := []basicAttackDamagePart{{damage: physicalDamage, damageType: "physical"}}
+		if !IsHeroUnit(target) {
+			parts = append(parts, basicAttackDamagePart{damage: magicDamageAfterResistance(attacker, target, float64(physicalDamage)*0.2, tick), damageType: "magic"})
+		}
+		return parts
+	case EntityKindSiegeMinion:
+		return []basicAttackDamagePart{{damage: physicalDamageAfterResistance(attacker, target, rawDamage, tick), damageType: "physical"}}
+	default:
+		return nil
+	}
+}
+
+func (w *World) applySiegeMinionSplash(attacker *Entity, target *Entity, tick uint64, tickRate int) {
+	if attacker == nil || target == nil || attacker.Kind != EntityKindSiegeMinion || tick < attacker.Combat.NextSiegeSplashTick {
+		return
+	}
+	attacker.Combat.NextSiegeSplashTick = tick + secondsToTicks(siegeMinionSplashSeconds, tickRate)
+	for _, hit := range w.targetsInRadius(attacker, target.Position, siegeMinionSplashRadius) {
+		if hit.ID == target.ID {
+			continue
+		}
+		key := attacker.ID + "->" + hit.ID
+		w.siegeSplashBurns[key] = EquipmentBurn{
+			SourceID:       attacker.ID,
+			TargetID:       hit.ID,
+			NextTick:       tick + secondsToTicks(siegeMinionSplashTickSeconds, tickRate),
+			ExpiresAt:      tick + secondsToTicks(siegeMinionSplashSeconds, tickRate),
+			FlatDamage:     attacker.Stats.Attack,
+			BaseMaxHPRatio: siegeMinionSplashMaxHPRatio,
+		}
+	}
+}
+
+func (w *World) tickSiegeMinionSplashBurns(tick uint64, tickRate int) {
+	for key, burn := range w.siegeSplashBurns {
+		source := w.entities[burn.SourceID]
+		target := w.entities[burn.TargetID]
+		if tick > burn.ExpiresAt || source == nil || target == nil || target.Stats.HP <= 0 {
+			delete(w.siegeSplashBurns, key)
+			continue
+		}
+		if tick < burn.NextTick {
+			continue
+		}
+		damage := magicDamageAfterResistance(source, target, burn.FlatDamage+target.Stats.MaxHP*burn.BaseMaxHPRatio, tick)
+		target.Combat.LastHitTick = tick
+		wasAlive := target.Stats.HP > 0
+		w.applyResolvedDamage(source, target, damage, "magic", sustainAOESkill, tickRate)
+		if wasAlive && target.Stats.HP == 0 {
+			w.applyKillReward(source, target)
+			w.killPlayer(target, tick, tickRate)
+			w.removeDeadUnit(target)
+		}
+		burn.NextTick += secondsToTicks(siegeMinionSplashTickSeconds, tickRate)
+		if burn.NextTick > burn.ExpiresAt {
+			delete(w.siegeSplashBurns, key)
+			continue
+		}
+		w.siegeSplashBurns[key] = burn
+	}
+}
+
+func (w *World) recordDummyBasicAttackDamage(attacker *Entity, target *Entity, damage int, tick uint64) {
+	target.Combat.LastDamage = damage
+	target.Combat.LastDamageType = "physical"
+	parts := w.minionBasicAttackDamageParts(attacker, target, tick)
+	if len(parts) == 0 {
+		return
+	}
+	target.Combat.LastDamage = 0
+	for _, part := range parts {
+		target.Combat.LastDamage += part.damage
+		target.Combat.LastDamageType = part.damageType
+	}
 }
 
 func minionBasicAttackRawDamage(attacker *Entity, target *Entity, rawPhysical float64) float64 {
@@ -241,4 +366,8 @@ func (w *World) tankWBonusDamage(attacker *Entity, tick uint64) float64 {
 		return heroHooksFor(tankHeroID).WBonusDamage(w, attacker, tick)
 	}
 	return 0
+}
+
+func isBasicAttackProjectileKind(kind string) bool {
+	return kind == basicArrowProjectileKind || kind == siegeCannonballProjectileKind
 }

@@ -1,6 +1,9 @@
 package world
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func TestHeroStatsAtMaxLevelUseGrowth(t *testing.T) {
 	hero := testHeroConfig()
@@ -240,6 +243,30 @@ func TestHeroKillRewardGrantsGold(t *testing.T) {
 	}
 }
 
+func TestPassiveGoldStartsAfter120Seconds(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	w.SpawnHero("p2", hero, TeamRed)
+	blue := w.entities[playerEntityID("p1")]
+	red := w.entities[playerEntityID("p2")]
+
+	w.Tick(2399, 20)
+	if blue.Gold != 0 || red.Gold != 0 {
+		t.Fatalf("gold before 120s = %f/%f, want 0/0", blue.Gold, red.Gold)
+	}
+
+	w.Tick(2400, 20)
+	if math.Abs(blue.Gold-20.4) > 0.000001 || math.Abs(red.Gold-20.4) > 0.000001 {
+		t.Fatalf("gold at 120s = %f/%f, want 20.4/20.4", blue.Gold, red.Gold)
+	}
+
+	w.Tick(2600, 20)
+	if math.Abs(blue.Gold-40.8) > 0.000001 || math.Abs(red.Gold-40.8) > 0.000001 {
+		t.Fatalf("gold at 130s = %f/%f, want 40.8/40.8", blue.Gold, red.Gold)
+	}
+}
+
 func TestExperienceLevelsUpAndRecalculatesStats(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()
@@ -420,7 +447,7 @@ func TestSpawnObjectEnemyHeroHasLevelRewardData(t *testing.T) {
 func TestEnemyHeroKillGrantsExperienceAndRemovesTarget(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()
-	hero.Base.Attack = 2000
+	hero.Base.Attack = 10000
 	hero.Base.AttackRange = 1000
 	w.SpawnHero("p1", hero, TeamBlue)
 	player := w.entities[playerEntityID("p1")]

@@ -130,11 +130,12 @@ type PlayerSnapshot struct {
 }
 
 type BuffSnapshot struct {
-	ID            string  `json:"id"`
-	Name          string  `json:"name"`
-	ExpiresAtTick uint64  `json:"expiresAtTick,omitempty"`
-	Negative      bool    `json:"negative,omitempty"`
-	AbilityHaste  float64 `json:"abilityHaste,omitempty"`
+	ID              string  `json:"id"`
+	Name            string  `json:"name"`
+	ExpiresAtTick   uint64  `json:"expiresAtTick,omitempty"`
+	ExplosionAtTick uint64  `json:"explosionAtTick,omitempty"`
+	Negative        bool    `json:"negative,omitempty"`
+	AbilityHaste    float64 `json:"abilityHaste,omitempty"`
 }
 
 type DummySnapshot struct {

@@ -44,7 +44,16 @@ func (w *World) projectileCanHitTarget(id string, source *Entity, projectile *Pr
 	if projectile.SkillID == explorerWSkillID && !canAttachExplorerW(target) {
 		return false, false
 	}
-	if (projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == explorerESkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot") && target.ID != projectile.TargetID {
+	if projectile.SkillID == fireMageRSkillID {
+		if target.ID != projectile.TargetID || !projectileIntersectsTarget(projectile, previousPosition, target) {
+			return false, false
+		}
+		if source != nil && target.ID == source.ID {
+			return true, false
+		}
+		return canAttackTarget(source, target), false
+	}
+	if (projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == explorerESkillID || isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot") && target.ID != projectile.TargetID {
 		return false, false
 	}
 	if projectile.HitIDs[target.ID] || !canAttackTarget(source, target) {
@@ -69,7 +78,7 @@ func (w *World) projectileCanHitTarget(id string, source *Entity, projectile *Pr
 
 func (w *World) projectileDamage(source *Entity, target *Entity, projectile *Projectile, tick uint64, tickRate int) int {
 	damage := projectile.Damage
-	if projectile.Kind == "basic_arrow" && source != nil {
+	if isBasicAttackProjectileKind(projectile.Kind) && source != nil {
 		damage = w.attackDamage(source, target, tick, tickRate)
 	} else if projectile.SkillID == archerWSkillID && source != nil {
 		damage = archerWDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
@@ -90,6 +99,10 @@ func (w *World) projectileDamage(source *Entity, target *Entity, projectile *Pro
 		damage = w.explorerEDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
 	} else if projectile.SkillID == explorerRSkillID && source != nil {
 		damage = w.explorerRDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+	} else if projectile.SkillID == fireMageQSkillID && source != nil {
+		damage = w.fireMageQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+	} else if projectile.SkillID == fireMageRSkillID && source != nil {
+		damage = w.fireMageRDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
 	} else if projectile.SkillID == mageQSkillID && source != nil {
 		hitNumber := len(projectile.HitIDs)
 		multiplier := 1.0
@@ -140,6 +153,28 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 		w.applyMagicDamage(source, target, damage, tickRate)
 		w.explorerRHit(source, target, w.skillConfig(projectile.SkillID), tick, tickRate)
 		w.onHeroSkillHit(source, target, tick, tickRate)
+	} else if projectile.SkillID == fireMageQSkillID {
+		wasBurning := fireMageBurningFrom(target, source, tick)
+		w.applyMagicDamage(source, target, damage, tickRate)
+		if wasBurning {
+			stunTicks := secondsToTicks(skillMetaRange(w.skillConfig(projectile.SkillID), "stunSeconds", 2), tickRate)
+			target.Control.StunnedUntilTick = tick + controlTicksAfterTenacity(target, stunTicks, tick)
+		}
+		delete(w.projectiles, id)
+		removeProjectile = true
+	} else if projectile.SkillID == fireMageRSkillID {
+		wasBurning := fireMageBurningFrom(target, source, tick)
+		bounced := false
+		if source == nil || target.ID == source.ID {
+			bounced = w.fireMageRBounce(projectile, source, target, false, tick, tickRate)
+		} else {
+			w.applyMagicDamage(source, target, damage, tickRate)
+			bounced = w.fireMageRBounce(projectile, source, target, wasBurning, tick, tickRate)
+		}
+		if !bounced {
+			delete(w.projectiles, id)
+		}
+		removeProjectile = true
 	} else if projectile.SkillID == mageQSkillID {
 		w.applyMagicDamage(source, target, damage, tickRate)
 		target.Control.RootedUntilTick = tick + controlTicksAfterTenacity(target, projectile.EffectTicks, tick)
@@ -159,7 +194,7 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 		if projectile.SkillID == ninjaQSkillID {
 			w.ninjaSkillHit(source, target, projectile.SkillID, projectile.GroupID, projectile.FromShadow, tick, tickRate)
 		}
-		if projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" || projectile.SkillID == archerWSkillID {
+		if isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot" || projectile.SkillID == archerWSkillID {
 			delete(w.projectiles, id)
 			removeProjectile = true
 		}
@@ -178,22 +213,28 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 func (w *World) applyGenericProjectileDamage(source *Entity, target *Entity, projectile *Projectile, damage int, tick uint64, tickRate int) {
 	if projectile.Kind == "fountain_shot" {
 		w.applyFountainShotDamage(source, target, projectile, tickRate)
-	} else if projectile.Kind == "basic_arrow" {
-		w.applyBasicAttackDamage(source, target, damage, tickRate)
+	} else if isBasicAttackProjectileKind(projectile.Kind) {
+		if !w.applyMinionBasicAttackDamage(source, target, tick, tickRate) {
+			w.applyBasicAttackDamage(source, target, damage, tickRate)
+		}
 	} else if projectile.SkillID == archerWSkillID || projectile.SkillID == swordQSkillID {
 		w.applyAOEDamage(source, target, damage, "physical", tickRate)
 	} else {
 		w.applyDamage(source, target, damage, tickRate)
 	}
-	if projectile.Kind == "basic_arrow" {
+	if isBasicAttackProjectileKind(projectile.Kind) {
 		w.onHeroBasicHit(source, target, tick, tickRate)
 	}
 }
 
 func (w *World) resolveProjectileDummyHit(id string, source *Entity, target *Entity, projectile *Projectile, damage int, tick uint64, tickRate int) bool {
-	target.Combat.LastDamage = damage
-	target.Combat.LastDamageType = projectileDamageType(projectile.SkillID)
-	if projectile.Kind == "basic_arrow" {
+	if isBasicAttackProjectileKind(projectile.Kind) {
+		w.recordDummyBasicAttackDamage(source, target, damage, tick)
+	} else {
+		target.Combat.LastDamage = damage
+		target.Combat.LastDamageType = projectileDamageType(projectile.SkillID)
+	}
+	if isBasicAttackProjectileKind(projectile.Kind) {
 		w.onHeroBasicHit(source, target, tick, tickRate)
 	}
 	if projectile.SkillID == tankQSkillID {
@@ -240,7 +281,27 @@ func (w *World) resolveProjectileDummyHit(id string, source *Entity, target *Ent
 		w.onHeroSkillHit(source, target, tick, tickRate)
 		return false
 	}
-	if projectile.SkillID == archerRSkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" || projectile.SkillID == archerWSkillID {
+	if projectile.SkillID == fireMageQSkillID {
+		wasBurning := fireMageBurningFrom(target, source, tick)
+		w.onHeroDamage(source, target, sustainSingleTargetSkill, tick, tickRate)
+		if wasBurning {
+			stunTicks := secondsToTicks(skillMetaRange(w.skillConfig(projectile.SkillID), "stunSeconds", 2), tickRate)
+			target.Control.StunnedUntilTick = tick + stunTicks
+		}
+		delete(w.projectiles, id)
+		return true
+	}
+	if projectile.SkillID == fireMageRSkillID {
+		wasBurning := fireMageBurningFrom(target, source, tick)
+		if source != nil && target.ID != source.ID {
+			w.onHeroDamage(source, target, sustainSingleTargetSkill, tick, tickRate)
+		}
+		if !w.fireMageRBounce(projectile, source, target, wasBurning, tick, tickRate) {
+			delete(w.projectiles, id)
+		}
+		return true
+	}
+	if projectile.SkillID == archerRSkillID || isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot" || projectile.SkillID == archerWSkillID {
 		delete(w.projectiles, id)
 		return true
 	}
@@ -252,4 +313,75 @@ func canAttachExplorerW(target *Entity) bool {
 		return false
 	}
 	return IsHeroUnit(target) || target.Kind == EntityKindTower || target.Kind == EntityKindBarracks || target.Kind == EntityKindCrystal || target.Kind == EntityKindBaronNashor
+}
+
+func fireMageBurningFrom(target *Entity, source *Entity, tick uint64) bool {
+	if target == nil || source == nil || target.Passive.FireBurns == nil {
+		return false
+	}
+	burn := target.Passive.FireBurns[source.ID]
+	return burn.Stacks > 0 && tick < burn.ExpiresAtTick
+}
+
+func (w *World) fireMageRBounce(projectile *Projectile, source *Entity, current *Entity, preferHeroes bool, tick uint64, tickRate int) bool {
+	if projectile == nil || source == nil || current == nil || projectile.MagicDamage <= 0 {
+		return false
+	}
+	next := w.fireMageRNextTarget(source, current, preferHeroes)
+	if next == nil {
+		return false
+	}
+	dx, dy := normalize(next.Position.X-current.Position.X, next.Position.Y-current.Position.Y)
+	if dx == 0 && dy == 0 {
+		dx = 1
+	}
+	projectile.TargetID = next.ID
+	projectile.Position = current.Position
+	projectile.Start = current.Position
+	projectile.Dir = Vector2{X: dx, Y: dy}
+	projectile.Range = distance(current.Position, next.Position) + next.Radius
+	projectile.Traveled = 0
+	projectile.MagicDamage--
+	projectile.CreatedAt = tick
+	projectile.ExpiresAt = tick + secondsToTicks(2, tickRate)
+	return true
+}
+
+func (w *World) fireMageRNextTarget(source *Entity, current *Entity, preferHeroes bool) *Entity {
+	if source == nil || current == nil {
+		return nil
+	}
+	skill := w.skillConfig(fireMageRSkillID)
+	bounceRange := skillMetaRange(skill, "bounceRange", 600)
+	var bestEnemy *Entity
+	bestEnemyDistance := 0.0
+	var bestHero *Entity
+	bestHeroDistance := 0.0
+	w.ForEachEntity(func(target *Entity) {
+		if target == nil || target.ID == current.ID || !canAttackTarget(source, target) {
+			return
+		}
+		dist := distance(current.Position, target.Position)
+		if dist > bounceRange+target.Radius {
+			return
+		}
+		if bestEnemy == nil || dist < bestEnemyDistance {
+			bestEnemy = target
+			bestEnemyDistance = dist
+		}
+		if IsHeroUnit(target) && (bestHero == nil || dist < bestHeroDistance) {
+			bestHero = target
+			bestHeroDistance = dist
+		}
+	})
+	if preferHeroes && bestHero != nil {
+		return bestHero
+	}
+	if source.ID != current.ID && source.Stats.HP > 0 && !source.Death.Dead && distance(current.Position, source.Position) <= bounceRange+source.Radius {
+		sourceDistance := distance(current.Position, source.Position)
+		if bestEnemy == nil || sourceDistance < bestEnemyDistance {
+			return source
+		}
+	}
+	return bestEnemy
 }

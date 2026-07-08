@@ -216,6 +216,12 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function setHtmlIfChanged(element, html) {
+  if (element && element.innerHTML !== html) {
+    element.innerHTML = html;
+  }
+}
+
 function ratio(value, max) {
   if (!max || max <= 0) {
     return 0;

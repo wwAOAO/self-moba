@@ -156,6 +156,10 @@ func (w *World) ApplyPetDamage(source *Entity, target *Entity, damage int, damag
 	w.applyResolvedDamage(source, target, damage, damageType, sustainPetDamage, tickRate)
 }
 
+func (w *World) ApplyEquipmentSkillBurn(source *Entity, target *Entity, tick uint64, tickRate int) {
+	w.applyEquipmentSkillBurn(source, target, tick, tickRate)
+}
+
 func (w *World) PhysicalDamageAfterResistance(source *Entity, target *Entity, rawDamage float64, tick uint64) int {
 	return physicalDamageAfterResistance(source, target, rawDamage, tick)
 }

@@ -36,6 +36,12 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 			damage = 1
 		}
 	}
+	if target.Kind == EntityKindMeleeMinion && source != nil && !IsHeroUnit(source) {
+		damage = int(math.Round(float64(damage) * 0.85))
+		if damage < 1 {
+			damage = 1
+		}
+	}
 	damage = w.applyShield(source, target, damage, tickRate)
 	target.Combat.LastDamage = damage
 	target.Combat.LastDamageType = damageType

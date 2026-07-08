@@ -25,7 +25,7 @@ func (w *World) SkillEffects() []SkillEffect {
 		if source := w.entities[projectile.SourceID]; source != nil {
 			sourceHeroID = source.HeroID
 		}
-		if projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == gunnerRSkillID || projectile.SkillID == robotQSkillID || projectile.SkillID == explorerQSkillID || projectile.SkillID == explorerWSkillID || projectile.SkillID == explorerESkillID || projectile.SkillID == explorerRSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID || projectile.SkillID == ninjaQSkillID || projectile.Kind == "basic_arrow" || projectile.Kind == "fountain_shot" {
+		if projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == gunnerRSkillID || projectile.SkillID == robotQSkillID || projectile.SkillID == explorerQSkillID || projectile.SkillID == explorerWSkillID || projectile.SkillID == explorerESkillID || projectile.SkillID == explorerRSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID || projectile.SkillID == fireMageQSkillID || projectile.SkillID == fireMageRSkillID || projectile.SkillID == ninjaQSkillID || isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot" {
 			start = projectile.Position
 		}
 		if projectile.SkillID == tankQSkillID {
@@ -65,7 +65,7 @@ func updateTrackingProjectileDir(projectile *Projectile, target *Entity) {
 }
 
 func projectileDamageType(skillID string) string {
-	if skillID == tankQSkillID || skillID == robotQSkillID || skillID == explorerESkillID || skillID == explorerRSkillID || skillID == mageQSkillID || skillID == mageESkillID {
+	if skillID == tankQSkillID || skillID == robotQSkillID || skillID == explorerESkillID || skillID == explorerRSkillID || skillID == mageQSkillID || skillID == mageESkillID || skillID == fireMageQSkillID || skillID == fireMageRSkillID {
 		return "magic"
 	}
 	return "physical"
