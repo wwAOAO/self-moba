@@ -20,6 +20,9 @@
   if (player.heroId === "blade") {
     return player.playerId === state.playerId ? 13 : 11;
   }
+  if (player.heroId === "killer") {
+    return player.playerId === state.playerId ? 13 : 11;
+  }
   if (player.heroId === "berserker") {
     return player.playerId === state.playerId ? 13 : 11;
   }
@@ -30,6 +33,15 @@
     return player.playerId === state.playerId ? 13 : 11;
   }
   if (player.heroId === "robot") {
+    return player.playerId === state.playerId ? 13 : 11;
+  }
+  if (player.heroId === "doctor") {
+    return player.playerId === state.playerId ? 13 : 11;
+  }
+  if (player.heroId === "monk") {
+    return player.playerId === state.playerId ? 13 : 11;
+  }
+  if (player.heroId === "butcher") {
     return player.playerId === state.playerId ? 13 : 11;
   }
   return player.playerId === state.playerId ? 10 : 8;
@@ -63,6 +75,9 @@ function playerModelShape(player) {
   if (player.heroId === "blade") {
     return "blade";
   }
+  if (player.heroId === "killer") {
+    return "killer";
+  }
   if (player.heroId === "berserker") {
     return "berserker";
   }
@@ -74,6 +89,15 @@ function playerModelShape(player) {
   }
   if (player.heroId === "robot") {
     return "robot";
+  }
+  if (player.heroId === "doctor") {
+    return "doctor";
+  }
+  if (player.heroId === "monk") {
+    return "monk";
+  }
+  if (player.heroId === "butcher") {
+    return "butcher";
   }
   return "circle";
 }
@@ -298,6 +322,50 @@ function drawNinjaIcon(graphics, radius) {
   graphics.circle(0, 0, iconRadius * 0.3);
 }
 
+function drawKillerIcon(graphics, radius) {
+  drawKillerDagger(graphics, radius, -1);
+  drawKillerDagger(graphics, radius, 1);
+
+  graphics.moveTo(0, -radius * 0.34);
+  graphics.lineTo(radius * 0.34, 0);
+  graphics.lineTo(0, radius * 0.34);
+  graphics.lineTo(-radius * 0.34, 0);
+  graphics.closePath();
+}
+
+function drawKillerDagger(graphics, radius, side) {
+  const mirrorX = (value) => value * side;
+
+  graphics.moveTo(mirrorX(radius * 1.34), -radius * 1.16);
+  graphics.quadraticCurveTo(
+    mirrorX(radius * 0.72),
+    -radius * 0.84,
+    mirrorX(radius * 0.2),
+    -radius * 0.12,
+  );
+  graphics.lineTo(mirrorX(radius * 0.48), radius * 0.12);
+  graphics.quadraticCurveTo(
+    mirrorX(radius * 0.94),
+    -radius * 0.46,
+    mirrorX(radius * 1.34),
+    -radius * 1.16,
+  );
+  graphics.closePath();
+
+  graphics.moveTo(mirrorX(radius * 0.1), -radius * 0.18);
+  graphics.lineTo(mirrorX(radius * 0.6), radius * 0.28);
+  graphics.lineTo(mirrorX(radius * 0.46), radius * 0.44);
+  graphics.lineTo(mirrorX(radius * 0.18), radius * 0.22);
+  graphics.lineTo(mirrorX(radius * 0.42), radius * 0.52);
+  graphics.lineTo(mirrorX(-radius * 0.48), radius * 1.42);
+  graphics.lineTo(mirrorX(-radius * 0.72), radius * 1.18);
+  graphics.lineTo(mirrorX(radius * 0.18), radius * 0.28);
+  graphics.lineTo(mirrorX(-radius * 0.08), radius * 0.02);
+  graphics.closePath();
+
+  graphics.circle(mirrorX(-radius * 0.66), radius * 1.36, radius * 0.2);
+}
+
 function drawExplorerHatIcon(graphics, radius) {
   graphics.ellipse(0, radius * 0.38, radius * 1.48, radius * 0.34);
   graphics.moveTo(-radius * 0.88, radius * 0.28);
@@ -333,83 +401,39 @@ function pointAt(angle, length) {
 }
 
 function drawBladeIcon(graphics, radius) {
-  const scale = radius * 1.2;
-  const paths = [
-    [
-      [0.896, -1],
-      [0.857, -0.826],
-      [0.796, -0.664],
-      [0.465, -0.193],
-      [0.224, 0.098],
-      [-0.034, 0.361],
-      [-0.347, 0.613],
-      [-0.291, 0.765],
-      [-0.05, 0.546],
-      [0.101, 0.395],
-      [0.353, 0.143],
-      [0.633, -0.249],
-      [0.891, -0.664],
-      [0.963, -0.854],
-      [1, -1],
-      [0.963, -0.955],
-      [0.935, -0.955],
-      [0.913, -0.983],
-    ],
-    [
-      [0.146, 0.249],
-      [0.448, 0.507],
-      [0.538, 0.462],
-      [0.616, 0.445],
-      [0.599, 0.524],
-      [0.549, 0.613],
-      [0.487, 0.681],
-      [0.403, 0.737],
-      [0.314, 0.765],
-      [0.101, 0.574],
-      [-0.028, 0.439],
-    ],
-    [
-      [-0.616, 0.647],
-      [-0.532, 0.737],
-      [-0.476, 0.77],
-      [-0.751, 0.983],
-      [-0.796, 1],
-      [-0.868, 0.983],
-      [-0.902, 0.938],
-      [-0.891, 0.86],
-    ],
-    [
-      [0.611, 0.647],
-      [0.891, 0.86],
-      [0.902, 0.938],
-      [0.868, 0.983],
-      [0.824, 1],
-      [0.751, 0.983],
-      [0.476, 0.77],
-      [0.538, 0.731],
-    ],
-    [
-      [-0.902, -1],
-      [-0.667, -0.737],
-      [-0.291, -0.216],
-      [-0.039, 0.059],
-      [-0.14, 0.176],
-      [-0.426, -0.143],
-      [-0.796, -0.664],
-    ],
-  ];
-  for (const path of paths) {
-    for (let i = 0; i < path.length; i++) {
-      const x = path[i][0] * scale;
-      const y = path[i][1] * scale;
-      if (i === 0) {
-        graphics.moveTo(x, y);
-      } else {
-        graphics.lineTo(x, y);
-      }
-    }
-    graphics.closePath();
-  }
+  graphics.moveTo(-radius * 1.42, radius * 0.08);
+  graphics.quadraticCurveTo(-radius * 0.82, -radius * 0.12, 0, -radius * 0.16);
+  graphics.quadraticCurveTo(radius * 0.82, -radius * 0.12, radius * 1.42, radius * 0.08);
+  graphics.quadraticCurveTo(radius * 0.78, radius * 0.42, 0, radius * 0.46);
+  graphics.quadraticCurveTo(-radius * 0.78, radius * 0.42, -radius * 1.42, radius * 0.08);
+  graphics.closePath();
+
+  graphics.moveTo(-radius * 0.82, -radius * 0.04);
+  graphics.quadraticCurveTo(-radius * 0.42, -radius * 0.78, 0, -radius * 1.3);
+  graphics.quadraticCurveTo(radius * 0.42, -radius * 0.78, radius * 0.82, -radius * 0.04);
+  graphics.quadraticCurveTo(radius * 0.36, radius * 0.12, 0, radius * 0.14);
+  graphics.quadraticCurveTo(-radius * 0.36, radius * 0.12, -radius * 0.82, -radius * 0.04);
+  graphics.closePath();
+
+  graphics.rect(-radius * 0.72, -radius * 0.08, radius * 1.44, radius * 0.18);
+
+  graphics.moveTo(-radius * 0.58, radius * 0.32);
+  graphics.quadraticCurveTo(-radius * 0.5, radius * 0.88, -radius * 0.72, radius * 1.36);
+  graphics.lineTo(-radius * 0.5, radius * 1.45);
+  graphics.quadraticCurveTo(-radius * 0.24, radius * 0.84, -radius * 0.36, radius * 0.3);
+  graphics.closePath();
+
+  graphics.moveTo(radius * 0.58, radius * 0.32);
+  graphics.quadraticCurveTo(radius * 0.5, radius * 0.88, radius * 0.72, radius * 1.36);
+  graphics.lineTo(radius * 0.5, radius * 1.45);
+  graphics.quadraticCurveTo(radius * 0.24, radius * 0.84, radius * 0.36, radius * 0.3);
+  graphics.closePath();
+
+  graphics.moveTo(-radius * 0.16, radius * 0.4);
+  graphics.lineTo(0, radius * 0.72);
+  graphics.lineTo(radius * 0.16, radius * 0.4);
+  graphics.lineTo(0, radius * 1.12);
+  graphics.closePath();
 }
 
 function drawBerserkerIcon(graphics, radius) {
@@ -458,6 +482,81 @@ function drawRobotIcon(graphics, radius) {
   graphics.rect(-radius * 0.32, radius * 0.2, radius * 0.64, radius * 0.12);
   graphics.rect(-radius * 1.12, -radius * 0.22, radius * 0.36, radius * 0.72);
   graphics.rect(radius * 0.76, -radius * 0.22, radius * 0.36, radius * 0.72);
+}
+
+function drawDoctorIcon(graphics, radius) {
+  graphics.roundRect(
+    -radius * 0.58,
+    -radius * 1.12,
+    radius * 1.16,
+    radius * 2.24,
+    radius * 0.26,
+  );
+  graphics.rect(-radius * 0.34, -radius * 1.38, radius * 0.68, radius * 0.34);
+  graphics.roundRect(
+    -radius * 0.76,
+    -radius * 0.42,
+    radius * 1.52,
+    radius * 0.86,
+    radius * 0.12,
+  );
+  graphics.rect(-radius * 0.14, -radius * 0.76, radius * 0.28, radius * 1.52);
+  graphics.rect(-radius * 0.58, -radius * 0.14, radius * 1.16, radius * 0.28);
+  graphics.circle(radius * 0.42, radius * 0.74, radius * 0.14);
+  graphics.circle(-radius * 0.34, radius * 0.78, radius * 0.1);
+}
+
+function drawMonkIcon(graphics, radius) {
+  graphics.circle(0, -radius * 0.58, radius * 0.48);
+  graphics.circle(-radius * 0.46, -radius * 0.54, radius * 0.12);
+  graphics.circle(radius * 0.46, -radius * 0.54, radius * 0.12);
+
+  graphics.rect(-radius * 0.54, -radius * 0.72, radius * 1.08, radius * 0.22);
+  graphics.moveTo(radius * 0.5, -radius * 0.68);
+  graphics.lineTo(radius * 1.28, -radius * 0.42);
+  graphics.lineTo(radius * 0.92, -radius * 0.14);
+  graphics.lineTo(radius * 0.48, -radius * 0.48);
+  graphics.closePath();
+
+  graphics.moveTo(-radius * 1.12, radius * 0.98);
+  graphics.quadraticCurveTo(-radius * 0.98, radius * 0.1, -radius * 0.42, -radius * 0.02);
+  graphics.lineTo(radius * 0.42, -radius * 0.02);
+  graphics.quadraticCurveTo(radius * 0.98, radius * 0.1, radius * 1.12, radius * 0.98);
+  graphics.quadraticCurveTo(radius * 0.56, radius * 1.34, 0, radius * 1.36);
+  graphics.quadraticCurveTo(-radius * 0.56, radius * 1.34, -radius * 1.12, radius * 0.98);
+  graphics.closePath();
+
+  graphics.moveTo(0, radius * 0.02);
+  graphics.lineTo(radius * 0.24, radius * 0.28);
+  graphics.lineTo(radius * 0.16, radius * 1.08);
+  graphics.lineTo(0, radius * 1.3);
+  graphics.lineTo(-radius * 0.16, radius * 1.08);
+  graphics.lineTo(-radius * 0.24, radius * 0.28);
+  graphics.closePath();
+}
+
+function drawButcherIcon(graphics, radius) {
+  graphics.moveTo(-radius * 1.34, -radius * 1.08);
+  graphics.lineTo(radius * 0.62, -radius * 0.88);
+  graphics.quadraticCurveTo(radius * 0.84, -radius * 0.28, radius * 0.54, radius * 0.3);
+  graphics.lineTo(-radius * 0.22, radius * 0.46);
+  graphics.lineTo(-radius * 0.5, radius * 0.78);
+  graphics.lineTo(-radius * 0.94, radius * 0.5);
+  graphics.lineTo(-radius * 0.76, radius * 0.16);
+  graphics.lineTo(-radius * 1.34, radius * 0.02);
+  graphics.closePath();
+
+  graphics.moveTo(radius * 0.1, radius * 0.3);
+  graphics.lineTo(radius * 0.52, radius * 0.2);
+  graphics.lineTo(radius * 1.16, radius * 1.42);
+  graphics.lineTo(radius * 0.72, radius * 1.66);
+  graphics.closePath();
+
+  graphics.moveTo(radius * 0.54, radius * 1.22);
+  graphics.lineTo(radius * 1.26, radius * 0.84);
+  graphics.lineTo(radius * 1.42, radius * 1.12);
+  graphics.lineTo(radius * 0.72, radius * 1.52);
+  graphics.closePath();
 }
 
 function drawMageIcon(graphics, radius) {

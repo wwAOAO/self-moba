@@ -13,6 +13,50 @@
       drawSwordWhirlwindEffect(effect, frame);
       continue;
     }
+    if (effect.kind === "blade_q_heal") {
+      drawBladeQHealEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "blade_e_whirlwind") {
+      drawBladeEWhirlwindEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "blade_r_rage") {
+      drawBladeRRageEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "monk_q") {
+      drawMonkQSonicWaveEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "monk_q_mark") {
+      drawMonkQMarkEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "monk_q_echo") {
+      drawMonkQEchoEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "monk_w_safeguard") {
+      drawMonkWSafeguardEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "monk_w_iron_will") {
+      drawMonkWIronWillEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "monk_e_tempest") {
+      drawMonkETempestEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "monk_e_reveal") {
+      drawMonkERevealEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "monk_e_cripple") {
+      drawMonkECrippleEffect(effect, frame);
+      continue;
+    }
     if (effect.kind === "berserker_q") {
       if (hasLocalBerserkerQWindup()) {
         continue;
@@ -58,6 +102,42 @@
       drawFireMageQEffect(effect, frame);
       continue;
     }
+    if (effect.kind === "killer_q") {
+      drawKillerQEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "killer_q_cast_range") {
+      drawKillerQCastRangeEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "killer_q_dagger_airborne") {
+      drawKillerQAirborneDaggerEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "killer_w_dagger_airborne") {
+      drawKillerWAirborneDaggerEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "killer_q_dagger" || effect.kind === "killer_w_dagger") {
+      drawKillerQDaggerEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "killer_dagger_slash") {
+      drawKillerDaggerSlashEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "killer_e") {
+      drawKillerEEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "killer_r_channel") {
+      drawKillerRChannelEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "killer_r") {
+      drawKillerRProjectileEffect(effect, frame);
+      continue;
+    }
     if (effect.kind === "fire_mage_w") {
       drawFireMageWEffect(effect, frame);
       continue;
@@ -68,6 +148,18 @@
     }
     if (effect.kind === "fire_mage_r") {
       drawFireMageREffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "doctor_q") {
+      drawDoctorQEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "doctor_w") {
+      drawDoctorWEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "doctor_r") {
+      drawDoctorREffect(effect, frame);
       continue;
     }
     if (effect.kind === "frostmage_w") {
@@ -95,8 +187,28 @@
       drawRobotHookProjectile(effect, frame);
       continue;
     }
+    if (effect.kind === "butcher_q") {
+      drawRobotHookProjectile(effect, frame);
+      continue;
+    }
     if (effect.kind === "robot_q_pull") {
       drawRobotHookPullEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "butcher_q_pull") {
+      drawRobotHookPullEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "butcher_w") {
+      drawButcherRotEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "butcher_e") {
+      drawButcherMeatShieldEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "butcher_r") {
+      drawButcherDismemberEffect(effect, frame);
       continue;
     }
     if (effect.kind === "robot_r") {
@@ -373,6 +485,503 @@ function drawFireMageQEffect(effect, frame) {
   skillLayer.fill({ color: 0xfef3c7, alpha: 0.92 });
 }
 
+function drawKillerQEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const sideX = -forwardY;
+  const sideY = forwardX;
+  const length = Math.max(15, (effect.radius || 24) * frame.scale * 1.25);
+  const width = Math.max(5, length * 0.28);
+
+  skillLayer.moveTo(x + forwardX * length, y + forwardY * length);
+  skillLayer.lineTo(x - forwardX * length * 0.75 + sideX * width, y - forwardY * length * 0.75 + sideY * width);
+  skillLayer.lineTo(x - forwardX * length, y - forwardY * length);
+  skillLayer.lineTo(x - forwardX * length * 0.75 - sideX * width, y - forwardY * length * 0.75 - sideY * width);
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xe5e7eb, alpha: 0.94 });
+  skillLayer.stroke({ color: 0x7c3aed, width: 2, alpha: 0.9 });
+}
+
+function drawKillerQCastRangeEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const targetX = frame.offsetX + effect.endX * frame.scale;
+  const targetY = frame.offsetY + effect.endY * frame.scale;
+  const range = (effect.range || 625) * frame.scale;
+  const targetRadius = Math.max(18, (effect.radius || 18) * frame.scale + 8);
+  const alpha = effectAlpha(effect);
+
+  skillLayer.circle(x, y, range);
+  skillLayer.fill({ color: 0x7c3aed, alpha: 0.035 * alpha });
+  skillLayer.circle(x, y, range);
+  skillLayer.stroke({ color: 0xa78bfa, width: 2, alpha: 0.48 * alpha });
+  skillLayer.circle(targetX, targetY, targetRadius);
+  skillLayer.stroke({ color: 0xe9d5ff, width: 3, alpha: 0.9 * alpha });
+}
+
+function drawBladeQHealEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = Math.max(22, (effect.radius || 90) * frame.scale);
+  const tick = interpolatedTick();
+  const duration = Math.max(1, (effect.expiresAt || tick + 1) - (effect.createdAt || tick));
+  const progress = clamp((tick - (effect.createdAt || tick)) / duration, 0, 1);
+  const alpha = 1 - progress;
+
+  skillLayer.circle(x, y, radius * (0.42 + progress * 0.58));
+  skillLayer.stroke({ color: 0x4ade80, width: 4, alpha: 0.72 * alpha });
+  skillLayer.circle(x, y, radius * (0.22 + progress * 0.36));
+  skillLayer.fill({ color: 0x86efac, alpha: 0.14 * alpha });
+  for (let index = 0; index < 8; index++) {
+    const angle = (Math.PI * 2 * index) / 8 + progress * 0.7;
+    const distance = radius * (0.18 + progress * (0.5 + (index % 3) * 0.08));
+    const px = x + Math.cos(angle) * distance;
+    const py = y + Math.sin(angle) * distance - radius * progress * 0.42;
+    const size = Math.max(3, radius * 0.055 * (1 - progress * 0.35));
+    skillLayer
+      .moveTo(px - size, py)
+      .lineTo(px + size, py)
+      .moveTo(px, py - size)
+      .lineTo(px, py + size);
+  }
+  skillLayer.stroke({ color: 0xbbf7d0, width: 2.5, alpha: 0.88 * alpha });
+}
+
+function drawBladeEWhirlwindEffect(effect, frame) {
+  const position = movingEffectPosition(effect);
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(20, (effect.radius || 70) * frame.scale);
+  const rotation = performance.now() / 95;
+  const alpha = Math.max(0.35, effectAlpha(effect));
+
+  skillLayer.circle(x, y, radius * 0.72);
+  skillLayer.fill({ color: 0xdbeafe, alpha: 0.11 * alpha });
+  for (let index = 0; index < 3; index++) {
+    const start = rotation + (Math.PI * 2 * index) / 3;
+    const arcRadius = radius * (0.48 + index * 0.18);
+    skillLayer.moveTo(
+      x + Math.cos(start) * arcRadius,
+      y + Math.sin(start) * arcRadius,
+    );
+    skillLayer.arc(x, y, arcRadius, start, start + Math.PI * 1.28);
+    skillLayer.stroke({
+      color: index === 1 ? 0xe0f2fe : 0x93c5fd,
+      width: Math.max(2, radius * (0.12 - index * 0.018)),
+      alpha: (0.82 - index * 0.12) * alpha,
+    });
+  }
+  for (let index = 0; index < 4; index++) {
+    const angle = rotation + (Math.PI * 2 * index) / 4;
+    const bladeX = x + Math.cos(angle) * radius * 0.72;
+    const bladeY = y + Math.sin(angle) * radius * 0.72;
+    const sideX = -Math.sin(angle);
+    const sideY = Math.cos(angle);
+    const length = radius * 0.24;
+    skillLayer
+      .moveTo(bladeX + Math.cos(angle) * length, bladeY + Math.sin(angle) * length)
+      .lineTo(bladeX - Math.cos(angle) * length + sideX * length * 0.36, bladeY - Math.sin(angle) * length + sideY * length * 0.36)
+      .lineTo(bladeX - Math.cos(angle) * length - sideX * length * 0.36, bladeY - Math.sin(angle) * length - sideY * length * 0.36)
+      .closePath();
+  }
+  skillLayer.fill({ color: 0xf8fafc, alpha: 0.86 * alpha });
+}
+
+function drawBladeRRageEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = Math.max(28, (effect.radius || 110) * frame.scale);
+  const alpha = Math.max(0.3, effectAlpha(effect));
+  const time = performance.now() / 1000;
+
+  skillLayer.circle(x, y, radius * (0.78 + Math.sin(time * 8) * 0.05));
+  skillLayer.fill({ color: 0x991b1b, alpha: 0.09 * alpha });
+  skillLayer.circle(x, y, radius * 0.9);
+  skillLayer.stroke({ color: 0xef4444, width: 3, alpha: 0.58 * alpha });
+  for (let index = 0; index < 14; index++) {
+    const phase = (time * (0.55 + (index % 4) * 0.08) + index / 14) % 1;
+    const angle = (Math.PI * 2 * index) / 14 + Math.sin(time * 1.8 + index) * 0.22;
+    const distance = radius * (0.34 + phase * 0.72);
+    const px = x + Math.cos(angle) * distance;
+    const py = y + Math.sin(angle) * distance - radius * phase * 0.45;
+    const size = Math.max(3, radius * 0.065 * (1 - phase * 0.45));
+    const particleAlpha = alpha * (1 - phase) * 0.9;
+    skillLayer.circle(px, py, size);
+    skillLayer.fill({
+      color: index % 3 === 0 ? 0xfca5a5 : index % 2 === 0 ? 0xef4444 : 0xb91c1c,
+      alpha: particleAlpha,
+    });
+  }
+}
+
+function drawMonkQSonicWaveEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const radius = Math.max(10, (effect.radius || 35) * frame.scale);
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const sideX = -forwardY;
+  const sideY = forwardX;
+
+  for (let index = 0; index < 3; index++) {
+    const distance = index * radius * 0.42;
+    const centerX = x - forwardX * distance;
+    const centerY = y - forwardY * distance;
+    const width = radius * (0.78 - index * 0.16);
+    skillLayer
+      .moveTo(centerX + sideX * width, centerY + sideY * width)
+      .quadraticCurveTo(
+        centerX + forwardX * radius * 0.5,
+        centerY + forwardY * radius * 0.5,
+        centerX - sideX * width,
+        centerY - sideY * width,
+      );
+    skillLayer.stroke({ color: index === 0 ? 0xe0f2fe : 0x38bdf8, width: 3 - index * 0.5, alpha: 0.9 - index * 0.2 });
+  }
+  skillLayer.circle(x, y, radius * 0.26);
+  skillLayer.fill({ color: 0xecfeff, alpha: 0.95 });
+}
+
+function drawMonkQMarkEffect(effect, frame) {
+  const worldX = effect.endX ?? effect.x;
+  const worldY = effect.endY ?? effect.y;
+  const x = frame.offsetX + worldX * frame.scale;
+  const y = frame.offsetY + worldY * frame.scale;
+  const radius = Math.max(20, ((effect.radius || 18) + 34) * frame.scale);
+  const pulse = 0.86 + Math.sin(performance.now() / 95) * 0.1;
+  const alpha = Math.max(0.35, effectAlpha(effect));
+
+  skillLayer.circle(x, y, radius * pulse);
+  skillLayer.stroke({ color: 0x22d3ee, width: 3, alpha: 0.82 * alpha });
+  for (let index = 0; index < 4; index++) {
+    const angle = Math.PI / 4 + (Math.PI * index) / 2;
+    const inner = radius * 0.62;
+    const outer = radius * 0.94;
+    skillLayer
+      .moveTo(x + Math.cos(angle) * inner, y + Math.sin(angle) * inner)
+      .lineTo(x + Math.cos(angle) * outer, y + Math.sin(angle) * outer);
+  }
+  skillLayer.stroke({ color: 0xa5f3fc, width: 2, alpha: 0.76 * alpha });
+}
+
+function drawMonkQEchoEffect(effect, frame) {
+  const position = movingEffectPosition(effect);
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(16, (effect.radius || 55) * frame.scale);
+  const angle = Math.atan2(effect.endY - effect.y, effect.endX - effect.x);
+  const backX = Math.cos(angle + Math.PI);
+  const backY = Math.sin(angle + Math.PI);
+
+  for (let index = 0; index < 4; index++) {
+    const offset = radius * index * 0.42;
+    skillLayer.circle(x + backX * offset, y + backY * offset, radius * (0.72 - index * 0.1));
+    skillLayer.fill({ color: index === 0 ? 0x67e8f9 : 0x0ea5e9, alpha: 0.2 - index * 0.035 });
+  }
+  skillLayer.circle(x, y, radius * 0.68);
+  skillLayer.stroke({ color: 0xecfeff, width: 3, alpha: 0.85 });
+}
+
+function drawMonkWSafeguardEffect(effect, frame) {
+  const tick = interpolatedTick();
+  const duration = Math.max(1, (effect.expiresAt || tick + 1) - (effect.createdAt || tick));
+  const progress = clamp((tick - (effect.createdAt || tick)) / duration, 0, 1);
+  const worldX = effect.x + (effect.endX - effect.x) * progress;
+  const worldY = effect.y + (effect.endY - effect.y) * progress;
+  const x = frame.offsetX + worldX * frame.scale;
+  const y = frame.offsetY + worldY * frame.scale;
+  const radius = Math.max(22, (effect.radius || 85) * frame.scale);
+  const alpha = 1 - progress * 0.35;
+
+  skillLayer.circle(x, y, radius * (0.72 + progress * 0.18));
+  skillLayer.fill({ color: 0xfacc15, alpha: 0.1 * alpha });
+  skillLayer.circle(x, y, radius * 0.82);
+  skillLayer.stroke({ color: 0xfef08a, width: 4, alpha: 0.82 * alpha });
+  skillLayer
+    .moveTo(x, y - radius * 0.56)
+    .lineTo(x + radius * 0.48, y - radius * 0.2)
+    .lineTo(x + radius * 0.34, y + radius * 0.48)
+    .lineTo(x, y + radius * 0.68)
+    .lineTo(x - radius * 0.34, y + radius * 0.48)
+    .lineTo(x - radius * 0.48, y - radius * 0.2)
+    .closePath();
+  skillLayer.stroke({ color: 0xfde68a, width: 2, alpha: 0.72 * alpha });
+}
+
+function drawMonkWIronWillEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = Math.max(20, (effect.radius || 75) * frame.scale);
+  const rotation = performance.now() / 240;
+  const alpha = Math.max(0.3, effectAlpha(effect));
+
+  skillLayer.circle(x, y, radius * 0.76);
+  skillLayer.fill({ color: 0xf59e0b, alpha: 0.08 * alpha });
+  for (let index = 0; index < 3; index++) {
+    const start = rotation + (Math.PI * 2 * index) / 3;
+    const arcRadius = radius * (0.62 + index * 0.09);
+    skillLayer.moveTo(x + Math.cos(start) * arcRadius, y + Math.sin(start) * arcRadius);
+    skillLayer.arc(x, y, arcRadius, start, start + Math.PI * 1.18);
+    skillLayer.stroke({ color: index === 0 ? 0xfef3c7 : 0xfbbf24, width: 3, alpha: (0.78 - index * 0.14) * alpha });
+  }
+}
+
+function drawMonkETempestEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = (effect.radius || 350) * frame.scale;
+  const tick = interpolatedTick();
+  const duration = Math.max(1, (effect.expiresAt || tick + 1) - (effect.createdAt || tick));
+  const progress = clamp((tick - (effect.createdAt || tick)) / duration, 0, 1);
+  const alpha = 1 - progress;
+
+  skillLayer.circle(x, y, radius * (0.16 + progress * 0.84));
+  skillLayer.fill({ color: 0x0ea5e9, alpha: 0.1 * alpha });
+  skillLayer.circle(x, y, radius * (0.18 + progress * 0.82));
+  skillLayer.stroke({ color: 0x7dd3fc, width: 5, alpha: 0.78 * alpha });
+  skillLayer.circle(x, y, radius * (0.1 + progress * 0.52));
+  skillLayer.stroke({ color: 0xe0f2fe, width: 3, alpha: 0.68 * alpha });
+}
+
+function drawMonkERevealEffect(effect, frame) {
+  const worldX = effect.endX ?? effect.x;
+  const worldY = effect.endY ?? effect.y;
+  const x = frame.offsetX + worldX * frame.scale;
+  const y = frame.offsetY + worldY * frame.scale;
+  const radius = Math.max(16, ((effect.radius || 18) + 18) * frame.scale);
+  const alpha = Math.max(0.2, effectAlpha(effect));
+  const pulse = 0.86 + Math.sin(performance.now() / 130) * 0.1;
+
+  skillLayer.ellipse(x, y, radius * pulse, radius * 0.48 * pulse);
+  skillLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.62 * alpha });
+  skillLayer.circle(x, y, radius * 0.18);
+  skillLayer.fill({ color: 0xe0f2fe, alpha: 0.78 * alpha });
+}
+
+function drawMonkECrippleEffect(effect, frame) {
+  const worldX = effect.endX ?? effect.x;
+  const worldY = effect.endY ?? effect.y;
+  const x = frame.offsetX + worldX * frame.scale;
+  const y = frame.offsetY + worldY * frame.scale;
+  const radius = Math.max(24, (effect.radius || 70) * frame.scale);
+  const tick = interpolatedTick();
+  const duration = Math.max(1, (effect.expiresAt || tick + 1) - (effect.createdAt || tick));
+  const progress = clamp((tick - (effect.createdAt || tick)) / duration, 0, 1);
+  const alpha = 1 - progress;
+
+  for (let index = 0; index < 3; index++) {
+    const ring = radius * (1.12 - progress * 0.58 - index * 0.16);
+    if (ring <= 0) {
+      continue;
+    }
+    skillLayer.circle(x, y, ring);
+    skillLayer.stroke({ color: index === 0 ? 0xf97316 : 0xfbbf24, width: 3, alpha: (0.78 - index * 0.16) * alpha });
+  }
+}
+
+function drawKillerWAirborneDaggerEffect(effect, frame) {
+  const tick = interpolatedTick();
+  const createdAt = effect.createdAt ?? tick;
+  const expiresAt = effect.expiresAt ?? createdAt + 1;
+  const duration = Math.max(1, expiresAt - createdAt);
+  const progress = clamp((tick - createdAt) / duration, 0, 1);
+  const groundX = frame.offsetX + effect.x * frame.scale;
+  const groundY = frame.offsetY + effect.y * frame.scale;
+  const height = Math.sin(Math.PI * progress) * 95 * frame.scale;
+  const x = groundX;
+  const y = groundY - height;
+  const angle = progress * Math.PI * 4;
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const sideX = -forwardY;
+  const sideY = forwardX;
+  const length = Math.max(16, (effect.radius || 32) * frame.scale * 0.72);
+  const width = Math.max(5, length * 0.28);
+
+  skillLayer.ellipse(groundX, groundY, length * (0.8 - progress * 0.25), length * 0.28);
+  skillLayer.fill({ color: 0x312e81, alpha: 0.2 });
+  skillLayer.moveTo(x + forwardX * length, y + forwardY * length);
+  skillLayer.lineTo(x - forwardX * length * 0.5 + sideX * width, y - forwardY * length * 0.5 + sideY * width);
+  skillLayer.lineTo(x - forwardX * length, y - forwardY * length);
+  skillLayer.lineTo(x - forwardX * length * 0.5 - sideX * width, y - forwardY * length * 0.5 - sideY * width);
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xf3f4f6, alpha: 0.94 });
+  skillLayer.stroke({ color: 0x8b5cf6, width: 2, alpha: 0.92 });
+}
+
+function drawKillerQAirborneDaggerEffect(effect, frame) {
+  const tick = interpolatedTick();
+  const createdAt = effect.createdAt ?? tick;
+  const expiresAt = effect.expiresAt ?? createdAt + 1;
+  const duration = Math.max(1, expiresAt - createdAt);
+  const progress = clamp((tick - createdAt) / duration, 0, 1);
+  const startX = frame.offsetX + effect.x * frame.scale;
+  const startY = frame.offsetY + effect.y * frame.scale;
+  const endX = frame.offsetX + effect.endX * frame.scale;
+  const endY = frame.offsetY + effect.endY * frame.scale;
+  const groundX = startX + (endX - startX) * progress;
+  const groundY = startY + (endY - startY) * progress;
+  const height = Math.sin(Math.PI * progress) * 72 * frame.scale;
+  const x = groundX;
+  const y = groundY - height;
+  const angle = Math.atan2(endY - startY, endX - startX) + progress * Math.PI * 5;
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const sideX = -forwardY;
+  const sideY = forwardX;
+  const length = Math.max(15, (effect.radius || 32) * frame.scale * 0.76);
+  const width = Math.max(5, length * 0.28);
+
+  skillLayer
+    .moveTo(startX, startY)
+    .lineTo(groundX, groundY);
+  skillLayer.stroke({ color: 0xa78bfa, width: 2, alpha: 0.28 });
+  skillLayer.ellipse(endX, endY, length * 0.72, length * 0.22);
+  skillLayer.fill({ color: 0x312e81, alpha: 0.18 + progress * 0.12 });
+  skillLayer.moveTo(x + forwardX * length, y + forwardY * length);
+  skillLayer.lineTo(x - forwardX * length * 0.55 + sideX * width, y - forwardY * length * 0.55 + sideY * width);
+  skillLayer.lineTo(x - forwardX * length, y - forwardY * length);
+  skillLayer.lineTo(x - forwardX * length * 0.55 - sideX * width, y - forwardY * length * 0.55 - sideY * width);
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xf5f3ff, alpha: 0.96 });
+  skillLayer.stroke({ color: 0x7c3aed, width: 2, alpha: 0.94 });
+}
+
+function drawKillerQDaggerEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1) + Math.PI / 2;
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const sideX = -forwardY;
+  const sideY = forwardX;
+  const alpha = effectAlpha(effect);
+  const length = Math.max(18, (effect.radius || 32) * frame.scale * 0.9);
+  const width = Math.max(6, length * 0.3);
+
+  skillLayer.circle(x, y, length * 0.85);
+  skillLayer.fill({ color: 0x7c3aed, alpha: 0.12 * alpha });
+  skillLayer.circle(x, y, length * 0.85);
+  skillLayer.stroke({ color: 0xa78bfa, width: 2, alpha: 0.55 * alpha });
+  skillLayer.moveTo(x + forwardX * length, y + forwardY * length);
+  skillLayer.lineTo(x - forwardX * length * 0.5 + sideX * width, y - forwardY * length * 0.5 + sideY * width);
+  skillLayer.lineTo(x - forwardX * length, y - forwardY * length);
+  skillLayer.lineTo(x - forwardX * length * 0.5 - sideX * width, y - forwardY * length * 0.5 - sideY * width);
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xf3f4f6, alpha: 0.9 * alpha });
+  skillLayer.stroke({ color: 0x6d28d9, width: 2, alpha: 0.92 * alpha });
+}
+
+function drawKillerDaggerSlashEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = (effect.radius || 340) * frame.scale;
+  const alpha = effectAlpha(effect);
+  const rotation = performance.now() / 160;
+
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x7c3aed, alpha: 0.08 * alpha });
+  skillLayer.moveTo(
+    x + Math.cos(rotation) * radius * 0.92,
+    y + Math.sin(rotation) * radius * 0.92,
+  );
+  skillLayer.arc(x, y, radius * 0.92, rotation, rotation + Math.PI * 1.45);
+  skillLayer.stroke({ color: 0xc4b5fd, width: 5, alpha: 0.82 * alpha });
+  const innerStart = rotation + Math.PI;
+  skillLayer.moveTo(
+    x + Math.cos(innerStart) * radius * 0.68,
+    y + Math.sin(innerStart) * radius * 0.68,
+  );
+  skillLayer.arc(x, y, radius * 0.68, innerStart, rotation + Math.PI * 2.3);
+  skillLayer.stroke({ color: 0x8b5cf6, width: 3, alpha: 0.72 * alpha });
+  for (let index = 0; index < 4; index++) {
+    const angle = rotation + (Math.PI * 2 * index) / 4;
+    const bladeX = x + Math.cos(angle) * radius * 0.78;
+    const bladeY = y + Math.sin(angle) * radius * 0.78;
+    const sideX = -Math.sin(angle);
+    const sideY = Math.cos(angle);
+    const length = Math.max(12, radius * 0.1);
+    skillLayer.moveTo(bladeX + Math.cos(angle) * length, bladeY + Math.sin(angle) * length);
+    skillLayer.lineTo(bladeX - Math.cos(angle) * length + sideX * length * 0.35, bladeY - Math.sin(angle) * length + sideY * length * 0.35);
+    skillLayer.lineTo(bladeX - Math.cos(angle) * length - sideX * length * 0.35, bladeY - Math.sin(angle) * length - sideY * length * 0.35);
+    skillLayer.closePath();
+  }
+  skillLayer.fill({ color: 0xf3f4f6, alpha: 0.88 * alpha });
+  skillLayer.stroke({ color: 0x6d28d9, width: 1.5, alpha: 0.9 * alpha });
+}
+
+function drawKillerEEffect(effect, frame) {
+  const startX = frame.offsetX + effect.x * frame.scale;
+  const startY = frame.offsetY + effect.y * frame.scale;
+  const endX = frame.offsetX + effect.endX * frame.scale;
+  const endY = frame.offsetY + effect.endY * frame.scale;
+  const alpha = effectAlpha(effect);
+  const distance = Math.hypot(endX - startX, endY - startY);
+  const segments = Math.max(3, Math.ceil(distance / 70));
+
+  for (let index = 0; index <= segments; index++) {
+    const progress = index / segments;
+    const x = startX + (endX - startX) * progress;
+    const y = startY + (endY - startY) * progress;
+    const radius = 16 + Math.sin(Math.PI * progress) * 8;
+    skillLayer.circle(x, y, radius);
+    skillLayer.fill({ color: 0x8b5cf6, alpha: 0.08 * alpha * (1 - progress * 0.45) });
+    skillLayer.circle(x, y, radius * 0.45);
+    skillLayer.fill({ color: 0xe9d5ff, alpha: 0.22 * alpha });
+  }
+  skillLayer.circle(endX, endY, 30);
+  skillLayer.stroke({ color: 0xc4b5fd, width: 3, alpha: 0.82 * alpha });
+}
+
+function drawKillerRChannelEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = (effect.radius || 550) * frame.scale;
+  const alpha = Math.max(0.3, effectAlpha(effect));
+  const rotation = performance.now() / 210;
+
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x581c87, alpha: 0.055 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0xc084fc, width: 2, alpha: 0.42 * alpha });
+  for (let index = 0; index < 10; index++) {
+    const angle = rotation + (Math.PI * 2 * index) / 10;
+    const inner = radius * 0.22;
+    const outer = radius * 0.38;
+    skillLayer
+      .moveTo(x + Math.cos(angle) * inner, y + Math.sin(angle) * inner)
+      .lineTo(x + Math.cos(angle + 0.15) * outer, y + Math.sin(angle + 0.15) * outer);
+  }
+  skillLayer.stroke({ color: 0xe9d5ff, width: 3, alpha: 0.62 * alpha });
+}
+
+function drawKillerRProjectileEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const sideX = -forwardY;
+  const sideY = forwardX;
+  const length = Math.max(13, (effect.radius || 18) * frame.scale * 1.45);
+  const width = Math.max(4, length * 0.28);
+
+  skillLayer
+    .moveTo(x + forwardX * length, y + forwardY * length)
+    .lineTo(x - forwardX * length + sideX * width, y - forwardY * length + sideY * width)
+    .lineTo(x - forwardX * length - sideX * width, y - forwardY * length - sideY * width)
+    .closePath();
+  skillLayer.fill({ color: 0xf5f3ff, alpha: 0.95 });
+  skillLayer.stroke({ color: 0x9333ea, width: 2, alpha: 0.92 });
+}
+
 function drawFireMageWEffect(effect, frame) {
   const x = frame.offsetX + effect.x * frame.scale;
   const y = frame.offsetY + effect.y * frame.scale;
@@ -524,6 +1133,95 @@ function drawFireMageREffect(effect, frame) {
   skillLayer.fill({ color: 0xf97316, alpha: 0.9 });
   skillLayer.circle(x + Math.cos(angle) * radius * 0.32, y + Math.sin(angle) * radius * 0.32, radius * 0.48);
   skillLayer.fill({ color: 0xfef3c7, alpha: 0.94 });
+}
+
+function drawDoctorQEffect(effect, frame) {
+  const position = projectileDrawPosition(effect, { fromSnapshot: true });
+  const x = frame.offsetX + position.x * frame.scale;
+  const y = frame.offsetY + position.y * frame.scale;
+  const radius = Math.max(9, (effect.radius || 60) * frame.scale * 0.4);
+  const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const sideX = -forwardY;
+  const sideY = forwardX;
+  const tail = radius * 4;
+
+  skillLayer
+    .moveTo(x - forwardX * tail, y - forwardY * tail)
+    .lineTo(x, y);
+  skillLayer.stroke({ color: 0x22c55e, width: Math.max(4, radius * 0.85), alpha: 0.38 });
+  skillLayer
+    .moveTo(x - forwardX * radius * 1.8, y - forwardY * radius * 1.8)
+    .lineTo(x - forwardX * radius * 0.45, y - forwardY * radius * 0.45);
+  skillLayer.stroke({ color: 0xbbf7d0, width: Math.max(3, radius * 0.34), alpha: 0.82 });
+
+  skillLayer
+    .moveTo(x + forwardX * radius * 1.65, y + forwardY * radius * 1.65)
+    .lineTo(
+      x - forwardX * radius * 0.55 + sideX * radius * 0.8,
+      y - forwardY * radius * 0.55 + sideY * radius * 0.8,
+    )
+    .quadraticCurveTo(
+      x - forwardX * radius * 1.2,
+      y - forwardY * radius * 1.2,
+      x - forwardX * radius * 0.55 - sideX * radius * 0.8,
+      y - forwardY * radius * 0.55 - sideY * radius * 0.8,
+    )
+    .closePath();
+  skillLayer.fill({ color: 0xd1fae5, alpha: 0.92 });
+  skillLayer.stroke({ color: 0x059669, width: 2, alpha: 0.9 });
+  skillLayer.circle(x + forwardX * radius * 0.15, y + forwardY * radius * 0.15, radius * 0.22);
+  skillLayer.fill({ color: 0x10b981, alpha: 0.95 });
+}
+
+function drawDoctorWEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = (effect.radius || 325) * frame.scale;
+  const alpha = Math.max(0.35, effectAlpha(effect));
+  const pulse = 0.5 + Math.sin(performance.now() / 120) * 0.5;
+  const inner = radius * (0.72 + pulse * 0.08);
+
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x14b8a6, alpha: 0.07 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0x2dd4bf, width: 3, alpha: 0.78 * alpha });
+  skillLayer.circle(x, y, inner);
+  skillLayer.stroke({ color: 0xfacc15, width: 2, alpha: 0.45 * alpha });
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI * 2 * i) / 6 + performance.now() / 420;
+    const start = radius * 0.34;
+    const end = radius * 0.55;
+    skillLayer
+      .moveTo(x + Math.cos(angle) * start, y + Math.sin(angle) * start)
+      .lineTo(x + Math.cos(angle + 0.15) * end, y + Math.sin(angle + 0.15) * end);
+  }
+  skillLayer.stroke({ color: 0xfef08a, width: 2, alpha: 0.55 * alpha });
+  skillLayer.circle(x, y, Math.max(8, radius * 0.07));
+  skillLayer.fill({ color: 0xccfbf1, alpha: 0.34 * alpha });
+}
+
+function drawDoctorREffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = Math.max(24, (effect.radius || 26) * frame.scale * 1.35);
+  const alpha = Math.max(0.35, effectAlpha(effect));
+
+  for (let i = 0; i < 5; i++) {
+    const drift = ((performance.now() / 850 + i * 0.2) % 1);
+    const side = (i - 2) * radius * 0.22 + Math.sin(performance.now() / 260 + i) * 3;
+    const px = x + side;
+    const py = y + radius * 0.65 - drift * radius * 1.55;
+    const size = Math.max(4, radius * 0.14) * (1 - drift * 0.3);
+    const particleAlpha = alpha * (1 - drift) * 0.8;
+    skillLayer
+      .moveTo(px - size, py)
+      .lineTo(px + size, py)
+      .moveTo(px, py - size)
+      .lineTo(px, py + size);
+    skillLayer.stroke({ color: 0xbbf7d0, width: 3, alpha: particleAlpha });
+  }
 }
 
 function drawGunnerREffect(effect, frame) {
@@ -693,6 +1391,59 @@ function drawRobotHookPullEffect(effect, frame) {
   const end = { x: effect.endX || effect.x, y: effect.endY || effect.y };
   drawRobotChain(start, end, frame, 0.85 * alpha);
   drawRobotHookHead(end, effect, frame, alpha);
+}
+
+function drawButcherRotEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = (effect.radius || 250) * frame.scale;
+  const pulse = 0.5 + Math.sin(performance.now() / 130) * 0.5;
+
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x365314, alpha: 0.08 + pulse * 0.025 });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0x84cc16, width: 3, alpha: 0.48 + pulse * 0.16 });
+  for (let index = 0; index < 10; index++) {
+    const phase = (performance.now() / 1200 + index / 10) % 1;
+    const angle = (Math.PI * 2 * index) / 10 + phase * 0.8;
+    const distance = radius * (0.18 + phase * 0.7);
+    skillLayer.circle(
+      x + Math.cos(angle) * distance,
+      y + Math.sin(angle) * distance - phase * 18 * frame.scale,
+      Math.max(3, radius * 0.025 * (1 - phase * 0.4)),
+    );
+  }
+  skillLayer.fill({ color: 0xa3e635, alpha: 0.22 });
+}
+
+function drawButcherMeatShieldEffect(effect, frame) {
+  const x = frame.offsetX + effect.x * frame.scale;
+  const y = frame.offsetY + effect.y * frame.scale;
+  const radius = Math.max(24, ((effect.radius || 22) + 14) * frame.scale);
+  const pulse = 0.5 + Math.sin(performance.now() / 170) * 0.5;
+  const alpha = effectAlpha(effect);
+
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x7f1d1d, alpha: (0.1 + pulse * 0.04) * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0xfca5a5, width: 4, alpha: (0.62 + pulse * 0.18) * alpha });
+  skillLayer.circle(x, y, radius * 0.72);
+  skillLayer.stroke({ color: 0x991b1b, width: 2, alpha: 0.7 * alpha });
+}
+
+function drawButcherDismemberEffect(effect, frame) {
+  const source = effectSourcePosition(effect) || { x: effect.x, y: effect.y };
+  const target = { x: effect.endX || effect.x, y: effect.endY || effect.y };
+  const alpha = effectAlpha(effect);
+  drawRobotChain(source, target, frame, alpha);
+  const x = frame.offsetX + target.x * frame.scale;
+  const y = frame.offsetY + target.y * frame.scale;
+  const radius = Math.max(22, ((effect.radius || 22) + 10) * frame.scale);
+  const pulse = 0.5 + Math.sin(performance.now() / 110) * 0.5;
+  skillLayer.circle(x, y, radius * (0.9 + pulse * 0.08));
+  skillLayer.fill({ color: 0x7f1d1d, alpha: 0.14 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0xef4444, width: 4, alpha: 0.8 * alpha });
 }
 
 function drawRobotChain(start, end, frame, alpha) {

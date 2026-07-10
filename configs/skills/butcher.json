@@ -1,0 +1,123 @@
+[
+  {
+    "skillId": "butcher_passive",
+    "name": "腐肉堆积",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive",
+    "description": [
+      "伤害格挡：格挡全部类型伤害，数值随英雄等级从8提升至26；魔法伤害额外减少4%-16%。",
+      "腐血：450范围内敌方英雄死亡时永久获得3/6/9/12层腐血；亲手击杀无距离限制。",
+      "每层腐血提供0.22最大生命、0.001/秒生命回复和0.01攻击力。"
+    ],
+    "meta": {
+      "damageBlockMin": 8,
+      "damageBlockMax": 26,
+      "magicDamageReductionMin": 0.04,
+      "magicDamageReductionMax": 0.16,
+      "fleshRange": 450,
+      "maxHPPerStack": 0.22,
+      "hpRegenPerSecondPerStack": 0.001,
+      "attackPerStack": 0.01
+    },
+    "metaLists": {
+      "fleshPerHeroDeath": [3, 6, 9, 12],
+      "fleshTierLevels": [1, 6, 11, 16]
+    }
+  },
+  {
+    "skillId": "butcher_q",
+    "name": "肉钩",
+    "cooldownMs": 21000,
+    "range": 1300,
+    "type": "projectile",
+    "description": [
+      "向目标方向发射肉钩，命中第一个单位后将其全程击飞并拖至屠夫身前。",
+      "敌方目标受到150/220/290/360/420（+0.3总攻击力）真实伤害，并额外受到牵引距离×0.2的真实伤害。",
+      "敌方小兵被直接击杀；友军不受伤害，且命中友军时本次冷却降低50%。"
+    ],
+    "meta": {
+      "castWindupSeconds": 0.3,
+      "projectileRadius": 100,
+      "projectileSpeed": 1450,
+      "pullSpeed": 1450,
+      "totalAdRatio": 0.3,
+      "pullDistanceDamageRatio": 0.2,
+      "allyCooldownMultiplier": 0.5,
+      "frontPadding": 1
+    },
+    "metaLists": {
+      "baseDamage": [150, 220, 290, 360, 420],
+      "manaCost": [125, 130, 135, 140, 155],
+      "cooldownMs": [21000, 19000, 17000, 15000, 13000]
+    }
+  },
+  {
+    "skillId": "butcher_w",
+    "name": "腐烂",
+    "cooldownMs": 500,
+    "range": 250,
+    "type": "toggle",
+    "description": [
+      "切换开启后，每0.5秒对250范围内敌人和自身同步造成魔法伤害；自身伤害无法致死。",
+      "敌人受到14%/18%/22%/26%/30%移动速度减缓和40%重伤，效果残留0.5秒。",
+      "开启期间每秒消耗8点法力；法力不足时自动关闭。"
+    ],
+    "meta": {
+      "damageIntervalSeconds": 0.5,
+      "auraLingerSeconds": 0.5,
+      "manaPerSecond": 8,
+      "bonusAdRatioPerSecond": 0.05,
+      "grievousWounds": 0.4
+    },
+    "metaLists": {
+      "damagePerSecond": [30, 60, 90, 120, 150],
+      "slow": [0.14, 0.18, 0.22, 0.26, 0.3],
+      "cooldownMs": [500, 500, 500, 500, 500]
+    }
+  },
+  {
+    "skillId": "butcher_e",
+    "name": "肉盾",
+    "cooldownMs": 20000,
+    "range": 0,
+    "type": "self_buff",
+    "description": [
+      "获得持续4/5/6/7/8秒的肉盾效果。",
+      "持续期间额外格挡35/50/65/80/95（+0.05护甲+0.05魔抗）点来自所有来源的伤害。"
+    ],
+    "meta": {
+      "manaCost": 35,
+      "armorRatio": 0.05,
+      "magicResistanceRatio": 0.05
+    },
+    "metaLists": {
+      "durationSeconds": [4, 5, 6, 7, 8],
+      "damageBlock": [35, 50, 65, 80, 95],
+      "cooldownMs": [20000, 19000, 18000, 17000, 16000]
+    }
+  },
+  {
+    "skillId": "butcher_r",
+    "name": "肢解",
+    "cooldownMs": 30000,
+    "range": 160,
+    "type": "channel_target",
+    "description": [
+      "引导并持续眩晕目标；对英雄持续2.95秒，对小兵和野怪持续5.9秒。",
+      "每秒造成75/125/175（+0.75额外攻击力）魔法伤害，施法时立即造成第一次伤害。",
+      "屠夫移动或受到控制时会中断引导。"
+    ],
+    "meta": {
+      "heroDurationSeconds": 2.95,
+      "unitDurationSeconds": 5.9,
+      "damageIntervalSeconds": 1,
+      "bonusAdRatioPerSecond": 0.75
+    },
+    "metaLists": {
+      "baseDamagePerSecond": [75, 125, 175],
+      "manaCost": [100, 130, 170],
+      "cooldownMs": [30000, 30000, 30000]
+    }
+  }
+]

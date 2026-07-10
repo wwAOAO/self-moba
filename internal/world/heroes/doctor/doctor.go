@@ -204,11 +204,23 @@ func CastR(w *world.World, entity *world.Entity, cast protocol.CastInput, state 
 	entity.Passive.DoctorRUntil = tick + durationTicks
 	entity.Passive.DoctorRNextHealTick = tick + healIntervalTicks
 	entity.Passive.DoctorRLevel = state.Level
+	entity.Passive.DoctorREffectID = w.NextEffectID("effect:doctor_r:")
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, int(skillList(skill, "cooldownMs", state.Level, []float64{110000, 100000, 90000})), tickRate)
 	state.Stacks = 1
 	state.StacksExpireTick = entity.Passive.DoctorRUntil
 	entity.Skills[rID] = state
 	w.RefreshPlayerStats(entity)
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           entity.Passive.DoctorREffectID,
+		Kind:         "doctor_r",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        entity.Position,
+		Radius:       entity.Radius,
+		CreatedAt:    tick,
+		ExpiresAt:    entity.Passive.DoctorRUntil,
+	})
 }
 
 func tickW(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
@@ -342,6 +354,9 @@ func clearR(w *world.World, entity *world.Entity) {
 	if entity == nil {
 		return
 	}
+	if entity.Passive.DoctorREffectID != "" {
+		w.RemoveSkillEffect(entity.Passive.DoctorREffectID)
+	}
 	state := entity.Skills[rID]
 	state.Stacks = 0
 	state.StacksExpireTick = 0
@@ -349,6 +364,7 @@ func clearR(w *world.World, entity *world.Entity) {
 	entity.Passive.DoctorRUntil = 0
 	entity.Passive.DoctorRNextHealTick = 0
 	entity.Passive.DoctorRLevel = 0
+	entity.Passive.DoctorREffectID = ""
 	w.RefreshPlayerStats(entity)
 }
 

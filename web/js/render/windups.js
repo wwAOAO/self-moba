@@ -98,6 +98,10 @@ function drawCastWindup(windup, frame, now) {
     drawDirectionalWindup(windup, frame, color, alpha, 10);
     return;
   }
+  if (windup.skillId === "killer_q") {
+    drawTargetLockWindup(windup, frame, color, alpha);
+    return;
+  }
   if (windup.skillId === "fire_mage_r") {
     drawFireMageRWindup(windup, frame, color, alpha);
     return;
@@ -300,6 +304,9 @@ function castWindupColor(skillId) {
   }
   if (skillId === "fire_mage_q" || skillId === "fire_mage_w") {
     return 0xf97316;
+  }
+  if (skillId === "killer_q") {
+    return 0x8b5cf6;
   }
   if (skillId === "berserker_e") {
     return 0xdc2626;

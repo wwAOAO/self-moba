@@ -6,6 +6,7 @@ type sustainContext struct {
 	BasicAttack            bool
 	AOE                    bool
 	Pet                    bool
+	Nonlethal              bool
 	SkipBerserkerBleed     bool
 	SkipEquipmentSkillSlow bool
 	SkipEquipmentEffects   bool

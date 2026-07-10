@@ -132,6 +132,8 @@ type PlayerSnapshot struct {
 type BuffSnapshot struct {
 	ID              string  `json:"id"`
 	Name            string  `json:"name"`
+	Stacks          int     `json:"stacks,omitempty"`
+	Tooltip         string  `json:"tooltip,omitempty"`
 	ExpiresAtTick   uint64  `json:"expiresAtTick,omitempty"`
 	ExplosionAtTick uint64  `json:"explosionAtTick,omitempty"`
 	Negative        bool    `json:"negative,omitempty"`
@@ -253,6 +255,9 @@ type PassiveSnapshot struct {
 	NinjaSoulCooldowns map[string]uint64 `json:"ninjaSoulCooldowns,omitempty"`
 	Shield             int               `json:"shield"`
 	MaxShield          int               `json:"maxShield"`
+	MonkQMarkUntil     uint64            `json:"monkQMarkUntil,omitempty"`
+	MonkWRecastUntil   uint64            `json:"monkWRecastUntil,omitempty"`
+	MonkERecastUntil   uint64            `json:"monkERecastUntil,omitempty"`
 }
 
 type ControlSnapshot struct {

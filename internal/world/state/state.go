@@ -8,6 +8,8 @@ import (
 type BuffState struct {
 	ID              string
 	Name            string
+	Stacks          int
+	Tooltip         string
 	AbilityHaste    float64
 	ExpiresAtTick   uint64
 	ExplosionAtTick uint64
@@ -139,6 +141,8 @@ type ControlState struct {
 	DashEnd                 geom.Vector2
 	ActionLockedUntilTick   uint64
 	StunnedUntilTick        uint64
+	TauntedUntilTick        uint64
+	SuppressedUntilTick     uint64
 	SilencedUntilTick       uint64
 	TenacityUntilTick       uint64
 	MoveSpeedBonusFlat      float64
@@ -305,119 +309,205 @@ type NinjaState struct {
 }
 
 type PassiveState struct {
-	SwordIntent                float64
-	MaxSwordIntent             float64
-	GunnerTargetID             string
-	GunnerWActiveUntil         uint64
-	GunnerWAttackSpeed         float64
-	GunnerWMoveSpeed           float64
-	GunnerECenter              geom.Vector2
-	GunnerEExpireTick          uint64
-	GunnerENextTick            uint64
-	GunnerELevel               int
-	GunnerEEffectID            string
-	GunnerRDir                 geom.Vector2
-	GunnerRStartTick           uint64
-	GunnerRExpireTick          uint64
-	GunnerRNextTick            uint64
-	GunnerRLevel               int
-	GunnerRWaves               int
-	GunnerRWaveCount           int
-	GunnerREffectID            string
-	RobotShieldUntil           uint64
-	RobotShieldCDUntil         uint64
-	RobotShieldMana            int
-	RobotQPending              bool
-	RobotQReleaseTick          uint64
-	RobotQTarget               geom.Vector2
-	RobotQLevel                int
-	RobotWStartTick            uint64
-	RobotWUntil                uint64
-	RobotWLevel                int
-	RobotWMoveSpeed            float64
-	RobotArcMarks              map[string]RobotArcState
-	ExplorerSpellForce         []uint64
-	ExplorerFluxMarks          map[string]ExplorerFluxState
-	ExplorerQPending           bool
-	ExplorerQRelease           uint64
-	ExplorerQTarget            geom.Vector2
-	ExplorerQLevel             int
-	ExplorerWTarget            geom.Vector2
-	ExplorerWLevel             int
-	ExplorerEPending           bool
-	ExplorerERelease           uint64
-	ExplorerETarget            geom.Vector2
-	ExplorerELevel             int
-	ExplorerRPending           bool
-	ExplorerRRelease           uint64
-	ExplorerRTarget            geom.Vector2
-	ExplorerRLevel             int
-	FrostServants              []FrostServantState
-	FrostQPending              bool
-	FrostQRelease              uint64
-	FrostQTarget               geom.Vector2
-	FrostQLevel                int
-	FrostEPending              bool
-	FrostERelease              uint64
-	FrostETarget               geom.Vector2
-	FrostELevel                int
-	FrostEProjectileID         string
-	FrostERecastTick           uint64
-	FrostRPending              bool
-	FrostRRelease              uint64
-	FrostRTargetID             string
-	FrostRLevel                int
-	FrostRSelfUntil            uint64
-	FrostRSelfLevel            int
-	FrostRSelfEffectID         string
-	FrostRSelfHealLeft         float64
-	FrostRSelfHealTicks        uint64
-	FrostROldDamageReduce      float64
-	FireBurns                  map[string]FireBurnState
-	FireManaUntil              uint64
-	FireManaNextTick           uint64
-	FireQPending               bool
-	FireQReleaseTick           uint64
-	FireQTarget                geom.Vector2
-	FireQLevel                 int
-	FireWPending               bool
-	FireWTriggerTick           uint64
-	FireWCenter                geom.Vector2
-	FireWLevel                 int
-	FireWCastPending           bool
-	FireWCastTarget            geom.Vector2
-	FireWCastLevel             int
-	FireRPending               bool
-	FireRReleaseTick           uint64
-	FireRTargetID              string
-	FireRLevel                 int
-	DoctorPassiveCooldownUntil uint64
-	DoctorCanisterEffectID     string
-	DoctorCanisterPosition     geom.Vector2
-	DoctorCanisterRadius       float64
-	DoctorCanisterExpiresAt    uint64
-	DoctorQPending             bool
-	DoctorQRelease             uint64
-	DoctorQTarget              geom.Vector2
-	DoctorQLevel               int
-	DoctorQHealthCost          float64
-	DoctorWActiveUntil         uint64
-	DoctorWNextDamageTick      uint64
-	DoctorWLevel               int
-	DoctorWGrayHealth          float64
-	DoctorWEffectID            string
-	DoctorRUntil               uint64
-	DoctorRNextHealTick        uint64
-	DoctorRLevel               int
-	NinjaSoulCooldowns         map[string]uint64
-	Shield                     int
-	MaxShield                  int
-	ShieldExpireTick           uint64
-	ShieldLayers               []ShieldLayer
-	LastRegenBreakTick         uint64
-	NextRegenTick              uint64
-	NextFountainTick           uint64
-	Bleeds                     map[string]BleedState
+	SwordIntent                 float64
+	MaxSwordIntent              float64
+	ButcherFlesh                int
+	ButcherQPending             bool
+	ButcherQRelease             uint64
+	ButcherQTarget              geom.Vector2
+	ButcherQLevel               int
+	ButcherWActive              bool
+	ButcherWNextTick            uint64
+	ButcherWLevel               int
+	ButcherWEffectID            string
+	ButcherEUntil               uint64
+	ButcherELevel               int
+	ButcherEEffectID            string
+	ButcherRTargetID            string
+	ButcherRStartPosition       geom.Vector2
+	ButcherRUntil               uint64
+	ButcherRNextTick            uint64
+	ButcherRLevel               int
+	ButcherREffectID            string
+	ButcherRPreviousStunUntil   uint64
+	ButcherRAppliedStunUntil    uint64
+	KillerVoracityMarks         map[string]KillerVoracityMark
+	KillerQPending              bool
+	KillerQReleaseTick          uint64
+	KillerQTargetID             string
+	KillerQLevel                int
+	KillerDaggers               []KillerDaggerState
+	KillerAirborneDaggers       []KillerAirborneDaggerState
+	KillerWMoveSpeedStartTick   uint64
+	KillerWMoveSpeedUntilTick   uint64
+	KillerWMoveSpeedBonus       float64
+	KillerEDamageReduceUntil    uint64
+	KillerEDamageReduction      float64
+	KillerRStartTick            uint64
+	KillerRExpireTick           uint64
+	KillerRNextTick             uint64
+	KillerRLevel                int
+	KillerRSegmentsFired        int
+	KillerREffectID             string
+	KillerRMoveSpeedMultiplier  float64
+	GunnerTargetID              string
+	GunnerWActiveUntil          uint64
+	GunnerWAttackSpeed          float64
+	GunnerWMoveSpeed            float64
+	GunnerECenter               geom.Vector2
+	GunnerEExpireTick           uint64
+	GunnerENextTick             uint64
+	GunnerELevel                int
+	GunnerEEffectID             string
+	GunnerRDir                  geom.Vector2
+	GunnerRStartTick            uint64
+	GunnerRExpireTick           uint64
+	GunnerRNextTick             uint64
+	GunnerRLevel                int
+	GunnerRWaves                int
+	GunnerRWaveCount            int
+	GunnerREffectID             string
+	RobotShieldUntil            uint64
+	RobotShieldCDUntil          uint64
+	RobotShieldMana             int
+	RobotQPending               bool
+	RobotQReleaseTick           uint64
+	RobotQTarget                geom.Vector2
+	RobotQLevel                 int
+	RobotWStartTick             uint64
+	RobotWUntil                 uint64
+	RobotWLevel                 int
+	RobotWMoveSpeed             float64
+	RobotArcMarks               map[string]RobotArcState
+	ExplorerSpellForceStacks    int
+	ExplorerSpellForceExpiresAt uint64
+	ExplorerFluxMarks           map[string]ExplorerFluxState
+	ExplorerQPending            bool
+	ExplorerQRelease            uint64
+	ExplorerQTarget             geom.Vector2
+	ExplorerQLevel              int
+	ExplorerWTarget             geom.Vector2
+	ExplorerWLevel              int
+	ExplorerEPending            bool
+	ExplorerERelease            uint64
+	ExplorerETarget             geom.Vector2
+	ExplorerELevel              int
+	ExplorerRPending            bool
+	ExplorerRRelease            uint64
+	ExplorerRTarget             geom.Vector2
+	ExplorerRLevel              int
+	FrostServants               []FrostServantState
+	FrostQPending               bool
+	FrostQRelease               uint64
+	FrostQTarget                geom.Vector2
+	FrostQLevel                 int
+	FrostEPending               bool
+	FrostERelease               uint64
+	FrostETarget                geom.Vector2
+	FrostELevel                 int
+	FrostEProjectileID          string
+	FrostERecastTick            uint64
+	FrostRPending               bool
+	FrostRRelease               uint64
+	FrostRTargetID              string
+	FrostRLevel                 int
+	FrostRSelfUntil             uint64
+	FrostRSelfLevel             int
+	FrostRSelfEffectID          string
+	FrostRSelfHealLeft          float64
+	FrostRSelfHealTicks         uint64
+	FrostROldDamageReduce       float64
+	FireBurns                   map[string]FireBurnState
+	FireManaUntil               uint64
+	FireManaNextTick            uint64
+	FireQPending                bool
+	FireQReleaseTick            uint64
+	FireQTarget                 geom.Vector2
+	FireQLevel                  int
+	FireWPending                bool
+	FireWTriggerTick            uint64
+	FireWCenter                 geom.Vector2
+	FireWLevel                  int
+	FireWCastPending            bool
+	FireWCastTarget             geom.Vector2
+	FireWCastLevel              int
+	FireRPending                bool
+	FireRReleaseTick            uint64
+	FireRTargetID               string
+	FireRLevel                  int
+	DoctorPassiveCooldownUntil  uint64
+	DoctorCanisterEffectID      string
+	DoctorCanisterPosition      geom.Vector2
+	DoctorCanisterRadius        float64
+	DoctorCanisterExpiresAt     uint64
+	DoctorQPending              bool
+	DoctorQRelease              uint64
+	DoctorQTarget               geom.Vector2
+	DoctorQLevel                int
+	DoctorQHealthCost           float64
+	DoctorWActiveUntil          uint64
+	DoctorWNextDamageTick       uint64
+	DoctorWLevel                int
+	DoctorWGrayHealth           float64
+	DoctorWEffectID             string
+	DoctorRUntil                uint64
+	DoctorRNextHealTick         uint64
+	DoctorRLevel                int
+	DoctorREffectID             string
+	MonkFlurryUntil             uint64
+	MonkFlurryAttacks           int
+	MonkFlurryHitIndex          int
+	MonkQPending                bool
+	MonkQRelease                uint64
+	MonkQTarget                 geom.Vector2
+	MonkQLevel                  int
+	MonkQMarkTargetID           string
+	MonkQMarkUntil              uint64
+	MonkQMarkLevel              int
+	MonkQMarkEffectID           string
+	MonkWRecastUntil            uint64
+	MonkWIronWillUntil          uint64
+	MonkWIronWillLevel          int
+	MonkEPending                bool
+	MonkERelease                uint64
+	MonkELevel                  int
+	MonkERecastUntil            uint64
+	MonkEHitIDs                 map[string]bool
+	MonkESlows                  map[string]MonkESlowState
+	MonkRPending                bool
+	MonkRRelease                uint64
+	MonkRTargetID               string
+	MonkRLevel                  int
+	NinjaSoulCooldowns          map[string]uint64
+	Shield                      int
+	MaxShield                   int
+	ShieldExpireTick            uint64
+	ShieldLayers                []ShieldLayer
+	LastRegenBreakTick          uint64
+	NextRegenTick               uint64
+	NextFountainTick            uint64
+	Bleeds                      map[string]BleedState
+}
+
+type KillerVoracityMark struct {
+	DamagedAt uint64
+	ExpiresAt uint64
+	TickRate  int
+}
+
+type KillerDaggerState struct {
+	EffectID  string
+	Position  geom.Vector2
+	ExpiresAt uint64
+}
+
+type KillerAirborneDaggerState struct {
+	EffectID           string
+	Position           geom.Vector2
+	Direction          geom.Vector2
+	LandsAt            uint64
+	GroundEffectKind   string
+	GroundEffectPrefix string
 }
 
 type BleedState struct {
@@ -449,6 +539,12 @@ type FrostServantState struct {
 	Position  geom.Vector2
 	ExpiresAt uint64
 	EffectID  string
+}
+
+type MonkESlowState struct {
+	StartTick uint64
+	Until     uint64
+	Slow      float64
 }
 
 type ShieldLayer struct {

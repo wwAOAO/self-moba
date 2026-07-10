@@ -1,0 +1,44 @@
+[
+  {
+    "heroId": "butcher",
+    "name": "屠夫",
+    "resource": "mp",
+    "base": {
+      "hp": 432,
+      "mp": 200,
+      "hpRegen5": 7.45,
+      "mpRegen5": 7.45,
+      "attack": 52,
+      "abilityHaste": 0,
+      "physicalDefense": 12,
+      "magicDefense": 30,
+      "moveSpeed": 325,
+      "attackRange": 175,
+      "attackSpeed": 0.613,
+      "attackWindupSeconds": 0.25,
+      "attackSpeedRatio": 0.613,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 86,
+      "mp": 50,
+      "hpRegen5": 0.55,
+      "mpRegen5": 0.7,
+      "attack": 3.3,
+      "physicalDefense": 1.25,
+      "magicDefense": 1.25,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.0098,
+      "critChance": 0
+    },
+    "radius": 22,
+    "skills": {
+      "passive": "butcher_passive",
+      "q": "butcher_q",
+      "w": "butcher_w",
+      "e": "butcher_e",
+      "r": "butcher_r"
+    }
+  }
+]

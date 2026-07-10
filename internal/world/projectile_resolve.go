@@ -1,6 +1,11 @@
 package world
 
 func (w *World) resolveProjectileTargets(id string, source *Entity, projectile *Projectile, previousPosition Vector2, tick uint64, tickRate int) {
+	if source != nil {
+		if h := heroHooksForEntity(source).ResolveProjectile; h != nil && h(w, source, projectile, previousPosition, tick, tickRate) {
+			return
+		}
+	}
 	if projectile.SkillID == robotQSkillID {
 		w.resolveRobotQTarget(id, source, projectile, previousPosition, tick, tickRate)
 		return
@@ -53,7 +58,7 @@ func (w *World) projectileCanHitTarget(id string, source *Entity, projectile *Pr
 		}
 		return canAttackTarget(source, target), false
 	}
-	if (projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == explorerESkillID || isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot") && target.ID != projectile.TargetID {
+	if (projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == explorerESkillID || projectile.SkillID == killerQSkillID || projectile.SkillID == killerRSkillID || isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot") && target.ID != projectile.TargetID {
 		return false, false
 	}
 	if projectile.HitIDs[target.ID] || !canAttackTarget(source, target) {
@@ -107,6 +112,12 @@ func (w *World) projectileDamage(source *Entity, target *Entity, projectile *Pro
 		damage = w.frostQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
 	} else if projectile.SkillID == doctorQSkillID && source != nil {
 		damage = w.doctorQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+	} else if projectile.SkillID == killerQSkillID && source != nil {
+		damage = w.killerQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+	} else if projectile.SkillID == killerRSkillID && source != nil {
+		damage = w.killerRDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+	} else if projectile.SkillID == monkQSkillID && source != nil {
+		damage = w.monkQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, false, tick)
 	} else if projectile.SkillID == frostmageESkillID && source != nil {
 		skill := w.skillConfig(projectile.SkillID)
 		raw := skillMetaListByLevel(skill, "baseDamage", projectile.Damage, []float64{70, 105, 140, 175, 210}) + float64(source.Stats.AbilityPower)*skillMetaRange(skill, "apRatio", 0.6)
@@ -193,6 +204,25 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 		w.doctorQHit(source, target, projectile, damage, tick, tickRate)
 		delete(w.projectiles, id)
 		removeProjectile = true
+	} else if projectile.SkillID == killerQSkillID {
+		w.applyMagicDamage(source, target, damage, tickRate)
+		if !w.killerQHit(source, target, projectile, tick, tickRate) {
+			delete(w.projectiles, id)
+		}
+		removeProjectile = true
+	} else if projectile.SkillID == killerRSkillID {
+		w.applyMagicDamage(source, target, damage, tickRate)
+		w.killerRHit(source, target, tick, tickRate)
+		delete(w.projectiles, id)
+		removeProjectile = true
+	} else if projectile.SkillID == monkQSkillID {
+		if h := heroHooksForEntity(source).MonkQHit; h != nil {
+			h(w, source, target, projectile, damage, tick, tickRate)
+		} else {
+			w.applyDamage(source, target, damage, tickRate)
+		}
+		delete(w.projectiles, id)
+		removeProjectile = true
 	} else if projectile.SkillID == frostmageESkillID {
 		w.applyMagicDamage(source, target, damage, tickRate)
 	} else if projectile.SkillID == mageQSkillID {
@@ -266,6 +296,24 @@ func (w *World) resolveProjectileDummyHit(id string, source *Entity, target *Ent
 		if !projectile.Returning {
 			w.fireGunnerQBounce(source, target, projectile, false, tick, tickRate)
 		}
+		delete(w.projectiles, id)
+		return true
+	}
+	if projectile.SkillID == killerQSkillID {
+		if !w.killerQHit(source, target, projectile, tick, tickRate) {
+			delete(w.projectiles, id)
+		}
+		return true
+	}
+	if projectile.SkillID == monkQSkillID {
+		if h := heroHooksForEntity(source).MonkQHit; h != nil {
+			h(w, source, target, projectile, damage, tick, tickRate)
+		}
+		delete(w.projectiles, id)
+		return true
+	}
+	if projectile.SkillID == killerRSkillID {
+		w.killerRHit(source, target, tick, tickRate)
 		delete(w.projectiles, id)
 		return true
 	}

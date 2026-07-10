@@ -84,6 +84,32 @@ func TestMonkStats(t *testing.T) {
 	}
 }
 
+func TestButcherStats(t *testing.T) {
+	heroes, err := LoadHeroes("../../configs/heroes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hero, ok := heroes.Get("butcher")
+	if !ok {
+		t.Fatal("butcher hero is missing")
+	}
+
+	if hero.Resource != "mp" {
+		t.Fatalf("resource = %q, want mp", hero.Resource)
+	}
+	if hero.Base.HP != 432 || hero.Growth.HP != 86 ||
+		hero.Base.HPRegen5 != 7.45 || hero.Growth.HPRegen5 != 0.55 ||
+		hero.Base.MP != 200 || hero.Growth.MP != 50 ||
+		hero.Base.MPRegen5 != 7.45 || hero.Growth.MPRegen5 != 0.7 ||
+		hero.Base.Attack != 52 || hero.Growth.Attack != 3.3 ||
+		hero.Base.AttackSpeed != 0.613 || hero.Growth.AttackSpeed != 0.0098 ||
+		hero.Base.PhysicalDefense != 12 || hero.Growth.PhysicalDefense != 1.25 ||
+		hero.Base.MagicDefense != 30 || hero.Growth.MagicDefense != 1.25 ||
+		hero.Base.MoveSpeed != 325 || hero.Base.AttackRange != 175 {
+		t.Fatalf("butcher stats do not match the configured base attributes: %+v", hero)
+	}
+}
+
 func TestValidateEquipmentComponentsRejectsCycles(t *testing.T) {
 	equipment, err := NewEquipmentStore([]EquipmentConfig{
 		{EquipmentID: "a", Name: "A", Price: 100, Tier: 2, Components: []string{"b"}},

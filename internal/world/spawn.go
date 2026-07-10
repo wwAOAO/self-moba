@@ -178,6 +178,10 @@ func unitTemplate(kind EntityKind) (Stats, float64, bool) {
 		return Stats{HP: 4500, MaxHP: 4500, PhysicalDefense: 70, MagicDefense: 70}, 48, true
 	case EntityKindFountain:
 		return Stats{HP: 99999, MaxHP: 99999}, 90, true
+	case EntityKindFruit:
+		return Stats{HP: 1, MaxHP: 1}, 22, true
+	case EntityKindWard:
+		return Stats{HP: 3, MaxHP: 3}, 12, true
 	default:
 		return Stats{}, 0, false
 	}

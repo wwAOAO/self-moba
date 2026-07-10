@@ -16,12 +16,25 @@ func ApplyQ(w *world.World, entity *world.Entity, _ protocol.CastInput, state wo
 		float64(entity.Stats.AbilityPower)*skillMeta(skill, "apRatio", 1.5) +
 		rage*skillList(skill, "healPerRage", state.Level, []float64{0.5, 0.95, 1.4, 1.85, 2.3})
 	entity.Stats.MP = 0
+	beforeHP := entity.Stats.HP
 	if heal := math.Round(healValue); heal > 0 {
 		entity.Stats.HP += heal
 		if entity.Stats.HP > entity.Stats.MaxHP {
 			entity.Stats.HP = entity.Stats.MaxHP
 		}
 	}
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:blade_q_heal:"),
+		Kind:         "blade_q_heal",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        entity.Position,
+		Radius:       skillMeta(skill, "healEffectRadius", 90),
+		Count:        int(math.Round(entity.Stats.HP - beforeHP)),
+		CreatedAt:    tick,
+		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "healEffectSeconds", 0.7), tickRate),
+	})
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skill.CooldownMS, tickRate)
 	entity.Skills[qID] = state
 	w.LockAttackAfterCast(entity, tick, tickRate)

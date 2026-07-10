@@ -53,6 +53,20 @@ func ApplyE(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	entity.Control.DashEnd = end
 	entity.Control.DashUntilTick = tick + travelTicks
 	entity.Control.ActionLockedUntilTick = entity.Control.DashUntilTick
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:blade_e_whirlwind:"),
+		Kind:         "blade_e_whirlwind",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        start,
+		End:          end,
+		Dir:          world.Vector2{X: dx, Y: dy},
+		Radius:       skillMeta(skill, "effectRadius", 70),
+		Speed:        distance(start, end) / float64(travelTicks),
+		CreatedAt:    tick,
+		ExpiresAt:    entity.Control.DashUntilTick,
+	})
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, int(skillList(skill, "cooldownMs", state.Level, []float64{13000, 12000, 11000, 10000, 9000})), tickRate)
 	entity.Skills[eID] = state
 	w.LockAttackAfterCast(entity, tick, tickRate)

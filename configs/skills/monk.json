@@ -1,42 +1,130 @@
 [
   {
     "skillId": "monk_passive",
-    "name": "武僧被动",
+    "name": "疾风骤雨",
     "cooldownMs": 0,
     "range": 0,
     "type": "passive",
-    "description": []
+    "description": [
+      "释放任意技能后，3秒内接下来两次普攻获得+40%攻速。",
+      "被动普攻释放时返还能量，命中或未命中都会返还；每次被动普攻减少非大招技能0.5秒冷却。"
+    ],
+    "meta": {
+      "durationSeconds": 3,
+      "attackCount": 2,
+      "attackSpeedBonus": 0.4,
+      "cooldownRefundSeconds": 0.5
+    },
+    "metaLists": {
+      "firstHitEnergy": [20, 30, 40],
+      "secondHitEnergy": [10, 15, 20],
+      "energyTierLevels": [1, 7, 13]
+    }
   },
   {
     "skillId": "monk_q",
-    "name": "武僧Q",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "active",
-    "description": []
+    "name": "天音波 / 回音击",
+    "cooldownMs": 10000,
+    "range": 1100,
+    "type": "projectile_recast",
+    "description": [
+      "一段：消耗50能量，短暂前摇后发射天音波，命中首个敌方单位造成物理伤害并标记3秒。",
+      "二段：标记期间再次施放，以1400码/秒免费突进至目标身边并造成物理伤害，附带目标已损失生命值斩杀伤害；突进期间可被击飞打断。"
+    ],
+    "meta": {
+      "energyCost": 50,
+      "projectileWidth": 70,
+      "projectileSpeed": 1400,
+      "castWindupSeconds": 0.25,
+      "markDurationSeconds": 3,
+      "bonusAdRatio": 0.95,
+      "missingHPRatio": 0.08,
+      "monsterExecuteDamageCap": 400,
+      "echoDashSpeed": 1400,
+      "echoEffectRadius": 55
+    },
+    "metaLists": {
+      "baseDamage": [65, 95, 125, 155, 185],
+      "cooldownMs": [10000, 9000, 8000, 7000, 6000]
+    }
   },
   {
     "skillId": "monk_w",
-    "name": "武僧W",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "active",
-    "description": []
+    "name": "金钟罩 / 铁布衫",
+    "cooldownMs": 8000,
+    "range": 700,
+    "type": "dash_recast",
+    "description": [
+      "一段：消耗50能量，可对自身施放，或以1400码/秒冲向友方英雄、小兵、守卫或果实，自身获得护盾2秒。对自身或友方英雄施放时冷却减半，友方英雄也会获得护盾。",
+      "二段：3秒内可再次施放，消耗30能量，获得基础护甲百分比加成和全能吸血，持续4秒。"
+    ],
+    "meta": {
+      "energyCost": 50,
+      "recastEnergyCost": 30,
+      "shieldSeconds": 2,
+      "recastSeconds": 3,
+      "ironWillSeconds": 4,
+      "apShieldRatio": 0.8,
+      "safeguardDashSpeed": 1400,
+      "safeguardEffectSeconds": 0.45,
+      "safeguardEffectRadius": 85,
+      "ironWillEffectRadius": 75
+    },
+    "metaLists": {
+      "shieldValue": [60, 100, 140, 180, 220],
+      "ironWillPercent": [0.05, 0.1, 0.15, 0.2, 0.25],
+      "cooldownMs": [8000, 8000, 8000, 8000, 8000]
+    }
   },
   {
     "skillId": "monk_e",
-    "name": "武僧E",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "active",
-    "description": []
+    "name": "天雷破 / 摧筋断骨",
+    "cooldownMs": 10000,
+    "range": 350,
+    "type": "aoe_recast",
+    "description": [
+      "一段：消耗50能量，0.25秒前摇后震击350码范围敌人，造成魔法伤害并显形4秒。",
+      "二段：3秒内可再释放，消耗30能量，对一段命中的敌人施加4秒持续衰减减速。"
+    ],
+    "meta": {
+      "energyCost": 50,
+      "recastEnergyCost": 30,
+      "radius": 350,
+      "castWindupSeconds": 0.25,
+      "revealSeconds": 4,
+      "recastSeconds": 3,
+      "slowSeconds": 4,
+      "bonusAdRatio": 1,
+      "tempestEffectSeconds": 0.5,
+      "crippleEffectSeconds": 0.65
+    },
+    "metaLists": {
+      "baseDamage": [60, 95, 130, 165, 200],
+      "slow": [0.2, 0.3, 0.4, 0.5, 0.6],
+      "cooldownMs": [10000, 10000, 10000, 10000, 10000]
+    }
   },
   {
     "skillId": "monk_r",
-    "name": "武僧R",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "active",
-    "description": []
+    "name": "猛龙摆尾",
+    "cooldownMs": 110000,
+    "range": 375,
+    "type": "target_knockback",
+    "description": [
+      "消耗无，0.25秒前摇后踢飞目标，造成物理伤害并击退1200码。",
+      "被击退目标撞到的敌人受到全额伤害和基于被踢目标额外生命值的附加伤害，并被击飞1秒。"
+    ],
+    "meta": {
+      "castWindupSeconds": 0.25,
+      "knockbackDistance": 1200,
+      "knockbackSeconds": 1,
+      "collisionAirborneSeconds": 1,
+      "bonusAdRatio": 2,
+      "collisionBonusHPRatio": 0.12
+    },
+    "metaLists": {
+      "baseDamage": [175, 400, 625],
+      "cooldownMs": [110000, 85000, 60000]
+    }
   }
 ]

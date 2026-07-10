@@ -40,7 +40,53 @@ func (w *World) ApplyAirborne(target *Entity, until uint64, tick uint64, tickRat
 	if w.consumeDoctorPassive(target, tick, tickRate) {
 		return false
 	}
+	w.interruptMonkEchoDash(target, tick)
 	target.Control.AirborneUntilTick = until
+	return true
+}
+
+func (w *World) interruptMonkEchoDash(target *Entity, tick uint64) {
+	if w == nil || target == nil || target.HeroID != "monk" {
+		return
+	}
+	for id, effect := range w.skillEffects {
+		if effect.Kind != "monk_q_echo" || effect.SourceID != target.ID || effect.ExpiresAt <= tick {
+			continue
+		}
+		delete(w.skillEffects, id)
+		if target.Control.DashUntilTick != effect.ExpiresAt {
+			continue
+		}
+		dashUntil := target.Control.DashUntilTick
+		target.Control.DashUntilTick = 0
+		target.Control.DashStartTick = 0
+		target.Control.DashStart = target.Position
+		target.Control.DashEnd = target.Position
+		if target.Control.ActionLockedUntilTick <= dashUntil {
+			target.Control.ActionLockedUntilTick = tick
+		}
+	}
+}
+
+func (w *World) ApplyTaunt(target *Entity, until uint64, tick uint64, tickRate int) bool {
+	if target == nil {
+		return false
+	}
+	if w.consumeDoctorPassive(target, tick, tickRate) {
+		return false
+	}
+	target.Control.TauntedUntilTick = until
+	return true
+}
+
+func (w *World) ApplySuppression(target *Entity, until uint64, tick uint64, tickRate int) bool {
+	if target == nil {
+		return false
+	}
+	if w.consumeDoctorPassive(target, tick, tickRate) {
+		return false
+	}
+	target.Control.SuppressedUntilTick = until
 	return true
 }
 

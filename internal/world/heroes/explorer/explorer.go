@@ -328,17 +328,10 @@ func OnSkillHit(w *world.World, source *world.Entity, target *world.Entity, tick
 	}
 	cleanupExpired(source, tick)
 	expiresAt := tick + durationTicks
-	if len(source.Passive.ExplorerSpellForce) < maxStacks {
-		source.Passive.ExplorerSpellForce = append(source.Passive.ExplorerSpellForce, expiresAt)
-	} else {
-		oldest := 0
-		for i := 1; i < len(source.Passive.ExplorerSpellForce); i++ {
-			if source.Passive.ExplorerSpellForce[i] < source.Passive.ExplorerSpellForce[oldest] {
-				oldest = i
-			}
-		}
-		source.Passive.ExplorerSpellForce[oldest] = expiresAt
+	if source.Passive.ExplorerSpellForceStacks < maxStacks {
+		source.Passive.ExplorerSpellForceStacks++
 	}
+	source.Passive.ExplorerSpellForceExpiresAt = expiresAt
 	if w != nil {
 		w.RefreshPlayerStats(source)
 	}
@@ -361,7 +354,7 @@ func ApplyStats(w *world.World, entity *world.Entity, stats *world.Stats) {
 	if entity == nil || entity.HeroID != heroID || stats == nil {
 		return
 	}
-	stacks := len(entity.Passive.ExplorerSpellForce)
+	stacks := entity.Passive.ExplorerSpellForceStacks
 	if stacks == 0 {
 		return
 	}
@@ -501,18 +494,9 @@ func ActiveBuffs(w *world.World, entity *world.Entity, tick uint64) []world.Buff
 	if entity.HeroID != heroID {
 		return buffs
 	}
-	stacks := 0
-	expiresAt := uint64(0)
-	for _, expiry := range entity.Passive.ExplorerSpellForce {
-		if tick >= expiry {
-			continue
-		}
-		stacks++
-		if expiresAt == 0 || expiry < expiresAt {
-			expiresAt = expiry
-		}
-	}
-	if stacks == 0 {
+	stacks := entity.Passive.ExplorerSpellForceStacks
+	expiresAt := entity.Passive.ExplorerSpellForceExpiresAt
+	if stacks == 0 || expiresAt == 0 || tick >= expiresAt {
 		return buffs
 	}
 	buffs = append(buffs, world.BuffState{
@@ -591,18 +575,12 @@ func clearR(entity *world.Entity) {
 }
 
 func cleanupExpired(entity *world.Entity, tick uint64) bool {
-	if entity == nil || len(entity.Passive.ExplorerSpellForce) == 0 {
+	if entity == nil || entity.Passive.ExplorerSpellForceStacks == 0 || entity.Passive.ExplorerSpellForceExpiresAt == 0 || tick < entity.Passive.ExplorerSpellForceExpiresAt {
 		return false
 	}
-	stacks := entity.Passive.ExplorerSpellForce
-	active := stacks[:0]
-	for _, expiry := range stacks {
-		if tick < expiry {
-			active = append(active, expiry)
-		}
-	}
-	entity.Passive.ExplorerSpellForce = active
-	return len(active) != len(stacks)
+	entity.Passive.ExplorerSpellForceStacks = 0
+	entity.Passive.ExplorerSpellForceExpiresAt = 0
+	return true
 }
 
 func passiveSkill(w *world.World, entity *world.Entity) config.SkillConfig {

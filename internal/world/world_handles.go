@@ -152,6 +152,16 @@ func (w *World) ApplyMagicDamage(source *Entity, target *Entity, damage int, tic
 	w.applyMagicDamage(source, target, damage, tickRate)
 }
 
+func (w *World) ApplyNonlethalMagicDamage(target *Entity, rawDamage float64, tick uint64, tickRate int) {
+	if target == nil {
+		return
+	}
+	damage := damageAfterResistance(rawDamage, effectiveResistance(target.Stats.MagicDefense, 0, 0), target.damageReductionForType("magic", tick))
+	context := sustainSingleTargetSkill
+	context.Nonlethal = true
+	w.applyResolvedDamage(nil, target, damage, "magic", context, tickRate)
+}
+
 func (w *World) ApplyTrueDamage(source *Entity, target *Entity, rawDamage float64, tickRate int) {
 	w.applyTrueDamage(source, target, rawDamage, tickRate)
 }

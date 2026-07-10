@@ -34,6 +34,16 @@ func (w *World) ninjaQDamage(attacker *Entity, target *Entity, skill config.Skil
 	return 0
 }
 
+func (w *World) monkQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, echo bool, tick uint64) int {
+	if attacker == nil {
+		return 0
+	}
+	if h := heroHooksFor(attacker.HeroID).MonkQDamage; h != nil {
+		return h(w, attacker, target, skill, skillLevel, echo, tick)
+	}
+	return 0
+}
+
 func (w *World) gunnerQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, crit bool, tick uint64) int {
 	rawDamage := skillMetaListByLevel(skill, "baseDamage", skillLevel, []float64{20, 45, 70, 95, 120})
 	rawDamage += attacker.Stats.Attack * skillMetaRange(skill, "totalAdRatio", 1)
@@ -92,6 +102,9 @@ func (entity *Entity) damageReductionForType(damageType string, tick uint64) flo
 	}
 	if entity.HeroID == warriorHeroID && entity.Warrior.CourageUntilTick > 0 {
 		reductions = append(reductions, warriorCourageDamageReductionAtTick(entity.Warrior, tick))
+	}
+	if h := heroHooksForEntity(entity).DamageReduction; h != nil {
+		reductions = append(reductions, h(entity, tick))
 	}
 	reductions = append(reductions, equipmentLowHealthDamageReduce(entity))
 	return stackDamageReduction(reductions...)

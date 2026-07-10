@@ -14,9 +14,12 @@ const (
 	basicArrowProjectileKind      = "basic_arrow"
 	siegeCannonballProjectileKind = "siege_cannonball"
 	siegeMinionSplashRadius       = 300
+	siegeMinionSplashCooldown     = 10
 	siegeMinionSplashSeconds      = 5
-	siegeMinionSplashMaxHPRatio   = 0.01
+	siegeMinionSplashAttackRatio  = 0.5
+	siegeMinionSplashHPRatio      = 0.005
 	siegeMinionSplashTickSeconds  = 1
+	siegeMinionTargetHPRatio      = 0.02
 )
 
 func (w *World) applyAttack(attacker *Entity, target *Entity, tick uint64, tickRate int) {
@@ -87,6 +90,7 @@ func (w *World) releasePendingAttack(attacker *Entity, tick uint64, tickRate int
 }
 
 func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64, tickRate int) {
+	w.onHeroBasicAttackRelease(attacker, target, tick, tickRate)
 	if isRangedBasicAttacker(attacker) {
 		w.fireBasicAttackProjectile(attacker, target, tick, tickRate)
 		return
@@ -233,7 +237,7 @@ func (w *World) applySiegeMinionSplash(attacker *Entity, target *Entity, tick ui
 	if attacker == nil || target == nil || attacker.Kind != EntityKindSiegeMinion || tick < attacker.Combat.NextSiegeSplashTick {
 		return
 	}
-	attacker.Combat.NextSiegeSplashTick = tick + secondsToTicks(siegeMinionSplashSeconds, tickRate)
+	attacker.Combat.NextSiegeSplashTick = tick + secondsToTicks(siegeMinionSplashCooldown, tickRate)
 	for _, hit := range w.targetsInRadius(attacker, target.Position, siegeMinionSplashRadius) {
 		if hit.ID == target.ID {
 			continue
@@ -244,8 +248,8 @@ func (w *World) applySiegeMinionSplash(attacker *Entity, target *Entity, tick ui
 			TargetID:       hit.ID,
 			NextTick:       tick + secondsToTicks(siegeMinionSplashTickSeconds, tickRate),
 			ExpiresAt:      tick + secondsToTicks(siegeMinionSplashSeconds, tickRate),
-			FlatDamage:     attacker.Stats.Attack,
-			BaseMaxHPRatio: siegeMinionSplashMaxHPRatio,
+			FlatDamage:     attacker.Stats.Attack * siegeMinionSplashAttackRatio,
+			BaseMaxHPRatio: siegeMinionSplashHPRatio,
 		}
 	}
 }
@@ -261,7 +265,7 @@ func (w *World) tickSiegeMinionSplashBurns(tick uint64, tickRate int) {
 		if tick < burn.NextTick {
 			continue
 		}
-		damage := magicDamageAfterResistance(source, target, burn.FlatDamage+target.Stats.MaxHP*burn.BaseMaxHPRatio, tick)
+		damage := magicDamageAfterResistance(source, target, burn.FlatDamage+target.Stats.HP*burn.BaseMaxHPRatio, tick)
 		target.Combat.LastHitTick = tick
 		wasAlive := target.Stats.HP > 0
 		w.applyResolvedDamage(source, target, damage, "magic", sustainAOESkill, tickRate)
@@ -312,7 +316,7 @@ func minionBasicAttackRawDamage(attacker *Entity, target *Entity, rawPhysical fl
 		if attacker.Kind == EntityKindRangedMinion {
 			ratio = 0.04
 		} else if attacker.Kind == EntityKindSiegeMinion {
-			ratio = 0.05
+			ratio = siegeMinionTargetHPRatio
 		}
 		rawPhysical += target.Stats.HP * ratio
 	}

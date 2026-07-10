@@ -30,6 +30,7 @@ type SkillEffect struct {
 	Team         model.Team
 	SourceID     string
 	SourceHeroID string
+	TargetID     string
 	Start        geom.Vector2
 	End          geom.Vector2
 	Dir          geom.Vector2

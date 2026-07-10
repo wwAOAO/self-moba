@@ -53,6 +53,7 @@ func TestBladeQConsumesRageAndHeals(t *testing.T) {
 	if got, want := player.Skills["blade_q"].CooldownUntilTick, uint64(250); got != want {
 		t.Fatalf("cooldown tick = %v, want %v", got, want)
 	}
+	assertSkillEffect(t, w.SkillEffects(), "blade_q_heal")
 }
 
 func TestBladeWReducesEnemyHeroAttackAndSlows(t *testing.T) {
@@ -177,6 +178,7 @@ func TestBladeEDashesDamagesPathAndGainsRage(t *testing.T) {
 	if got, want := blade.Skills["blade_e"].CooldownUntilTick, uint64(250); got != want {
 		t.Fatalf("cooldown tick = %v, want %v", got, want)
 	}
+	assertSkillEffect(t, w.SkillEffects(), "blade_e_whirlwind")
 }
 
 func TestBladeBasicAttackCritRefundsECooldown(t *testing.T) {
@@ -233,6 +235,7 @@ func TestBladeRGrantsRageAndPreventsDeath(t *testing.T) {
 	if got, want := blade.Skills["blade_r"].CooldownUntilTick, uint64(2010); got != want {
 		t.Fatalf("cooldown tick = %v, want %v", got, want)
 	}
+	assertSkillEffect(t, w.SkillEffects(), "blade_r_rage")
 
 	blade.Combat.LastHitTick = 20
 	w.applyDamage(nil, blade, 1000, 20)

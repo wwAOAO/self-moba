@@ -44,7 +44,26 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 	}
 	damage = w.applyEquipmentDamageMultiplier(source, target, damage)
 	damage = w.applyEquipmentLowHealthMagicTrueDamageBonus(source, target, damage, damageType, context)
+	if h := heroHooksForEntity(target).DamageBlock; h != nil {
+		damage -= int(math.Round(h(w, target)))
+		if damage <= 0 {
+			target.Combat.LastDamage = 0
+			target.Combat.LastDamageType = damageType
+			target.Combat.DamageEvents = nil
+			target.Combat.DamageEventsTick = target.Combat.LastHitTick
+			return
+		}
+	}
 	damage = w.applyShield(source, target, damage, tickRate)
+	if context.Nonlethal {
+		maxDamage := int(math.Floor(target.Stats.HP - 1))
+		if maxDamage < 0 {
+			maxDamage = 0
+		}
+		if damage > maxDamage {
+			damage = maxDamage
+		}
+	}
 	target.Combat.LastDamage = damage
 	target.Combat.LastDamageType = damageType
 	if target.Combat.DamageEventsTick != target.Combat.LastHitTick {

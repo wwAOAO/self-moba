@@ -39,8 +39,11 @@ func (w *World) ApplyInput(playerID string, input protocol.PlayerInput, tick uin
 	moving := input.Move != nil || (input.MoveX != 0 || input.MoveY != 0)
 	if moving {
 		w.cancelGunnerRChannel(entity)
+		if h := heroHooksForEntity(entity).OnMoveInput; h != nil {
+			h(w, entity, tick)
+		}
 	}
-	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick || tick < entity.Control.StunnedUntilTick {
+	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick || tick < entity.Control.StunnedUntilTick || tick < entity.Control.SuppressedUntilTick || tick < entity.Control.TauntedUntilTick {
 		return
 	}
 	rooted := tick < entity.Control.RootedUntilTick
@@ -104,7 +107,7 @@ func canCastDuringSwordEDash(entity *Entity, tick uint64, tickRate int) bool {
 }
 
 func (w *World) tickPlayer(entity *Entity, tick uint64, tickRate int) {
-	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick || tick < entity.Control.StunnedUntilTick {
+	if tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick || tick < entity.Control.StunnedUntilTick || tick < entity.Control.SuppressedUntilTick || tick < entity.Control.TauntedUntilTick {
 		return
 	}
 	if tick < entity.Control.DashUntilTick {
@@ -155,6 +158,7 @@ func EffectiveMoveSpeedAtTick(entity *Entity, tick uint64) float64 {
 	if entity.HeroID == warriorHeroID && tick > 0 && tick < entity.Warrior.DecisiveStrikeSpeedUntilTick {
 		moveSpeed *= 1 + entity.Warrior.DecisiveStrikeMoveSpeedBonus
 	}
+	moveSpeed *= heroMoveSpeedMultiplier(entity, tick)
 	if entity.Control.MoveSpeedBonusUntil > 0 && (tick == 0 || tick < entity.Control.MoveSpeedBonusUntil) {
 		moveSpeed += entity.Control.MoveSpeedBonusFlat
 	}
@@ -176,6 +180,7 @@ func EffectiveAttackSpeedAtTick(entity *Entity, tick uint64) float64 {
 	if entity.HeroID == gunnerHeroID && entity.Passive.GunnerWActiveUntil > 0 && (tick == 0 || tick < entity.Passive.GunnerWActiveUntil) {
 		attackSpeed *= 1 + entity.Passive.GunnerWAttackSpeed
 	}
+	attackSpeed *= heroAttackSpeedMultiplier(entity, tick)
 	if entity.Control.AttackSpeedSlowUntil > 0 && (tick == 0 || tick < entity.Control.AttackSpeedSlowUntil) {
 		attackSpeed *= 1 - clamp(entity.Control.AttackSpeedSlow, 0, 1)
 	}

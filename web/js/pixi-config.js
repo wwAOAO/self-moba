@@ -219,6 +219,7 @@ function heroRole(hero) {
       tank: "tank",
       robot: "tank",
       doctor: "tank",
+      butcher: "tank",
       monk: "fighter",
     }[hero.heroId] || "fighter"
   );

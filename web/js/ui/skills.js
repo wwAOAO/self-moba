@@ -338,11 +338,15 @@ function controlBuffRow(name, untilTick, tick) {
 
 function formatBuffRow(buff, tick) {
   const name = escapeHtml(formatBuffName(buff));
+  const tip = buff.tooltip
+    ? `<span class="stat-tip" data-tip="${escapeHtml(buff.tooltip)}">?</span>`
+    : "";
   const remain =
     buff.expiresAtTick > 0
       ? `${Math.max(0, (buff.expiresAtTick - tick) / state.tickRate).toFixed(1)}s`
       : "∞";
-  return `<div class="buff-row"><strong>${name}</strong><span>${remain}</span></div>`;
+  const status = buff.stacks > 0 ? `${buff.stacks}层 · ${remain}` : remain;
+  return `<div class="buff-row"><strong>${name}${tip}</strong><span>${status}</span></div>`;
 }
 
 function formatBuffName(buff) {

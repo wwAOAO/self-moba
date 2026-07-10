@@ -297,7 +297,8 @@ function castSkill(slot) {
   if (
     isSkillOnCooldown(self, skillId) &&
     !isNinjaShadowRecast(self, skillId) &&
-    !isFrostMageERecast(self, skillId)
+    !isFrostMageERecast(self, skillId) &&
+    !isMonkRecast(self, skillId)
   ) {
     return;
   }
@@ -317,6 +318,8 @@ function castSkill(slot) {
     skillId === "ninja_w" ||
     skillId === "ninja_r" ||
     skillId === "blade_e" ||
+    skillId === "killer_q" ||
+    skillId === "killer_e" ||
     skillId === "sword_cut" ||
     skillId === "sword_sweeping_blade" ||
     skillId === "trap" ||
@@ -331,11 +334,17 @@ function castSkill(slot) {
   if (skillId === "frostmage_r") {
     showFrostMageRPreview(self);
   }
-  addCastWindup(self, skillId, target, selected);
+  const cursorOnlyTargeting = skillId === "killer_q" || skillId === "killer_e";
+  if (skillId !== "killer_q") {
+    addCastWindup(self, skillId, target, cursorOnlyTargeting ? null : selected);
+  }
   sendPacket("input", {
     cast: {
       skillId,
-      targetId: skillId === "slam" || skillId === "trap" ? "" : selected?.id || "",
+      targetId:
+        skillId === "slam" || skillId === "trap" || cursorOnlyTargeting
+          ? ""
+          : selected?.id || "",
       targetX: target.x,
       targetY: target.y,
     },
@@ -370,6 +379,23 @@ function isFrostMageERecast(player, skillId) {
       (effect.expiresAt || 0) > tick &&
       (effect.createdAt || 0) + recastTicks <= tick,
   );
+}
+
+function isMonkRecast(player, skillId) {
+  if (player?.heroId !== "monk") {
+    return false;
+  }
+  const tick = Number(els.tick.textContent || 0);
+  if (skillId === "monk_q") {
+    return (player.passive?.monkQMarkUntil || 0) > tick;
+  }
+  if (skillId === "monk_w") {
+    return (player.passive?.monkWRecastUntil || 0) > tick;
+  }
+  if (skillId === "monk_e") {
+    return (player.passive?.monkERecastUntil || 0) > tick;
+  }
+  return false;
 }
 
 function canCastDuringSwordEDash(player) {

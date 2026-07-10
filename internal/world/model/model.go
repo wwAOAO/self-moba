@@ -21,6 +21,8 @@ const (
 	EntityKindBarracks     EntityKind = "barracks"
 	EntityKindFountain     EntityKind = "fountain"
 	EntityKindDummy        EntityKind = "dummy"
+	EntityKindFruit        EntityKind = "fruit"
+	EntityKindWard         EntityKind = "ward"
 )
 
 type Team string
@@ -49,7 +51,7 @@ func IsMonsterKind(kind EntityKind, team Team) bool {
 		return false
 	}
 	switch kind {
-	case EntityKindPlayer, EntityKindEnemyHero, EntityKindTower, EntityKindBarracks, EntityKindCrystal, EntityKindDummy:
+	case EntityKindPlayer, EntityKindEnemyHero, EntityKindTower, EntityKindBarracks, EntityKindCrystal, EntityKindDummy, EntityKindFruit, EntityKindWard:
 		return false
 	default:
 		return true

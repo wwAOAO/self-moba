@@ -147,6 +147,8 @@ func buildBuffSnapshots(buffs []world.BuffState) []protocol.BuffSnapshot {
 		snapshots = append(snapshots, protocol.BuffSnapshot{
 			ID:              buff.ID,
 			Name:            buff.Name,
+			Stacks:          buff.Stacks,
+			Tooltip:         buff.Tooltip,
 			ExpiresAtTick:   buff.ExpiresAtTick,
 			ExplosionAtTick: buff.ExplosionAtTick,
 			Negative:        buff.Negative,
@@ -248,6 +250,9 @@ func buildPassiveSnapshot(state world.PassiveState) protocol.PassiveSnapshot {
 		NinjaSoulCooldowns: ninjaCooldowns,
 		Shield:             state.Shield,
 		MaxShield:          state.MaxShield,
+		MonkQMarkUntil:     state.MonkQMarkUntil,
+		MonkWRecastUntil:   state.MonkWRecastUntil,
+		MonkERecastUntil:   state.MonkERecastUntil,
 	}
 }
 

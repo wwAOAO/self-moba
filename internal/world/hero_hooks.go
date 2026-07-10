@@ -9,17 +9,21 @@ import (
 type HeroCastHandler func(w *World, entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int)
 type HeroTickHandler func(w *World, entity *Entity, tick uint64, tickRate int)
 type HeroHitHandler func(w *World, source *Entity, target *Entity, tick uint64, tickRate int)
+type HeroBasicAttackReleaseHandler func(w *World, source *Entity, target *Entity, tick uint64, tickRate int)
 type HeroKillHandler func(w *World, killer *Entity, target *Entity)
 type HeroSkillUpgradeHandler func(w *World, entity *Entity, skillID string)
 type HeroSpecialRecastHandler func(w *World, entity *Entity, cast protocol.CastInput, state SkillState, skill config.SkillConfig, tick uint64, tickRate int) bool
 type HeroDamageHandler func(w *World, source *Entity, target *Entity, basicAttack bool, pet bool, skipBleed bool, tick uint64, tickRate int)
 type HeroActiveBuffsHandler func(w *World, entity *Entity, tick uint64) []BuffState
+type HeroProjectileResolver func(w *World, source *Entity, projectile *Projectile, previousPosition Vector2, tick uint64, tickRate int) bool
+type HeroMoveInputHandler func(w *World, entity *Entity, tick uint64)
 
 type HeroHooks struct {
 	Cast                           map[string]HeroCastHandler
 	Tick                           HeroTickHandler
 	TickEntity                     HeroTickHandler
 	OnBasicHit                     HeroHitHandler
+	OnBasicAttackRelease           HeroBasicAttackReleaseHandler
 	OnDamage                       HeroDamageHandler
 	OnDamaged                      HeroDamageHandler
 	OnSkillHit                     HeroHitHandler
@@ -28,6 +32,12 @@ type HeroHooks struct {
 	SpecialRecast                  HeroSpecialRecastHandler
 	ActiveBuffs                    HeroActiveBuffsHandler
 	ApplyStats                     func(w *World, entity *Entity, stats *Stats)
+	MoveSpeedMultiplier            func(entity *Entity, tick uint64) float64
+	AttackSpeedMultiplier          func(entity *Entity, tick uint64) float64
+	DamageReduction                func(entity *Entity, tick uint64) float64
+	DamageBlock                    func(w *World, entity *Entity) float64
+	ResolveProjectile              HeroProjectileResolver
+	OnMoveInput                    HeroMoveInputHandler
 	BasicAttackMultiplier          func(w *World, attacker *Entity, target *Entity, tick uint64) float64
 	BasicAttackBonusPhysicalDamage func(w *World, attacker *Entity, target *Entity, tick uint64, tickRate int) int
 	BasicAttackBonusMagicDamage    func(w *World, attacker *Entity, target *Entity, tick uint64, tickRate int) int
@@ -79,6 +89,12 @@ type HeroHooks struct {
 	DoctorQHit        func(w *World, source *Entity, target *Entity, projectile *Projectile, damage int, tick uint64, tickRate int)
 	NinjaQDamage      func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, hitNumber int, tick uint64) int
 	NinjaSkillHit     func(w *World, source *Entity, target *Entity, skillID string, groupID string, fromShadow bool, tick uint64, tickRate int)
+	KillerQDamage     func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int
+	KillerQHit        func(w *World, source *Entity, target *Entity, projectile *Projectile, tick uint64, tickRate int) bool
+	KillerRDamage     func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int
+	KillerRHit        func(w *World, source *Entity, target *Entity, tick uint64, tickRate int)
+	MonkQDamage       func(w *World, attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, echo bool, tick uint64) int
+	MonkQHit          func(w *World, source *Entity, target *Entity, projectile *Projectile, damage int, tick uint64, tickRate int)
 
 	StopE          func(w *World, entity *Entity, state SkillState, skill config.SkillConfig, tick uint64, tickRate int)
 	QBonusDamage   func(w *World, attacker *Entity, tick uint64) float64
@@ -125,6 +141,12 @@ func (w *World) tickHeroEntity(entity *Entity, tick uint64, tickRate int) {
 
 func (w *World) onHeroBasicHit(source *Entity, target *Entity, tick uint64, tickRate int) {
 	if h := heroHooksForEntity(source).OnBasicHit; h != nil {
+		h(w, source, target, tick, tickRate)
+	}
+}
+
+func (w *World) onHeroBasicAttackRelease(source *Entity, target *Entity, tick uint64, tickRate int) {
+	if h := heroHooksForEntity(source).OnBasicAttackRelease; h != nil {
 		h(w, source, target, tick, tickRate)
 	}
 }
@@ -192,10 +214,55 @@ func (w *World) onHeroSkillUpgrade(entity *Entity, skillID string) {
 	}
 }
 
+func (w *World) killerQDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	if h := heroHooksFor("killer").KillerQDamage; h != nil {
+		return h(w, attacker, target, skill, skillLevel, tick)
+	}
+	return 0
+}
+
+func (w *World) killerQHit(source *Entity, target *Entity, projectile *Projectile, tick uint64, tickRate int) bool {
+	if h := heroHooksFor("killer").KillerQHit; h != nil {
+		return h(w, source, target, projectile, tick, tickRate)
+	}
+	return false
+}
+
+func (w *World) killerRDamage(attacker *Entity, target *Entity, skill config.SkillConfig, skillLevel int, tick uint64) int {
+	if h := heroHooksFor("killer").KillerRDamage; h != nil {
+		return h(w, attacker, target, skill, skillLevel, tick)
+	}
+	return 0
+}
+
+func (w *World) killerRHit(source *Entity, target *Entity, tick uint64, tickRate int) {
+	if h := heroHooksFor("killer").KillerRHit; h != nil {
+		h(w, source, target, tick, tickRate)
+	}
+}
+
 func (w *World) applyHeroStats(entity *Entity, stats *Stats) {
 	if h := heroHooksForEntity(entity).ApplyStats; h != nil {
 		h(w, entity, stats)
 	}
+}
+
+func heroMoveSpeedMultiplier(entity *Entity, tick uint64) float64 {
+	if h := heroHooksForEntity(entity).MoveSpeedMultiplier; h != nil {
+		if multiplier := h(entity, tick); multiplier > 0 {
+			return multiplier
+		}
+	}
+	return 1
+}
+
+func heroAttackSpeedMultiplier(entity *Entity, tick uint64) float64 {
+	if h := heroHooksForEntity(entity).AttackSpeedMultiplier; h != nil {
+		if multiplier := h(entity, tick); multiplier > 0 {
+			return multiplier
+		}
+	}
+	return 1
 }
 
 func archerRDamage(entity *Entity, target *Entity, skill config.SkillConfig, level int, tick uint64, multiplier float64) int {

@@ -231,6 +231,19 @@ func TestSiegeMinionBasicAttackIsPhysicalOnly(t *testing.T) {
 	}
 }
 
+func TestSiegeMinionBasicAttackAddsTwoPercentCurrentHPAgainstMinions(t *testing.T) {
+	w := testWorld(t)
+	attacker := &Entity{ID: "minion:siege", Kind: EntityKindSiegeMinion, Team: TeamBlue, Stats: Stats{HP: 1, MaxHP: 1, Attack: 100}}
+	target := &Entity{ID: "minion:target", Kind: EntityKindRangedMinion, Team: TeamRed, Stats: Stats{HP: 1000, MaxHP: 1000}}
+	target.Combat.LastHitTick = 10
+
+	w.applyMinionBasicAttackDamage(attacker, target, 10, 20)
+
+	if got := 1000 - target.Stats.HP; got != 120 {
+		t.Fatalf("siege minion damage = %v, want 120", got)
+	}
+}
+
 func TestSiegeMinionBasicAttackSplashBurnsEverySecondForFiveSeconds(t *testing.T) {
 	w := testWorld(t)
 	attacker := &Entity{ID: "minion:siege", Kind: EntityKindSiegeMinion, Team: TeamBlue, Stats: Stats{HP: 1, MaxHP: 1, Attack: 100}}
@@ -258,11 +271,14 @@ func TestSiegeMinionBasicAttackSplashBurnsEverySecondForFiveSeconds(t *testing.T
 	for tick := uint64(11); tick <= 10+secondsToTicks(5, 20); tick++ {
 		w.tickSiegeMinionSplashBurns(tick, 20)
 	}
-	if got := 1000 - near.Stats.HP; got != 550 {
-		t.Fatalf("near splash burn damage = %v, want 550", got)
+	if got := 1000 - near.Stats.HP; got != 272 {
+		t.Fatalf("near splash burn damage = %v, want 272", got)
 	}
 	if got := near.Combat.LastDamageType; got != "magic" {
 		t.Fatalf("near splash damage type = %q, want magic", got)
+	}
+	if got := attacker.Combat.NextSiegeSplashTick; got != 10+secondsToTicks(10, 20) {
+		t.Fatalf("next siege splash tick = %v, want 10s cooldown", got)
 	}
 }
 

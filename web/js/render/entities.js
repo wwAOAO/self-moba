@@ -175,10 +175,18 @@ function redrawPlayerBody(sprite, player) {
     drawExplorerHatIcon(sprite.body, radius);
   } else if (shape === "blade") {
     drawBladeIcon(sprite.body, radius);
+  } else if (shape === "killer") {
+    drawKillerIcon(sprite.body, radius);
   } else if (shape === "berserker") {
     drawBerserkerIcon(sprite.body, radius);
   } else if (shape === "robot") {
     drawRobotIcon(sprite.body, radius);
+  } else if (shape === "doctor") {
+    drawDoctorIcon(sprite.body, radius);
+  } else if (shape === "monk") {
+    drawMonkIcon(sprite.body, radius);
+  } else if (shape === "butcher") {
+    drawButcherIcon(sprite.body, radius);
   } else {
     sprite.body.circle(0, 0, radius);
   }
@@ -187,13 +195,13 @@ function redrawPlayerBody(sprite, player) {
     sprite.body.stroke({
       color: player.dead
         ? 0x111827
-        : shape === "gunner" || shape === "berserker" || shape === "blade" || shape === "robot" || shape === "explorer"
+        : shape === "gunner" || shape === "berserker" || shape === "blade" || shape === "killer" || shape === "robot" || shape === "explorer" || shape === "doctor" || shape === "monk" || shape === "butcher"
           ? 0x000000
           : isSelf
             ? 0xffffff
             : 0x172026,
       width:
-        shape === "gunner" || shape === "berserker" || shape === "blade" || shape === "robot" || shape === "explorer"
+        shape === "gunner" || shape === "berserker" || shape === "blade" || shape === "killer" || shape === "robot" || shape === "explorer" || shape === "doctor" || shape === "monk" || shape === "butcher"
           ? 1
           : isSelf
             ? 2
@@ -360,6 +368,8 @@ function unitVisual(kind) {
     barracks: { label: "Barracks", color: 0x7c2d12, shape: "rect" },
     fountain: { label: "Fountain", color: 0x38bdf8, shape: "fountain" },
     dummy: { label: "Dummy", color: 0x8a5a32, shape: "rect" },
+    fruit: { label: "Fruit", color: 0x22c55e, shape: "diamond" },
+    ward: { label: "Ward", color: 0x06b6d4, shape: "diamond" },
   };
   return visuals[kind] || { label: kind, color: 0x334155, shape: "circle" };
 }

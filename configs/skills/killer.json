@@ -1,42 +1,129 @@
 [
   {
     "skillId": "killer_passive",
-    "name": "Killer Passive",
+    "name": "贪婪",
     "cooldownMs": 0,
     "range": 0,
     "type": "passive",
-    "description": []
+    "description": [
+      "无冷却、无消耗。",
+      "敌方英雄在过去3秒内受到杀手伤害后阵亡：Q/W/E全部重置冷却，死亡莲华的冷却减少15秒。",
+      "拾取地面匕首时，以自身为中心斩击340码范围内所有敌人，造成68～240（随英雄等级）+0.65额外AD的魔法伤害。",
+      "AP加成：1～5级+0.7AP，6～10级+0.8AP，11～15级+0.9AP，16～18级+1.0AP。地面匕首持续4秒。"
+    ],
+    "meta": {
+      "damageWindowSeconds": 3,
+      "ultimateCooldownRefundSeconds": 15,
+      "daggerDurationSeconds": 4,
+      "daggerPickupRadius": 55,
+      "daggerSlashRadius": 340,
+      "daggerBonusAdRatio": 0.65,
+      "daggerSlashEffectSeconds": 0.25
+    },
+    "metaLists": {
+      "daggerBaseDamage": [68, 240],
+      "daggerBaseDamageLevels": [1, 18],
+      "daggerAPRatio": [0.7, 0.8, 0.9, 1.0],
+      "daggerAPRatioLevels": [1, 6, 11, 16]
+    }
   },
   {
     "skillId": "killer_q",
-    "name": "Killer Q",
-    "cooldownMs": 0,
-    "range": 0,
+    "name": "弹射之刃",
+    "cooldownMs": 11000,
+    "range": 625,
     "type": "active",
-    "description": []
+    "description": [
+      "选择施法范围内距离鼠标指针最近的敌人投掷匕首，造成75/105/135/165/195（+0.3AP）魔法伤害，并弹射至附近最多2个敌人。",
+      "匕首从最后一个实际命中的目标处飞向其身后350码并在抵达后落地。Q弹道可被风墙阻挡。"
+    ],
+    "meta": {
+      "projectileSpeed": 1600,
+      "castWindupSeconds": 0.25,
+      "projectileRadius": 24,
+      "bounceRange": 450,
+      "maxBounces": 2,
+      "daggerLandingDistance": 350,
+      "daggerLandingSpeed": 1000,
+      "daggerRadius": 32,
+      "apRatio": 0.3
+    },
+    "metaLists": {
+      "cooldownMs": [11000, 10000, 9000, 8000, 7000],
+      "baseDamage": [75, 105, 135, 165, 195]
+    }
   },
   {
     "skillId": "killer_w",
-    "name": "Killer W",
-    "cooldownMs": 0,
+    "name": "伺机待发",
+    "cooldownMs": 15000,
     "range": 0,
     "type": "active",
-    "description": []
+    "description": [
+      "瞬间向空中投掷一把匕首，落点固定在施法时自身脚下。空中匕首不可拾取，1秒后落地并变为可拾取状态。",
+      "立刻获得50/60/70/80/90%移动速度，持续1.25秒并线性衰减。"
+    ],
+    "meta": {
+      "landingDelaySeconds": 1,
+      "moveSpeedDurationSeconds": 1.25,
+      "daggerRadius": 32
+    },
+    "metaLists": {
+      "cooldownMs": [15000, 14000, 13000, 12000, 11000],
+      "moveSpeedBonus": [0.5, 0.6, 0.7, 0.8, 0.9]
+    }
   },
   {
     "skillId": "killer_e",
-    "name": "Killer E",
-    "cooldownMs": 0,
-    "range": 0,
+    "name": "瞬步",
+    "cooldownMs": 14000,
+    "range": 700,
     "type": "active",
-    "description": []
+    "description": [
+      "从施法范围内的合法对象中选择距离鼠标指针最近者，瞬间闪烁至友军、敌军、小兵、野怪、果实或自身地面匕首，不能以防御塔、眼或其他建筑为目标。",
+      "对敌方单位造成30/45/60/75/90（+0.4AP +0.65额外AD）魔法伤害。",
+      "瞬步拾取匕首时自动触发被动斩击，并使瞬步本次冷却减少78%。瞬步结束后3秒内承受伤害降低20%。"
+    ],
+    "meta": {
+      "apRatio": 0.4,
+      "bonusAdRatio": 0.65,
+      "daggerCooldownRemainingRatio": 0.22,
+      "damageReduction": 0.2,
+      "damageReductionSeconds": 3,
+      "blinkEffectSeconds": 0.2
+    },
+    "metaLists": {
+      "cooldownMs": [14000, 12500, 11000, 9500, 8000],
+      "baseDamage": [30, 45, 60, 75, 90]
+    }
   },
   {
     "skillId": "killer_r",
-    "name": "Killer R",
-    "cooldownMs": 0,
-    "range": 0,
+    "name": "死亡莲华",
+    "cooldownMs": 90000,
+    "range": 550,
     "type": "active",
-    "description": []
+    "description": [
+      "立刻开始持续2.5秒的引导，每0.25秒向550码内最近最多3名敌方英雄投掷匕首，共造成10段魔法伤害。匕首为弹道且不会生成地面匕首。",
+      "每段造成40/65/90（+0.165/0.264/0.363AP +0.22/0.352/0.484额外AD）魔法伤害。命中施加40%重伤，持续3秒。",
+      "眩晕、击飞、禁锢、嘲讽和压制会打断引导。引导期间可缓慢移动并释放瞬步，但移动速度降低80%，且无法普攻或释放Q/W。"
+    ],
+    "meta": {
+      "channelSeconds": 2.5,
+      "damageSegments": 10,
+      "maxTargets": 3,
+      "projectileSpeed": 2000,
+      "projectileRadius": 18,
+      "projectileLifetimeSeconds": 1,
+      "moveSpeedMultiplier": 0.2,
+      "grievousWounds": 0.4,
+      "grievousWoundsSeconds": 3
+    },
+    "metaLists": {
+      "cooldownMs": [90000, 60000, 45000],
+      "baseDamage": [40, 65, 90],
+      "apRatio": [0.165, 0.264, 0.363],
+      "bonusAdRatio": [0.22, 0.352, 0.484]
+    }
   }
 ]

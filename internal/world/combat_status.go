@@ -98,6 +98,10 @@ func (w *World) applyGrievousWounds(target *Entity, value float64, until uint64)
 	}
 }
 
+func (w *World) ApplyGrievousWounds(target *Entity, value float64, until uint64) {
+	w.applyGrievousWounds(target, value, until)
+}
+
 func (w *World) tickGrievousWounds(entity *Entity, tick uint64) {
 	if entity == nil || entity.Control.GrievousWoundsUntil == 0 || tick < entity.Control.GrievousWoundsUntil {
 		return
