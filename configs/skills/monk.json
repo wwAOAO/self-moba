@@ -1,0 +1,42 @@
+[
+  {
+    "skillId": "monk_passive",
+    "name": "武僧被动",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive",
+    "description": []
+  },
+  {
+    "skillId": "monk_q",
+    "name": "武僧Q",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "active",
+    "description": []
+  },
+  {
+    "skillId": "monk_w",
+    "name": "武僧W",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "active",
+    "description": []
+  },
+  {
+    "skillId": "monk_e",
+    "name": "武僧E",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "active",
+    "description": []
+  },
+  {
+    "skillId": "monk_r",
+    "name": "武僧R",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "active",
+    "description": []
+  }
+]

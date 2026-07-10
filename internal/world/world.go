@@ -24,6 +24,8 @@ const (
 	berserkerHeroID    = "berserker"
 	ninjaHeroID        = "ninja"
 	respawnSeconds     = 20
+	doctorQSkillID     = "doctor_q"
+	doctorWSkillID     = "doctor_w"
 	berserkerQSkillID  = "berserker_q"
 	berserkerWSkillID  = "berserker_w"
 	berserkerESkillID  = "berserker_e"
@@ -211,6 +213,7 @@ func (w *World) tickRespawn(entity *Entity, tick uint64) {
 	}
 	entity.Intent = IntentState{}
 	entity.Control = ControlState{}
+	w.removeDoctorCanister(entity)
 	entity.Sword = swordStateForHero(entity.HeroID)
 	entity.Warrior = WarriorState{}
 	entity.Archer = ArcherState{}

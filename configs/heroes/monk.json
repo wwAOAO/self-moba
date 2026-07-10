@@ -1,0 +1,44 @@
+[
+  {
+    "heroId": "monk",
+    "name": "武僧",
+    "resource": "energy",
+    "base": {
+      "hp": 428,
+      "mp": 200,
+      "hpRegen5": 6.25,
+      "mpRegen5": 50,
+      "attack": 55.8,
+      "abilityHaste": 0,
+      "physicalDefense": 16,
+      "magicDefense": 30,
+      "moveSpeed": 350,
+      "attackRange": 125,
+      "attackSpeed": 0.651,
+      "attackWindupSeconds": 0.25,
+      "attackSpeedRatio": 0.625,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 85,
+      "mp": 0,
+      "hpRegen5": 0.7,
+      "mpRegen5": 0,
+      "attack": 3.2,
+      "physicalDefense": 3.7,
+      "magicDefense": 1.25,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.03,
+      "critChance": 0
+    },
+    "radius": 16,
+    "skills": {
+      "passive": "monk_passive",
+      "q": "monk_q",
+      "w": "monk_w",
+      "e": "monk_e",
+      "r": "monk_r"
+    }
+  }
+]

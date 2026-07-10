@@ -1,172 +1,131 @@
 [
-  {
-    "skillId": "sword_cut",
-    "name": "Sword Cut",
-    "cooldownMs": 6000,
-    "range": 475,
-    "type": "damage",
-    "meta": {
-      "whirlwindRange": 900,
-      "eqRadius": 375,
-      "eqWindowSeconds": 0.35,
-      "adRatio": 1,
-      "stackDurationSeconds": 6,
-      "knockupSeconds": 1,
-      "minCooldownSeconds": 1.33,
-      "lineWidth": 55,
-      "whirlwindRadius": 80,
-      "whirlwindSpeed": 1400,
-      "castWindupSeconds": 0.328,
-      "minCastWindupSeconds": 0.09
+    {
+        "skillId": "sword_cut",
+        "name": "Sword Cut",
+        "cooldownMs": 6000,
+        "range": 475,
+        "type": "damage",
+        "description": [
+            "Q:斩钢闪",
+            "效果：向前方猛刺，对敌人造成物理伤害",
+            "旋风烈斩：命中敌人会获得一层“旋风烈斩”效果。积攒两层后，下一次斩钢闪会变为一道击飞敌人的旋风",
+            "特殊机制：该技能被视为普通攻击，可以暴击并触发攻击特效。其冷却和施法时间受攻击速度影响",
+            "环形出剑：在踏前斩（E技能）突进过程中使用斩钢闪，会变为360度的环形剑击"
+        ],
+        "meta": {
+            "whirlwindRange": 900,
+            "eqRadius": 375,
+            "eqWindowSeconds": 0.35,
+            "adRatio": 1,
+            "stackDurationSeconds": 6,
+            "knockupSeconds": 1,
+            "minCooldownSeconds": 1.33,
+            "lineWidth": 55,
+            "whirlwindRadius": 80,
+            "whirlwindSpeed": 1400,
+            "castWindupSeconds": 0.328,
+            "minCastWindupSeconds": 0.09
+        },
+        "metaLists": {
+            "baseDamage": [20, 45, 70, 95, 120],
+            "cooldownMs": [4000, 4000, 4000, 4000, 4000]
+        }
     },
-    "metaLists": {
-      "baseDamage": [
-        20,
-        45,
-        70,
-        95,
-        120
-      ],
-      "cooldownMs": [
-        4000,
-        4000,
-        4000,
-        4000,
-        4000
-      ]
-    }
-  },
-  {
-    "skillId": "sword_wind_wall",
-    "name": "Wind Wall",
-    "cooldownMs": 26000,
-    "range": 180,
-    "type": "wall",
-    "meta": {
-      "durationSeconds": 4,
-      "placeDistance": 180
+    {
+        "skillId": "sword_wind_wall",
+        "name": "Wind Wall",
+        "cooldownMs": 26000,
+        "range": 180,
+        "type": "wall",
+        "description": [
+            "W:风之障壁",
+            "效果：形成一个持续4秒的气流之墙。",
+            "作用：可以阻挡所有敌方的飞行道具（如普通攻击、技能弹道等）"
+        ],
+        "meta": {
+            "durationSeconds": 4,
+            "placeDistance": 180
+        },
+        "metaLists": {
+            "width": [300, 350, 400, 450, 500],
+            "cooldownMs": [26000, 24000, 22000, 20000, 18000]
+        }
     },
-    "metaLists": {
-      "width": [
-        300,
-        350,
-        400,
-        450,
-        500
-      ],
-      "cooldownMs": [
-        26000,
-        24000,
-        22000,
-        20000,
-        18000
-      ]
-    }
-  },
-  {
-    "skillId": "sword_sweeping_blade",
-    "name": "Sweeping Blade",
-    "cooldownMs": 500,
-    "range": 475,
-    "type": "dash",
-    "meta": {
-      "bonusAdRatio": 0.2,
-      "apRatio": 0.6,
-      "stackDamageBonus": 0.25,
-      "maxStacks": 4,
-      "dashDurationSeconds": 0.35,
-      "dashThroughDistance": 34,
-      "targetPickPadding": 48
+    {
+        "skillId": "sword_sweeping_blade",
+        "name": "Sweeping Blade",
+        "cooldownMs": 500,
+        "range": 475,
+        "type": "dash",
+        "description": [
+            "E:踏前斩",
+            "效果：向目标敌人突进，造成魔法伤害",
+            "机制：每次施法都会提升下一次突进的基础伤害。在10/9/8/7/6秒内无法对同一目标重复使用"
+        ],
+        "meta": {
+            "bonusAdRatio": 0.2,
+            "apRatio": 0.6,
+            "stackDamageBonus": 0.25,
+            "maxStacks": 4,
+            "dashDurationSeconds": 0.35,
+            "dashThroughDistance": 34,
+            "targetPickPadding": 48
+        },
+        "metaLists": {
+            "baseDamage": [60, 70, 80, 90, 100],
+            "cooldownMs": [500, 400, 300, 200, 100],
+            "targetCooldownMs": [10000, 9000, 8000, 7000, 6000]
+        }
     },
-    "metaLists": {
-      "baseDamage": [
-        60,
-        70,
-        80,
-        90,
-        100
-      ],
-      "cooldownMs": [
-        500,
-        400,
-        300,
-        200,
-        100
-      ],
-      "targetCooldownMs": [
-        10000,
-        9000,
-        8000,
-        7000,
-        6000
-      ]
-    }
-  },
-  {
-    "skillId": "sword_storm",
-    "name": "Last Breath",
-    "cooldownMs": 80000,
-    "range": 1200,
-    "type": "damage",
-    "meta": {
-      "bonusAdRatio": 1.5,
-      "airborneExtendSeconds": 1,
-      "lastBreathDurationSeconds": 15,
-      "selfActionLockSeconds": 1,
-      "qStacksAfterCast": 0,
-      "qStackDurationSeconds": 6,
-      "hitRadius": 450,
-      "targetPickPadding": 80
+    {
+        "skillId": "sword_storm",
+        "name": "Last Breath",
+        "cooldownMs": 80000,
+        "range": 1200,
+        "type": "damage",
+        "description": [
+            "R:狂风绝息斩",
+            "效果：瞬移到被击飞的敌人身边，造成大量物理伤害，并延长其滞空时间",
+            "增益：技能结束后，剑客会获得50%的护甲穿透效果，持续15秒"
+        ],
+        "meta": {
+            "bonusAdRatio": 1.5,
+            "airborneExtendSeconds": 1,
+            "lastBreathDurationSeconds": 15,
+            "selfActionLockSeconds": 1,
+            "qStacksAfterCast": 0,
+            "qStackDurationSeconds": 6,
+            "hitRadius": 450,
+            "targetPickPadding": 80
+        },
+        "metaLists": {
+            "baseDamage": [200, 300, 400],
+            "cooldownMs": [80000, 55000, 30000]
+        }
     },
-    "metaLists": {
-      "baseDamage": [
-        200,
-        300,
-        400
-      ],
-      "cooldownMs": [
-        80000,
-        55000,
-        30000
-      ]
+    {
+        "skillId": "sword_edge",
+        "name": "Sword Edge",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": [
+            "被动",
+            "百折不屈 (护盾)：剑客在移动时会积攒“剑意”，移动越快积攒越快。剑意槽充满后，受到英雄或野怪伤害时会触发一个护盾，护盾值随等级提升。",
+            "向死而生 (暴击)：剑客的暴击几率提升200%。溢出100%的暴击几率会按一定比例转化为攻击力。此外，剑客的暴击伤害会降低。"
+        ],
+        "meta": {
+            "intentMax": 100,
+            "shieldDurationSeconds": 1,
+            "critChanceMultiplier": 2,
+            "critOverflowAttackPerPercent": 0.5,
+            "critFinalDamageMultiplier": 0.9
+        },
+        "metaLists": {
+            "intentMoveUnitsPerPercent": [59, 52.5, 46],
+            "intentMoveUnitLevels": [1, 7, 13],
+            "shieldValue": [125, 160, 275, 600],
+            "shieldValueLevels": [1, 6, 12, 18]
+        }
     }
-  },
-  {
-    "skillId": "sword_edge",
-    "name": "Sword Edge",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "passive",
-    "meta": {
-      "intentMax": 100,
-      "shieldDurationSeconds": 1,
-      "critChanceMultiplier": 2,
-      "critOverflowAttackPerPercent": 0.5,
-      "critFinalDamageMultiplier": 0.9
-    },
-    "metaLists": {
-      "intentMoveUnitsPerPercent": [
-        59,
-        52.5,
-        46
-      ],
-      "intentMoveUnitLevels": [
-        1,
-        7,
-        13
-      ],
-      "shieldValue": [
-        125,
-        160,
-        275,
-        600
-      ],
-      "shieldValueLevels": [
-        1,
-        6,
-        12,
-        18
-      ]
-    }
-  }
 ]

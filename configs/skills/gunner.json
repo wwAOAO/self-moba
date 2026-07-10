@@ -1,172 +1,107 @@
 [
-  {
-    "skillId": "gunner_passive",
-    "name": "Gunner Passive",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "passive"
-  },
-  {
-    "skillId": "gunner_q",
-    "name": "Double Up",
-    "cooldownMs": 7000,
-    "range": 650,
-    "type": "target_bounce",
-    "meta": {
-      "totalAdRatio": 1,
-      "apRatio": 0.35,
-      "projectileRadius": 16,
-      "projectileSpeed": 1800,
-      "bounceRange": 500,
-      "bounceAngleDegrees": 60,
-      "targetPickPadding": 90
+    {
+        "skillId": "gunner_passive",
+        "name": "Gunner Passive",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": [
+            "被动：厄运的眷顾",
+            "在对一个新目标进行第一次普通攻击时，厄运小姐会造成 50 - 100% 的额外物理伤害（伤害值随英雄等级提升）。对小兵、野怪和防御塔的伤害效果减半"
+        ]
     },
-    "metaLists": {
-      "manaCost": [
-        40,
-        40,
-        40,
-        40,
-        40
-      ],
-      "cooldownMs": [
-        7000,
-        6000,
-        5000,
-        4000,
-        3000
-      ],
-      "baseDamage": [
-        20,
-        45,
-        70,
-        95,
-        120
-      ]
-    }
-  },
-  {
-    "skillId": "gunner_w",
-    "name": "Strut",
-    "cooldownMs": 12000,
-    "range": 0,
-    "type": "self_buff",
-    "meta": {
-      "activeDurationSeconds": 4
+    {
+        "skillId": "gunner_q",
+        "name": "Double Up",
+        "cooldownMs": 7000,
+        "range": 650,
+        "type": "target_bounce",
+        "description": [
+            "Q：一箭双雕",
+            "向敌方目标发射一次弹跳射击，对第一个目标造成物理伤害，并对第二个目标造成同样伤害。这两段攻击都可附带攻击特效与暴击"
+        ],
+        "meta": {
+            "totalAdRatio": 1,
+            "apRatio": 0.35,
+            "projectileRadius": 16,
+            "projectileSpeed": 1800,
+            "bounceRange": 500,
+            "bounceAngleDegrees": 60,
+            "targetPickPadding": 90
+        },
+        "metaLists": {
+            "manaCost": [40, 40, 40, 40, 40],
+            "cooldownMs": [7000, 6000, 5000, 4000, 3000],
+            "baseDamage": [20, 45, 70, 95, 120]
+        }
     },
-    "metaLists": {
-      "manaCost": [
-        45,
-        45,
-        45,
-        45,
-        45
-      ],
-      "cooldownMs": [
-        12000,
-        12000,
-        12000,
-        12000,
-        12000
-      ],
-      "moveSpeed": [
-        30,
-        35,
-        40,
-        45,
-        50
-      ],
-      "enhancedMoveSpeed": [
-        60,
-        70,
-        80,
-        90,
-        100
-      ],
-      "attackSpeedBonus": [
-        0.4,
-        0.55,
-        0.7,
-        0.85,
-        1
-      ]
-    }
-  },
-  {
-    "skillId": "gunner_e",
-    "name": "Make It Rain",
-    "cooldownMs": 18000,
-    "range": 1000,
-    "type": "area_dot",
-    "meta": {
-      "radius": 300,
-      "durationSeconds": 2,
-      "tickSeconds": 0.25,
-      "slow": 0.4,
-      "slowAPRatio": 0.0006,
-      "apRatio": 0.6
+    {
+        "skillId": "gunner_w",
+        "name": "Strut",
+        "cooldownMs": 12000,
+        "range": 0,
+        "type": "self_buff",
+        "description": ["W：大步流星", "被动：若一段时间未受直接伤害，获得移速加成。", "主动：获得攻击速度加成"],
+        "meta": {
+            "activeDurationSeconds": 4
+        },
+        "metaLists": {
+            "manaCost": [45, 45, 45, 45, 45],
+            "cooldownMs": [12000, 12000, 12000, 12000, 12000],
+            "moveSpeed": [30, 35, 40, 45, 50],
+            "enhancedMoveSpeed": [60, 70, 80, 90, 100],
+            "attackSpeedBonus": [0.4, 0.55, 0.7, 0.85, 1]
+        }
     },
-    "metaLists": {
-      "manaCost": [
-        80,
-        80,
-        80,
-        80,
-        80
-      ],
-      "cooldownMs": [
-        18000,
-        17000,
-        16000,
-        15000,
-        14000
-      ],
-      "damagePerSecond": [
-        35,
-        50,
-        65,
-        80,
-        95
-      ]
-    }
-  },
-  {
-    "skillId": "gunner_r",
-    "name": "Bullet Time",
-    "cooldownMs": 120000,
-    "range": 1400,
-    "type": "channel_cone",
-    "meta": {
-      "durationSeconds": 3,
-      "firstWaveSeconds": 0.066,
-      "lastWaveSeconds": 2.904,
-      "coneAngleDegrees": 45,
-      "projectileRadius": 18,
-      "projectileSpeed": 2800,
-      "adRatio": 0.6,
-      "apRatio": 0.25
+    {
+        "skillId": "gunner_e",
+        "name": "Make It Rain",
+        "cooldownMs": 18000,
+        "range": 1000,
+        "type": "area_dot",
+        "description": [
+            "E：枪林弹雨",
+            "朝空中发射子弹，在目标区域降下弹雨，持续2秒，对范围内敌人造成魔法伤害，并减速 40/45/50/55/60%"
+        ],
+        "meta": {
+            "radius": 300,
+            "durationSeconds": 2,
+            "tickSeconds": 0.25,
+            "slow": 0.4,
+            "slowAPRatio": 0.0006,
+            "apRatio": 0.6
+        },
+        "metaLists": {
+            "manaCost": [80, 80, 80, 80, 80],
+            "cooldownMs": [18000, 17000, 16000, 15000, 14000],
+            "damagePerSecond": [35, 50, 65, 80, 95]
+        }
     },
-    "metaLists": {
-      "manaCost": [
-        100,
-        100,
-        100
-      ],
-      "cooldownMs": [
-        120000,
-        110000,
-        100000
-      ],
-      "baseDamage": [
-        20,
-        30,
-        40
-      ],
-      "waves": [
-        14,
-        16,
-        18
-      ]
+    {
+        "skillId": "gunner_r",
+        "name": "Bullet Time",
+        "cooldownMs": 120000,
+        "range": 1400,
+        "type": "channel_cone",
+        "description": [
+            "R：弹幕时间",
+            "向前方锥形地带持续扫射3秒，每波弹幕造成物理伤害。总波数为 14/16/18。技能可以暴击。"
+        ],
+        "meta": {
+            "durationSeconds": 3,
+            "firstWaveSeconds": 0.066,
+            "lastWaveSeconds": 2.904,
+            "coneAngleDegrees": 45,
+            "projectileRadius": 18,
+            "projectileSpeed": 2800,
+            "adRatio": 0.6,
+            "apRatio": 0.25
+        },
+        "metaLists": {
+            "manaCost": [100, 100, 100],
+            "cooldownMs": [120000, 110000, 100000],
+            "baseDamage": [20, 30, 40],
+            "waves": [14, 16, 18]
+        }
     }
-  }
 ]

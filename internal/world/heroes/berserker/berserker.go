@@ -214,7 +214,7 @@ func releaseE(w *world.World, entity *world.Entity, skill config.SkillConfig, ti
 			X: entity.Position.X + dir.X*(entity.Radius+target.Radius+1),
 			Y: entity.Position.Y + dir.Y*(entity.Radius+target.Radius+1),
 		})
-		target.Control.AirborneUntilTick = tick + world.ControlTicksAfterTenacity(target, secondsToTicks(skillMeta(skill, "knockupSeconds", 0.25), tickRate), tick)
+		w.ApplyAirborne(target, tick+world.ControlTicksAfterTenacity(target, secondsToTicks(skillMeta(skill, "knockupSeconds", 0.25), tickRate), tick), tick, tickRate)
 		w.ApplyMoveSpeedSlow(target, skillMeta(skill, "slow", 0.4), until)
 	}
 }

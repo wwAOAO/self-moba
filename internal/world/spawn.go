@@ -36,10 +36,13 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 	if hero.HeroID == bladeHeroID {
 		stats.MP = 0
 	}
-	w.applySwordCritOverflowStats(&Entity{HeroID: hero.HeroID}, &stats)
+	spawnEntity := &Entity{HeroID: hero.HeroID, Skills: skills}
+	w.applySwordCritOverflowStats(spawnEntity, &stats)
+	w.applyHeroStats(spawnEntity, &stats)
 	nextLevelExp := w.nextLevelExp(level)
 	startingSkillPoints := 1
 	if entity := w.entities[entityID]; entity != nil {
+		w.removeDoctorCanister(entity)
 		entity.Team = team
 		entity.HeroID = hero.HeroID
 		entity.Level = level

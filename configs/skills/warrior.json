@@ -1,179 +1,120 @@
 [
-  {
-    "skillId": "slash",
-    "name": "Decisive Strike",
-    "cooldownMs": 8000,
-    "range": 300,
-    "type": "empower",
-    "meta": {
-      "moveSpeedBonus": 0.3,
-      "empowerDurationSeconds": 4.5,
-      "silenceSeconds": 1.5,
-      "totalAdRatio": 1.4
+    {
+        "skillId": "slash",
+        "name": "Decisive Strike",
+        "cooldownMs": 8000,
+        "range": 300,
+        "type": "empower",
+        "description": [
+            "Q:致命打击",
+            "效果：移除自身所有减速效果，并获得 35% 移动速度加成，持续 1/1.65/2.3/2.95/3.6秒 (随技能等级提升)。强化下一次普通攻击，造成物理伤害。被此强化攻击命中的敌人将被沉默1.5秒"
+        ],
+        "meta": {
+            "moveSpeedBonus": 0.3,
+            "empowerDurationSeconds": 4.5,
+            "silenceSeconds": 1.5,
+            "totalAdRatio": 1.4
+        },
+        "metaLists": {
+            "bonusDamage": [30, 60, 90, 120, 150],
+            "moveSpeedDurationSeconds": [1.5, 2, 2.5, 3, 3.5]
+        }
     },
-    "metaLists": {
-      "bonusDamage": [
-        30,
-        60,
-        90,
-        120,
-        150
-      ],
-      "moveSpeedDurationSeconds": [
-        1.5,
-        2,
-        2.5,
-        3,
-        3.5
-      ]
-    }
-  },
-  {
-    "skillId": "dash",
-    "name": "Courage",
-    "cooldownMs": 24000,
-    "range": 0,
-    "type": "defense",
-    "meta": {
-      "durationSeconds": 4,
-      "frontDurationSeconds": 0.75,
-      "frontDamageReduce": 0.6,
-      "frontTenacity": 0.6,
-      "backDamageReduce": 0.3,
-      "bonusHealthRatio": 0.2,
-      "passiveMinionResistGain": 0.2,
-      "passiveHeroResistGain": 1,
-      "passiveMaxResistGain": 40
+    {
+        "skillId": "dash",
+        "name": "Courage",
+        "cooldownMs": 24000,
+        "range": 0,
+        "type": "defense",
+        "description": [
+            "W:勇气",
+            "被动效果：每击杀一个单位，永久提升 0.2 点护甲和魔法抗性，最多可叠加30层。叠满后，额外获得 10% 的护甲和魔法抗性。",
+            "主动效果：圣骑士加固自身，获得一个持续 2/2.75/3.5/4.25/5秒 的护盾，并减少 30% 所受伤害"
+        ],
+        "meta": {
+            "durationSeconds": 4,
+            "frontDurationSeconds": 0.75,
+            "frontDamageReduce": 0.6,
+            "frontTenacity": 0.6,
+            "backDamageReduce": 0.3,
+            "bonusHealthRatio": 0.2,
+            "passiveMinionResistGain": 0.2,
+            "passiveHeroResistGain": 1,
+            "passiveMaxResistGain": 40
+        },
+        "metaLists": {
+            "shieldValue": [70, 95, 120, 145, 170],
+            "cooldownMs": [24000, 22000, 20000, 18000, 16000]
+        }
     },
-    "metaLists": {
-      "shieldValue": [
-        70,
-        95,
-        120,
-        145,
-        170
-      ],
-      "cooldownMs": [
-        24000,
-        22000,
-        20000,
-        18000,
-        16000
-      ]
-    }
-  },
-  {
-    "skillId": "judgment",
-    "name": "Judgment",
-    "cooldownMs": 9000,
-    "range": 220,
-    "type": "spin",
-    "meta": {
-      "durationSeconds": 3,
-      "baseSpins": 7,
-      "attackSpeedBonusPerExtraSpin": 0.25,
-      "nearestDamageBonus": 0.25,
-      "armorShredHitCount": 6,
-      "armorShredPercent": 0.25,
-      "armorShredSeconds": 6
+    {
+        "skillId": "judgment",
+        "name": "Judgment",
+        "cooldownMs": 9000,
+        "range": 220,
+        "type": "spin",
+        "description": [
+            "E:审判",
+            "效果：圣骑士快速旋转大剑，在3秒内对周围敌人造成多次物理伤害。旋转次数在 1级时为8次，之后每升4级增加1次，最多11次。伤害：每次旋转造成物理伤害。若技能范围内只有一个敌人，伤害会提升33%。破甲：被4次旋转命中的敌方英雄，其护甲会降低25%，持续6秒。",
+            "暴击：该技能可以暴击。暴击几率和暴击伤害会影响技能的总伤害。",
+            "小兵伤害：对非史诗级野怪和小兵的伤害会降低25%"
+        ],
+        "meta": {
+            "durationSeconds": 3,
+            "baseSpins": 7,
+            "attackSpeedBonusPerExtraSpin": 0.25,
+            "nearestDamageBonus": 0.25,
+            "armorShredHitCount": 6,
+            "armorShredPercent": 0.25,
+            "armorShredSeconds": 6
+        },
+        "metaLists": {
+            "baseDamage": [4, 7, 10, 13, 16],
+            "adRatio": [0.4, 0.43, 0.46, 0.49, 0.52],
+            "critBaseDamage": [5.2, 9.1, 13, 16.9, 20.8],
+            "critAdRatio": [0.52, 0.559, 0.598, 0.637, 0.676],
+            "cooldownMs": [9000, 8250, 7500, 6750, 6000]
+        }
     },
-    "metaLists": {
-      "baseDamage": [
-        4,
-        7,
-        10,
-        13,
-        16
-      ],
-      "adRatio": [
-        0.4,
-        0.43,
-        0.46,
-        0.49,
-        0.52
-      ],
-      "critBaseDamage": [
-        5.2,
-        9.1,
-        13,
-        16.9,
-        20.8
-      ],
-      "critAdRatio": [
-        0.52,
-        0.559,
-        0.598,
-        0.637,
-        0.676
-      ],
-      "cooldownMs": [
-        9000,
-        8250,
-        7500,
-        6750,
-        6000
-      ]
-    }
-  },
-  {
-    "skillId": "justice",
-    "name": "Justice",
-    "cooldownMs": 120000,
-    "range": 400,
-    "type": "execute",
-    "meta": {
-      "targetPickPadding": 80,
-      "castWindupSeconds": 0.435
+    {
+        "skillId": "justice",
+        "name": "Justice",
+        "cooldownMs": 120000,
+        "range": 400,
+        "type": "execute",
+        "description": [
+            "R:正义",
+            "效果：召唤圣剑，对一名敌方英雄造成 150/250/350 点基础真实伤害。此外，还会额外造成目标已损失生命值的 25%/30%/35% 的真实伤害。"
+        ],
+        "meta": {
+            "targetPickPadding": 80,
+            "castWindupSeconds": 0.435
+        },
+        "metaLists": {
+            "baseDamage": [150, 250, 350],
+            "missingHPRatio": [0.25, 0.3, 0.35],
+            "cooldownMs": [120000, 100000, 80000]
+        }
     },
-    "metaLists": {
-      "baseDamage": [
-        150,
-        250,
-        350
-      ],
-      "missingHPRatio": [
-        0.25,
-        0.3,
-        0.35
-      ],
-      "cooldownMs": [
-        120000,
-        100000,
-        80000
-      ]
+    {
+        "skillId": "warrior_toughness",
+        "name": "Toughness",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": [
+            "被动:坚韧",
+            "效果：如果圣骑士在8秒内未受到来自敌方英雄、塔或史诗级野怪的伤害，他每5秒就会回复 2% - 10% (基于1-18级) 的最大生命值。小兵和非史诗级野怪的伤害不会打断此效果"
+        ],
+        "meta": {
+            "outOfCombatSeconds": 8,
+            "regenIntervalSeconds": 5
+        },
+        "metaLists": {
+            "regenMaxHPRatio": [
+                0.015, 0.0198, 0.0246, 0.0294, 0.0342, 0.039, 0.0438, 0.0486, 0.0534, 0.0582, 0.063, 0.0678, 0.0726,
+                0.0774, 0.0822, 0.087, 0.0918, 0.101
+            ]
+        }
     }
-  },
-  {
-    "skillId": "warrior_toughness",
-    "name": "Toughness",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "passive",
-    "meta": {
-      "outOfCombatSeconds": 8,
-      "regenIntervalSeconds": 5
-    },
-    "metaLists": {
-      "regenMaxHPRatio": [
-        0.015,
-        0.0198,
-        0.0246,
-        0.0294,
-        0.0342,
-        0.039,
-        0.0438,
-        0.0486,
-        0.0534,
-        0.0582,
-        0.063,
-        0.0678,
-        0.0726,
-        0.0774,
-        0.0822,
-        0.087,
-        0.0918,
-        0.101
-      ]
-    }
-  }
 ]

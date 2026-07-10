@@ -1,179 +1,128 @@
 [
-  {
-    "skillId": "frostmage_passive",
-    "name": "Frost Mage Passive",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "passive",
-    "meta": {
-      "spawnRadius": 1350,
-      "seekRadius": 700,
-      "slowRadius": 450,
-      "slow": 0.3,
-      "slowSeconds": 0.25,
-      "durationSeconds": 4,
-      "moveSpeed": 325,
-      "explosionRadius": 450,
-      "apRatio": 0.5
+    {
+        "skillId": "frostmage_passive",
+        "name": "Frost Mage Passive",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": [
+            "被动：冰脉驱役",
+            "效果：当一名敌方英雄在冰霜法师附近阵亡时，该英雄会变成一个冰封奴仆。",
+            "冰封奴仆：会寻找附近的敌人，使其移动速度减少，并在4秒后爆炸，对附近敌人造成魔法伤害"
+        ],
+        "meta": {
+            "spawnRadius": 1350,
+            "seekRadius": 700,
+            "slowRadius": 450,
+            "slow": 0.3,
+            "slowSeconds": 0.25,
+            "durationSeconds": 4,
+            "moveSpeed": 325,
+            "explosionRadius": 450,
+            "apRatio": 0.5
+        },
+        "metaLists": {
+            "explosionDamage": [120, 580],
+            "explosionDamageLevels": [1, 18]
+        }
     },
-    "metaLists": {
-      "explosionDamage": [120, 580],
-      "explosionDamageLevels": [1, 18]
-    }
-  },
-  {
-    "skillId": "frostmage_q",
-    "name": "寒冰碎片",
-    "cooldownMs": 8000,
-    "range": 825,
-    "type": "projectile_line",
-    "meta": {
-      "apRatio": 0.8,
-      "castWindupSeconds": 0.25,
-      "projectileSpeed": 2200,
-      "projectileRadius": 75,
-      "shardProjectileRadius": 90,
-      "shatterDistance": 700,
-      "shatterSearchRadius": 100,
-      "effectRange": 950,
-      "slowSeconds": 1.5
+    {
+        "skillId": "frostmage_q",
+        "name": "寒冰碎片",
+        "cooldownMs": 8000,
+        "range": 825,
+        "type": "projectile_line",
+        "description": [
+            "Q：寒冰碎片",
+            "效果：扔出一杆冰矛，对命中的第一个敌人造成魔法伤害并减速 16/19/22/25/28%，持续1.5秒。冰矛在命中后会碎裂，对目标身后的其他敌人造成等量伤害。"
+        ],
+        "meta": {
+            "apRatio": 0.8,
+            "castWindupSeconds": 0.25,
+            "projectileSpeed": 2200,
+            "projectileRadius": 75,
+            "shardProjectileRadius": 90,
+            "shatterDistance": 700,
+            "shatterSearchRadius": 100,
+            "effectRange": 950,
+            "slowSeconds": 1.5
+        },
+        "metaLists": {
+            "manaCost": [60, 63, 66, 69, 72],
+            "cooldownMs": [8000, 7000, 6000, 5000, 4000],
+            "baseDamage": [70, 100, 130, 160, 190],
+            "slow": [0.16, 0.19, 0.22, 0.25, 0.28]
+        }
     },
-    "metaLists": {
-      "manaCost": [
-        60,
-        63,
-        66,
-        69,
-        72
-      ],
-      "cooldownMs": [
-        8000,
-        7000,
-        6000,
-        5000,
-        4000
-      ],
-      "baseDamage": [
-        70,
-        100,
-        130,
-        160,
-        190
-      ],
-      "slow": [
-        0.16,
-        0.19,
-        0.22,
-        0.25,
-        0.28
-      ]
-    }
-  },
-  {
-    "skillId": "frostmage_w",
-    "name": "Ring of Frost",
-    "cooldownMs": 14000,
-    "range": 450,
-    "type": "aoe_root",
-    "meta": {
-      "apRatio": 0.7,
-      "radius": 450
+    {
+        "skillId": "frostmage_w",
+        "name": "Ring of Frost",
+        "cooldownMs": 14000,
+        "range": 450,
+        "type": "aoe_root",
+        "description": ["W：冰霜之环 (Ring of Frost)", "效果：对周围的敌人造成魔法伤害并施加束缚（定身） 效果"],
+        "meta": {
+            "apRatio": 0.7,
+            "radius": 450
+        },
+        "metaLists": {
+            "cooldownMs": [14000, 13000, 12000, 11000, 10000],
+            "baseDamage": [70, 105, 140, 175, 210],
+            "rootSeconds": [1.1, 1.2, 1.3, 1.4, 1.5]
+        }
     },
-    "metaLists": {
-      "cooldownMs": [
-        14000,
-        13000,
-        12000,
-        11000,
-        10000
-      ],
-      "baseDamage": [
-        70,
-        105,
-        140,
-        175,
-        210
-      ],
-      "rootSeconds": [
-        1.1,
-        1.2,
-        1.3,
-        1.4,
-        1.5
-      ]
-    }
-  },
-  {
-    "skillId": "frostmage_e",
-    "name": "Glacial Path",
-    "cooldownMs": 24000,
-    "range": 1050,
-    "type": "projectile_line",
-    "meta": {
-      "manaCost": 40,
-      "apRatio": 0.6,
-      "castWindupSeconds": 0.1,
-      "recastDelaySeconds": 0.5,
-      "durationSeconds": 1.25,
-      "projectileRadius": 90,
-      "projectileMinSpeed": 400,
-      "projectileMaxSpeed": 1600
+    {
+        "skillId": "frostmage_e",
+        "name": "Glacial Path",
+        "cooldownMs": 24000,
+        "range": 1050,
+        "type": "projectile_line",
+        "description": [
+            "E：冰川之径",
+            "效果：放出一团寒冰魔爪，对命中的所有敌人造成魔法伤害。再次激活此技能，冰霜法师就会传送到魔爪的当前位置"
+        ],
+        "meta": {
+            "manaCost": 40,
+            "apRatio": 0.6,
+            "castWindupSeconds": 0.1,
+            "recastDelaySeconds": 0.5,
+            "durationSeconds": 1.25,
+            "projectileRadius": 90,
+            "projectileMinSpeed": 400,
+            "projectileMaxSpeed": 1600
+        },
+        "metaLists": {
+            "cooldownMs": [24000, 21000, 18000, 15000, 12000],
+            "baseDamage": [70, 105, 140, 175, 210]
+        }
     },
-    "metaLists": {
-      "cooldownMs": [
-        24000,
-        21000,
-        18000,
-        15000,
-        12000
-      ],
-      "baseDamage": [
-        70,
-        105,
-        140,
-        175,
-        210
-      ]
+    {
+        "skillId": "frostmage_r",
+        "name": "Frozen Tomb",
+        "cooldownMs": 120000,
+        "range": 550,
+        "type": "target_or_self",
+        "description": [
+            "R：冰封陵墓",
+            "对敌方施放：将目标英雄封入冰块，使其晕眩，并对目标及其附近的敌人造成魔法伤害。",
+            "对自身施放：冰霜法师用暗黑之冰将自己裹住，变得免疫伤害且无法被选定，持续2.5秒。在此期间，她会治疗自身 100/150/200 (+0.3AP) 生命值，每损失1%生命值，这个治疗效果还会提升1%"
+        ],
+        "meta": {
+            "manaCost": 100,
+            "apRatio": 0.75,
+            "selfHealAPRatio": 0.25,
+            "enemyCastWindupSeconds": 0.375,
+            "selfDurationSeconds": 2.5,
+            "stunSeconds": 1.5,
+            "selfRadius": 550,
+            "slowSeconds": 1.5,
+            "targetPickPadding": 80
+        },
+        "metaLists": {
+            "cooldownMs": [120000, 100000, 80000],
+            "baseDamage": [150, 250, 350],
+            "selfHeal": [90, 140, 190],
+            "slow": [0.3, 0.45, 0.75]
+        }
     }
-  },
-  {
-    "skillId": "frostmage_r",
-    "name": "Frozen Tomb",
-    "cooldownMs": 120000,
-    "range": 550,
-    "type": "target_or_self",
-    "meta": {
-      "manaCost": 100,
-      "apRatio": 0.75,
-      "selfHealAPRatio": 0.25,
-      "enemyCastWindupSeconds": 0.375,
-      "selfDurationSeconds": 2.5,
-      "stunSeconds": 1.5,
-      "selfRadius": 550,
-      "slowSeconds": 1.5,
-      "targetPickPadding": 80
-    },
-    "metaLists": {
-      "cooldownMs": [
-        120000,
-        100000,
-        80000
-      ],
-      "baseDamage": [
-        150,
-        250,
-        350
-      ],
-      "selfHeal": [
-        90,
-        140,
-        190
-      ],
-      "slow": [
-        0.3,
-        0.45,
-        0.75
-      ]
-    }
-  }
 ]

@@ -73,10 +73,10 @@ func (w *World) pullRobotQTarget(source *Entity, target *Entity, projectile *Pro
 		CreatedAt:    tick,
 		ExpiresAt:    tick + ticks,
 	})
-	w.startForcedDisplacement(target, end, ticks, tick)
+	w.startForcedDisplacement(target, end, ticks, tick, tickRate)
 }
 
-func (w *World) startForcedDisplacement(target *Entity, end Vector2, ticks uint64, tick uint64) {
+func (w *World) startForcedDisplacement(target *Entity, end Vector2, ticks uint64, tick uint64, tickRate int) {
 	if target == nil {
 		return
 	}
@@ -85,6 +85,6 @@ func (w *World) startForcedDisplacement(target *Entity, end Vector2, ticks uint6
 	target.Control.DashStart = target.Position
 	target.Control.DashEnd = end
 	target.Control.DashUntilTick = tick + ticks
-	target.Control.StunnedUntilTick = tick + ticks
+	w.ApplyStun(target, tick+ticks, tick, tickRate)
 	target.Control.ActionLockedUntilTick = tick + ticks
 }

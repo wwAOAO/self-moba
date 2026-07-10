@@ -72,7 +72,7 @@ func ReleaseQ(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 				w.ApplyDamage(entity, target, damage, tickRate)
 			}
 			if form == "circle" && hasWhirlwindStack {
-				target.Control.AirborneUntilTick = tick + secondsToTicks(skillMeta(skill, "knockupSeconds", 1), tickRate)
+				w.ApplyAirborne(target, tick+secondsToTicks(skillMeta(skill, "knockupSeconds", 1), tickRate), tick, tickRate)
 			}
 			if wasAlive && target.Stats.HP == 0 {
 				w.ApplyKillReward(entity, target)

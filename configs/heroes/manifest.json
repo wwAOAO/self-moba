@@ -11,5 +11,8 @@
     "explorer.json",
     "robot.json",
     "frostmage.json",
-    "fire_mage.json"
+    "fire_mage.json",
+    "doctor.json",
+    "killer.json",
+    "monk.json"
 ]

@@ -1,142 +1,115 @@
 [
-  {
-    "skillId": "shot",
-    "name": "Ranger's Focus",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "self_buff",
-    "meta": {
-      "manaCost": 50,
-      "maxStacks": 4,
-      "stackDurationSeconds": 4,
-      "activeDurationSeconds": 5
+    {
+        "skillId": "shot",
+        "name": "Ranger's Focus",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "self_buff",
+        "description": [
+            "Q：射手的专注",
+            "弓箭手的主要持续输出技能，开启后能大幅提升攻速并发射箭风。",
+            "被动效果：普通攻击在命中时会叠加“全神贯注”效果，持续4秒，最多叠加 4层。叠满后即可施放Q技能。",
+            "主动效果：在 5秒 内，弓箭手获得 20/25/30/35/40% 攻击速度。同时，她的每次普攻会发射一阵箭风，造成额外物理伤害。在主动效果持续期间，弓箭手不会叠加“全神贯注”层数。"
+        ],
+        "meta": {
+            "manaCost": 50,
+            "maxStacks": 4,
+            "stackDurationSeconds": 4,
+            "activeDurationSeconds": 5
+        },
+        "metaLists": {
+            "attackSpeedBonus": [0.2, 0.25, 0.3, 0.35, 0.4],
+            "bonusAdDamageRatio": [1.05, 1.1, 1.15, 1.2, 1.25]
+        }
     },
-    "metaLists": {
-      "attackSpeedBonus": [
-        0.2,
-        0.25,
-        0.3,
-        0.35,
-        0.4
-      ],
-      "bonusAdDamageRatio": [
-        1.05,
-        1.1,
-        1.15,
-        1.2,
-        1.25
-      ]
-    }
-  },
-  {
-    "skillId": "roll",
-    "name": "Volley",
-    "cooldownMs": 14000,
-    "range": 1200,
-    "type": "projectile_cone",
-    "meta": {
-      "coneAngleDegrees": 48,
-      "projectileRadius": 16,
-      "projectileSpeed": 1500,
-      "adRatio": 1
+    {
+        "skillId": "roll",
+        "name": "Volley",
+        "cooldownMs": 14000,
+        "range": 1200,
+        "type": "projectile_cone",
+        "description": [
+            "W：万箭齐发",
+            "效果：弓箭手朝目标方向呈扇形发射一阵箭矢。每支箭矢只会对命中的第一个敌人造成物理伤害。",
+            "特殊机制：该技能会对被命中的英雄施加强化版减速效果。"
+        ],
+        "meta": {
+            "coneAngleDegrees": 48,
+            "projectileRadius": 16,
+            "projectileSpeed": 1500,
+            "adRatio": 1
+        },
+        "metaLists": {
+            "manaCost": [70, 65, 60, 55, 50],
+            "cooldownMs": [14000, 11500, 9000, 6500, 4000],
+            "arrowCount": [7, 8, 9, 10, 11],
+            "baseDamage": [20, 35, 50, 65, 80]
+        }
     },
-    "metaLists": {
-      "manaCost": [
-        70,
-        65,
-        60,
-        55,
-        50
-      ],
-      "cooldownMs": [
-        14000,
-        11500,
-        9000,
-        6500,
-        4000
-      ],
-      "arrowCount": [
-        7,
-        8,
-        9,
-        10,
-        11
-      ],
-      "baseDamage": [
-        20,
-        35,
-        50,
-        65,
-        80
-      ]
-    }
-  },
-  {
-    "skillId": "trap",
-    "name": "Hawkshot",
-    "cooldownMs": 5000,
-    "range": 6000,
-    "type": "scout",
-    "meta": {
-      "maxCharges": 2,
-      "lingerSeconds": 5,
-      "projectileSpeed": 1800
+    {
+        "skillId": "trap",
+        "name": "Hawkshot",
+        "cooldownMs": 5000,
+        "range": 6000,
+        "type": "scout",
+        "description": ["E：鹰击长空", "效果：弓箭手朝目标区域释放一只鹰灵，鹰灵会沿途提供视野。"],
+        "meta": {
+            "maxCharges": 2,
+            "lingerSeconds": 5,
+            "projectileSpeed": 1800
+        },
+        "metaLists": {
+            "rechargeMs": [90000, 80000, 70000, 60000, 50000]
+        }
     },
-    "metaLists": {
-      "rechargeMs": [
-        90000,
-        80000,
-        70000,
-        60000,
-        50000
-      ]
-    }
-  },
-  {
-    "skillId": "arrow_rain",
-    "name": "Enchanted Crystal Arrow",
-    "cooldownMs": 100000,
-    "range": 0,
-    "type": "global_projectile",
-    "meta": {
-      "manaCost": 100,
-      "projectileMinSpeed": 1500,
-      "projectileMaxSpeed": 2100,
-      "projectileRadius": 130,
-      "apRatio": 1,
-      "minStunSeconds": 1,
-      "maxStunSeconds": 3.5,
-      "maxStunDistance": 1400,
-      "splashRadius": 400,
-      "splashDamageMultiplier": 0.5,
-      "castDelaySeconds": 0.25
+    {
+        "skillId": "arrow_rain",
+        "name": "Enchanted Crystal Arrow",
+        "cooldownMs": 100000,
+        "range": 0,
+        "type": "global_projectile",
+        "description": [
+            "R：魔法水晶箭",
+            "效果：弓箭手朝目标方向射出一支巨大的水晶箭。箭矢飞行距离越远，晕眩时间越长。",
+            "附带效果：箭矢会提供沿途的视野。"
+        ],
+        "meta": {
+            "manaCost": 100,
+            "projectileMinSpeed": 1500,
+            "projectileMaxSpeed": 2100,
+            "projectileRadius": 130,
+            "apRatio": 1,
+            "minStunSeconds": 1,
+            "maxStunSeconds": 3.5,
+            "maxStunDistance": 1400,
+            "splashRadius": 400,
+            "splashDamageMultiplier": 0.5,
+            "castDelaySeconds": 0.25
+        },
+        "metaLists": {
+            "cooldownMs": [100000, 90000, 80000],
+            "baseDamage": [200, 400, 600]
+        }
     },
-    "metaLists": {
-      "cooldownMs": [
-        100000,
-        90000,
-        80000
-      ],
-      "baseDamage": [
-        200,
-        400,
-        600
-      ]
+    {
+        "skillId": "archer_focus",
+        "name": "Frost Shot",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": [
+            "被动：冰霜射击",
+            "减速效果：弓箭手的技能和普通攻击会减速目标 20% - 30% (于1-18级)，持续 2秒。",
+            "伤害强化：弓箭手的普通攻击会对已被减速的敌人造成 110% 伤害。这个伤害可以从暴击几率和暴击伤害中获得提升。",
+            "暴击机制：弓箭手的暴击不会造成额外伤害，而是会施加一个强化版减速效果。"
+        ],
+        "meta": {
+            "slowMin": 0.2,
+            "slowMax": 0.3,
+            "slowSeconds": 2,
+            "critSlowMultiplier": 2,
+            "slowedTargetDamageMultiplier": 1.1,
+            "critChanceDamageRatio": 1
+        }
     }
-  },
-  {
-    "skillId": "archer_focus",
-    "name": "Frost Shot",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "passive",
-    "meta": {
-      "slowMin": 0.2,
-      "slowMax": 0.3,
-      "slowSeconds": 2,
-      "critSlowMultiplier": 2,
-      "slowedTargetDamageMultiplier": 1.1,
-      "critChanceDamageRatio": 1
-    }
-  }
 ]

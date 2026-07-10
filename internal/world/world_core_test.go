@@ -355,13 +355,13 @@ func TestMinionGrowthCaps(t *testing.T) {
 	applyMinionGrowth(&ranged, EntityKindRangedMinion, highTick)
 	applyMinionGrowth(&siege, EntityKindSiegeMinion, highTick)
 
-	if melee.MaxHP != 6650 || melee.Attack != 1200 || melee.PhysicalDefense != 450 || melee.MagicDefense != 400 {
+	if melee.MaxHP != 3000 || melee.Attack != 160 || melee.PhysicalDefense != 40 || melee.MagicDefense != 25 {
 		t.Fatalf("melee capped stats = %+v", melee)
 	}
-	if ranged.MaxHP != 3600 || ranged.Attack != 2000 {
+	if ranged.MaxHP != 1200 || ranged.Attack != 250 {
 		t.Fatalf("ranged capped stats = %+v", ranged)
 	}
-	if siege.MaxHP != 15500 || siege.Attack != 2210 || siege.PhysicalDefense != 1200 || siege.MagicDefense != 1000 {
+	if siege.MaxHP != 5400 || siege.Attack != 261 || siege.PhysicalDefense != 120 || siege.MagicDefense != 100 {
 		t.Fatalf("siege capped stats = %+v", siege)
 	}
 }

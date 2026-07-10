@@ -1,0 +1,44 @@
+[
+  {
+    "heroId": "killer",
+    "name": "Killer",
+    "resource": "none",
+    "base": {
+      "hp": 602,
+      "mp": 0,
+      "hpRegen5": 7.5,
+      "mpRegen5": 0,
+      "attack": 53,
+      "abilityHaste": 0,
+      "physicalDefense": 28,
+      "magicDefense": 34,
+      "moveSpeed": 345,
+      "attackRange": 125,
+      "attackSpeed": 0.656,
+      "attackWindupSeconds": 0.25,
+      "attackSpeedRatio": 0.625,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 94,
+      "mp": 0,
+      "hpRegen5": 0.7,
+      "mpRegen5": 0,
+      "attack": 3.2,
+      "physicalDefense": 4,
+      "magicDefense": 1.25,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.0244,
+      "critChance": 0
+    },
+    "radius": 16,
+    "skills": {
+      "passive": "killer_passive",
+      "q": "killer_q",
+      "w": "killer_w",
+      "e": "killer_e",
+      "r": "killer_r"
+    }
+  }
+]

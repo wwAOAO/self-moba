@@ -1,101 +1,123 @@
 [
-  {
-    "skillId": "fire_mage_passive",
-    "name": "Fire Mage Passive",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "passive",
-    "meta": {
-      "maxStacks": 3,
-      "durationSeconds": 4,
-      "tickSeconds": 1,
-      "burnMaxHPRatioPerSecond": 0.02,
-      "explosionDelaySeconds": 2,
-      "explosionRadius": 400,
-      "manaRestoreSeconds": 10,
-      "manaRestoreTickSeconds": 5
+    {
+        "skillId": "fire_mage_passive",
+        "name": "Fire Mage Passive",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": [
+            "被动：炽热之焰",
+            "烈焰焚身：技能会施加【烈焰焚身】效果，在4秒内持续造成共 2.5% 目标最大生命值的魔法伤害。该效果最多可叠加3次。",
+            "爆炸：当【烈焰焚身】在一名英雄或大型野怪身上叠至满层（3层）时，会在2秒后爆炸，对目标附近区域造成目标最大生命值的魔法伤害。",
+            "法力回复：击杀一个带有【烈焰焚身】效果的敌人，会回复法力值。"
+        ],
+        "meta": {
+            "maxStacks": 3,
+            "durationSeconds": 4,
+            "tickSeconds": 1,
+            "burnMaxHPRatioPerSecond": 0.02,
+            "explosionDelaySeconds": 2,
+            "explosionRadius": 400,
+            "manaRestoreSeconds": 10,
+            "manaRestoreTickSeconds": 5
+        },
+        "metaLists": {
+            "explosionDamage": [120, 360],
+            "explosionDamageLevels": [1, 18],
+            "manaRestore": [30, 50],
+            "manaRestoreLevels": [1, 18]
+        }
     },
-    "metaLists": {
-      "explosionDamage": [120, 360],
-      "explosionDamageLevels": [1, 18],
-      "manaRestore": [30, 50],
-      "manaRestoreLevels": [1, 18]
-    }
-  },
-  {
-    "skillId": "fire_mage_q",
-    "name": "Sear",
-    "cooldownMs": 8000,
-    "range": 1050,
-    "type": "projectile_line",
-    "meta": {
-      "manaCost": 50,
-      "apRatio": 0.65,
-      "projectileRadius": 28,
-      "projectileSpeed": 3000,
-      "castWindupSeconds": 0.25,
-      "stunSeconds": 2
+    {
+        "skillId": "fire_mage_q",
+        "name": "Sear",
+        "cooldownMs": 8000,
+        "range": 1050,
+        "type": "projectile_line",
+        "description": [
+            "Q：火焰烙印",
+            "效果：向前方放出一团火球，对命中的第一个敌人造成魔法伤害。",
+            "炽热之焰：如果目标带有【烈焰焚身】效果，此技能将晕眩目标 1.5秒"
+        ],
+        "meta": {
+            "manaCost": 50,
+            "apRatio": 0.65,
+            "projectileRadius": 28,
+            "projectileSpeed": 3000,
+            "castWindupSeconds": 0.25,
+            "stunSeconds": 2
+        },
+        "metaLists": {
+            "cooldownMs": [8000, 7500, 7000, 6500, 6000],
+            "baseDamage": [80, 110, 140, 170, 200]
+        }
     },
-    "metaLists": {
-      "cooldownMs": [8000, 7500, 7000, 6500, 6000],
-      "baseDamage": [80, 110, 140, 170, 200]
-    }
-  },
-  {
-    "skillId": "fire_mage_w",
-    "name": "Pillar of Flame",
-    "cooldownMs": 10000,
-    "range": 900,
-    "type": "ground_aoe",
-    "meta": {
-      "apRatio": 0.6,
-      "castWindupSeconds": 0.25,
-      "landingDelaySeconds": 0.5,
-      "landingRadius": 260,
-      "burningDamageMultiplier": 1.25
+    {
+        "skillId": "fire_mage_w",
+        "name": "Pillar of Flame",
+        "cooldownMs": 10000,
+        "range": 900,
+        "type": "ground_aoe",
+        "description": [
+            "W：烈焰之柱",
+            "效果：在短暂延迟后，于目标区域创造一根烈焰之柱，对范围内的敌人造成魔法伤害。",
+            "炽热之焰：如果目标带有【烈焰焚身】效果，此技能会造成 25% 额外伤害。"
+        ],
+        "meta": {
+            "apRatio": 0.6,
+            "castWindupSeconds": 0.25,
+            "landingDelaySeconds": 0.5,
+            "landingRadius": 260,
+            "burningDamageMultiplier": 1.25
+        },
+        "metaLists": {
+            "manaCost": [70, 80, 90, 100, 110],
+            "cooldownMs": [10000, 9500, 9000, 8500, 8000],
+            "baseDamage": [75, 120, 165, 210, 255]
+        }
     },
-    "metaLists": {
-      "manaCost": [70, 80, 90, 100, 110],
-      "cooldownMs": [10000, 9500, 9000, 8500, 8000],
-      "baseDamage": [75, 120, 165, 210, 255]
-    }
-  },
-  {
-    "skillId": "fire_mage_e",
-    "name": "Conflagration",
-    "cooldownMs": 12000,
-    "range": 625,
-    "type": "targeted",
-    "meta": {
-      "apRatio": 0.5,
-      "spreadRadius": 600,
-      "targetPickPadding": 80
+    {
+        "skillId": "fire_mage_e",
+        "name": "Conflagration",
+        "cooldownMs": 12000,
+        "range": 625,
+        "type": "targeted",
+        "description": [
+            "E：烈火燃烧",
+            "效果：引爆目标，对其造成 70/105/140/175/210 (+0.55AP) 魔法伤害。",
+            "炽热之焰：如果目标带有【烈焰焚身】效果，此技能会扩散到附近敌人并造成相同的伤害"
+        ],
+        "meta": {
+            "apRatio": 0.5,
+            "spreadRadius": 600,
+            "targetPickPadding": 80
+        },
+        "metaLists": {
+            "manaCost": [70, 75, 80, 85, 90],
+            "cooldownMs": [12000, 11000, 10000, 9000, 8000],
+            "baseDamage": [70, 95, 120, 145, 170]
+        }
     },
-    "metaLists": {
-      "manaCost": [70, 75, 80, 85, 90],
-      "cooldownMs": [12000, 11000, 10000, 9000, 8000],
-      "baseDamage": [70, 95, 120, 145, 170]
+    {
+        "skillId": "fire_mage_r",
+        "name": "Pyroclasm",
+        "cooldownMs": 105000,
+        "range": 750,
+        "type": "targeted_projectile",
+        "description": ["R：烈焰风暴", "效果：释放一团会在敌方单位间弹射的火球，每次弹射造成魔法伤害。"],
+        "meta": {
+            "manaCost": 100,
+            "apRatio": 0.6,
+            "castWindupSeconds": 0.2,
+            "bounceRange": 600,
+            "maxBounces": 4,
+            "projectileRadius": 36,
+            "projectileSpeed": 600,
+            "targetPickPadding": 80
+        },
+        "metaLists": {
+            "cooldownMs": [105000, 90000, 75000],
+            "baseDamage": [150, 250, 350]
+        }
     }
-  },
-  {
-    "skillId": "fire_mage_r",
-    "name": "Pyroclasm",
-    "cooldownMs": 105000,
-    "range": 750,
-    "type": "targeted_projectile",
-    "meta": {
-      "manaCost": 100,
-      "apRatio": 0.6,
-      "castWindupSeconds": 0.2,
-      "bounceRange": 600,
-      "maxBounces": 4,
-      "projectileRadius": 36,
-      "projectileSpeed": 600,
-      "targetPickPadding": 80
-    },
-    "metaLists": {
-      "cooldownMs": [105000, 90000, 75000],
-      "baseDamage": [150, 250, 350]
-    }
-  }
 ]

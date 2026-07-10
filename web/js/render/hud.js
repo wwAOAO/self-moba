@@ -1,4 +1,4 @@
-﻿function spawnDamageText(target, damage, damageType) {
+﻿function spawnDamageText(target, damage, damageType, highlighted = false) {
   if (!damage) {
     return;
   }
@@ -10,9 +10,9 @@
     style: {
       fill: damageTextColor(damageType),
       fontFamily: "Microsoft YaHei, PingFang SC, Noto Sans SC, Arial, sans-serif",
-      fontSize: 10,
+      fontSize: highlighted ? 12 : 10,
       fontWeight: "900",
-      // stroke: { color: 0x111827, width: 2 },
+      ...(highlighted ? { stroke: { color: 0xffffff, width: 2 } } : {}),
     },
   });
   text.anchor.set(0.5, 0.5);

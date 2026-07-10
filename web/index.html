@@ -320,7 +320,7 @@
         bottom: calc(100% + 6px);
         z-index: 20;
         width: max-content;
-        max-width: 220px;
+        max-width: 320px;
         padding: 6px 8px;
         border-radius: 4px;
         color: #fff;
@@ -329,7 +329,7 @@
         line-height: 1.4;
         text-align: left;
         transform: translateX(-50%);
-        white-space: normal;
+        white-space: pre-line;
         pointer-events: none;
       }
 
@@ -356,13 +356,13 @@
 
       .skill-row {
         display: grid;
-        grid-template-columns: 28px 1fr 44px 24px;
+        grid-template-columns: 28px 1fr 44px 14px 24px;
         align-items: center;
         gap: 6px;
       }
 
       .skill-row.has-charge {
-        grid-template-columns: 28px 1fr 40px 44px 24px;
+        grid-template-columns: 28px 1fr 40px 44px 14px 24px;
       }
 
       .skill-row span {
@@ -432,7 +432,7 @@
         <input id="roomId" value="demo-room" readonly />
 
         <label for="playerId">玩家 ID</label>
-        <input id="playerId" />
+        <input id="playerId" maxlength="16" />
 
         <div class="form-row">
           <div>

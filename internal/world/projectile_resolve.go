@@ -105,6 +105,8 @@ func (w *World) projectileDamage(source *Entity, target *Entity, projectile *Pro
 		damage = w.fireMageRDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
 	} else if projectile.SkillID == frostmageQSkillID && source != nil {
 		damage = w.frostQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
+	} else if projectile.SkillID == doctorQSkillID && source != nil {
+		damage = w.doctorQDamage(source, target, w.skillConfig(projectile.SkillID), projectile.Damage, tick)
 	} else if projectile.SkillID == frostmageESkillID && source != nil {
 		skill := w.skillConfig(projectile.SkillID)
 		raw := skillMetaListByLevel(skill, "baseDamage", projectile.Damage, []float64{70, 105, 140, 175, 210}) + float64(source.Stats.AbilityPower)*skillMetaRange(skill, "apRatio", 0.6)
@@ -164,7 +166,7 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 		w.applyMagicDamage(source, target, damage, tickRate)
 		if wasBurning {
 			stunTicks := secondsToTicks(skillMetaRange(w.skillConfig(projectile.SkillID), "stunSeconds", 2), tickRate)
-			target.Control.StunnedUntilTick = tick + controlTicksAfterTenacity(target, stunTicks, tick)
+			w.ApplyStun(target, tick+controlTicksAfterTenacity(target, stunTicks, tick), tick, tickRate)
 		}
 		delete(w.projectiles, id)
 		removeProjectile = true
@@ -187,11 +189,15 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 			delete(w.projectiles, id)
 			removeProjectile = true
 		}
+	} else if projectile.SkillID == doctorQSkillID {
+		w.doctorQHit(source, target, projectile, damage, tick, tickRate)
+		delete(w.projectiles, id)
+		removeProjectile = true
 	} else if projectile.SkillID == frostmageESkillID {
 		w.applyMagicDamage(source, target, damage, tickRate)
 	} else if projectile.SkillID == mageQSkillID {
 		w.applyMagicDamage(source, target, damage, tickRate)
-		target.Control.RootedUntilTick = tick + controlTicksAfterTenacity(target, projectile.EffectTicks, tick)
+		w.ApplyRoot(target, tick+controlTicksAfterTenacity(target, projectile.EffectTicks, tick), tick, tickRate)
 		w.onHeroSkillHit(source, target, tick, tickRate)
 		if len(projectile.HitIDs) >= int(skillMetaRange(w.skillConfig(projectile.SkillID), "maxHits", 2)) {
 			delete(w.projectiles, id)
@@ -199,7 +205,7 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 		}
 	} else if projectile.SkillID == archerRSkillID {
 		w.applyMagicDamage(source, target, damage, tickRate)
-		target.Control.StunnedUntilTick = tick + controlTicksAfterTenacity(target, archerRStunTicks(projectile, w.skillConfig(projectile.SkillID), tickRate), tick)
+		w.ApplyStun(target, tick+controlTicksAfterTenacity(target, archerRStunTicks(projectile, w.skillConfig(projectile.SkillID), tickRate), tick), tick, tickRate)
 		applyArcherRSplash(w, source, target, projectile, w.skillConfig(projectile.SkillID), tick, tickRate)
 		delete(w.projectiles, id)
 		removeProjectile = true
@@ -214,7 +220,7 @@ func (w *World) resolveProjectileUnitHit(id string, source *Entity, target *Enti
 		}
 	}
 	if projectile.KnockupTicks > 0 {
-		target.Control.AirborneUntilTick = tick + projectile.KnockupTicks
+		w.ApplyAirborne(target, tick+projectile.KnockupTicks, tick, tickRate)
 	}
 	if wasAlive && target.Stats.HP == 0 {
 		w.applyKillReward(source, target)
@@ -264,7 +270,7 @@ func (w *World) resolveProjectileDummyHit(id string, source *Entity, target *Ent
 		return true
 	}
 	if projectile.SkillID == mageQSkillID {
-		target.Control.RootedUntilTick = tick + projectile.EffectTicks
+		w.ApplyRoot(target, tick+projectile.EffectTicks, tick, tickRate)
 		w.onHeroSkillHit(source, target, tick, tickRate)
 		if len(projectile.HitIDs) >= int(skillMetaRange(w.skillConfig(projectile.SkillID), "maxHits", 2)) {
 			delete(w.projectiles, id)
@@ -300,7 +306,7 @@ func (w *World) resolveProjectileDummyHit(id string, source *Entity, target *Ent
 		w.onHeroDamage(source, target, sustainSingleTargetSkill, tick, tickRate)
 		if wasBurning {
 			stunTicks := secondsToTicks(skillMetaRange(w.skillConfig(projectile.SkillID), "stunSeconds", 2), tickRate)
-			target.Control.StunnedUntilTick = tick + stunTicks
+			w.ApplyStun(target, tick+stunTicks, tick, tickRate)
 		}
 		delete(w.projectiles, id)
 		return true
@@ -322,6 +328,11 @@ func (w *World) resolveProjectileDummyHit(id string, source *Entity, target *Ent
 			return true
 		}
 		return false
+	}
+	if projectile.SkillID == doctorQSkillID {
+		w.doctorQHit(source, target, projectile, damage, tick, tickRate)
+		delete(w.projectiles, id)
+		return true
 	}
 	if projectile.SkillID == frostmageESkillID {
 		return false

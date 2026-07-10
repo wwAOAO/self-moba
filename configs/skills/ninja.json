@@ -1,93 +1,117 @@
 [
-  {
-    "skillId": "ninja_passive",
-    "name": "忍者被动",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "passive",
-    "meta": {
-      "heroCooldownSeconds": 10,
-      "monsterDamageMultiplier": 0.75,
-      "epicMonsterDamageCap": 175
+    {
+        "skillId": "ninja_passive",
+        "name": "忍者被动",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": [
+            "被动:影忍法！灭魂劫",
+            "效果：劫的普通攻击会对生命值低于50% 的目标造成额外魔法伤害，伤害值相当于目标最大生命值的6-10%。对野怪造成的伤害提升100%。",
+            "冷却：对同一目标有10秒的内置冷却时间。"
+        ],
+        "meta": {
+            "heroCooldownSeconds": 10,
+            "monsterDamageMultiplier": 0.75,
+            "epicMonsterDamageCap": 175
+        },
+        "metaLists": {
+            "maxHPRatio": [0.05, 0.1],
+            "maxHPRatioLevels": [1, 18]
+        }
     },
-    "metaLists": {
-      "maxHPRatio": [0.05, 0.1],
-      "maxHPRatioLevels": [1, 18]
-    }
-  },
-  {
-    "skillId": "ninja_q",
-    "name": "忍者Q",
-    "cooldownMs": 6000,
-    "range": 900,
-    "type": "projectile",
-    "meta": {
-      "projectileSpeed": 1700,
-      "projectileRadius": 87.5,
-      "castWindupSeconds": 0.25,
-      "firstBonusAdRatio": 1,
-      "laterBonusAdRatio": 0.6
+    {
+        "skillId": "ninja_q",
+        "name": "忍者Q",
+        "cooldownMs": 6000,
+        "range": 900,
+        "type": "projectile",
+        "description": [
+            "Q:影奥义！诸刃",
+            "效果：劫和他的影分身一起向前方掷出手里剑，对命中的第一个敌人造成物理伤害。每一枚手里剑对第一个目标后的敌人伤害会衰减。"
+        ],
+        "meta": {
+            "projectileSpeed": 1700,
+            "projectileRadius": 87.5,
+            "castWindupSeconds": 0.25,
+            "firstBonusAdRatio": 1,
+            "laterBonusAdRatio": 0.6
+        },
+        "metaLists": {
+            "firstBaseDamage": [80, 120, 160, 200, 240],
+            "laterBaseDamage": [48, 72, 96, 120, 144],
+            "manaCost": [55, 60, 65, 70, 75],
+            "cooldownMs": [6000, 6000, 6000, 6000, 6000]
+        }
     },
-    "metaLists": {
-      "firstBaseDamage": [80, 120, 160, 200, 240],
-      "laterBaseDamage": [48, 72, 96, 120, 144],
-      "manaCost": [55, 60, 65, 70, 75],
-      "cooldownMs": [6000, 6000, 6000, 6000, 6000]
-    }
-  },
-  {
-    "skillId": "ninja_w",
-    "name": "忍者W",
-    "cooldownMs": 20000,
-    "range": 650,
-    "type": "dash_shadow",
-    "meta": {
-      "shadowDurationSeconds": 5,
-      "shadowDashSeconds": 0.25
+    {
+        "skillId": "ninja_w",
+        "name": "忍者W",
+        "cooldownMs": 20000,
+        "range": 650,
+        "type": "dash_shadow",
+        "description": [
+            "W:影奥义！分身",
+            "主动：劫的影分身向前突进，并在目标位置停留数秒。再次激活此技能，劫会与影分身互换位置。",
+            "被动：当劫和影分身用相同技能击中一名敌方英雄时，劫会回复30/35/40/45/50能量。每次施放技能只会回复一次"
+        ],
+        "meta": {
+            "shadowDurationSeconds": 5,
+            "shadowDashSeconds": 0.25
+        },
+        "metaLists": {
+            "energyRefund": [30, 35, 40, 45, 50],
+            "manaCost": [20, 25, 30, 35, 40],
+            "cooldownMs": [20000, 19000, 18000, 17000, 16000]
+        }
     },
-    "metaLists": {
-      "energyRefund": [30, 35, 40, 45, 50],
-      "manaCost": [20, 25, 30, 35, 40],
-      "cooldownMs": [20000, 19000, 18000, 17000, 16000]
-    }
-  },
-  {
-    "skillId": "ninja_e",
-    "name": "忍者E",
-    "cooldownMs": 5000,
-    "range": 290,
-    "type": "aoe",
-    "meta": {
-      "manaCost": 40,
-      "bonusAdRatio": 0.7,
-      "slowSeconds": 1.5,
-      "wCooldownRefundSeconds": 3
+    {
+        "skillId": "ninja_e",
+        "name": "忍者E",
+        "cooldownMs": 5000,
+        "range": 290,
+        "type": "aoe",
+        "description": [
+            "E:影奥义！鬼斩",
+            "效果：劫和影分身进行斩击，对附近敌人造成物理伤害并减速。被影分身的斩击击中的敌人将受到更强的减速效果。",
+            "机制：每个被劫的斩击命中的敌方英雄，都会使W (影奥义！分身) 的冷却时间减少2秒"
+        ],
+        "meta": {
+            "manaCost": 40,
+            "bonusAdRatio": 0.7,
+            "slowSeconds": 1.5,
+            "wCooldownRefundSeconds": 3
+        },
+        "metaLists": {
+            "baseDamage": [70, 92.5, 115, 137.5, 160],
+            "shadowSlow": [0.2, 0.25, 0.3, 0.35, 0.4],
+            "doubleSlow": [0.3, 0.375, 0.45, 0.45, 0.6],
+            "cooldownMs": [5000, 4500, 4000, 3500, 3000]
+        }
     },
-    "metaLists": {
-      "baseDamage": [70, 92.5, 115, 137.5, 160],
-      "shadowSlow": [0.2, 0.25, 0.3, 0.35, 0.4],
-      "doubleSlow": [0.3, 0.375, 0.45, 0.45, 0.6],
-      "cooldownMs": [5000, 4500, 4000, 3500, 3000]
+    {
+        "skillId": "ninja_r",
+        "name": "禁奥义!瞬狱影杀阵",
+        "cooldownMs": 120000,
+        "range": 625,
+        "type": "mark_dash",
+        "description": [
+            "R:禁奥义！瞬狱影杀阵",
+            "效果：劫变得无法被选取，突进向一位敌方英雄并施加死亡印记。突进时会在身后留下一个影分身，持续6秒，可与该分身互换位置。",
+            "伤害：3秒后，印记会触发，造成物理伤害，伤害值等于劫在印记激活期间所造成的所有伤害总和的25/40/55%。"
+        ],
+        "meta": {
+            "castWindupSeconds": 0.6,
+            "dashSeconds": 0.35,
+            "markDelaySeconds": 3,
+            "shadowDurationSeconds": 7.5,
+            "shadowLingerSeconds": 1.5,
+            "targetPickPadding": 80,
+            "attackRatio": 1
+        },
+        "metaLists": {
+            "storedDamageRatio": [0.25, 0.4, 0.55],
+            "cooldownMs": [120000, 110000, 100000]
+        }
     }
-  },
-  {
-    "skillId": "ninja_r",
-    "name": "禁奥义!瞬狱影杀阵",
-    "cooldownMs": 120000,
-    "range": 625,
-    "type": "mark_dash",
-    "meta": {
-      "castWindupSeconds": 0.6,
-      "dashSeconds": 0.35,
-      "markDelaySeconds": 3,
-      "shadowDurationSeconds": 7.5,
-      "shadowLingerSeconds": 1.5,
-      "targetPickPadding": 80,
-      "attackRatio": 1
-    },
-    "metaLists": {
-      "storedDamageRatio": [0.25, 0.4, 0.55],
-      "cooldownMs": [120000, 110000, 100000]
-    }
-  }
 ]

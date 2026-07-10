@@ -1,175 +1,116 @@
 [
-  {
-    "skillId": "slam",
-    "name": "Seismic Shard",
-    "cooldownMs": 8000,
-    "range": 625,
-    "type": "projectile",
-    "meta": {
-      "apRatio": 0.6,
-      "projectileRadius": 45,
-      "projectileSpeed": 1200,
-      "targetPickPadding": 90,
-      "moveSpeedStealSeconds": 3,
-      "castWindupSeconds": 0.25
+    {
+        "skillId": "slam",
+        "name": "Seismic Shard",
+        "cooldownMs": 8000,
+        "range": 625,
+        "type": "projectile",
+        "description": [
+            "Q:地震碎片",
+            "效果：向目标射出一块岩石碎片，造成魔法伤害，并偷取目标 15/20/25/30/35% 的移动速度，持续3秒"
+        ],
+        "meta": {
+            "apRatio": 0.6,
+            "projectileRadius": 45,
+            "projectileSpeed": 1200,
+            "targetPickPadding": 90,
+            "moveSpeedStealSeconds": 3,
+            "castWindupSeconds": 0.25
+        },
+        "metaLists": {
+            "manaCost": [70, 75, 80, 85, 90],
+            "baseDamage": [70, 120, 170, 220, 270],
+            "moveSpeedSteal": [0.2, 0.25, 0.3, 0.35, 0.4]
+        }
     },
-    "metaLists": {
-      "manaCost": [
-        70,
-        75,
-        80,
-        85,
-        90
-      ],
-      "baseDamage": [
-        70,
-        120,
-        170,
-        220,
-        270
-      ],
-      "moveSpeedSteal": [
-        0.2,
-        0.25,
-        0.3,
-        0.35,
-        0.4
-      ]
-    }
-  },
-  {
-    "skillId": "guard",
-    "name": "Thunderclap",
-    "cooldownMs": 10000,
-    "range": 0,
-    "type": "empower",
-    "meta": {
-      "apRatio": 0.2,
-      "armorRatio": 0.15,
-      "aftershockAPRatio": 0.3,
-      "aftershockArmorRatio": 0.15,
-      "aftershockConeRange": 500,
-      "aftershockConeAngleDegrees": 70,
-      "aftershockDurationSeconds": 5,
-      "monsterDamageMultiplier": 1.8,
-      "shieldArmorRatio": 0.3
+    {
+        "skillId": "guard",
+        "name": "Thunderclap",
+        "cooldownMs": 10000,
+        "range": 0,
+        "type": "empower",
+        "description": [
+            "W:野蛮打击",
+            "被动：石头人的护甲提升 10/15/20/25/30%。",
+            "效果：强化下一次普通攻击，获得50额外攻击距离，并在6秒内对目标和附近敌人造成额外物理伤害。此强化攻击对野怪造成200% 伤害"
+        ],
+        "meta": {
+            "apRatio": 0.2,
+            "armorRatio": 0.15,
+            "aftershockAPRatio": 0.3,
+            "aftershockArmorRatio": 0.15,
+            "aftershockConeRange": 500,
+            "aftershockConeAngleDegrees": 70,
+            "aftershockDurationSeconds": 5,
+            "monsterDamageMultiplier": 1.8,
+            "shieldArmorRatio": 0.3
+        },
+        "metaLists": {
+            "passiveArmorRatio": [0.1, 0.15, 0.2, 0.25, 0.3],
+            "manaCost": [30, 35, 40, 45, 50],
+            "bonusDamage": [30, 40, 50, 60, 70],
+            "aftershockDamage": [15, 25, 35, 45, 55],
+            "cooldownMs": [10000, 9500, 9000, 8500, 8000]
+        }
     },
-    "metaLists": {
-      "passiveArmorRatio": [
-        0.1,
-        0.15,
-        0.2,
-        0.25,
-        0.3
-      ],
-      "manaCost": [
-        30,
-        35,
-        40,
-        45,
-        50
-      ],
-      "bonusDamage": [
-        30,
-        40,
-        50,
-        60,
-        70
-      ],
-      "aftershockDamage": [
-        15,
-        25,
-        35,
-        45,
-        55
-      ],
-      "cooldownMs": [
-        10000,
-        9500,
-        9000,
-        8500,
-        8000
-      ]
-    }
-  },
-  {
-    "skillId": "taunt",
-    "name": "Ground Slam",
-    "cooldownMs": 7000,
-    "range": 400,
-    "type": "aoe",
-    "meta": {
-      "armorRatio": 0.4,
-      "apRatio": 0.6,
-      "attackSpeedSlowSeconds": 3,
-      "castWindupSeconds": 0.242
+    {
+        "skillId": "taunt",
+        "name": "Ground Slam",
+        "cooldownMs": 7000,
+        "range": 400,
+        "type": "aoe",
+        "description": [
+            "E:大地震颤",
+            "效果：锤击地面，对周围敌人造成魔法伤害，并减少目标 30/35/40/45/50% 的攻击速度，持续3秒"
+        ],
+        "meta": {
+            "armorRatio": 0.4,
+            "apRatio": 0.6,
+            "attackSpeedSlowSeconds": 3,
+            "castWindupSeconds": 0.242
+        },
+        "metaLists": {
+            "manaCost": [50, 55, 60, 65, 70],
+            "baseDamage": [60, 95, 130, 165, 200],
+            "attackSpeedSlow": [0.3, 0.35, 0.4, 0.45, 0.5],
+            "cooldownMs": [7000, 7000, 7000, 7000, 7000]
+        }
     },
-    "metaLists": {
-      "manaCost": [
-        50,
-        55,
-        60,
-        65,
-        70
-      ],
-      "baseDamage": [
-        60,
-        95,
-        130,
-        165,
-        200
-      ],
-      "attackSpeedSlow": [
-        0.3,
-        0.35,
-        0.4,
-        0.45,
-        0.5
-      ],
-      "cooldownMs": [
-        7000,
-        7000,
-        7000,
-        7000,
-        7000
-      ]
-    }
-  },
-  {
-    "skillId": "earthquake",
-    "name": "Unstoppable Force",
-    "cooldownMs": 130000,
-    "range": 1000,
-    "type": "dash_circle_aoe",
-    "meta": {
-      "manaCost": 100,
-      "apRatio": 0.8,
-      "dashSpeed": 2200,
-      "landingRadius": 300,
-      "knockupSeconds": 1.5
+    {
+        "skillId": "earthquake",
+        "name": "Unstoppable Force",
+        "cooldownMs": 130000,
+        "range": 1000,
+        "type": "dash_circle_aoe",
+        "description": [
+            "R:势不可挡",
+            "效果：石头人冲击目标区域，对范围内所有敌人造成魔法伤害，并将他们击飞1.5秒"
+        ],
+        "meta": {
+            "manaCost": 100,
+            "apRatio": 0.8,
+            "dashSpeed": 2200,
+            "landingRadius": 300,
+            "knockupSeconds": 1.5
+        },
+        "metaLists": {
+            "baseDamage": [200, 300, 400],
+            "cooldownMs": [130000, 105000, 80000]
+        }
     },
-    "metaLists": {
-      "baseDamage": [
-        200,
-        300,
-        400
-      ],
-      "cooldownMs": [
-        130000,
-        105000,
-        80000
-      ]
+    {
+        "skillId": "tank_armor",
+        "name": "Granite Shield",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": [
+            "被动:花岗岩护盾",
+            "效果：石头人被岩石护盾保护，可吸收相当于其最大生命值10% 的伤害。若10秒内未受到攻击，护盾将重置"
+        ],
+        "meta": {
+            "shieldMaxHPRatio": 0.1,
+            "resetSeconds": 10
+        }
     }
-  },
-  {
-    "skillId": "tank_armor",
-    "name": "Granite Shield",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "passive",
-    "meta": {
-      "shieldMaxHPRatio": 0.1,
-      "resetSeconds": 10
-    }
-  }
 ]

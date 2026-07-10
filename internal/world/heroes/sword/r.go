@@ -21,7 +21,7 @@ func ApplyR(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 		if hit.Kind != world.EntityKindDummy {
 			wasAlive := hit.Stats.HP > 0
 			w.ApplyAOEDamage(entity, hit, damage, "physical", tickRate)
-			hit.Control.AirborneUntilTick += secondsToTicks(skillMeta(skill, "airborneExtendSeconds", 1), tickRate)
+			w.ExtendAirborne(hit, secondsToTicks(skillMeta(skill, "airborneExtendSeconds", 1), tickRate), tick, tickRate)
 			if wasAlive && hit.Stats.HP == 0 {
 				w.ApplyKillReward(entity, hit)
 				w.KillPlayer(hit, tick, tickRate)

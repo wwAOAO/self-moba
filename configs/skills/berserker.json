@@ -1,101 +1,133 @@
 [
-  {
-    "skillId": "berserker_passive",
-    "name": "狂战士被动",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "passive",
-    "meta": {
-      "maxBleedStacks": 5,
-      "bleedDurationSeconds": 5,
-      "bleedTickSeconds": 1,
-      "bleedBonusAdRatio": 0.3,
-      "bleedMonsterDamageMultiplier": 2.5,
-      "bloodRageDurationSeconds": 5
+    {
+        "skillId": "berserker_passive",
+        "name": "狂战士被动",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": [
+            "被动：出血",
+            "狂战士的攻击和伤害技能会让敌人流血，在5秒内持续造成物理伤害。这个效果最多可以叠加5层。",
+            "机制：当一名敌方英雄身上的“出血”效果叠满5层，或死于断头台(R) 时，狂战士会进入“诺克萨斯之力”状态。在此期间，他会获得大量额外攻击力，并且他的所有攻击和伤害技能都会为目标立即施加5层“出血” 效果"
+        ],
+        "meta": {
+            "maxBleedStacks": 5,
+            "bleedDurationSeconds": 5,
+            "bleedTickSeconds": 1,
+            "bleedBonusAdRatio": 0.3,
+            "bleedMonsterDamageMultiplier": 2.5,
+            "bloodRageDurationSeconds": 5
+        },
+        "metaLists": {
+            "bleedDamage": [13, 30],
+            "bleedDamageLevels": [1, 18],
+            "bloodRageAttack": [30, 230],
+            "bloodRageAttackLevels": [1, 18]
+        }
     },
-    "metaLists": {
-      "bleedDamage": [13, 30],
-      "bleedDamageLevels": [1, 18],
-      "bloodRageAttack": [30, 230],
-      "bloodRageAttackLevels": [1, 18]
-    }
-  },
-  {
-    "skillId": "berserker_q",
-    "name": "大杀四方",
-    "cooldownMs": 9000,
-    "range": 425,
-    "type": "active",
-    "meta": {
-      "castWindupSeconds": 0.75,
-      "innerRadius": 300,
-      "outerHealMissingHPRatio": 0.17,
-      "outerHealMissingHPCap": 0.51
+    {
+        "skillId": "berserker_q",
+        "name": "大杀四方",
+        "cooldownMs": 9000,
+        "range": 425,
+        "type": "active",
+        "description": [
+            "Q：大杀四方",
+            "狂战士挥舞巨斧，对自身周围的敌人造成伤害。",
+            "外圈机制：被斧刃（外圈）命中的敌人会受到 50%额外伤害。",
+            "治疗效果：每用外圈击中一名敌方英雄，就会回复 15% 已损失的生命值"
+        ],
+        "meta": {
+            "castWindupSeconds": 0.75,
+            "innerRadius": 300,
+            "outerHealMissingHPRatio": 0.17,
+            "outerHealMissingHPCap": 0.51
+        },
+        "metaLists": {
+            "outerBaseDamage": [50, 80, 110, 140, 170],
+            "outerTotalAdRatio": [1, 1.1, 1.2, 1.3, 1.4],
+            "innerBaseDamage": [17.5, 28, 38.5, 49, 59.5],
+            "innerTotalAdRatio": [0.35, 0.385, 0.42, 0.455, 0.49],
+            "manaCost": [30, 35, 40, 45, 50],
+            "cooldownMs": [9000, 8000, 7000, 6000, 5000]
+        }
     },
-    "metaLists": {
-      "outerBaseDamage": [50, 80, 110, 140, 170],
-      "outerTotalAdRatio": [1, 1.1, 1.2, 1.3, 1.4],
-      "innerBaseDamage": [17.5, 28, 38.5, 49, 59.5],
-      "innerTotalAdRatio": [0.35, 0.385, 0.42, 0.455, 0.49],
-      "manaCost": [30, 35, 40, 45, 50],
-      "cooldownMs": [9000, 8000, 7000, 6000, 5000]
-    }
-  },
-  {
-    "skillId": "berserker_w",
-    "name": "致残打击",
-    "cooldownMs": 9000,
-    "range": 0,
-    "type": "active",
-    "meta": {
-      "manaCost": 30,
-      "slowSeconds": 2,
-      "cooldownReductionPerBleedStackSeconds": 1
+    {
+        "skillId": "berserker_w",
+        "name": "致残打击",
+        "cooldownMs": 9000,
+        "range": 0,
+        "type": "active",
+        "description": [
+            "W：致残打击",
+            "狂战士强化下一次普通攻击，造成额外伤害并减速敌人。",
+            "伤害：下一次普通攻击加倍伤害。",
+            "减速效果：使目标的移动速度和攻击速度减少 20/25/30/35/40%，持续2秒。",
+            "机制：目标身上每层“出血”效果，都会减少此技能1秒基础冷却时间。"
+        ],
+        "meta": {
+            "manaCost": 30,
+            "slowSeconds": 2,
+            "cooldownReductionPerBleedStackSeconds": 1
+        },
+        "metaLists": {
+            "damageMultiplier": [1.2, 1.4, 1.6, 1.8, 2],
+            "slow": [0.2, 0.25, 0.3, 0.35, 0.4],
+            "cooldownMs": [9000, 8000, 7000, 6000, 5000]
+        }
     },
-    "metaLists": {
-      "damageMultiplier": [1.2, 1.4, 1.6, 1.8, 2],
-      "slow": [0.2, 0.25, 0.3, 0.35, 0.4],
-      "cooldownMs": [9000, 8000, 7000, 6000, 5000]
-    }
-  },
-  {
-    "skillId": "berserker_e",
-    "name": "无情铁手",
-    "cooldownMs": 24000,
-    "range": 535,
-    "type": "active",
-    "meta": {
-      "manaCost": 45,
-      "castWindupSeconds": 0.25,
-      "coneAngleDegrees": 50,
-      "slow": 0.4,
-      "slowSeconds": 1,
-      "knockupSeconds": 0.25
+    {
+        "skillId": "berserker_e",
+        "name": "无情铁手",
+        "cooldownMs": 24000,
+        "range": 535,
+        "type": "active",
+        "description": [
+            "E：无情铁手",
+            "狂战士的被动提供护甲穿透，主动使用可将敌人拉向自己。",
+            "被动效果：获得 5/10/15/20/25% 的护甲穿透。",
+            "主动效果：将前方锥形范围内的所有敌人拉向自己，并使其减速40%，持续1秒。"
+        ],
+
+        "meta": {
+            "manaCost": 45,
+            "castWindupSeconds": 0.25,
+            "coneAngleDegrees": 50,
+            "slow": 0.4,
+            "slowSeconds": 1,
+            "knockupSeconds": 0.25
+        },
+        "metaLists": {
+            "armorPenPercent": [0.2, 0.25, 0.3, 0.35, 0.4],
+            "cooldownMs": [24000, 21000, 18000, 15000, 12000]
+        }
     },
-    "metaLists": {
-      "armorPenPercent": [0.2, 0.25, 0.3, 0.35, 0.4],
-      "cooldownMs": [24000, 21000, 18000, 15000, 12000]
+    {
+        "skillId": "berserker_r",
+        "name": "断头台",
+        "cooldownMs": 120000,
+        "range": 460,
+        "type": "active",
+        "description": [
+            "R：断头台",
+            "狂战士的终极技能，对目标造成基于“出血”层数的真实伤害。",
+            "基础伤害：造成真实伤害。",
+            "额外伤害：目标身上每层“出血”效果，都会使该技能伤害提升20%。",
+            "刷新机制：如果R技能击杀目标，狂战士可以在接下来的20秒内再次施放。当R技能升到3级时，如果击杀目标，技能冷却时间会完全重置。"
+        ],
+        "meta": {
+            "castWindupSeconds": 0.5,
+            "bonusAdRatio": 0.75,
+            "damagePerBleedStack": 0.2,
+            "recastSeconds": 20,
+            "visionSeconds": 2.5,
+            "visionRadius": 450,
+            "targetPickPadding": 80
+        },
+        "metaLists": {
+            "baseDamage": [125, 250, 375],
+            "manaCost": [100, 100, 0],
+            "cooldownMs": [120000, 100000, 80000]
+        }
     }
-  },
-  {
-    "skillId": "berserker_r",
-    "name": "断头台",
-    "cooldownMs": 120000,
-    "range": 460,
-    "type": "active",
-    "meta": {
-      "castWindupSeconds": 0.5,
-      "bonusAdRatio": 0.75,
-      "damagePerBleedStack": 0.2,
-      "recastSeconds": 20,
-      "visionSeconds": 2.5,
-      "visionRadius": 450,
-      "targetPickPadding": 80
-    },
-    "metaLists": {
-      "baseDamage": [125, 250, 375],
-      "manaCost": [100, 100, 0],
-      "cooldownMs": [120000, 100000, 80000]
-    }
-  }
 ]

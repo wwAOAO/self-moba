@@ -1,0 +1,42 @@
+[
+  {
+    "skillId": "killer_passive",
+    "name": "Killer Passive",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "passive",
+    "description": []
+  },
+  {
+    "skillId": "killer_q",
+    "name": "Killer Q",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "active",
+    "description": []
+  },
+  {
+    "skillId": "killer_w",
+    "name": "Killer W",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "active",
+    "description": []
+  },
+  {
+    "skillId": "killer_e",
+    "name": "Killer E",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "active",
+    "description": []
+  },
+  {
+    "skillId": "killer_r",
+    "name": "Killer R",
+    "cooldownMs": 0,
+    "range": 0,
+    "type": "active",
+    "description": []
+  }
+]

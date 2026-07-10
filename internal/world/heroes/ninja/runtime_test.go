@@ -282,7 +282,7 @@ func TestRWindupDashMarkDamageAndRecast(t *testing.T) {
 	target.Stats.MaxHP = 1000
 	target.Stats.PhysicalDefense = 0
 
-	CastR(w, source, protocol.CastInput{SkillID: rID, TargetID: target.ID, TargetX: target.Position.X, TargetY: target.Position.Y}, source.Skills[rID], rSkill(), 10, 20)
+	CastR(w, source, protocol.CastInput{SkillID: rID, TargetID: target.ID, TargetX: 420, TargetY: target.Position.Y}, source.Skills[rID], rSkill(), 10, 20)
 
 	if source.Ninja.RReleaseTick != 22 || source.Ninja.RDashEndTick != 29 {
 		t.Fatalf("r timing release=%d dashEnd=%d, want 22/29", source.Ninja.RReleaseTick, source.Ninja.RDashEndTick)
@@ -311,8 +311,8 @@ func TestRWindupDashMarkDamageAndRecast(t *testing.T) {
 	if source.Ninja.ShadowPosition.X != 25 || source.Ninja.ShadowRecastSkillID != wID {
 		t.Fatalf("r should not overwrite w shadow: %+v", source.Ninja)
 	}
-	if source.Ninja.RShadowPosition.X != 100 || source.Ninja.RShadowExpiresAt != 172 || source.Ninja.RShadowRecastUntil != 142 {
-		t.Fatalf("r shadow = %+v expires %d recastUntil %d, want x=100 expires=172 recastUntil=142", source.Ninja.RShadowPosition, source.Ninja.RShadowExpiresAt, source.Ninja.RShadowRecastUntil)
+	if source.Ninja.RShadowPosition.X != 420 || source.Ninja.RShadowExpiresAt != 172 || source.Ninja.RShadowRecastUntil != 142 {
+		t.Fatalf("r shadow = %+v expires %d recastUntil %d, want x=420 expires=172 recastUntil=142", source.Ninja.RShadowPosition, source.Ninja.RShadowExpiresAt, source.Ninja.RShadowRecastUntil)
 	}
 
 	Tick(w, source, 29, 20)
@@ -336,8 +336,8 @@ func TestRWindupDashMarkDamageAndRecast(t *testing.T) {
 	if !SpecialRecast(w, source, protocol.CastInput{SkillID: rID}, source.Skills[rID], rSkill(), 90, 20) {
 		t.Fatal("r recast should swap with shadow")
 	}
-	if source.Position.X != 100 || source.Ninja.RShadowPosition.X != 500 {
-		t.Fatalf("r recast positions source=%+v shadow=%+v, want source x=100 shadow x=500", source.Position, source.Ninja.RShadowPosition)
+	if source.Position.X != 420 || source.Ninja.RShadowPosition.X != 500 {
+		t.Fatalf("r recast positions source=%+v shadow=%+v, want source x=420 shadow x=500", source.Position, source.Ninja.RShadowPosition)
 	}
 	if SpecialRecast(w, source, protocol.CastInput{SkillID: rID}, source.Skills[rID], rSkill(), 142, 20) {
 		t.Fatal("r recast should be closed during final shadow linger")

@@ -4,12 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"unicode/utf8"
 
 	"l-battle/internal/config"
 	"l-battle/internal/messaging/jetstream"
 	"l-battle/internal/protocol"
 	"l-battle/internal/world"
 )
+
+const MaxPlayerIDLength = 16
 
 var (
 	ErrMissingPayload    = errors.New("missing payload")
@@ -58,8 +61,8 @@ func (m *Manager) CreateRoom(roomID string) (*Room, error) {
 }
 
 func (m *Manager) JoinRoom(roomID string, playerID string, heroID string, team world.Team) (*Room, error) {
-	if playerID == "" {
-		return nil, fmt.Errorf("player id is required")
+	if err := validatePlayerID(playerID); err != nil {
+		return nil, err
 	}
 	hero, ok := m.heroes.Get(heroID)
 	if !ok {
@@ -73,6 +76,15 @@ func (m *Manager) JoinRoom(roomID string, playerID string, heroID string, team w
 	return room, nil
 }
 
+func validatePlayerID(playerID string) error {
+	if playerID == "" {
+		return fmt.Errorf("player id is required")
+	}
+	if utf8.RuneCountInString(playerID) > MaxPlayerIDLength {
+		return fmt.Errorf("player id must be at most %d characters", MaxPlayerIDLength)
+	}
+	return nil
+}
 func (m *Manager) SubmitInput(roomID string, playerID string, input protocol.PlayerInput) error {
 	m.mu.RLock()
 	room := m.rooms[roomID]

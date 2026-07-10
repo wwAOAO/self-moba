@@ -1,171 +1,119 @@
 [
-  {
-    "skillId": "mage_arcane_flow",
-    "name": "光芒四射",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "passive",
-    "meta": {
-      "debuffSeconds": 6,
-      "apRatio": 0.3
+    {
+        "skillId": "mage_arcane_flow",
+        "name": "光芒四射",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": [
+            "被动：",
+            "光明法师的伤害型技能会标记敌人。她的下一次普通攻击会引爆该标记，造成额外魔法伤害。此外，终极闪光（R） 在命中敌人时也会引爆并刷新这个标记"
+        ],
+        "meta": {
+            "debuffSeconds": 6,
+            "apRatio": 0.3
+        },
+        "metaLists": {
+            "detonateDamage": [20, 200],
+            "detonateDamageLevels": [1, 18]
+        }
     },
-    "metaLists": {
-      "detonateDamage": [
-        20,
-        200
-      ],
-      "detonateDamageLevels": [
-        1,
-        18
-      ]
-    }
-  },
-  {
-    "skillId": "mage_q",
-    "name": "光之束缚",
-    "cooldownMs": 15000,
-    "range": 1175,
-    "type": "projectile_line",
-    "meta": {
-      "apRatio": 0.7,
-      "projectileRadius": 45,
-      "projectileSpeed": 1400,
-      "castWindupSeconds": 0.25,
-      "rootSeconds": 2,
-      "maxHits": 2,
-      "secondHitDamageMultiplier": 0.5
+    {
+        "skillId": "mage_q",
+        "name": "光之束缚",
+        "cooldownMs": 15000,
+        "range": 1175,
+        "type": "projectile_line",
+        "description": [
+            "Q：光之束缚",
+            "光明法师朝目标方向发射一个光球，对命中的前两个敌方单位造成魔法伤害，并将其束缚（定身）2秒"
+        ],
+        "meta": {
+            "apRatio": 0.7,
+            "projectileRadius": 45,
+            "projectileSpeed": 1400,
+            "castWindupSeconds": 0.25,
+            "rootSeconds": 2,
+            "maxHits": 2,
+            "secondHitDamageMultiplier": 0.5
+        },
+        "metaLists": {
+            "manaCost": [50, 55, 60, 65, 70],
+            "cooldownMs": [15000, 14000, 13000, 12000, 11000],
+            "baseDamage": [50, 100, 150, 200, 250]
+        }
     },
-    "metaLists": {
-      "manaCost": [
-        50,
-        55,
-        60,
-        65,
-        70
-      ],
-      "cooldownMs": [
-        15000,
-        14000,
-        13000,
-        12000,
-        11000
-      ],
-      "baseDamage": [
-        50,
-        100,
-        150,
-        200,
-        250
-      ]
-    }
-  },
-  {
-    "skillId": "mage_w",
-    "name": "曲光屏障",
-    "cooldownMs": 14000,
-    "range": 1075,
-    "type": "shield_boomerang",
-    "meta": {
-      "manaCost": 60,
-      "apRatio": 0.2,
-      "projectileRadius": 55,
-      "projectileSpeed": 2400,
-      "castWindupSeconds": 0.2,
-      "shieldSeconds": 3
+    {
+        "skillId": "mage_w",
+        "name": "曲光屏障",
+        "cooldownMs": 14000,
+        "range": 1075,
+        "type": "shield_boomerang",
+        "description": [
+            "W：曲光屏障",
+            "光明法师朝目标方向掷出魔杖，对路径上所有被触及的友方英雄（包括自己）施加护盾，持续3秒。魔杖在到达最大距离后会返回，再次对路径上的友方英雄施加护盾，护盾效果可以叠加"
+        ],
+        "meta": {
+            "manaCost": 60,
+            "apRatio": 0.2,
+            "projectileRadius": 55,
+            "projectileSpeed": 2400,
+            "castWindupSeconds": 0.2,
+            "shieldSeconds": 3
+        },
+        "metaLists": {
+            "cooldownMs": [14000, 13000, 12000, 11000, 10000],
+            "shieldValue": [50, 65, 80, 95, 110]
+        }
     },
-    "metaLists": {
-      "cooldownMs": [
-        14000,
-        13000,
-        12000,
-        11000,
-        10000
-      ],
-      "shieldValue": [
-        50,
-        65,
-        80,
-        95,
-        110
-      ]
-    }
-  },
-  {
-    "skillId": "mage_e",
-    "name": "透光奇点",
-    "cooldownMs": 10000,
-    "range": 1100,
-    "type": "zone_detonate",
-    "meta": {
-      "manaCost": 70,
-      "apRatio": 0.8,
-      "castWindupSeconds": 0.25,
-      "radius": 310,
-      "projectileRadius": 34,
-      "projectileSpeed": 1200,
-      "durationSeconds": 5,
-      "detonateSlowSeconds": 1
+    {
+        "skillId": "mage_e",
+        "name": "透光奇点",
+        "cooldownMs": 10000,
+        "range": 1100,
+        "type": "zone_detonate",
+        "description": [
+            "E：透光奇点",
+            "光明法师在目标区域创造一个光球，使区域内的敌人减速 20/24/28/32/36%。区域在5秒后会自动爆炸，对区域内敌人造成魔法伤害。也可以再次激活该技能提前引爆"
+        ],
+        "meta": {
+            "manaCost": 70,
+            "apRatio": 0.8,
+            "castWindupSeconds": 0.25,
+            "radius": 310,
+            "projectileRadius": 34,
+            "projectileSpeed": 1200,
+            "durationSeconds": 5,
+            "detonateSlowSeconds": 1
+        },
+        "metaLists": {
+            "manaCost": [70, 80, 90, 100, 110],
+            "cooldownMs": [10000, 9500, 9000, 8500, 8000],
+            "baseDamage": [80, 120, 160, 200, 240],
+            "slow": [0.3, 0.35, 0.4, 0.45, 0.5]
+        }
     },
-    "metaLists": {
-      "manaCost": [
-        70,
-        80,
-        90,
-        100,
-        110
-      ],
-      "cooldownMs": [
-        10000,
-        9500,
-        9000,
-        8500,
-        8000
-      ],
-      "baseDamage": [
-        80,
-        120,
-        160,
-        200,
-        240
-      ],
-      "slow": [
-        0.3,
-        0.35,
-        0.4,
-        0.45,
-        0.5
-      ]
+    {
+        "skillId": "mage_r",
+        "name": "终极闪光",
+        "cooldownMs": 80000,
+        "range": 3400,
+        "type": "beam",
+        "description": [
+            "R：终极闪光",
+            "光明法师在短暂蓄力后，发射一束耀目的光能射线，对一条直线上的所有敌人造成魔法伤害。R技能会引爆并刷新目标身上的被动印记"
+        ],
+        "meta": {
+            "manaCost": 100,
+            "apRatio": 0.75,
+            "castWindupSeconds": 0.5,
+            "beamWidth": 200,
+            "refundWindowSeconds": 1.75
+        },
+        "metaLists": {
+            "baseDamage": [300, 400, 500],
+            "cooldownMs": [80000, 65000, 50000],
+            "cooldownRefund": [0.3, 0.4, 0.5]
+        }
     }
-  },
-  {
-    "skillId": "mage_r",
-    "name": "终极闪光",
-    "cooldownMs": 80000,
-    "range": 3400,
-    "type": "beam",
-    "meta": {
-      "manaCost": 100,
-      "apRatio": 0.75,
-      "castWindupSeconds": 0.5,
-      "beamWidth": 200,
-      "refundWindowSeconds": 1.75
-    },
-    "metaLists": {
-      "baseDamage": [
-        300,
-        400,
-        500
-      ],
-      "cooldownMs": [
-        80000,
-        65000,
-        50000
-      ],
-      "cooldownRefund": [
-        0.3,
-        0.4,
-        0.5
-      ]
-    }
-  }
 ]

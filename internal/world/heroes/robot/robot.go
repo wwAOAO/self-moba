@@ -360,7 +360,7 @@ func ApplyEOnBasicHit(w *world.World, attacker *world.Entity, target *world.Enti
 	w.RefreshPlayerStats(attacker)
 	w.InterruptControl(target)
 	knockupTicks := secondsToTicks(skillMeta(w.SkillConfig(eID), "knockupSeconds", 1), tickRate)
-	target.Control.AirborneUntilTick = tick + world.ControlTicksAfterTenacity(target, knockupTicks, tick)
+	w.ApplyAirborne(target, tick+world.ControlTicksAfterTenacity(target, knockupTicks, tick), tick, tickRate)
 }
 
 func eActive(entity *world.Entity, tick uint64) bool {

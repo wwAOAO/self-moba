@@ -11,5 +11,8 @@
   "robot.json",
   "sword.json",
   "tank.json",
-  "warrior.json"
+  "warrior.json",
+  "doctor.json",
+  "killer.json",
+  "monk.json"
 ]

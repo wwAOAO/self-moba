@@ -211,12 +211,15 @@ function heroRole(hero) {
       gunner: "marksman",
       explorer: "marksman",
       blade: "fighter",
+      killer: "assassin",
       ninja: "assassin",
       sword: "fighter",
       warrior: "fighter",
       berserker: "fighter",
       tank: "tank",
       robot: "tank",
+      doctor: "tank",
+      monk: "fighter",
     }[hero.heroId] || "fighter"
   );
 }
@@ -231,11 +234,13 @@ function heroDisplayName(hero) {
     tank: "石头人",
     gunner: "手枪手",
     blade: "刀客",
+    killer: "杀手",
     berserker: "狂战士",
     ninja: "忍者",
     frostmage: "冰霜法师",
     robot: "机器人",
     explorer: "探险者",
+    doctor: "医生",
   };
   return names[hero.heroId] || hero.name || hero.heroId;
 }

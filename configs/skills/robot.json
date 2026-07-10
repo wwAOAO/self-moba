@@ -1,155 +1,120 @@
 [
-  {
-    "skillId": "robot_passive",
-    "name": "Robot Passive",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "passive",
-    "meta": {
-      "threshold": 0.2,
-      "shieldMaxManaRatio": 0.3,
-      "durationSeconds": 10,
-      "cooldownSeconds": 90
-    }
-  },
-  {
-    "skillId": "robot_q",
-    "name": "Rocket Grab",
-    "cooldownMs": 20000,
-    "range": 925,
-    "type": "hook_projectile",
-    "meta": {
-      "castWindupSeconds": 0.25,
-      "projectileSpeed": 1800,
-      "projectileRadius": 70,
-      "apRatio": 1,
-      "pullSpeed": 1800,
-      "frontPadding": 1
+    {
+        "skillId": "robot_passive",
+        "name": "Robot Passive",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": [
+            "被动:法力屏障",
+            "触发条件：当机器人的生命值低于20% 时自动激活。",
+            "护盾值：产生相当于机器人最大法力值30% 的法力护盾。",
+            "持续时间：10秒",
+            "冷却时间：90秒"
+        ],
+        "meta": {
+            "threshold": 0.2,
+            "shieldMaxManaRatio": 0.3,
+            "durationSeconds": 10,
+            "cooldownSeconds": 90
+        }
     },
-    "metaLists": {
-      "manaCost": [
-        100,
-        100,
-        100,
-        100,
-        100
-      ],
-      "cooldownMs": [
-        20000,
-        19000,
-        18000,
-        17000,
-        16000
-      ],
-      "baseDamage": [
-        80,
-        135,
-        190,
-        245,
-        300
-      ]
-    }
-  },
-  {
-    "skillId": "robot_w",
-    "name": "Overdrive",
-    "cooldownMs": 15000,
-    "range": 0,
-    "type": "self_buff",
-    "meta": {
-      "manaCost": 75,
-      "durationSeconds": 5,
-      "decaySeconds": 2.5,
-      "minMoveSpeedBonus": 0.1,
-      "slow": 0.3,
-      "slowSeconds": 1.5,
-      "maxHPMagicDamageRatio": 0.01
+    {
+        "skillId": "robot_q",
+        "name": "Rocket Grab",
+        "cooldownMs": 20000,
+        "range": 925,
+        "type": "hook_projectile",
+        "description": [
+            "Q:机械飞爪",
+            "效果：机器人将右手发射出去，命中第一个敌人时将其眩晕并拉到面前，同时造成魔法伤害。"
+        ],
+        "meta": {
+            "castWindupSeconds": 0.25,
+            "projectileSpeed": 1800,
+            "projectileRadius": 70,
+            "apRatio": 1,
+            "pullSpeed": 1800,
+            "frontPadding": 1
+        },
+        "metaLists": {
+            "manaCost": [100, 100, 100, 100, 100],
+            "cooldownMs": [20000, 19000, 18000, 17000, 16000],
+            "baseDamage": [80, 135, 190, 245, 300]
+        }
     },
-    "metaLists": {
-      "cooldownMs": [
-        15000,
-        15000,
-        15000,
-        15000,
-        15000
-      ],
-      "moveSpeedBonus": [
-        0.7,
-        0.75,
-        0.8,
-        0.85,
-        0.9
-      ],
-      "attackSpeedBonus": [
-        0.3,
-        0.38,
-        0.46,
-        0.54,
-        0.62
-      ],
-      "minionMonsterDamageCapLevels": [
-        1,
-        18
-      ],
-      "minionMonsterDamageCap": [
-        60,
-        190
-      ]
-    }
-  },
-  {
-    "skillId": "robot_e",
-    "name": "Power Fist",
-    "cooldownMs": 9000,
-    "range": 300,
-    "type": "empowered_basic_attack",
-    "meta": {
-      "manaCost": 25,
-      "durationSeconds": 5,
-      "attackMultiplier": 2,
-      "apRatio": 0.25,
-      "knockupSeconds": 1
+    {
+        "skillId": "robot_w",
+        "name": "Overdrive",
+        "cooldownMs": 15000,
+        "range": 0,
+        "type": "self_buff",
+        "description": [
+            "W:过载运转",
+            "效果：机器人进行超级充能，移动速度提升 70/75/80/85/90% ，攻击速度提升 30/38/46/54/62% ，持续5秒。",
+            "负面效果：加速效果结束后，机器人的移动速度会减少30%，持续1.5秒"
+        ],
+        "meta": {
+            "manaCost": 75,
+            "durationSeconds": 5,
+            "decaySeconds": 2.5,
+            "minMoveSpeedBonus": 0.1,
+            "slow": 0.3,
+            "slowSeconds": 1.5,
+            "maxHPMagicDamageRatio": 0.01
+        },
+        "metaLists": {
+            "cooldownMs": [15000, 15000, 15000, 15000, 15000],
+            "moveSpeedBonus": [0.7, 0.75, 0.8, 0.85, 0.9],
+            "attackSpeedBonus": [0.3, 0.38, 0.46, 0.54, 0.62],
+            "minionMonsterDamageCapLevels": [1, 18],
+            "minionMonsterDamageCap": [60, 190]
+        }
     },
-    "metaLists": {
-      "cooldownMs": [
-        9000,
-        8000,
-        7000,
-        6000,
-        5000
-      ]
-    }
-  },
-  {
-    "skillId": "robot_r",
-    "name": "Static Field",
-    "cooldownMs": 60000,
-    "range": 600,
-    "type": "area_silence",
-    "meta": {
-      "manaCost": 100,
-      "castWindupSeconds": 0.2,
-      "silenceSeconds": 0.5,
-      "passiveDelaySeconds": 1,
-      "passiveAPRatio": 0.3,
-      "activeAPRatio": 1
+    {
+        "skillId": "robot_e",
+        "name": "Power Fist",
+        "cooldownMs": 9000,
+        "range": 300,
+        "type": "empowered_basic_attack",
+        "description": [
+            "E:能量铁拳",
+            "效果：机器人为机械手臂充能，在5秒内下一次普通攻击造成双倍伤害，并将目标击飞"
+        ],
+        "meta": {
+            "manaCost": 25,
+            "durationSeconds": 5,
+            "attackMultiplier": 2,
+            "apRatio": 0.25,
+            "knockupSeconds": 1
+        },
+        "metaLists": {
+            "cooldownMs": [9000, 8000, 7000, 6000, 5000]
+        }
     },
-    "metaLists": {
-      "cooldownMs": [
-        60000,
-        40000,
-        20000
-      ],
-      "passiveDamage": [
-        50,
-        100,
-        150
-      ],
-      "activeDamage": [
-        250,
-        375,
-        500
-      ]
+    {
+        "skillId": "robot_r",
+        "name": "Static Field",
+        "cooldownMs": 60000,
+        "range": 600,
+        "type": "area_silence",
+        "description": [
+            "R:静电力场",
+            "被动效果：机器人每2.5秒会释放一道电弧，对附近一个随机敌人造成魔法伤害。",
+            "主动效果：对周围敌人造成魔法伤害，并沉默他们0.5秒。主动施放后，被动效果会暂时移除，直到技能冷却结束"
+        ],
+        "meta": {
+            "manaCost": 100,
+            "castWindupSeconds": 0.2,
+            "silenceSeconds": 0.5,
+            "passiveDelaySeconds": 1,
+            "passiveAPRatio": 0.3,
+            "activeAPRatio": 1
+        },
+        "metaLists": {
+            "cooldownMs": [60000, 40000, 20000],
+            "passiveDamage": [50, 100, 150],
+            "activeDamage": [250, 375, 500]
+        }
     }
-  }
 ]

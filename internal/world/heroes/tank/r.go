@@ -97,7 +97,7 @@ func ResolveRImpact(w *world.World, entity *world.Entity, tick uint64, tickRate 
 		if target.Kind != world.EntityKindDummy {
 			wasAlive := target.Stats.HP > 0
 			w.ApplyAOEDamage(entity, target, w.TankMagicDamageAfterResistance(entity, target, damage, tick), "magic", tickRate)
-			target.Control.AirborneUntilTick = tick + world.TankControlTicksAfterTenacity(target, knockupTicks, tick)
+			w.ApplyAirborne(target, tick+world.TankControlTicksAfterTenacity(target, knockupTicks, tick), tick, tickRate)
 			if wasAlive && target.Stats.HP == 0 {
 				w.ApplyKillReward(entity, target)
 				w.KillPlayer(target, tick, tickRate)
@@ -106,7 +106,7 @@ func ResolveRImpact(w *world.World, entity *world.Entity, tick uint64, tickRate 
 		} else {
 			target.Combat.LastDamage = w.TankMagicDamageAfterResistance(entity, target, damage, tick)
 			target.Combat.LastDamageType = "magic"
-			target.Control.AirborneUntilTick = tick + knockupTicks
+			w.ApplyAirborne(target, tick+knockupTicks, tick, tickRate)
 		}
 	}
 	entity.Tank.UnstoppableImpactPending = false

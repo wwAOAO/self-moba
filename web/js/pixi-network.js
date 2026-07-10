@@ -4,7 +4,7 @@ function connect() {
   }
 
   state.roomId = els.roomId.value.trim() || "demo-room";
-  state.playerId = els.playerId.value.trim() || state.playerId;
+  state.playerId = Array.from(els.playerId.value.trim() || state.playerId).slice(0, 16).join("");
   state.team = els.team.value;
   els.serverUrl.value = els.serverUrl.value.trim() || websocketURL();
   els.playerId.value = state.playerId;
@@ -209,8 +209,20 @@ function showTargetDamage(id, target) {
     };
   }
   for (const event of damageEvents.slice(-maxDamageEventsPerTarget)) {
-    spawnDamageText(target, event.damage || 0, event.damageType || "physical");
+    spawnDamageText(
+      target,
+      event.damage || 0,
+      event.damageType || "physical",
+      isLocalPlayerDamage(target, event, self),
+    );
   }
+}
+
+function isLocalPlayerDamage(target, event, self) {
+  if (!self) {
+    return false;
+  }
+  return target.id === self.id || event.sourceId === self.id;
 }
 
 function rememberTargetDamage(id, target) {

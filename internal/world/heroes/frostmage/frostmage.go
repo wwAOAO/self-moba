@@ -151,12 +151,12 @@ func CastW(w *world.World, entity *world.Entity, cast protocol.CastInput, state 
 		if target.Kind == world.EntityKindDummy {
 			target.Combat.LastDamage = damage
 			target.Combat.LastDamageType = "magic"
-			target.Control.RootedUntilTick = tick + rootTicks
+			w.ApplyRoot(target, tick+rootTicks, tick, tickRate)
 			continue
 		}
 		wasAlive := target.Stats.HP > 0
 		w.ApplyMagicDamage(entity, target, damage, tickRate)
-		target.Control.RootedUntilTick = tick + world.ControlTicksAfterTenacity(target, rootTicks, tick)
+		w.ApplyRoot(target, tick+world.ControlTicksAfterTenacity(target, rootTicks, tick), tick, tickRate)
 		if wasAlive && target.Stats.HP == 0 {
 			w.ApplyKillReward(entity, target)
 			w.KillPlayer(target, tick, tickRate)
@@ -388,7 +388,7 @@ func releaseR(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 	} else {
 		wasAlive := target.Stats.HP > 0
 		w.ApplyMagicDamage(entity, target, damage, tickRate)
-		target.Control.StunnedUntilTick = tick + world.ControlTicksAfterTenacity(target, secondsToTicks(skillMeta(skill, "stunSeconds", 1.5), tickRate), tick)
+		w.ApplyStun(target, tick+world.ControlTicksAfterTenacity(target, secondsToTicks(skillMeta(skill, "stunSeconds", 1.5), tickRate), tick), tick, tickRate)
 		if wasAlive && target.Stats.HP == 0 {
 			w.ApplyKillReward(entity, target)
 			w.KillPlayer(target, tick, tickRate)

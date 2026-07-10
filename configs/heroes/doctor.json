@@ -1,0 +1,42 @@
+[
+  {
+    "heroId": "doctor",
+    "name": "医生",
+    "resource": "none",
+    "base": {
+      "hp": 640,
+      "mp": 0,
+      "hpRegen5": 7.25,
+      "attack": 59.23,
+      "abilityHaste": 0,
+      "physicalDefense": 20.5,
+      "magicDefense": 31.25,
+      "moveSpeed": 345,
+      "attackRange": 125,
+      "attackSpeed": 0.625,
+      "attackWindupSeconds": 0.25,
+      "attackSpeedRatio": 0.625,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 89,
+      "mp": 0,
+      "hpRegen5": 0.75,
+      "attack": 2.5,
+      "physicalDefense": 3.5,
+      "magicDefense": 1.25,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.028,
+      "critChance": 0
+    },
+    "radius": 22,
+    "skills": {
+      "passive": "doctor_passive",
+      "q": "doctor_q",
+      "w": "doctor_w",
+      "e": "doctor_e",
+      "r": "doctor_r"
+    }
+  }
+]
