@@ -103,6 +103,29 @@ func (w *World) SpawnBattleUnits() {
 		PhysicalPenPercent: 0.3,
 		MagicPenPercent:    0.3,
 	})
+
+	structures := []struct {
+		kind     EntityKind
+		distance float64
+	}{
+		{EntityKindCrystal, 1100},
+		{EntityKindBarracks, 1800},
+		{EntityKindTower, 2900},
+		{EntityKindTower, 4100},
+	}
+	for _, team := range []Team{TeamBlue, TeamRed} {
+		start := w.spawnPosition(team)
+		end := w.spawnPosition(oppositeTeam(team))
+		dx, dy := normalize(end.X-start.X, end.Y-start.Y)
+		for index, structure := range structures {
+			stats, radius, _ := unitTemplate(structure.kind)
+			id := "spawn:" + string(structure.kind) + ":" + string(team)
+			if structure.kind == EntityKindTower {
+				id += ":" + strconv.Itoa(index-1)
+			}
+			w.spawnUnit(id, structure.kind, team, start.X+dx*structure.distance, start.Y+dy*structure.distance, radius, stats)
+		}
+	}
 }
 
 func (w *World) SpawnTrainingDummy() {
@@ -171,11 +194,11 @@ func unitTemplate(kind EntityKind) (Stats, float64, bool) {
 	case EntityKindSiegeMinion:
 		return Stats{HP: 900, MaxHP: 900, Attack: 40, MoveSpeed: 2.4, AttackRange: 280, AttackSpeed: 1}, 26, true
 	case EntityKindTower:
-		return Stats{HP: 2600, MaxHP: 2600, Attack: 180, PhysicalDefense: 80, MagicDefense: 60, AttackRange: 620, AttackSpeed: 0.75}, 34, true
+		return Stats{HP: 2600, MaxHP: 2600, Attack: 180, PhysicalDefense: 80, MagicDefense: 60, AttackRange: 620, AttackSpeed: 0.75}, 28, true
 	case EntityKindBarracks:
-		return Stats{HP: 3200, MaxHP: 3200, PhysicalDefense: 55, MagicDefense: 45}, 40, true
+		return Stats{HP: 3200, MaxHP: 3200, PhysicalDefense: 55, MagicDefense: 45}, 32, true
 	case EntityKindCrystal:
-		return Stats{HP: 4500, MaxHP: 4500, PhysicalDefense: 70, MagicDefense: 70}, 48, true
+		return Stats{HP: 4500, MaxHP: 4500, PhysicalDefense: 70, MagicDefense: 70}, 38, true
 	case EntityKindFountain:
 		return Stats{HP: 99999, MaxHP: 99999}, 90, true
 	case EntityKindFruit:

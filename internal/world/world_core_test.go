@@ -156,6 +156,64 @@ func TestFountainsSpawnAtTeamSpawnPositions(t *testing.T) {
 	}
 }
 
+func TestBattleStructuresSpawnForBothTeams(t *testing.T) {
+	w := testWorld(t)
+	structures := []struct {
+		suffix   string
+		kind     EntityKind
+		distance float64
+		radius   float64
+	}{
+		{"", EntityKindCrystal, 1100, 38},
+		{"", EntityKindBarracks, 1800, 32},
+		{":1", EntityKindTower, 2900, 28},
+		{":2", EntityKindTower, 4100, 28},
+	}
+
+	for _, team := range []Team{TeamBlue, TeamRed} {
+		start := w.spawnPosition(team)
+		end := w.spawnPosition(oppositeTeam(team))
+		dx, dy := normalize(end.X-start.X, end.Y-start.Y)
+		for _, structure := range structures {
+			id := "spawn:" + string(structure.kind) + ":" + string(team) + structure.suffix
+			entity := w.entities[id]
+			if entity == nil {
+				t.Fatalf("missing %s", id)
+			}
+			if entity.Kind != structure.kind || entity.Team != team {
+				t.Fatalf("%s kind/team = %s/%s", id, entity.Kind, entity.Team)
+			}
+			want := Vector2{X: start.X + dx*structure.distance, Y: start.Y + dy*structure.distance}
+			if entity.Position != want {
+				t.Fatalf("%s position = %+v, want %+v", id, entity.Position, want)
+			}
+			if entity.Radius != structure.radius {
+				t.Fatalf("%s radius = %v, want %v", id, entity.Radius, structure.radius)
+			}
+			if entity.Stats.HP <= 0 || entity.Stats.HP != entity.Stats.MaxHP {
+				t.Fatalf("%s hp = %v/%v", id, entity.Stats.HP, entity.Stats.MaxHP)
+			}
+		}
+	}
+}
+
+func TestPlayerCannotMoveThroughStructure(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	hero.Base.MoveSpeed = 345
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	structure := w.entities["spawn:barracks:blue"]
+	structure.Position = Vector2{X: player.Position.X + 50, Y: player.Position.Y}
+
+	w.ApplyInput("p1", protocolPlayerInputMove(player.Position.X+100, player.Position.Y), 1, nil, 20)
+	w.Tick(2, 20)
+
+	if got, want := distance(player.Position, structure.Position), player.Radius+structure.Radius; got < want-0.001 {
+		t.Fatalf("player distance to structure = %f, want at least %f", got, want)
+	}
+}
+
 func TestFountainRegeneratesFriendlyHero(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()
@@ -457,6 +515,56 @@ func TestLaneMinionAttacksEnemyOnRoute(t *testing.T) {
 
 	if red.Stats.HP >= red.Stats.MaxHP {
 		t.Fatalf("red minion hp = %v, want damaged", red.Stats.HP)
+	}
+}
+
+func TestLaneMinionAttacksEnemyStructure(t *testing.T) {
+	w := testWorld(t)
+	tower := w.entities["spawn:tower:red:1"]
+	minion := &Entity{
+		ID:       "spawn:test-blue-structure-attacker",
+		Kind:     EntityKindMeleeMinion,
+		Team:     TeamBlue,
+		Position: Vector2{X: tower.Position.X - 50, Y: tower.Position.Y},
+		Radius:   20,
+		Stats:    Stats{HP: 10000, MaxHP: 10000, Attack: 200, MoveSpeed: laneMinionMoveSpeed, AttackRange: 125, AttackSpeed: 1.25},
+		Lane:     LaneState{Active: true, RouteTarget: w.spawnPosition(TeamRed), LastOnLaneTick: 1},
+	}
+	w.entities[minion.ID] = minion
+	startHP := tower.Stats.HP
+
+	for tick := uint64(1); tick <= 10; tick++ {
+		w.Tick(tick, 20)
+	}
+
+	if tower.Stats.HP >= startHP {
+		t.Fatalf("tower hp = %v, want less than %v", tower.Stats.HP, startHP)
+	}
+}
+
+func TestTowerAutomaticallyAttacksNearestEnemyUnit(t *testing.T) {
+	w := testWorld(t)
+	tower := w.entities["spawn:tower:blue:1"]
+	minion := &Entity{
+		ID:       "spawn:test-red-tower-target",
+		Kind:     EntityKindMeleeMinion,
+		Team:     TeamRed,
+		Position: Vector2{X: tower.Position.X + 200, Y: tower.Position.Y},
+		Radius:   20,
+		Stats:    Stats{HP: 5000, MaxHP: 5000},
+	}
+	w.entities[minion.ID] = minion
+	startHP := minion.Stats.HP
+
+	for tick := uint64(1); tick <= 15; tick++ {
+		w.Tick(tick, 20)
+	}
+
+	if tower.Intent.AttackTargetID != minion.ID {
+		t.Fatalf("tower target = %q, want %q", tower.Intent.AttackTargetID, minion.ID)
+	}
+	if minion.Stats.HP >= startHP {
+		t.Fatalf("minion hp = %v, want less than %v", minion.Stats.HP, startHP)
 	}
 }
 

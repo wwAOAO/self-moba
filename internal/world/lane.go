@@ -178,7 +178,47 @@ func (w *World) nearestLaneTarget(minion *Entity) *Entity {
 }
 
 func isLaneTarget(entity *Entity) bool {
-	return entity != nil && (entity.Kind == EntityKindPlayer || entity.Kind == EntityKindEnemyHero || isMinion(entity))
+	return entity != nil && (entity.Kind == EntityKindPlayer || entity.Kind == EntityKindEnemyHero || isMinion(entity) || isStructure(entity))
+}
+
+func isStructure(entity *Entity) bool {
+	return entity != nil && (entity.Kind == EntityKindTower || entity.Kind == EntityKindBarracks || entity.Kind == EntityKindCrystal)
+}
+
+func (w *World) tickTower(tower *Entity, tick uint64, tickRate int) {
+	if tower == nil || tower.Kind != EntityKindTower || tower.Stats.HP <= 0 || tickRate <= 0 {
+		return
+	}
+	target := w.entities[tower.Intent.AttackTargetID]
+	if !isTowerTarget(tower, target) || distance(tower.Position, target.Position) > w.attackReachAtTick(tower, target, tick) {
+		target = w.nearestTowerTarget(tower, tick)
+		if target == nil {
+			tower.Intent.AttackTargetID = ""
+			return
+		}
+		tower.Intent.AttackTargetID = target.ID
+	}
+	w.applyAttack(tower, target, tick, tickRate)
+}
+
+func (w *World) nearestTowerTarget(tower *Entity, tick uint64) *Entity {
+	var best *Entity
+	bestDistance := math.MaxFloat64
+	for _, target := range w.entities {
+		if !isTowerTarget(tower, target) {
+			continue
+		}
+		d := distance(tower.Position, target.Position)
+		if d <= w.attackReachAtTick(tower, target, tick) && d < bestDistance {
+			best = target
+			bestDistance = d
+		}
+	}
+	return best
+}
+
+func isTowerTarget(tower *Entity, target *Entity) bool {
+	return canAttackTarget(tower, target) && (target.Kind == EntityKindPlayer || target.Kind == EntityKindEnemyHero || isMinion(target))
 }
 
 func oppositeTeam(team Team) Team {

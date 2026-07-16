@@ -54,7 +54,7 @@ func (w *World) interruptMonkEchoDash(target *Entity, tick uint64) {
 			continue
 		}
 		delete(w.skillEffects, id)
-		if target.Control.DashUntilTick != effect.ExpiresAt {
+		if target.Control.DashUntilTick+1 != effect.ExpiresAt {
 			continue
 		}
 		dashUntil := target.Control.DashUntilTick

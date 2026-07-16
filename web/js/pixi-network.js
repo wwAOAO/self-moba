@@ -320,6 +320,7 @@ function castSkill(slot) {
     skillId === "blade_e" ||
     skillId === "killer_q" ||
     skillId === "killer_e" ||
+    skillId === "monk_q" ||
     skillId === "sword_cut" ||
     skillId === "sword_sweeping_blade" ||
     skillId === "trap" ||
@@ -334,7 +335,7 @@ function castSkill(slot) {
   if (skillId === "frostmage_r") {
     showFrostMageRPreview(self);
   }
-  const cursorOnlyTargeting = skillId === "killer_q" || skillId === "killer_e";
+  const cursorOnlyTargeting = skillId === "killer_q" || skillId === "killer_e" || skillId === "monk_q";
   if (skillId !== "killer_q") {
     addCastWindup(self, skillId, target, cursorOnlyTargeting ? null : selected);
   }

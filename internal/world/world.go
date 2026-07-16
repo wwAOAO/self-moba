@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	DefaultMapWidth    = 6000.0
-	DefaultMapHeight   = 6000.0
+	DefaultMapWidth    = 8000.0
+	DefaultMapHeight   = 8000.0
 	MinHeroLevel       = 1
 	MaxHeroLevel       = 18
 	MaxBasicSkillLevel = 5
@@ -142,6 +142,11 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		if entity.Lane.Active {
 			w.releasePendingAttack(entity, tick, tickRate)
 			w.tickLaneMinion(entity, tick, tickRate)
+			continue
+		}
+		if entity.Kind == EntityKindTower {
+			w.releasePendingAttack(entity, tick, tickRate)
+			w.tickTower(entity, tick, tickRate)
 			continue
 		}
 		if entity.Kind != EntityKindPlayer {

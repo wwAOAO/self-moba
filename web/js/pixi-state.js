@@ -4,7 +4,7 @@ const state = {
   playerId: `p-${Math.floor(Math.random() * 10000)}`,
   team: "blue",
   seq: 0,
-  map: { width: 6000, height: 6000 },
+  map: { width: 8000, height: 8000 },
   players: new Map(),
   units: new Map(),
   effects: [],

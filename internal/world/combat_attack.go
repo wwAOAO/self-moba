@@ -116,11 +116,11 @@ func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64
 }
 
 func isRangedBasicAttacker(attacker *Entity) bool {
-	return attacker != nil && (attacker.HeroID == archerHeroID || attacker.HeroID == mageHeroID || attacker.HeroID == gunnerHeroID || attacker.HeroID == explorerHeroID || attacker.HeroID == frostmageHeroID || attacker.HeroID == fireMageHeroID || attacker.Kind == EntityKindRangedMinion || attacker.Kind == EntityKindSiegeMinion)
+	return attacker != nil && (attacker.HeroID == archerHeroID || attacker.HeroID == mageHeroID || attacker.HeroID == gunnerHeroID || attacker.HeroID == explorerHeroID || attacker.HeroID == frostmageHeroID || attacker.HeroID == fireMageHeroID || attacker.Kind == EntityKindRangedMinion || attacker.Kind == EntityKindSiegeMinion || attacker.Kind == EntityKindTower)
 }
 
 func canBasicAttack(entity *Entity) bool {
-	return entity != nil && (entity.Kind == EntityKindPlayer || isMinion(entity))
+	return entity != nil && (entity.Kind == EntityKindPlayer || isMinion(entity) || entity.Kind == EntityKindTower)
 }
 
 func (w *World) fireBasicAttackProjectile(attacker *Entity, target *Entity, tick uint64, tickRate int) {

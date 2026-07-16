@@ -815,8 +815,9 @@ func TestExplorerRDealsReducedDamageToMinionsAndNonEpicMonsters(t *testing.T) {
 	if got := countProjectilesByKind(w, "explorer_r"); got != 1 {
 		t.Fatalf("r projectile after channel = %d, want 1", got)
 	}
-	if projectile := projectileByKind(w, "explorer_r"); projectile == nil || projectile.Range != 5000 {
-		t.Fatalf("r projectile range = %+v, want map edge range 5000", projectile)
+	wantRange := w.width - explorer.Position.X
+	if projectile := projectileByKind(w, "explorer_r"); projectile == nil || projectile.Range != wantRange {
+		t.Fatalf("r projectile range = %+v, want map edge range %v", projectile, wantRange)
 	}
 	for tick := uint64(31); tick <= 50 && (target.Combat.LastDamage == 0 || minion.Combat.LastDamage == 0 || monster.Combat.LastDamage == 0); tick++ {
 		w.Tick(tick, 20)
@@ -864,8 +865,9 @@ func TestArcherRUsesMapEdgeRange(t *testing.T) {
 	if projectile == nil {
 		t.Fatal("archer r projectile missing after release")
 	}
-	if got := projectile.Range; got != 5000 {
-		t.Fatalf("archer r range = %f, want map edge range 5000", got)
+	wantRange := w.width - archer.Position.X
+	if got := projectile.Range; got != wantRange {
+		t.Fatalf("archer r range = %f, want map edge range %v", got, wantRange)
 	}
 }
 

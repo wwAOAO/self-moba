@@ -217,7 +217,13 @@ function createUnit(unit) {
   const collision = new PIXI.Graphics();
   const hpFill = new PIXI.Graphics();
   let visual = unitVisual(unit.kind);
-  if (unit.kind === "fountain" || isMinionKind(unit.kind)) {
+  if (
+    unit.kind === "fountain" ||
+    unit.kind === "tower" ||
+    unit.kind === "crystal" ||
+    unit.kind === "barracks" ||
+    isMinionKind(unit.kind)
+  ) {
     visual = { ...visual, color: colorForTeam(unit.team) };
   }
   const statusLabel = createStatusLabel();
@@ -365,7 +371,7 @@ function unitVisual(kind) {
     ranged_minion: { label: "Ranged", color: 0xfacc15, shape: "ranged_minion" },
     tower: { label: "Tower", color: 0x475569, shape: "tower" },
     crystal: { label: "Crystal", color: 0xa855f7, shape: "crystal" },
-    barracks: { label: "Barracks", color: 0x7c2d12, shape: "rect" },
+    barracks: { label: "Barracks", color: 0x7c2d12, shape: "barracks" },
     fountain: { label: "Fountain", color: 0x38bdf8, shape: "fountain" },
     dummy: { label: "Dummy", color: 0x8a5a32, shape: "rect" },
     fruit: { label: "Fruit", color: 0x22c55e, shape: "diamond" },
@@ -421,6 +427,10 @@ function drawUnitBody(body, visual, radius) {
     drawTowerBuilding(body, size, visual.color);
     return;
   }
+  if (visual.shape === "barracks") {
+    drawBarracksBuilding(body, size, visual.color);
+    return;
+  }
   if (visual.shape === "fountain") {
     body.circle(0, 0, size);
     body.fill({ color: visual.color, alpha: 0.2 });
@@ -466,6 +476,41 @@ function drawTowerBuilding(body, size, color) {
   body.fill({ color: 0xf8fafc, alpha: 0.78 });
   body.rect(-size * 0.1, size * 0.02, size * 0.2, size * 0.46);
   body.fill({ color: 0x1f2937, alpha: 0.7 });
+}
+
+function drawBarracksBuilding(body, size, color) {
+  const stone = visualTowerStone(color);
+  body.roundRect(-size, size * 0.5, size * 2, size * 0.38, size * 0.1);
+  body.fill(0x334155);
+  body.rect(-size * 0.82, -size * 0.32, size * 1.64, size * 0.94);
+  body.fill(stone);
+
+  for (const side of [-1, 1]) {
+    body.rect(side * size * 0.58 - size * 0.2, -size * 0.62, size * 0.4, size * 1.12);
+    body.fill(0x475569);
+    body.moveTo(side * size * 0.82, -size * 0.58);
+    body.lineTo(side * size * 0.58, -size * 1.02);
+    body.lineTo(side * size * 0.34, -size * 0.58);
+    body.closePath();
+    body.fill(color);
+  }
+
+  body.moveTo(-size * 0.5, -size * 0.3);
+  body.lineTo(0, -size * 0.92);
+  body.lineTo(size * 0.5, -size * 0.3);
+  body.closePath();
+  body.fill(color);
+
+  body.circle(0, size * 0.2, size * 0.3);
+  body.fill(0x1f2937);
+  body.rect(-size * 0.3, size * 0.2, size * 0.6, size * 0.42);
+  body.fill(0x1f2937);
+  body.moveTo(0, -size * 0.58);
+  body.lineTo(size * 0.16, -size * 0.38);
+  body.lineTo(0, -size * 0.18);
+  body.lineTo(-size * 0.16, -size * 0.38);
+  body.closePath();
+  body.fill({ color: 0xf8fafc, alpha: 0.82 });
 }
 
 function visualTowerStone(color) {

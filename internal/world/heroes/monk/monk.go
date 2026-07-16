@@ -28,6 +28,7 @@ func init() {
 		AttackSpeedMultiplier: FlurryAttackSpeedMultiplier,
 		ActiveBuffs:           ActiveBuffs,
 		Tick:                  Tick,
+		TickEntity:            TickEntity,
 		SpecialRecast:         SpecialRecast,
 		ApplyStats:            ApplyStats,
 		MonkQDamage:           QDamage,
@@ -39,6 +40,7 @@ func Tick(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 	if w == nil || entity == nil || entity.HeroID != heroID {
 		return
 	}
+	resolveEchoStrike(w, entity, tick, tickRate)
 	releaseQ(w, entity, tick, tickRate)
 	releaseE(w, entity, tick, tickRate)
 	releaseR(w, entity, tick, tickRate)
@@ -58,6 +60,50 @@ func Tick(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 		entity.Passive.MonkERecastUntil = 0
 		entity.Passive.MonkEHitIDs = nil
 	}
+}
+
+func TickEntity(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
+	if w == nil || entity == nil || entity.HeroID != heroID || entity.Control.DashUntilTick <= tick || tickRate <= 0 {
+		return
+	}
+	var echo *world.SkillEffect
+	for _, effect := range w.SkillEffects() {
+		if effect.Kind == "monk_q_echo" && effect.SourceID == entity.ID && effect.ExpiresAt == entity.Control.DashUntilTick+1 {
+			effectCopy := effect
+			echo = &effectCopy
+			break
+		}
+	}
+	if echo == nil {
+		return
+	}
+	target := w.EntityByID(echo.TargetID)
+	if !world.CanAttackTarget(entity, target) {
+		return
+	}
+	end := echoEndPosition(entity, target)
+	dashDistance := distance(entity.Position, end)
+	dashSpeed := skillMeta(w.SkillConfig(qID), "echoDashSpeed", 1400)
+	if dashSpeed <= 0 {
+		dashSpeed = 1400
+	}
+	dashTicks := secondsToTicks(dashDistance/dashSpeed, tickRate)
+	if dashTicks < 1 {
+		dashTicks = 1
+	}
+	startTick := tick
+	if tick > 0 {
+		startTick = tick - 1
+	}
+	entity.Control.DashStartTick = startTick
+	entity.Control.DashStart = entity.Position
+	entity.Control.DashEnd = end
+	entity.Control.DashUntilTick = tick + dashTicks - 1
+	entity.Control.ActionLockedUntilTick = entity.Control.DashUntilTick
+	echo.End = end
+	echo.ExpiresAt = entity.Control.DashUntilTick + 1
+	echo.Speed = dashDistance / float64(dashTicks)
+	w.PutSkillEffect(*echo)
 }
 
 func SpecialRecast(w *world.World, entity *world.Entity, cast protocol.CastInput, state world.SkillState, skill config.SkillConfig, tick uint64, tickRate int) bool {
@@ -98,7 +144,7 @@ func CastQ(w *world.World, entity *world.Entity, cast protocol.CastInput, state 
 	}
 	entity.Passive.MonkQPending = true
 	entity.Passive.MonkQRelease = tick + windupTicks
-	entity.Passive.MonkQTarget = qTargetPoint(w, entity, cast, skill)
+	entity.Passive.MonkQTarget = qTargetPoint(entity, cast, skill)
 	entity.Passive.MonkQLevel = state.Level
 	entity.Control.ActionLockedUntilTick = entity.Passive.MonkQRelease
 	w.LockAttackAfterCast(entity, tick, tickRate)
@@ -612,25 +658,41 @@ func castEcho(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 		Start:        entity.Position,
 		End:          end,
 		Radius:       skillMeta(w.SkillConfig(qID), "echoEffectRadius", 55),
+		Count:        level,
 		Speed:        dashDistance / float64(dashTicks),
 		CreatedAt:    tick,
-		ExpiresAt:    entity.Control.DashUntilTick,
+		ExpiresAt:    entity.Control.DashUntilTick + 1,
 	})
+}
 
-	target.Combat.LastHitTick = tick
-	target.Combat.DamageEvents = nil
-	damage := QDamage(w, entity, target, w.SkillConfig(qID), level, true, tick)
-	wasAlive := target.Stats.HP > 0
-	if target.Kind == world.EntityKindDummy {
-		target.Combat.LastDamage = damage
-		target.Combat.LastDamageType = "physical"
-	} else {
+func resolveEchoStrike(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
+	if entity.Control.DashUntilTick != 0 || tickRate <= 0 {
+		return
+	}
+	for _, effect := range w.SkillEffects() {
+		if effect.Kind != "monk_q_echo" || effect.SourceID != entity.ID || effect.ExpiresAt != tick+1 {
+			continue
+		}
+		target := w.EntityByID(effect.TargetID)
+		if !world.CanAttackTarget(entity, target) {
+			return
+		}
+		target.Combat.LastHitTick = tick
+		target.Combat.DamageEvents = nil
+		damage := QDamage(w, entity, target, w.SkillConfig(qID), effect.Count, true, tick)
+		wasAlive := target.Stats.HP > 0
+		if target.Kind == world.EntityKindDummy {
+			target.Combat.LastDamage = damage
+			target.Combat.LastDamageType = "physical"
+			return
+		}
 		w.ApplyDamage(entity, target, damage, tickRate)
 		if wasAlive && target.Stats.HP == 0 {
 			w.ApplyKillReward(entity, target)
 			w.KillPlayer(target, tick, tickRate)
 			w.RemoveDeadUnit(target)
 		}
+		return
 	}
 }
 
@@ -877,13 +939,8 @@ func shieldValue(entity *world.Entity, skill config.SkillConfig, level int) int 
 	return int(math.Round(value))
 }
 
-func qTargetPoint(w *world.World, entity *world.Entity, cast protocol.CastInput, skill config.SkillConfig) world.Vector2 {
+func qTargetPoint(entity *world.Entity, cast protocol.CastInput, skill config.SkillConfig) world.Vector2 {
 	target := world.Vector2{X: cast.TargetX, Y: cast.TargetY}
-	if cast.TargetID != "" {
-		if targetEntity := w.EntityByID(cast.TargetID); targetEntity != nil {
-			target = targetEntity.Position
-		}
-	}
 	dx, dy := normalize(target.X-entity.Position.X, target.Y-entity.Position.Y)
 	if dx == 0 && dy == 0 {
 		dx = 1

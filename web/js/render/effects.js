@@ -739,14 +739,42 @@ function drawMonkETempestEffect(effect, frame) {
   const tick = interpolatedTick();
   const duration = Math.max(1, (effect.expiresAt || tick + 1) - (effect.createdAt || tick));
   const progress = clamp((tick - (effect.createdAt || tick)) / duration, 0, 1);
-  const alpha = 1 - progress;
+  const alpha = Math.max(0, 1 - progress);
+  const reach = radius * Math.min(1, progress * 2.8);
 
-  skillLayer.circle(x, y, radius * (0.16 + progress * 0.84));
-  skillLayer.fill({ color: 0x0ea5e9, alpha: 0.1 * alpha });
-  skillLayer.circle(x, y, radius * (0.18 + progress * 0.82));
-  skillLayer.stroke({ color: 0x7dd3fc, width: 5, alpha: 0.78 * alpha });
-  skillLayer.circle(x, y, radius * (0.1 + progress * 0.52));
-  skillLayer.stroke({ color: 0xe0f2fe, width: 3, alpha: 0.68 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0x082f49, alpha: 0.16 * alpha });
+
+  for (let index = 0; index < 8; index++) {
+    const angle = (Math.PI * 2 * index) / 8 + 0.18 * Math.sin(index * 2.7);
+    const length = reach * (0.68 + 0.3 * Math.sin(index * 4.1) ** 2);
+    skillLayer.moveTo(x, y);
+    for (let step = 1; step <= 4; step++) {
+      const distance = length * step / 4;
+      const bend = Math.sin(index * 3.4 + step * 4.7) * radius * 0.035;
+      skillLayer.lineTo(
+        x + Math.cos(angle) * distance - Math.sin(angle) * bend,
+        y + Math.sin(angle) * distance + Math.cos(angle) * bend,
+      );
+    }
+    skillLayer.stroke({ color: 0x0284c7, width: 7, alpha: 0.3 * alpha });
+    skillLayer.stroke({ color: 0xe0f2fe, width: 2.5, alpha: 0.9 * alpha });
+  }
+
+  for (let index = 0; index < 2; index++) {
+    const ringProgress = clamp((progress - index * 0.14) / (1 - index * 0.14), 0, 1);
+    skillLayer.circle(x, y, radius * (0.08 + ringProgress * 0.92));
+    skillLayer.stroke({
+      color: index === 0 ? 0x7dd3fc : 0xffffff,
+      width: index === 0 ? 6 : 3,
+      alpha: (0.75 - index * 0.18) * (1 - ringProgress),
+    });
+  }
+
+  skillLayer.circle(x, y, radius * (0.2 - progress * 0.12));
+  skillLayer.fill({ color: 0xf0f9ff, alpha: 0.72 * alpha });
+  skillLayer.circle(x, y, radius * (0.32 + progress * 0.16));
+  skillLayer.stroke({ color: 0x38bdf8, width: 4, alpha: 0.45 * alpha });
 }
 
 function drawMonkERevealEffect(effect, frame) {

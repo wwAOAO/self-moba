@@ -249,5 +249,5 @@ func isCollisionEntity(entity *Entity) bool {
 	if entity.Kind == EntityKindPlayer {
 		return !entity.Death.Dead
 	}
-	return entity.Kind == EntityKindEnemyHero || isMinion(entity)
+	return entity.Kind == EntityKindEnemyHero || isMinion(entity) || isStructure(entity)
 }

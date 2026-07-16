@@ -118,8 +118,8 @@ func TestSonicWaveMarksAndEchoStrikeExecutes(t *testing.T) {
 	if got := player.Stats.MP; got != beforeMP {
 		t.Fatalf("echo strike energy = %f, want %f", got, beforeMP)
 	}
-	if got := target.Combat.LastDamage; got != 208 {
-		t.Fatalf("echo strike damage = %d, want 208", got)
+	if got := target.Stats.HP; got != 400 {
+		t.Fatalf("echo strike dealt damage before arrival: hp = %f, want 400", got)
 	}
 	if player.Passive.MonkQMarkTargetID != "" {
 		t.Fatalf("q mark should be consumed: %+v", player.Passive)
@@ -137,8 +137,46 @@ func TestSonicWaveMarksAndEchoStrikeExecutes(t *testing.T) {
 		t.Fatal("airborne should remove echo strike effect")
 	}
 	w.Tick(castTick+4, 20)
+	if got := target.Stats.HP; got != 400 {
+		t.Fatalf("interrupted echo strike damage: hp = %f, want 400", got)
+	}
 	if player.Position != interruptedAt {
 		t.Fatalf("interrupted echo strike moved from %+v to %+v", interruptedAt, player.Position)
+	}
+}
+
+func TestEchoStrikeDealsDamageOnlyAtDestination(t *testing.T) {
+	w, player := testWorld(t)
+	learn(player, qID, 1)
+	player.Position = world.Vector2{X: 1000, Y: 1000}
+	player.Stats.MP = 200
+	player.Stats.BonusAttack = 100
+	targetID, ok := w.SpawnObject(world.EntityKindEnemyHero, world.TeamRed, 1300, 1000)
+	if !ok {
+		t.Fatal("spawn target failed")
+	}
+	target := w.EntityByID(targetID)
+	target.Stats.HP = 1000
+	target.Stats.MaxHP = 1000
+	target.Stats.PhysicalDefense = 0
+
+	w.ApplyInput("monk", protocol.PlayerInput{Cast: &protocol.CastInput{SkillID: qID, TargetX: 1300, TargetY: 1000}}, 10, nil, 20)
+	w.Tick(15, 20)
+	hitTick := tickUntilMarked(t, w, player, target, 16, 30, 20)
+	target.Stats.HP = 400
+
+	castTick := hitTick + 1
+	w.ApplyInput("monk", protocol.PlayerInput{Cast: &protocol.CastInput{SkillID: qID}}, castTick, nil, 20)
+	arrivalTick := player.Control.DashUntilTick
+	for tick := castTick + 1; tick < arrivalTick; tick++ {
+		w.Tick(tick, 20)
+		if target.Stats.HP != 400 {
+			t.Fatalf("echo strike dealt damage at tick %d before arrival %d: hp = %f", tick, arrivalTick, target.Stats.HP)
+		}
+	}
+	w.Tick(arrivalTick, 20)
+	if got := target.Combat.LastDamage; got != 208 {
+		t.Fatalf("echo strike damage at destination = %d, want 208", got)
 	}
 }
 
@@ -170,6 +208,77 @@ func TestSonicWaveBlockedByWindWallDoesNotMark(t *testing.T) {
 	}
 	if player.Passive.MonkQMarkTargetID != "" {
 		t.Fatalf("blocked sonic wave should not mark: %+v", player.Passive)
+	}
+}
+
+func TestSonicWaveUsesCursorDirectionNotTargetID(t *testing.T) {
+	w, player := testWorld(t)
+	learn(player, qID, 1)
+	player.Position = world.Vector2{X: 1000, Y: 1000}
+	player.Stats.MP = 200
+
+	lockedID, ok := w.SpawnObject(world.EntityKindEnemyHero, world.TeamRed, 1000, 1300)
+	if !ok {
+		t.Fatal("spawn locked target failed")
+	}
+	cursorID, ok := w.SpawnObject(world.EntityKindEnemyHero, world.TeamRed, 1300, 1000)
+	if !ok {
+		t.Fatal("spawn cursor target failed")
+	}
+	locked := w.EntityByID(lockedID)
+	cursor := w.EntityByID(cursorID)
+	locked.Stats.PhysicalDefense = 0
+	cursor.Stats.PhysicalDefense = 0
+
+	w.ApplyInput("monk", protocol.PlayerInput{Cast: &protocol.CastInput{
+		SkillID:  qID,
+		TargetID: locked.ID,
+		TargetX:  1300,
+		TargetY:  1000,
+	}}, 10, nil, 20)
+	w.Tick(15, 20)
+	tickUntilMarked(t, w, player, cursor, 16, 30, 20)
+
+	if locked.Combat.LastDamage != 0 {
+		t.Fatalf("sonic wave should ignore target id, locked target damage = %d", locked.Combat.LastDamage)
+	}
+	if cursor.Combat.LastDamage == 0 {
+		t.Fatal("sonic wave did not hit cursor-direction target")
+	}
+}
+
+func TestEchoStrikeTracksMovingMarkedTarget(t *testing.T) {
+	w, player := testWorld(t)
+	learn(player, qID, 1)
+	player.Position = world.Vector2{X: 1000, Y: 1000}
+	player.Stats.MP = 200
+
+	targetID, ok := w.SpawnObject(world.EntityKindEnemyHero, world.TeamRed, 1300, 1000)
+	if !ok {
+		t.Fatal("spawn target failed")
+	}
+	target := w.EntityByID(targetID)
+	target.Stats.HP = 1000
+	target.Stats.MaxHP = 1000
+	target.Stats.PhysicalDefense = 0
+
+	w.ApplyInput("monk", protocol.PlayerInput{Cast: &protocol.CastInput{SkillID: qID, TargetX: 1300, TargetY: 1000}}, 10, nil, 20)
+	w.Tick(15, 20)
+	hitTick := tickUntilMarked(t, w, player, target, 16, 30, 20)
+
+	castTick := hitTick + 1
+	w.ApplyInput("monk", protocol.PlayerInput{Cast: &protocol.CastInput{SkillID: qID}}, castTick, nil, 20)
+	originalEnd := player.Control.DashEnd
+	target.Position = world.Vector2{X: 1900, Y: 1000}
+
+	for tick := castTick + 1; tick <= castTick+30; tick++ {
+		w.Tick(tick, 20)
+	}
+	if player.Position.X <= originalEnd.X+100 {
+		t.Fatalf("echo strike stopped near old target position: got %+v old end %+v", player.Position, originalEnd)
+	}
+	if distance(player.Position, target.Position) > player.Radius+target.Radius+1 {
+		t.Fatalf("echo strike did not follow moving target: player %+v target %+v", player.Position, target.Position)
 	}
 }
 

@@ -124,7 +124,7 @@ function drawCastWindup(windup, frame, now) {
   }
   if (windup.skillId === "explorer_r") {
     drawDirectionalWindup(
-      { ...windup, range: Math.hypot(state.map.width || 6000, state.map.height || 6000) },
+      { ...windup, range: Math.hypot(state.map.width || 8000, state.map.height || 8000) },
       frame,
       color,
       alpha,
