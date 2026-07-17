@@ -57,6 +57,18 @@ func ApplyQ(w *world.World, entity *world.Entity, state world.SkillState, skill 
 	entity.Warrior.DecisiveStrikeLevel = state.Level
 	entity.Warrior.DecisiveStrikeMoveSpeedBonus = skillMeta(skill, "moveSpeedBonus", 0.3)
 	entity.Combat.NextAttackTick = tick
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:warrior_q_light:"),
+		Kind:         "warrior_q_light",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        entity.Position,
+		Radius:       skillMeta(skill, "effectRadius", 120),
+		Count:        int(skillMeta(skill, "effectParticles", 18)),
+		CreatedAt:    tick,
+		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "effectSeconds", 0.9), tickRate),
+	})
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, int(math.Round(skillList(skill, "cooldownMs", state.Level, []float64{8000, 8000, 8000, 8000, 8000}))), tickRate)
 	entity.Skills[qID] = state
 }

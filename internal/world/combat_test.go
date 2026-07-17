@@ -407,6 +407,31 @@ func TestWarriorQResetsBasicAttack(t *testing.T) {
 	}
 }
 
+func TestWarriorSkillEffects(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(warriorHeroID)
+	if !ok {
+		t.Fatal("warrior hero not found")
+	}
+	w.SpawnHero("warrior-effects", hero, TeamBlue)
+	player := w.entities[playerEntityID("warrior-effects")]
+	target := w.entities["enemy:hero-1"]
+	placeEntity(player, 1000, 1000)
+	placeEntity(target, 1100, 1000)
+	learnSkill(player, warriorQSkillID, 1)
+	learnSkill(player, warriorWSkillID, 1)
+	learnSkill(player, warriorRSkillID, 1)
+
+	w.ApplyInput("warrior-effects", protocolPlayerInputCast(warriorQSkillID, player.Position.X, player.Position.Y), 10, nil, 20)
+	w.ApplyInput("warrior-effects", protocolPlayerInputCast(warriorWSkillID, player.Position.X, player.Position.Y), 11, nil, 20)
+	assertSkillEffect(t, w.SkillEffects(), "warrior_q_light")
+	assertSkillEffect(t, w.SkillEffects(), "warrior_w_shields")
+
+	w.ApplyInput("warrior-effects", protocolPlayerInputCast(warriorRSkillID, target.Position.X, target.Position.Y), 12, nil, 20)
+	w.Tick(player.Warrior.JusticeReleaseTick, 20)
+	assertSkillEffect(t, w.SkillEffects(), "warrior_r_sword")
+}
+
 func TestBasicAttackUsesWindupBeforeDamage(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()

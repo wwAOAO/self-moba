@@ -9,6 +9,18 @@
 
   const visibleServants = new Set();
   for (const effect of state.effects) {
+    if (effect.kind === "warrior_q_light") {
+      drawWarriorQLightEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "warrior_w_shields") {
+      drawWarriorWShieldsEffect(effect, frame);
+      continue;
+    }
+    if (effect.kind === "warrior_r_sword") {
+      drawWarriorRSwordEffect(effect, frame);
+      continue;
+    }
     if (effect.kind === "sword_whirlwind") {
       drawSwordWhirlwindEffect(effect, frame);
       continue;
@@ -362,12 +374,148 @@ function drawWarriorJudgmentRange(player, frame, tick) {
   const hitRadius = radius + unitCollisionRadius({ radius: 18 });
   const x = frame.offsetX + player.x * frame.scale;
   const y = frame.offsetY + player.y * frame.scale;
+  const scaledRadius = radius * frame.scale;
+  const rotation = performance.now() / 110;
   skillLayer.circle(x, y, radius * frame.scale);
-  skillLayer.fill({ color: 0xf59e0b, alpha: 0.08 });
-  skillLayer.circle(x, y, radius * frame.scale);
-  skillLayer.stroke({ color: 0xf97316, width: 3, alpha: 0.75 });
+  skillLayer.fill({ color: 0xfacc15, alpha: 0.1 });
+  for (let index = 0; index < 3; index++) {
+    const start = rotation + (Math.PI * 2 * index) / 3;
+    const arcRadius = scaledRadius * (0.55 + index * 0.16);
+    skillLayer.moveTo(x + Math.cos(start) * arcRadius, y + Math.sin(start) * arcRadius);
+    skillLayer.arc(x, y, arcRadius, start, start + Math.PI * 1.12);
+    skillLayer.stroke({
+      color: index === 1 ? 0xfef3c7 : 0xfbbf24,
+      width: Math.max(3, scaledRadius * (0.1 - index * 0.018)),
+      alpha: 0.72 - index * 0.1,
+    });
+  }
+  for (let index = 0; index < 2; index++) {
+    const angle = rotation + Math.PI * index;
+    drawWarriorSpinningSword(x, y, scaledRadius * 0.78, angle);
+  }
   skillLayer.circle(x, y, hitRadius * frame.scale);
-  skillLayer.stroke({ color: 0xf97316, width: 1, alpha: 0.35 });
+  skillLayer.stroke({ color: 0xf59e0b, width: 1, alpha: 0.28 });
+}
+
+function drawWarriorQLightEffect(effect, frame) {
+  const source = effectSourcePosition(effect);
+  const worldX = source?.x ?? effect.x;
+  const worldY = source?.y ?? effect.y;
+  const x = frame.offsetX + worldX * frame.scale;
+  const y = frame.offsetY + worldY * frame.scale;
+  const radius = Math.max(50, (effect.radius || 120) * frame.scale);
+  const alpha = effectAlpha(effect);
+  const progress = 1 - alpha;
+  const count = Math.max(8, effect.count || 18);
+
+  skillLayer.circle(x, y, radius * (0.35 + progress * 0.65));
+  skillLayer.stroke({ color: 0xfacc15, width: 4, alpha: 0.75 * alpha });
+  for (let index = 0; index < count; index++) {
+    const angle = (Math.PI * 2 * index) / count + progress * 0.8;
+    const distance = radius * (0.18 + progress * (0.55 + (index % 4) * 0.06));
+    const px = x + Math.cos(angle) * distance;
+    const py = y + Math.sin(angle) * distance - radius * progress * 0.35;
+    const size = Math.max(2, radius * (0.025 + (index % 3) * 0.008));
+    skillLayer.circle(px, py, size);
+    skillLayer.fill({
+      color: index % 3 === 0 ? 0xffffff : index % 2 === 0 ? 0xfef08a : 0xfbbf24,
+      alpha: alpha * 0.9,
+    });
+  }
+}
+
+function drawWarriorWShieldsEffect(effect, frame) {
+  const source = effectSourcePosition(effect);
+  const worldX = source?.x ?? effect.x;
+  const worldY = source?.y ?? effect.y;
+  const x = frame.offsetX + worldX * frame.scale;
+  const y = frame.offsetY + worldY * frame.scale;
+  const radius = Math.max(38, (effect.radius || 100) * frame.scale);
+  const count = Math.max(1, effect.count || 3);
+  const rotation = performance.now() / 700;
+  const alpha = Math.min(1, effectAlpha(effect) * 4);
+
+  skillLayer.circle(x, y, radius * 0.72);
+  skillLayer.stroke({ color: 0xfde68a, width: 2, alpha: 0.3 * alpha });
+  for (let index = 0; index < count; index++) {
+    const angle = rotation + (Math.PI * 2 * index) / count;
+    const shieldX = x + Math.cos(angle) * radius;
+    const shieldY = y + Math.sin(angle) * radius;
+    drawWarriorShield(shieldX, shieldY, Math.max(9, radius * 0.25), angle, alpha);
+  }
+}
+
+function drawWarriorShield(x, y, size, angle, alpha) {
+  const radialX = Math.cos(angle);
+  const radialY = Math.sin(angle);
+  const sideX = -radialY;
+  const sideY = radialX;
+  skillLayer.moveTo(x - sideX * size * 0.7 - radialX * size * 0.55, y - sideY * size * 0.7 - radialY * size * 0.55);
+  skillLayer.lineTo(x + sideX * size * 0.7 - radialX * size * 0.55, y + sideY * size * 0.7 - radialY * size * 0.55);
+  skillLayer.lineTo(x + sideX * size * 0.55 + radialX * size * 0.35, y + sideY * size * 0.55 + radialY * size * 0.35);
+  skillLayer.lineTo(x + radialX * size, y + radialY * size);
+  skillLayer.lineTo(x - sideX * size * 0.55 + radialX * size * 0.35, y - sideY * size * 0.55 + radialY * size * 0.35);
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xf59e0b, alpha: 0.72 * alpha });
+  skillLayer.stroke({ color: 0xfffbeb, width: 2, alpha: 0.92 * alpha });
+}
+
+function drawWarriorSpinningSword(x, y, distance, angle) {
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const sideX = -forwardY;
+  const sideY = forwardX;
+  const centerX = x + forwardX * distance;
+  const centerY = y + forwardY * distance;
+  const length = Math.max(10, distance * 0.42);
+  const width = Math.max(4, length * 0.16);
+  skillLayer.moveTo(centerX + forwardX * length * 0.58, centerY + forwardY * length * 0.58);
+  skillLayer.lineTo(centerX - forwardX * length * 0.48 + sideX * width, centerY - forwardY * length * 0.48 + sideY * width);
+  skillLayer.lineTo(centerX - forwardX * length * 0.48 - sideX * width, centerY - forwardY * length * 0.48 - sideY * width);
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xfffbeb, alpha: 0.9 });
+  skillLayer.moveTo(centerX - sideX * width * 1.8, centerY - sideY * width * 1.8);
+  skillLayer.lineTo(centerX + sideX * width * 1.8, centerY + sideY * width * 1.8);
+  skillLayer.stroke({ color: 0xf59e0b, width: 3, alpha: 0.9 });
+}
+
+function drawWarriorRSwordEffect(effect, frame) {
+  const worldX = effect.endX ?? effect.x;
+  const worldY = effect.endY ?? effect.y;
+  const x = frame.offsetX + worldX * frame.scale;
+  const y = frame.offsetY + worldY * frame.scale;
+  const radius = Math.max(60, (effect.radius || 108) * frame.scale);
+  const tick = interpolatedTick();
+  const duration = Math.max(1, (effect.expiresAt || tick + 1) - (effect.createdAt || tick));
+  const progress = clamp((tick - (effect.createdAt || tick)) / duration, 0, 1);
+  const drop = clamp(progress / 0.34, 0, 1);
+  const alpha = Math.min(1, effectAlpha(effect) * 3);
+  const swordLength = radius * 1.25;
+  const tipY = y - radius * 2.2 * (1 - drop);
+  const bladeTop = tipY - swordLength;
+  const bladeWidth = Math.max(8, radius * 0.16);
+
+  skillLayer.moveTo(x, tipY);
+  skillLayer.lineTo(x - bladeWidth, bladeTop + swordLength * 0.18);
+  skillLayer.lineTo(x - bladeWidth * 0.7, bladeTop);
+  skillLayer.lineTo(x + bladeWidth * 0.7, bladeTop);
+  skillLayer.lineTo(x + bladeWidth, bladeTop + swordLength * 0.18);
+  skillLayer.closePath();
+  skillLayer.fill({ color: 0xfffbeb, alpha: 0.94 * alpha });
+  skillLayer.stroke({ color: 0xf59e0b, width: 3, alpha });
+  skillLayer.moveTo(x - bladeWidth * 2.4, bladeTop - 3);
+  skillLayer.lineTo(x + bladeWidth * 2.4, bladeTop - 3);
+  skillLayer.stroke({ color: 0xfbbf24, width: 6, alpha });
+  skillLayer.rect(x - bladeWidth * 0.35, bladeTop - radius * 0.42, bladeWidth * 0.7, radius * 0.42);
+  skillLayer.fill({ color: 0x92400e, alpha });
+
+  if (drop >= 1) {
+    const impact = clamp((progress - 0.34) / 0.66, 0, 1);
+    skillLayer.circle(x, y, radius * (0.28 + impact * 0.9));
+    skillLayer.stroke({ color: 0xfacc15, width: Math.max(3, radius * 0.08), alpha: (1 - impact) * alpha });
+    skillLayer.circle(x, y, radius * 0.32);
+    skillLayer.fill({ color: 0xfef3c7, alpha: 0.2 * (1 - impact) });
+  }
 }
 
 function drawBerserkerQRange(

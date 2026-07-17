@@ -46,6 +46,18 @@ func ReleaseR(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 	entity.Skills[rID] = state
 	damage := RDamage(target, skill, level)
 	target.Combat.LastHitTick = tick
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:warrior_r_sword:"),
+		Kind:         "warrior_r_sword",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        target.Position,
+		End:          target.Position,
+		Radius:       target.Radius + skillMeta(skill, "effectRadius", 90),
+		CreatedAt:    tick,
+		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "effectSeconds", 1), tickRate),
+	})
 	if target.Kind != world.EntityKindDummy {
 		wasAlive := target.Stats.HP > 0
 		w.ApplyTrueDamage(entity, target, damage, tickRate)

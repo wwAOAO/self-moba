@@ -19,6 +19,18 @@ func ApplyW(w *world.World, entity *world.Entity, state world.SkillState, skill 
 	entity.Passive.MaxShield = warriorWShieldValue(entity, skill, state.Level)
 	entity.Passive.Shield = entity.Passive.MaxShield
 	entity.Passive.ShieldExpireTick = entity.Warrior.CourageUntilTick
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:warrior_w_shields:"),
+		Kind:         "warrior_w_shields",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        entity.Position,
+		Radius:       skillMeta(skill, "effectRadius", 100),
+		Count:        int(skillMeta(skill, "effectShieldCount", 3)),
+		CreatedAt:    tick,
+		ExpiresAt:    entity.Warrior.CourageUntilTick,
+	})
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, int(math.Round(skillList(skill, "cooldownMs", state.Level, []float64{24000, 22000, 20000, 18000, 16000}))), tickRate)
 	entity.Skills[wID] = state
 }
