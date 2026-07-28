@@ -116,7 +116,7 @@ func (w *World) resolveBasicAttack(attacker *Entity, target *Entity, tick uint64
 }
 
 func isRangedBasicAttacker(attacker *Entity) bool {
-	return attacker != nil && (attacker.HeroID == archerHeroID || attacker.HeroID == mageHeroID || attacker.HeroID == gunnerHeroID || attacker.HeroID == explorerHeroID || attacker.HeroID == frostmageHeroID || attacker.HeroID == fireMageHeroID || attacker.Kind == EntityKindRangedMinion || attacker.Kind == EntityKindSiegeMinion || attacker.Kind == EntityKindTower)
+	return attacker != nil && (attacker.HeroID == archerHeroID || attacker.HeroID == crossbowmanHeroID || attacker.HeroID == mageHeroID || attacker.HeroID == gunnerHeroID || attacker.HeroID == explorerHeroID || attacker.HeroID == frostmageHeroID || attacker.HeroID == fireMageHeroID || attacker.Kind == EntityKindRangedMinion || attacker.Kind == EntityKindSiegeMinion || attacker.Kind == EntityKindTower)
 }
 
 func canBasicAttack(entity *Entity) bool {
@@ -184,6 +184,7 @@ func (w *World) attackDamage(attacker *Entity, target *Entity, tick uint64, tick
 	rawPhysical := attack + w.warriorQBonusDamage(attacker, tick) + w.tankWBonusDamage(attacker, tick)
 	rawPhysical *= w.heroBasicAttackMultiplier(attacker, target, tick)
 	rawPhysical = minionBasicAttackRawDamage(attacker, target, rawPhysical)
+	rawPhysical += w.consumeEquipmentSpellbladeBonus(attacker, tick, tickRate)
 	if isMinion(target) {
 		rawPhysical += w.equipmentMinionBasicAttackBonus(attacker, "physical")
 	}

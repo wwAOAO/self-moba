@@ -53,6 +53,19 @@ func ApplyE(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	entity.Control.DashStart = entity.Position
 	entity.Control.DashEnd = dashEnd
 	entity.Control.DashUntilTick = tick + secondsToTicks(skillMeta(skill, "dashDurationSeconds", 0.35), tickRate)
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:sword_e:"),
+		Kind:         "sword_e",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        entity.Position,
+		End:          dashEnd,
+		Dir:          world.Vector2{X: dx, Y: dy},
+		Radius:       target.Radius + entity.Radius,
+		CreatedAt:    tick,
+		ExpiresAt:    entity.Control.DashUntilTick,
+	})
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListMS(skill, "cooldownMs", state.Level, []float64{500, 400, 300, 200, 100}), tickRate)
 	w.LockAttackAfterCast(entity, tick, tickRate)
 	entity.Skills[eID] = state

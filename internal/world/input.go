@@ -159,6 +159,7 @@ func EffectiveMoveSpeedAtTick(entity *Entity, tick uint64) float64 {
 		moveSpeed *= 1 + entity.Warrior.DecisiveStrikeMoveSpeedBonus
 	}
 	moveSpeed *= heroMoveSpeedMultiplier(entity, tick)
+	moveSpeed += heroMoveSpeedBonus(entity, tick)
 	if entity.Control.MoveSpeedBonusUntil > 0 && (tick == 0 || tick < entity.Control.MoveSpeedBonusUntil) {
 		moveSpeed += entity.Control.MoveSpeedBonusFlat
 	}

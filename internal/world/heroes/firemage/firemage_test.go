@@ -41,8 +41,7 @@ func TestSearHitDamagesAndAddsBurn(t *testing.T) {
 
 	castSear(w, source, 10)
 	w.Tick(15, 20)
-	w.Tick(16, 20)
-	w.Tick(17, 20)
+	tickUntilDamage(t, w, target, 16, 35)
 
 	if got, want := target.Combat.LastDamage, 80; got != want {
 		t.Fatalf("sear damage = %d, want %d", got, want)
@@ -60,10 +59,9 @@ func TestSearStunsAlreadyBurningTarget(t *testing.T) {
 
 	castSear(w, source, 20)
 	w.Tick(25, 20)
-	w.Tick(26, 20)
-	w.Tick(27, 20)
+	hitTick := tickUntilDamage(t, w, target, 26, 45)
 
-	if got, want := target.Control.StunnedUntilTick, uint64(67); got != want {
+	if got, want := target.Control.StunnedUntilTick, hitTick+40; got != want {
 		t.Fatalf("stunned until = %d, want %d", got, want)
 	}
 	if got := target.Passive.FireBurns[source.ID].Stacks; got != 2 {
@@ -84,12 +82,31 @@ func TestPillarOfFlameTriggersAfterDelay(t *testing.T) {
 	if got, want := source.Skills[wID].CooldownUntilTick, uint64(210); got != want {
 		t.Fatalf("cooldown tick = %d, want %d", got, want)
 	}
-
+	rangeEffectID := effectIDByKind(w, "fire_mage_w_range")
+	if rangeEffectID == "" {
+		t.Fatal("pillar range effect should appear immediately after cast")
+	}
+	if effectIDByKind(w, "fire_mage_w") != "" {
+		t.Fatal("pillar impact effect should not appear before damage")
+	}
 	w.Tick(24, 20)
 	if target.Combat.LastDamage != 0 {
 		t.Fatalf("pillar damaged before delay: %d", target.Combat.LastDamage)
 	}
+	if got := effectIDByKind(w, "fire_mage_w_range"); got != rangeEffectID {
+		t.Fatalf("pillar range effect before trigger = %q, want %q", got, rangeEffectID)
+	}
 	w.Tick(25, 20)
+	if got := effectIDByKind(w, "fire_mage_w_range"); got != "" {
+		t.Fatalf("pillar range effect after trigger = %q, want empty", got)
+	}
+	impactEffectID := effectIDByKind(w, "fire_mage_w")
+	if impactEffectID == "" {
+		t.Fatal("pillar impact effect should appear when damage triggers")
+	}
+	if impactEffectID == rangeEffectID {
+		t.Fatalf("pillar impact reused range effect id %q", impactEffectID)
+	}
 
 	if got, want := target.Combat.LastDamage, 75; got != want {
 		t.Fatalf("pillar damage = %d, want %d", got, want)
@@ -440,6 +457,15 @@ func hasSearProjectile(w *world.World) bool {
 		}
 	}
 	return false
+}
+
+func effectIDByKind(w *world.World, kind string) string {
+	for _, effect := range w.SkillEffects() {
+		if effect.Kind == kind {
+			return effect.ID
+		}
+	}
+	return ""
 }
 
 func hasPyroclasmProjectile(w *world.World) bool {

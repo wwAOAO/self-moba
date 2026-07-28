@@ -61,6 +61,7 @@ func ReleaseQ(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 		return
 	}
 	targets := w.SwordQTargets(entity, targetPoint, qRange, form, skill)
+	putQReleaseEffect(w, entity, targetPoint, qRange, form, skill, len(targets), tick, tickRate)
 	for _, target := range targets {
 		damage := w.SwordQDamage(entity, target, skill, tick)
 		target.Combat.LastHitTick = tick
@@ -98,6 +99,37 @@ func ReleaseQ(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 	}
 	w.LockAttackAfterCast(entity, tick, tickRate)
 	entity.Skills[qID] = state
+}
+
+func putQReleaseEffect(w *world.World, entity *world.Entity, targetPoint world.Vector2, qRange float64, form string, skill config.SkillConfig, hitCount int, tick uint64, tickRate int) {
+	dx, dy := normalize(targetPoint.X-entity.Position.X, targetPoint.Y-entity.Position.Y)
+	if dx == 0 && dy == 0 {
+		dx = 1
+	}
+	kind := "sword_q"
+	if form == "circle" {
+		kind = "sword_q_circle"
+	}
+	durationTicks := secondsToTicks(skillMeta(skill, "effectSeconds", 0.34), tickRate)
+	if durationTicks < 1 {
+		durationTicks = 1
+	}
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:" + kind + ":"),
+		Kind:         kind,
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        entity.Position,
+		End:          world.Vector2{X: entity.Position.X + dx*qRange, Y: entity.Position.Y + dy*qRange},
+		Dir:          world.Vector2{X: dx, Y: dy},
+		Range:        qRange,
+		Radius:       skillMeta(skill, "eqRadius", 375),
+		Width:        skillMeta(skill, "lineWidth", 55),
+		Count:        hitCount,
+		CreatedAt:    tick,
+		ExpiresAt:    tick + durationTicks,
+	})
 }
 
 func ExpireQStacks(entity *world.Entity, tick uint64) {

@@ -5,6 +5,7 @@ import (
 	_ "l-battle/internal/world/heroes/berserker"
 	_ "l-battle/internal/world/heroes/blade"
 	_ "l-battle/internal/world/heroes/butcher"
+	_ "l-battle/internal/world/heroes/crossbowman"
 	_ "l-battle/internal/world/heroes/doctor"
 	_ "l-battle/internal/world/heroes/explorer"
 	_ "l-battle/internal/world/heroes/firemage"

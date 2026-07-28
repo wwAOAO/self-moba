@@ -31,6 +31,10 @@ func (w *World) fireGunnerQBounce(source *Entity, first *Entity, projectile *Pro
 		dx = 1
 	}
 	id := w.NextProjectileID("projectile:gunner_q:")
+	displayCount := 2
+	if forceCrit {
+		displayCount = 3
+	}
 	w.PutProjectile(&Projectile{
 		ID:           id,
 		Kind:         "gunner_q",
@@ -47,6 +51,7 @@ func (w *World) fireGunnerQBounce(source *Entity, first *Entity, projectile *Pro
 		Damage:       projectile.Damage,
 		EffectRatio:  boolRatio(forceCrit),
 		Returning:    true,
+		DisplayCount: displayCount,
 		CreatedAt:    tick,
 		ExpiresAt:    tick + secondsToTicks(2, tickRate),
 		HitIDs:       make(map[string]bool),

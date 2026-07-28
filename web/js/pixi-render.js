@@ -5,18 +5,65 @@
   syncUnits(frame, ticker.deltaMS);
   syncSprites(frame, ticker.deltaMS);
   syncDamageTexts(frame, ticker.deltaMS);
+  drawMinimap();
+}
+
+function drawMinimap() {
+  const canvas = els.minimap;
+  const size = Math.floor(canvas.clientWidth * window.devicePixelRatio);
+  if (!size) {
+    return;
+  }
+  if (canvas.width !== size || canvas.height !== size) {
+    canvas.width = size;
+    canvas.height = size;
+  }
+  const context = canvas.getContext("2d");
+  const scale = size / Math.max(state.map.width, state.map.height);
+  const point = (entity, radius, color) => {
+    context.beginPath();
+    context.arc(entity.x * scale, entity.y * scale, radius, 0, Math.PI * 2);
+    context.fillStyle = color;
+    context.fill();
+  };
+
+  context.clearRect(0, 0, size, size);
+  context.fillStyle = "#15251d";
+  context.fillRect(0, 0, size, size);
+  context.strokeStyle = "rgba(188, 211, 192, .3)";
+  context.lineWidth = Math.max(2, size * .014);
+  context.beginPath();
+  context.moveTo(size * .08, size * .92);
+  context.lineTo(size * .92, size * .08);
+  context.moveTo(size * .08, size * .92);
+  context.lineTo(size * .08, size * .08);
+  context.lineTo(size * .92, size * .08);
+  context.stroke();
+
+  for (const unit of state.units.values()) {
+    const color = unit.team === "red" ? "#dc4b4b" : unit.team === "blue" ? "#3e82dc" : "#c6b65d";
+    point(unit, unit.kind === "tower" || unit.kind === "crystal" ? size * .015 : size * .008, color);
+  }
+  for (const player of state.players.values()) {
+    const self = player.playerId === state.playerId;
+    point(player, self ? size * .022 : size * .016, self ? "#ffffff" : player.team === "red" ? "#ff5b5b" : "#55a0ff");
+  }
 }
 
 function calculateFrame() {
-  const padding = 36;
-  const scale = Math.min(
-    (app.renderer.width - padding * 2) / state.map.width,
-    (app.renderer.height - padding * 2) / state.map.height,
-  );
+  const scale = state.cameraScale;
+  const self = state.sprites.get(state.playerId) || state.players.get(state.playerId);
+  const focus = self || { x: state.map.width / 2, y: state.map.height / 2 };
+  const hudTop = els.hud?.getBoundingClientRect().top || app.renderer.height;
+  const viewHeight = hudTop > app.renderer.height * 0.45 ? hudTop : app.renderer.height;
+  const minOffsetX = Math.min(0, app.renderer.width - state.map.width * scale);
+  const minOffsetY = Math.min(0, viewHeight - state.map.height * scale);
+  const offsetX = app.renderer.width / 2 - focus.x * scale;
+  const offsetY = viewHeight / 2 - focus.y * scale;
   state.frame = {
     scale,
-    offsetX: (app.renderer.width - state.map.width * scale) / 2,
-    offsetY: (app.renderer.height - state.map.height * scale) / 2,
+    offsetX: Math.max(minOffsetX, Math.min(0, offsetX)),
+    offsetY: Math.max(minOffsetY, Math.min(0, offsetY)),
   };
   return state.frame;
 }

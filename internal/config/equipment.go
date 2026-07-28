@@ -103,6 +103,11 @@ type EquipmentEffects struct {
 	SkillDamageLowHealthSlowSeconds   float64 `json:"skillDamageLowHealthSlowSeconds,omitempty"`
 	BasicAttackAttackerSlow           float64 `json:"basicAttackAttackerSlow,omitempty"`
 	BasicAttackAttackerSlowSeconds    float64 `json:"basicAttackAttackerSlowSeconds,omitempty"`
+	BasicAttackTargetSlowChance       float64 `json:"basicAttackTargetSlowChance,omitempty"`
+	BasicAttackTargetSlow             float64 `json:"basicAttackTargetSlow,omitempty"`
+	BasicAttackTargetSlowSeconds      float64 `json:"basicAttackTargetSlowSeconds,omitempty"`
+	SpellbladeBasicAttackBonusRatio   float64 `json:"spellbladeBasicAttackBonusRatio,omitempty"`
+	SpellbladeCooldownSeconds         float64 `json:"spellbladeCooldownSeconds,omitempty"`
 	MagicHitMoveSpeedPercentPerStack  float64 `json:"magicHitMoveSpeedPercentPerStack,omitempty"`
 	MagicHitMagicDefensePerStack      float64 `json:"magicHitMagicDefensePerStack,omitempty"`
 	MagicHitMaxStacks                 float64 `json:"magicHitMaxStacks,omitempty"`
@@ -222,6 +227,9 @@ func NewEquipmentStore(items []EquipmentConfig) (*EquipmentStore, error) {
 			item.Effects.SkillDamageLowHealthSlow < 0 || item.Effects.SkillDamageLowHealthSlowThreshold < 0 ||
 			item.Effects.SkillDamageLowHealthSlowSeconds < 0 ||
 			item.Effects.BasicAttackAttackerSlow < 0 || item.Effects.BasicAttackAttackerSlowSeconds < 0 ||
+			item.Effects.BasicAttackTargetSlowChance < 0 || item.Effects.BasicAttackTargetSlow < 0 ||
+			item.Effects.BasicAttackTargetSlowSeconds < 0 || item.Effects.SpellbladeBasicAttackBonusRatio < 0 ||
+			item.Effects.SpellbladeCooldownSeconds < 0 ||
 			item.Effects.MagicHitMoveSpeedPercentPerStack < 0 || item.Effects.MagicHitMagicDefensePerStack < 0 ||
 			item.Effects.MagicHitMaxStacks < 0 || item.Effects.StoneplateShieldMaxHPRatio < 0 ||
 			item.Effects.ThornsDamageFlat < 0 || item.Effects.ThornsBonusArmorRatio < 0 ||

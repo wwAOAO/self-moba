@@ -1276,3 +1276,109 @@ func TestLudensEchoChargesTriggersAndBounces(t *testing.T) {
 		t.Fatalf("luden bounce hp primary/bounce = %v/%v, want 900/920", primary.Stats.HP, bounce.Stats.HP)
 	}
 }
+
+func TestTrinityForceConsumesComponentsAndAppliesStats(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3733
+	baseAttack := player.Stats.Attack
+	baseAP := player.Stats.AbilityPower
+	baseAttackSpeedBonus := player.Stats.AttackSpeedBonus
+	baseCritChance := player.Stats.CritChance
+	baseMoveSpeed := player.Stats.MoveSpeed
+	baseMaxHP := player.Stats.MaxHP
+	baseMaxMP := player.Stats.MaxMP
+
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("stinger"), 1, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("sheen"), 2, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("phage"), 3, nil, 20)
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("trinity_force"), 4, nil, 20)
+
+	if player.Gold != 0 {
+		t.Fatalf("gold = %f, want 0", player.Gold)
+	}
+	if len(player.Equipment) != 1 || player.Equipment[0].EquipmentID != "trinity_force" {
+		t.Fatalf("equipment = %+v, want trinity_force", player.Equipment)
+	}
+	if player.Stats.Attack != baseAttack+20 || player.Stats.AbilityPower != baseAP+30 {
+		t.Fatalf("attack/ap = %f/%d, want %f/%d", player.Stats.Attack, player.Stats.AbilityPower, baseAttack+20, baseAP+30)
+	}
+	if player.Stats.AttackSpeedBonus != baseAttackSpeedBonus+0.25 || player.Stats.CritChance != baseCritChance+0.12 {
+		t.Fatalf("attack speed bonus/crit = %f/%f, want %f/%f", player.Stats.AttackSpeedBonus, player.Stats.CritChance, baseAttackSpeedBonus+0.25, baseCritChance+0.12)
+	}
+	wantMoveSpeed := baseMoveSpeed * 1.12
+	if player.Stats.MoveSpeed < wantMoveSpeed-0.000001 || player.Stats.MoveSpeed > wantMoveSpeed+0.000001 {
+		t.Fatalf("move speed = %f, want %f", player.Stats.MoveSpeed, wantMoveSpeed)
+	}
+	if player.Stats.MaxHP != baseMaxHP+300 || player.Stats.MaxMP != baseMaxMP+300 {
+		t.Fatalf("max hp/mp = %f/%f, want %f/%f", player.Stats.MaxHP, player.Stats.MaxMP, baseMaxHP+300, baseMaxMP+300)
+	}
+}
+
+func TestTrinityForceSpellbladeEmpowersNextAttackAndHonorsCooldown(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3733
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("trinity_force"), 1, nil, 20)
+	player.Stats.CritChance = 0
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 5000, MaxHP: 5000}}
+
+	baseline := w.attackDamage(player, target, 100, 20)
+	w.chargeEquipmentOnCast(player, 101)
+	if !player.Equipment[0].SpellbladeReady {
+		t.Fatal("spellblade was not charged after cast")
+	}
+	empowered := w.attackDamage(player, target, 102, 20)
+	wantBonus := int(player.Stats.Attack * 1.5)
+	if empowered != baseline+wantBonus {
+		t.Fatalf("empowered damage = %d, want %d", empowered, baseline+wantBonus)
+	}
+	if player.Equipment[0].SpellbladeReady || player.Equipment[0].SpellbladeCooldownUntil != 142 {
+		t.Fatalf("spellblade state after hit = ready %v cooldown %d, want false/142", player.Equipment[0].SpellbladeReady, player.Equipment[0].SpellbladeCooldownUntil)
+	}
+
+	w.chargeEquipmentOnCast(player, 120)
+	if player.Equipment[0].SpellbladeReady {
+		t.Fatal("spellblade charged during cooldown")
+	}
+	w.chargeEquipmentOnCast(player, 142)
+	if !player.Equipment[0].SpellbladeReady {
+		t.Fatal("spellblade did not charge after cooldown")
+	}
+}
+
+func TestTrinityForceBasicAttackSlowChance(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("p1", hero, TeamBlue)
+	player := w.entities[playerEntityID("p1")]
+	player.Gold = 3733
+	w.ApplyInput("p1", protocolPlayerInputBuyEquipment("trinity_force"), 1, nil, 20)
+	target := &Entity{ID: "enemy", Kind: EntityKindEnemyHero, Team: TeamRed, Stats: Stats{HP: 5000, MaxHP: 5000}}
+
+	procTick := uint64(1)
+	for equipmentProcRoll("trinity_force:target_slow", player.ID, target.ID, procTick) >= 0.25 {
+		procTick++
+	}
+	target.Combat.LastHitTick = procTick
+	w.applyBasicAttackDamage(player, target, 1, 20)
+	if target.Control.MoveSpeedSlow != 0.35 || target.Control.MoveSpeedSlowUntil != procTick+50 {
+		t.Fatalf("slow = %f until %d, want 0.35 until %d", target.Control.MoveSpeedSlow, target.Control.MoveSpeedSlowUntil, procTick+50)
+	}
+
+	missTick := procTick + 1
+	for equipmentProcRoll("trinity_force:target_slow", player.ID, target.ID, missTick) < 0.25 {
+		missTick++
+	}
+	target.Control.MoveSpeedSlow = 0
+	target.Control.MoveSpeedSlowUntil = 0
+	target.Combat.LastHitTick = missTick
+	w.applyBasicAttackDamage(player, target, 1, 20)
+	if target.Control.MoveSpeedSlow != 0 || target.Control.MoveSpeedSlowUntil != 0 {
+		t.Fatalf("slow triggered on miss roll: %f until %d", target.Control.MoveSpeedSlow, target.Control.MoveSpeedSlowUntil)
+	}
+}

@@ -26,12 +26,18 @@
     els.statOmnivamp.textContent = "-";
     els.statLifeSteal.textContent = "-";
     els.statHealingPower.textContent = "-";
+    els.heroPortrait.textContent = "英";
+    els.hudHpFill.style.width = "0";
+    els.hudResourceFill.style.width = "0";
     els.abilityHasteBtn.textContent = "+200急速";
     return;
   }
   const stats = player.stats;
   const heroConfig = heroClientConfig[player.heroId || els.heroId.value] || {};
   const resourceKind = entityResourceKind(player, heroConfig);
+  const heroName = heroDisplayName(heroConfig) || player.heroId || "英雄";
+  els.heroPortrait.textContent = heroName.slice(0, 1);
+  els.heroPortrait.title = heroName;
   els.statLevel.textContent = `${player.level || 1}/${player.maxLevel || levelClientConfig.maxLevel || 18}`;
   els.statExp.textContent =
     player.nextLevelExp > 0
@@ -46,34 +52,37 @@
   els.statHp.textContent = formatHpWithShield(player);
   els.statMpLabel.textContent = resourceLabel || "资源";
   els.statMp.textContent = formatEntityResourceValue(player, heroConfig);
+  els.hudHpFill.style.width = `${Math.min(100, Math.max(0, ((stats.hp || 0) / (stats.maxHp || 1)) * 100))}%`;
+  els.hudResourceFill.style.width = `${Math.min(100, Math.max(0, playerResourceRatio(player) * 100))}%`;
+  els.hudResourceFill.style.background = `#${playerResourceColor(player).toString(16).padStart(6, "0")}`;
   els.statHpRegen5.textContent = formatHpRegen5(player);
   const showMpRegen = resourceKind === "mp" && stats.maxMp > 0;
   setStatPairVisible(els.statMpRegen5Label, els.statMpRegen5, showMpRegen);
   els.statMpRegen5.textContent = showMpRegen
     ? formatNumber((stats.mpRegen5 || 0) + equipmentPercentRegen5(player, "mp"))
     : "-";
-  els.statAttack.textContent = formatAttack(stats);
-  els.statAbilityPower.textContent = stats.abilityPower || 0;
+  els.statAttack.textContent = formatInteger(stats.attack);
+  els.statAbilityPower.textContent = formatInteger(stats.abilityPower);
   setHtmlIfChanged(
     els.statAbilityHasteTip,
     formatAbilityHasteTip(stats.abilityHaste || 0),
   );
-  els.statAbilityHaste.textContent = formatNumber(stats.abilityHaste || 0);
-  els.statPhysicalDefense.textContent = formatPhysicalDefense(stats);
+  els.statAbilityHaste.textContent = formatInteger(stats.abilityHaste);
+  els.statPhysicalDefense.textContent = formatInteger(stats.physicalDefense);
   setHtmlIfChanged(
     els.statPhysicalDefenseTip,
     formatDefenseTip(stats.physicalDefense || 0, "物理"),
   );
-  els.statMagicDefense.textContent = formatMagicDefense(stats);
+  els.statMagicDefense.textContent = formatInteger(stats.magicDefense);
   setHtmlIfChanged(
     els.statMagicDefenseTip,
     formatDefenseTip(stats.magicDefense || 0, "魔法"),
   );
-  els.statMoveSpeed.textContent = formatNumber(stats.moveSpeed);
+  els.statMoveSpeed.textContent = formatInteger(stats.moveSpeed);
   els.statAttackRange.textContent = formatNumber(stats.attackRange);
   els.statAttackSpeed.textContent = formatNumber(stats.attackSpeed);
   setHtmlIfChanged(els.statCritChanceTip, formatCritChanceTip(player));
-  els.statCritChance.textContent = formatCritChance(player);
+  els.statCritChance.textContent = `${formatInteger((stats.critChance || 0) * 100)}%`;
   els.statOmnivamp.textContent = formatPercent(stats.omnivamp || 0);
   els.statLifeSteal.textContent = formatPercent(stats.lifeSteal || 0);
   els.statHealingPower.textContent = formatPercent(stats.healingPower || 0);

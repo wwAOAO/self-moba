@@ -12,9 +12,10 @@ func ApplyR(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	if target == nil {
 		return
 	}
+	center := target.Position
 	entity.Position = w.ClampWorldPoint(world.Vector2{X: target.Position.X - entity.Radius - target.Radius - 18, Y: target.Position.Y})
 	entity.Intent = world.IntentState{}
-	hits := rTargets(w, entity, target.Position, skill, tick)
+	hits := rTargets(w, entity, center, skill, tick)
 	for _, hit := range hits {
 		damage := w.SwordRDamage(entity, hit, skill, state.Level, tick)
 		hit.Combat.LastHitTick = tick
@@ -41,6 +42,19 @@ func ApplyR(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	entity.Skills[qID] = qState
 	entity.Sword.LastBreathUntilTick = tick + secondsToTicks(skillMeta(skill, "lastBreathDurationSeconds", 15), tickRate)
 	entity.Control.ActionLockedUntilTick = tick + secondsToTicks(skillMeta(skill, "selfActionLockSeconds", 1), tickRate)
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:sword_r:"),
+		Kind:         "sword_r",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        entity.Position,
+		End:          center,
+		Radius:       skillMeta(skill, "hitRadius", 450),
+		Count:        len(hits),
+		CreatedAt:    tick,
+		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "selfActionLockSeconds", 1), tickRate),
+	})
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListMS(skill, "cooldownMs", state.Level, []float64{80000, 55000, 30000}), tickRate)
 	w.LockAttackAfterCast(entity, tick, tickRate)
 	entity.Skills[rID] = state

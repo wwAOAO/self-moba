@@ -263,6 +263,7 @@ type PassiveSnapshot struct {
 type ControlSnapshot struct {
 	AirborneUntilTick     uint64  `json:"airborneUntilTick"`
 	DashUntilTick         uint64  `json:"dashUntilTick"`
+	InvisibleUntilTick    uint64  `json:"invisibleUntilTick,omitempty"`
 	ActionLockedUntilTick uint64  `json:"actionLockedUntilTick"`
 	StunnedUntilTick      uint64  `json:"stunnedUntilTick"`
 	SilencedUntilTick     uint64  `json:"silencedUntilTick"`

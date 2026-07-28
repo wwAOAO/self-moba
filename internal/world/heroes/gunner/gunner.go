@@ -58,6 +58,7 @@ func fireQ(w *world.World, entity *world.Entity, target *world.Entity, level int
 	if dir.X == 0 && dir.Y == 0 {
 		dir.X = 1
 	}
+	addQMuzzleEffect(w, entity, dir, level, skill, tick, tickRate)
 	w.PutProjectile(&world.Projectile{
 		ID:           w.NextProjectileID("projectile:gunner_q:"),
 		Kind:         "gunner_q",
@@ -72,6 +73,7 @@ func fireQ(w *world.World, entity *world.Entity, target *world.Entity, level int
 		Range:        skillRange(skill, 650) + target.Radius,
 		Radius:       skillMeta(skill, "projectileRadius", 16),
 		Damage:       level,
+		DisplayCount: 1,
 		CreatedAt:    tick,
 		ExpiresAt:    tick + secondsToTicks(2, tickRate),
 		HitIDs:       make(map[string]bool),
@@ -110,6 +112,7 @@ func CastW(w *world.World, entity *world.Entity, cast protocol.CastInput, state 
 	entity.Passive.GunnerWActiveUntil = tick + secondsToTicks(skillMeta(skill, "activeDurationSeconds", 4), tickRate)
 	entity.Passive.GunnerWAttackSpeed = skillList(skill, "attackSpeedBonus", state.Level, []float64{0.4, 0.55, 0.7, 0.85, 1})
 	entity.Passive.GunnerWMoveSpeed = skillList(skill, "enhancedMoveSpeed", state.Level, []float64{60, 70, 80, 90, 100})
+	addWEffect(w, entity, state.Level, skill, tick, entity.Passive.GunnerWActiveUntil)
 	state.CooldownUntilTick = tick + cooldownTicks(skill, state.Level, tickRate)
 	entity.Skills[wID] = state
 	w.RefreshPlayerStats(entity)
@@ -265,6 +268,38 @@ func addEEffect(w *world.World, entity *world.Entity, center world.Vector2, radi
 	return id
 }
 
+func addQMuzzleEffect(w *world.World, entity *world.Entity, dir world.Vector2, level int, skill config.SkillConfig, tick uint64, tickRate int) {
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:gunner_q_muzzle:"),
+		Kind:         "gunner_q_muzzle",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        entity.Position,
+		Dir:          dir,
+		Range:        skillMeta(skill, "muzzleFlashRange", 150),
+		Width:        skillMeta(skill, "muzzleFlashWidth", 44),
+		Count:        level,
+		CreatedAt:    tick,
+		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "muzzleFlashSeconds", 0.25), tickRate),
+	})
+}
+
+func addWEffect(w *world.World, entity *world.Entity, level int, skill config.SkillConfig, tick uint64, expiresAt uint64) {
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:gunner_w:"),
+		Kind:         "gunner_w",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        entity.Position,
+		Radius:       skillMeta(skill, "effectRadius", 105),
+		Count:        level,
+		CreatedAt:    tick,
+		ExpiresAt:    expiresAt,
+	})
+}
+
 func CastR(w *world.World, entity *world.Entity, cast protocol.CastInput, state world.SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
 	if entity == nil || state.Level <= 0 || tickRate <= 0 || entity.Passive.GunnerRExpireTick > tick {
 		return
@@ -366,6 +401,7 @@ func addREffect(w *world.World, entity *world.Entity, dir world.Vector2, skill c
 		Dir:          dir,
 		Range:        skillRange(skill, 1400),
 		Width:        skillMeta(skill, "coneAngleDegrees", 45),
+		Count:        entity.Passive.GunnerRWaves,
 		CreatedAt:    tick,
 		ExpiresAt:    expiresAt,
 	})

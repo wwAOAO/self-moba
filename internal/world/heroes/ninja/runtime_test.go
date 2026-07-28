@@ -311,13 +311,16 @@ func TestRWindupDashMarkDamageAndRecast(t *testing.T) {
 	if source.Ninja.ShadowPosition.X != 25 || source.Ninja.ShadowRecastSkillID != wID {
 		t.Fatalf("r should not overwrite w shadow: %+v", source.Ninja)
 	}
-	if source.Ninja.RShadowPosition.X != 420 || source.Ninja.RShadowExpiresAt != 172 || source.Ninja.RShadowRecastUntil != 142 {
-		t.Fatalf("r shadow = %+v expires %d recastUntil %d, want x=420 expires=172 recastUntil=142", source.Ninja.RShadowPosition, source.Ninja.RShadowExpiresAt, source.Ninja.RShadowRecastUntil)
+	if source.Ninja.RShadowPosition.X != 100 || source.Ninja.RShadowExpiresAt != 172 || source.Ninja.RShadowRecastUntil != 142 {
+		t.Fatalf("r shadow = %+v expires %d recastUntil %d, want x=100 expires=172 recastUntil=142", source.Ninja.RShadowPosition, source.Ninja.RShadowExpiresAt, source.Ninja.RShadowRecastUntil)
 	}
 
 	Tick(w, source, 29, 20)
 	if source.Position.X != 500 || source.Control.UntargetableUntilTick != 0 {
 		t.Fatalf("after dash position=%+v untargetable=%d, want x=500 untargetable=0", source.Position, source.Control.UntargetableUntilTick)
+	}
+	if source.Ninja.RShadowPosition.X != 100 {
+		t.Fatalf("r shadow moved after dash finish: %+v, want x=100", source.Ninja.RShadowPosition)
 	}
 	if source.Ninja.RMarkTargetID != target.ID || source.Ninja.RMarkTriggerTick != 89 {
 		t.Fatalf("mark target=%q trigger=%d, want %q/89", source.Ninja.RMarkTargetID, source.Ninja.RMarkTriggerTick, target.ID)
@@ -336,11 +339,41 @@ func TestRWindupDashMarkDamageAndRecast(t *testing.T) {
 	if !SpecialRecast(w, source, protocol.CastInput{SkillID: rID}, source.Skills[rID], rSkill(), 90, 20) {
 		t.Fatal("r recast should swap with shadow")
 	}
-	if source.Position.X != 420 || source.Ninja.RShadowPosition.X != 500 {
-		t.Fatalf("r recast positions source=%+v shadow=%+v, want source x=420 shadow x=500", source.Position, source.Ninja.RShadowPosition)
+	if source.Position.X != 100 || source.Ninja.RShadowPosition.X != 500 {
+		t.Fatalf("r recast positions source=%+v shadow=%+v, want source x=100 shadow x=500", source.Position, source.Ninja.RShadowPosition)
 	}
 	if SpecialRecast(w, source, protocol.CastInput{SkillID: rID}, source.Skills[rID], rSkill(), 142, 20) {
 		t.Fatal("r recast should be closed during final shadow linger")
+	}
+}
+
+func TestRDashEndDoesNotRestartDashOrMoveShadow(t *testing.T) {
+	w := world.NewWorld(nil, nil, nil, nil, nil)
+	sourceID, _ := w.SpawnObject(world.EntityKindEnemyHero, world.TeamBlue, 100, 100)
+	targetID, _ := w.SpawnObject(world.EntityKindEnemyHero, world.TeamRed, 500, 100)
+	source := w.EntityByID(sourceID)
+	target := w.EntityByID(targetID)
+	source.HeroID = heroID
+	source.Radius = 16
+	source.Stats = world.Stats{HP: 1000, MaxHP: 1000, Attack: 100, AttackSpeed: 1}
+	source.Skills = map[string]world.SkillState{rID: {SkillID: rID, Level: 2}}
+	target.Stats.HP = 1000
+	target.Stats.MaxHP = 1000
+
+	CastR(w, source, protocol.CastInput{SkillID: rID, TargetID: target.ID, TargetX: target.Position.X, TargetY: target.Position.Y}, source.Skills[rID], rSkill(), 10, 20)
+	Tick(w, source, 22, 20)
+	if source.Ninja.RShadowPosition.X != 100 {
+		t.Fatalf("r shadow after dash start = %+v, want x=100", source.Ninja.RShadowPosition)
+	}
+
+	w.TickDashMovement(source, 29, 20)
+	Tick(w, source, 29, 20)
+
+	if source.Ninja.RShadowPosition.X != 100 {
+		t.Fatalf("r shadow after world dash movement = %+v, want x=100", source.Ninja.RShadowPosition)
+	}
+	if source.Control.DashUntilTick != 0 || source.Ninja.RPending {
+		t.Fatalf("r dash not finished cleanly: dash=%d pending=%v", source.Control.DashUntilTick, source.Ninja.RPending)
 	}
 }
 

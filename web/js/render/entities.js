@@ -21,11 +21,13 @@
     redrawPlayerBody(sprite, player);
     updateBars(sprite, player);
     updatePlayerLabel(sprite, player);
-    updateStatusLabel(sprite, player, -43);
+    const barY = -(playerModelRadius(player) + 10);
+    updateStatusLabel(sprite, player, barY + 5, 24);
     sprite.x += (sprite.targetX - sprite.x) * smoothing;
     sprite.y += (sprite.targetY - sprite.y) * smoothing;
     sprite.node.x = frame.offsetX + sprite.x * frame.scale;
     sprite.node.y = frame.offsetY + sprite.y * frame.scale;
+    sprite.node.alpha = (player.control?.invisibleUntilTick || 0) > interpolatedTick() ? 0.45 : 1;
   }
 }
 
@@ -93,14 +95,15 @@ function createPlayer(player) {
   });
 
   redrawPlayerBody({ body }, player);
-  drawBar(hpBack, 0x24312b, 1, -34);
-  drawHealthBar(hpFill, player, -34);
-  drawBar(resourceBack, 0x24312b, 1, -28);
+  const barY = -(playerModelRadius(player) + 10);
+  drawBar(hpBack, 0x24312b, 1, barY);
+  drawHealthBar(hpFill, player, barY);
+  drawBar(resourceBack, 0x24312b, 1, barY + 6);
   drawBar(
     resourceFill,
     playerResourceColor(player),
     playerResourceRatio(player),
-    -28,
+    barY + 6,
   );
   label.anchor.set(0.5, 0);
   label.y = 16;
@@ -149,6 +152,8 @@ function redrawPlayerBody(sprite, player) {
     sprite.body.closePath();
   } else if (shape === "archer") {
     drawBowArrowIcon(sprite.body, radius);
+  } else if (shape === "crossbow") {
+    drawCrossbowIcon(sprite.body, radius);
   } else if (shape === "square") {
     sprite.body.rect(-radius, -radius, radius * 2, radius * 2);
   } else if (shape === "octagon") {
@@ -269,9 +274,9 @@ function createStatusLabel() {
   const label = new PIXI.Text({
     text: "",
     style: {
-      fill: 0xf97316,
+      fill: 0xffd15c,
       fontFamily: "Arial",
-      fontSize: 12,
+      fontSize: 14,
       fontWeight: "900",
       stroke: { color: 0xffffff, width: 2 },
     },
@@ -281,7 +286,7 @@ function createStatusLabel() {
   return label;
 }
 
-function updateStatusLabel(sprite, target, y) {
+function updateStatusLabel(sprite, target, y, x = 0) {
   if (!sprite.statusLabel) {
     return;
   }
@@ -295,6 +300,7 @@ function updateStatusLabel(sprite, target, y) {
     return;
   }
   sprite.statusLabel.text = statuses.join(" ");
+  sprite.statusLabel.x = x;
   sprite.statusLabel.y = y;
   sprite.statusLabel.visible = true;
 }
@@ -303,35 +309,34 @@ function abnormalStatuses(target) {
   const tick = Number(els.tick.textContent || 0);
   const statuses = [];
   if ((target.control?.airborneUntilTick || 0) > tick) {
-    statuses.push("击飞");
+    statuses.push("↑");
   }
   if ((target.control?.actionLockedUntilTick || 0) > tick) {
-    statuses.push("Lock");
+    statuses.push("⊘");
   }
   if ((target.control?.stunnedUntilTick || 0) > tick) {
-    statuses.push("眩晕");
+    statuses.push("✦");
   }
   if ((target.control?.silencedUntilTick || 0) > tick) {
-    statuses.push("沉默");
+    statuses.push("×");
   }
   if ((target.control?.rootedUntilTick || 0) > tick) {
-    statuses.push("禁锢");
+    statuses.push("⛓");
   }
   if ((target.control?.tenacityUntilTick || 0) > tick) {
-    statuses.push("韧性");
+    statuses.push("◆");
   }
   if ((target.control?.moveSpeedSlowUntil || 0) > tick) {
-    statuses.push("减速");
+    statuses.push("⌄");
   }
   if ((target.control?.mageIlluminationUntil || 0) > tick) {
-    statuses.push("启明");
+    statuses.push("☀");
   }
   for (const buff of target.buffs || []) {
     if (!buff.negative || !buff.expiresAtTick || buff.expiresAtTick <= tick) {
       continue;
     }
-    const remain = ((buff.expiresAtTick - tick) / state.tickRate).toFixed(1);
-    statuses.push(`${buff.name || buff.id} ${remain}s`);
+    statuses.push("●");
   }
   return statuses;
 }
@@ -349,6 +354,19 @@ function visibleUnits(snapshot) {
   return units.filter((unit) => {
     const kind = unit.kind || "dummy";
     return kind !== "dummy" && String(unit.id || "").startsWith("spawn:");
+  });
+}
+
+function visiblePlayers(snapshot) {
+  const players = snapshot.players || [];
+  const viewer = players.find((player) => player.playerId === state.playerId);
+  const viewerTeam = viewer?.team || state.team;
+  const tick = snapshot.tick || 0;
+  return players.filter((player) => {
+    if (player.playerId === state.playerId || player.team === viewerTeam) {
+      return true;
+    }
+    return (player.control?.invisibleUntilTick || 0) <= tick;
   });
 }
 

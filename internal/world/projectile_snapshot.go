@@ -11,7 +11,7 @@ func (w *World) WindWalls() []WindWall {
 func (w *World) SkillEffects() []SkillEffect {
 	effects := make([]SkillEffect, 0, len(w.projectiles)+len(w.skillEffects))
 	for _, effect := range w.skillEffects {
-		if effect.Kind == "berserker_q" || effect.Kind == "berserker_r" || effect.Kind == "butcher_w" || effect.Kind == "butcher_e" || effect.Kind == "butcher_r" || effect.Kind == "doctor_w" || effect.Kind == "doctor_r" || effect.Kind == "killer_r_channel" || effect.Kind == "blade_q_heal" || effect.Kind == "blade_r_rage" || effect.Kind == "monk_w_iron_will" {
+		if effect.Kind == "berserker_q_range" || effect.Kind == "berserker_q" || effect.Kind == "berserker_r" || effect.Kind == "butcher_w" || effect.Kind == "butcher_e" || effect.Kind == "butcher_r" || effect.Kind == "doctor_w" || effect.Kind == "doctor_r" || effect.Kind == "killer_r_channel" || effect.Kind == "blade_q_heal" || effect.Kind == "blade_r_rage" || effect.Kind == "monk_w_iron_will" {
 			if source := w.entities[effect.SourceID]; source != nil {
 				effect.Start = source.Position
 			}
@@ -29,7 +29,7 @@ func (w *World) SkillEffects() []SkillEffect {
 		if source := w.entities[projectile.SourceID]; source != nil {
 			sourceHeroID = source.HeroID
 		}
-		if projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == gunnerRSkillID || projectile.SkillID == robotQSkillID || projectile.SkillID == explorerQSkillID || projectile.SkillID == explorerWSkillID || projectile.SkillID == explorerESkillID || projectile.SkillID == explorerRSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID || projectile.SkillID == fireMageQSkillID || projectile.SkillID == fireMageRSkillID || projectile.SkillID == frostmageQSkillID || projectile.SkillID == frostmageESkillID || projectile.SkillID == doctorQSkillID || projectile.SkillID == killerQSkillID || projectile.SkillID == killerRSkillID || projectile.SkillID == monkQSkillID || projectile.SkillID == ninjaQSkillID || projectile.Kind == "butcher_q" || isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot" {
+		if projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == gunnerRSkillID || projectile.SkillID == robotQSkillID || projectile.SkillID == explorerQSkillID || projectile.SkillID == explorerWSkillID || projectile.SkillID == explorerESkillID || projectile.SkillID == explorerRSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID || projectile.SkillID == fireMageQSkillID || projectile.SkillID == fireMageRSkillID || projectile.SkillID == frostmageQSkillID || projectile.SkillID == frostmageESkillID || projectile.SkillID == doctorQSkillID || projectile.SkillID == killerQSkillID || projectile.SkillID == killerRSkillID || projectile.SkillID == monkQSkillID || projectile.SkillID == ninjaQSkillID || projectile.Kind == "crossbowman_condemn" || projectile.Kind == "butcher_q" || isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot" {
 			start = projectile.Position
 		}
 		if projectile.SkillID == tankQSkillID {

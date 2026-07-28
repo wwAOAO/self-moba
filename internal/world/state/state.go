@@ -57,6 +57,8 @@ type EquipmentSlot struct {
 	HeroDamageBonusUntil      uint64
 	EchoCharge                float64
 	EchoCooldownUntil         uint64
+	SpellbladeReady           bool
+	SpellbladeCooldownUntil   uint64
 }
 
 type Stats struct {
@@ -135,6 +137,7 @@ type DamageEvent struct {
 type ControlState struct {
 	AirborneUntilTick       uint64
 	UntargetableUntilTick   uint64
+	InvisibleUntilTick      uint64
 	DashUntilTick           uint64
 	DashStartTick           uint64
 	DashStart               geom.Vector2
@@ -210,6 +213,32 @@ type ArcherState struct {
 	CrystalArrowReleaseTick uint64
 	CrystalArrowTarget      geom.Vector2
 	CrystalArrowLevel       int
+}
+
+type CrossbowmanState struct {
+	NightHunterUntil             uint64
+	NightHunterMoveSpeed         float64
+	NightHunterUltimateMoveSpeed float64
+	TumbleEmpowerUntilTick       uint64
+	TumbleLevel                  int
+	TumblePendingCooldownTicks   uint64
+	SilverBoltsTargetID          string
+	SilverBoltsStacks            int
+	SilverBoltsUntilTick         uint64
+	SilverBoltsEffectID          string
+	CondemnPending               bool
+	CondemnReleaseTick           uint64
+	CondemnTargetID              string
+	CondemnLevel                 int
+	CondemnImpactTick            uint64
+	CondemnImpactTargetID        string
+	CondemnImpactDamage          int
+	UltimateUntilTick            uint64
+	UltimateLevel                int
+	UltimateTickRate             int
+	UltimateStartedAtTick        uint64
+	UltimateEffectID             string
+	UltimateDamagedHeroes        map[string]uint64
 }
 
 type MageState struct {
@@ -296,8 +325,6 @@ type NinjaState struct {
 	RCastPending         bool
 	RCastTargetID        string
 	RCastLevel           int
-	RCastPoint           geom.Vector2
-	RCastPointSet        bool
 	RReleaseTick         uint64
 	RDashEndTick         uint64
 	RTargetID            string

@@ -26,6 +26,24 @@ func (w *World) ForEachEntity(fn func(*Entity)) {
 	}
 }
 
+func (w *World) MovementDestination(entity *Entity, tick uint64) (Vector2, bool) {
+	if w == nil || entity == nil || entity.Death.Dead || entity.Stats.HP <= 0 ||
+		tick < entity.Control.AirborneUntilTick || tick < entity.Control.ActionLockedUntilTick ||
+		tick < entity.Control.StunnedUntilTick || tick < entity.Control.SuppressedUntilTick ||
+		tick < entity.Control.TauntedUntilTick || tick < entity.Control.RootedUntilTick ||
+		tick < entity.Control.DashUntilTick {
+		return Vector2{}, false
+	}
+	if entity.Intent.MoveTarget != nil && distance(entity.Position, *entity.Intent.MoveTarget) > 8 {
+		return *entity.Intent.MoveTarget, true
+	}
+	target := w.entities[entity.Intent.AttackTargetID]
+	if canAttackTarget(entity, target) && distance(entity.Position, target.Position) > w.attackReachAtTick(entity, target, tick) {
+		return target.Position, true
+	}
+	return Vector2{}, false
+}
+
 func (w *World) ClampWorldPoint(point Vector2) Vector2 {
 	if w == nil {
 		return point
@@ -34,6 +52,13 @@ func (w *World) ClampWorldPoint(point Vector2) Vector2 {
 		X: clamp(point.X, 0, w.width),
 		Y: clamp(point.Y, 0, w.height),
 	}
+}
+
+func (w *World) ResolveCollisionPosition(entity *Entity, point Vector2) Vector2 {
+	if w == nil {
+		return point
+	}
+	return w.resolveCollisionPosition(entity, w.ClampWorldPoint(point))
 }
 
 func (w *World) MapExitRange(start Vector2, dir Vector2) float64 {

@@ -260,6 +260,7 @@ func buildControlSnapshot(state world.ControlState) protocol.ControlSnapshot {
 	return protocol.ControlSnapshot{
 		AirborneUntilTick:     state.AirborneUntilTick,
 		DashUntilTick:         state.DashUntilTick,
+		InvisibleUntilTick:    state.InvisibleUntilTick,
 		ActionLockedUntilTick: state.ActionLockedUntilTick,
 		StunnedUntilTick:      state.StunnedUntilTick,
 		SilencedUntilTick:     state.SilencedUntilTick,

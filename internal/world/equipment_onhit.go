@@ -61,6 +61,26 @@ func (w *World) equipmentBasicAttackBonus(attacker *Entity, damageType string) f
 	return bonus
 }
 
+func (w *World) consumeEquipmentSpellbladeBonus(attacker *Entity, tick uint64, tickRate int) float64 {
+	if attacker == nil || attacker.Kind != EntityKindPlayer || w.equipment == nil {
+		return 0
+	}
+	for index, equipped := range attacker.Equipment {
+		item, ok := w.equipment.Get(equipped.EquipmentID)
+		if !ok || !equipped.SpellbladeReady || item.Effects.SpellbladeBasicAttackBonusRatio <= 0 {
+			continue
+		}
+		attacker.Equipment[index].SpellbladeReady = false
+		seconds := item.Effects.SpellbladeCooldownSeconds
+		if seconds <= 0 {
+			seconds = 2
+		}
+		attacker.Equipment[index].SpellbladeCooldownUntil = tick + secondsToTicks(seconds, tickRate)
+		return attacker.Stats.Attack * item.Effects.SpellbladeBasicAttackBonusRatio
+	}
+	return 0
+}
+
 func (w *World) equipmentMinionBasicAttackBonus(attacker *Entity, damageType string) float64 {
 	if attacker == nil || w.equipment == nil {
 		return 0

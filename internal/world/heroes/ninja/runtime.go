@@ -42,16 +42,15 @@ func CastR(w *world.World, entity *world.Entity, cast protocol.CastInput, state 
 	if target == nil {
 		return
 	}
-	castPoint := w.ClampWorldPoint(world.Vector2{X: cast.TargetX, Y: cast.TargetY})
 	if !rInRange(entity, target, skill) {
-		prepareR(w, entity, target, state, skill, castPoint)
+		prepareR(w, entity, target, state, skill)
 		entity.Skills[rID] = state
 		return
 	}
-	startRWindup(entity, target, state, skill, castPoint, tick, tickRate)
+	startRWindup(entity, target, state, skill, tick, tickRate)
 }
 
-func startRWindup(entity *world.Entity, target *world.Entity, state world.SkillState, skill config.SkillConfig, castPoint world.Vector2, tick uint64, tickRate int) {
+func startRWindup(entity *world.Entity, target *world.Entity, state world.SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
 	if entity == nil || target == nil {
 		return
 	}
@@ -66,8 +65,6 @@ func startRWindup(entity *world.Entity, target *world.Entity, state world.SkillS
 	entity.Ninja.RCastPending = false
 	entity.Ninja.RCastTargetID = ""
 	entity.Ninja.RCastLevel = 0
-	entity.Ninja.RCastPoint = castPoint
-	entity.Ninja.RCastPointSet = true
 	entity.Ninja.RPending = true
 	entity.Ninja.RReleaseTick = tick + windupTicks
 	entity.Ninja.RDashEndTick = entity.Ninja.RReleaseTick + dashTicks
@@ -112,7 +109,7 @@ func rInRange(entity *world.Entity, target *world.Entity, skill config.SkillConf
 	return entity != nil && target != nil && distance(entity.Position, target.Position) <= skillRange(skill, 625)+target.Radius
 }
 
-func prepareR(w *world.World, entity *world.Entity, target *world.Entity, state world.SkillState, skill config.SkillConfig, castPoint world.Vector2) {
+func prepareR(w *world.World, entity *world.Entity, target *world.Entity, state world.SkillState, skill config.SkillConfig) {
 	if entity == nil || target == nil {
 		return
 	}
@@ -127,8 +124,6 @@ func prepareR(w *world.World, entity *world.Entity, target *world.Entity, state 
 	entity.Ninja.RCastPending = true
 	entity.Ninja.RCastTargetID = target.ID
 	entity.Ninja.RCastLevel = state.Level
-	entity.Ninja.RCastPoint = castPoint
-	entity.Ninja.RCastPointSet = true
 	entity.Intent.MoveTarget = &castPosition
 	entity.Intent.AttackTargetID = ""
 	entity.Intent.AttackPausedTill = 0
@@ -151,7 +146,7 @@ func ReleasePreparedR(w *world.World, entity *world.Entity, tick uint64, tickRat
 	}
 	skill := w.SkillConfig(rID)
 	if !rInRange(entity, target, skill) {
-		prepareR(w, entity, target, state, skill, entity.Ninja.RCastPoint)
+		prepareR(w, entity, target, state, skill)
 		entity.Skills[rID] = state
 		return
 	}
@@ -160,7 +155,7 @@ func ReleasePreparedR(w *world.World, entity *world.Entity, tick uint64, tickRat
 		entity.Skills[rID] = state
 		return
 	}
-	startRWindup(entity, target, state, skill, entity.Ninja.RCastPoint, tick, tickRate)
+	startRWindup(entity, target, state, skill, tick, tickRate)
 }
 
 func CancelPreparedR(entity *world.Entity) {
@@ -170,8 +165,6 @@ func CancelPreparedR(entity *world.Entity) {
 	entity.Ninja.RCastPending = false
 	entity.Ninja.RCastTargetID = ""
 	entity.Ninja.RCastLevel = 0
-	entity.Ninja.RCastPoint = world.Vector2{}
-	entity.Ninja.RCastPointSet = false
 }
 
 func CastE(w *world.World, entity *world.Entity, cast protocol.CastInput, state world.SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
@@ -503,7 +496,7 @@ func releasePendingShadowCopies(w *world.World, entity *world.Entity, tick uint6
 }
 
 func tickR(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
-	if entity.Ninja.RPending && entity.Ninja.RReleaseTick > 0 && tick >= entity.Ninja.RReleaseTick && entity.Ninja.RDashEndTick > 0 && entity.Control.DashUntilTick == 0 {
+	if entity.Ninja.RPending && entity.Ninja.RReleaseTick > 0 && tick >= entity.Ninja.RReleaseTick && entity.Ninja.RDashEndTick > 0 && tick < entity.Ninja.RDashEndTick && entity.Control.DashUntilTick == 0 {
 		startRDash(w, entity, tick, tickRate)
 	}
 	if entity.Ninja.RPending && entity.Ninja.RDashEndTick > 0 && tick >= entity.Ninja.RDashEndTick {
@@ -521,9 +514,7 @@ func startRDash(w *world.World, entity *world.Entity, tick uint64, tickRate int)
 		entity.Control.UntargetableUntilTick = 0
 		return
 	}
-	entity.Ninja.RShadowPosition = rShadowSpawnPosition(entity)
-	entity.Ninja.RCastPoint = world.Vector2{}
-	entity.Ninja.RCastPointSet = false
+	entity.Ninja.RShadowPosition = entity.Position
 	skill := w.SkillConfig(rID)
 	entity.Ninja.RShadowExpiresAt = tick + secondsToTicks(skillMeta(skill, "shadowDurationSeconds", 7.5), tickRate)
 	lingerTicks := secondsToTicks(skillMeta(skill, "shadowLingerSeconds", 1.5), tickRate)
@@ -540,16 +531,6 @@ func startRDash(w *world.World, entity *world.Entity, tick uint64, tickRate int)
 	entity.Control.DashStart = entity.Position
 	entity.Control.DashEnd = target.Position
 	entity.Control.DashUntilTick = entity.Ninja.RDashEndTick
-}
-
-func rShadowSpawnPosition(entity *world.Entity) world.Vector2 {
-	if entity != nil && entity.Ninja.RCastPointSet {
-		return entity.Ninja.RCastPoint
-	}
-	if entity != nil {
-		return entity.Position
-	}
-	return world.Vector2{}
 }
 
 func finishRDash(w *world.World, entity *world.Entity, tick uint64, tickRate int) {

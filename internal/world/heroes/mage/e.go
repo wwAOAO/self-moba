@@ -105,6 +105,7 @@ func DetonateE(w *world.World, entity *world.Entity, skill config.SkillConfig, t
 	entity.Mage.LucentSingularityExpireTick = 0
 	entity.Mage.LucentSingularityLevel = 0
 	entity.Mage.LucentSingularityEffectID = ""
+	addEBurstEffect(w, entity, center, skill, tick, tickRate)
 	rawDamage := eRawDamage(entity, skill, level)
 	slow := skillList(skill, "slow", level, []float64{0.3, 0.35, 0.4, 0.45, 0.5})
 	slowUntil := tick + secondsToTicks(skillMeta(skill, "detonateSlowSeconds", 1), tickRate)
@@ -148,6 +149,20 @@ func addEEffect(w *world.World, entity *world.Entity, center world.Vector2, radi
 		ExpiresAt: expiresAt,
 	})
 	return id
+}
+
+func addEBurstEffect(w *world.World, entity *world.Entity, center world.Vector2, skill config.SkillConfig, tick uint64, tickRate int) {
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:mage_e_burst:"),
+		Kind:         "mage_lucent_singularity_burst",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        center,
+		Radius:       skillMeta(skill, "radius", 300),
+		CreatedAt:    tick,
+		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "burstEffectSeconds", 0.8), tickRate),
+	})
 }
 
 func ApplyE(w *world.World, entity *world.Entity, cast protocol.CastInput, state world.SkillState, skill config.SkillConfig, tick uint64, tickRate int) {

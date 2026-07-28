@@ -59,6 +59,32 @@ func TestKillerStats(t *testing.T) {
 	}
 }
 
+func TestCrossbowmanStats(t *testing.T) {
+	heroes, err := LoadHeroes("../../configs/heroes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hero, ok := heroes.Get("crossbowman")
+	if !ok {
+		t.Fatal("crossbowman hero is missing")
+	}
+
+	if hero.Resource != "mp" {
+		t.Fatalf("resource = %q, want mp", hero.Resource)
+	}
+	if hero.Base.HP != 515 || hero.Growth.HP != 89 ||
+		hero.Base.HPRegen5 != 3.5 || hero.Growth.HPRegen5 != 0.55 ||
+		hero.Base.MP != 231.8 || hero.Growth.MP != 35 ||
+		hero.Base.MPRegen5 != 6.972 || hero.Growth.MPRegen5 != 0.4 ||
+		hero.Base.Attack != 60 || hero.Growth.Attack != 2.36 ||
+		hero.Base.AttackSpeed != 0.658 || hero.Growth.AttackSpeed != 0.033 ||
+		hero.Base.PhysicalDefense != 23 || hero.Growth.PhysicalDefense != 3.4 ||
+		hero.Base.MagicDefense != 30 || hero.Growth.MagicDefense != 0.5 ||
+		hero.Base.MoveSpeed != 330 || hero.Base.AttackRange != 550 {
+		t.Fatalf("crossbowman stats do not match the configured base attributes: %+v", hero)
+	}
+}
+
 func TestMonkStats(t *testing.T) {
 	heroes, err := LoadHeroes("../../configs/heroes")
 	if err != nil {

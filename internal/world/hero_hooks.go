@@ -33,6 +33,7 @@ type HeroHooks struct {
 	ActiveBuffs                    HeroActiveBuffsHandler
 	ApplyStats                     func(w *World, entity *Entity, stats *Stats)
 	MoveSpeedMultiplier            func(entity *Entity, tick uint64) float64
+	MoveSpeedBonus                 func(entity *Entity, tick uint64) float64
 	AttackSpeedMultiplier          func(entity *Entity, tick uint64) float64
 	DamageReduction                func(entity *Entity, tick uint64) float64
 	DamageBlock                    func(w *World, entity *Entity) float64
@@ -254,6 +255,13 @@ func heroMoveSpeedMultiplier(entity *Entity, tick uint64) float64 {
 		}
 	}
 	return 1
+}
+
+func heroMoveSpeedBonus(entity *Entity, tick uint64) float64 {
+	if h := heroHooksForEntity(entity).MoveSpeedBonus; h != nil {
+		return h(entity, tick)
+	}
+	return 0
 }
 
 func heroAttackSpeedMultiplier(entity *Entity, tick uint64) float64 {

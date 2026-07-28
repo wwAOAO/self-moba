@@ -59,8 +59,18 @@ func (w *World) triggerEquipmentHeroDamageBonus(source *Entity, target *Entity, 
 	}
 }
 
-func (w *World) chargeEquipmentOnCast(entity *Entity) {
+func (w *World) chargeEquipmentOnCast(entity *Entity, tick uint64) {
 	w.addEquipmentEchoCharge(entity, func(e itemEffectsEcho) float64 { return e.castCharge })
+	if entity == nil || entity.Kind != EntityKindPlayer || w.equipment == nil {
+		return
+	}
+	for index, equipped := range entity.Equipment {
+		item, ok := w.equipment.Get(equipped.EquipmentID)
+		if !ok || item.Effects.SpellbladeBasicAttackBonusRatio <= 0 || tick < equipped.SpellbladeCooldownUntil {
+			continue
+		}
+		entity.Equipment[index].SpellbladeReady = true
+	}
 }
 
 func (w *World) chargeEquipmentOnMove(entity *Entity, moved float64) {

@@ -14,6 +14,7 @@ const (
 	swordHeroID        = "sword"
 	warriorHeroID      = "warrior"
 	archerHeroID       = "archer"
+	crossbowmanHeroID  = "crossbowman"
 	tankHeroID         = "tank"
 	mageHeroID         = "mage"
 	gunnerHeroID       = "gunner"
@@ -129,6 +130,7 @@ func (w *World) Tick(tick uint64, tickRate int) {
 	for _, entity := range w.entities {
 		w.tickHeroEntity(entity, tick, tickRate)
 		w.tickUntargetable(entity, tick)
+		w.tickInvisible(entity, tick)
 		w.tickPhysicalDefenseShred(entity, tick)
 		w.tickAttackDamageReduction(entity, tick)
 		w.tickGrievousWounds(entity, tick)
@@ -169,6 +171,12 @@ func (w *World) Tick(tick uint64, tickRate int) {
 func (w *World) tickUntargetable(entity *Entity, tick uint64) {
 	if entity != nil && entity.Control.UntargetableUntilTick > 0 && tick >= entity.Control.UntargetableUntilTick {
 		entity.Control.UntargetableUntilTick = 0
+	}
+}
+
+func (w *World) tickInvisible(entity *Entity, tick uint64) {
+	if entity != nil && entity.Control.InvisibleUntilTick > 0 && tick >= entity.Control.InvisibleUntilTick {
+		entity.Control.InvisibleUntilTick = 0
 	}
 }
 
@@ -225,6 +233,7 @@ func (w *World) tickRespawn(entity *Entity, tick uint64) {
 	entity.Sword = swordStateForHero(entity.HeroID)
 	entity.Warrior = WarriorState{}
 	entity.Archer = ArcherState{}
+	entity.Crossbowman = CrossbowmanState{}
 	entity.Mage = MageState{}
 	entity.Tank = TankState{}
 	entity.Berserker = BerserkerState{}

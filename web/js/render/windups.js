@@ -19,25 +19,6 @@ function finishCastWindup(windup) {
     return;
   }
   windup.finished = true;
-  if (windup.skillId !== "sword_cut") {
-    return;
-  }
-  showSwordQReleasePreview(windup);
-}
-
-function showSwordQReleasePreview(windup) {
-  const self = state.players.get(state.playerId);
-  if (!self || self.dead) {
-    return;
-  }
-  if (windup.preview) {
-    showSwordQPreviewFromData(windup.preview);
-    return;
-  }
-  showSwordQPreview(self, {
-    x: windup.targetX,
-    y: windup.targetY,
-  });
 }
 
 function drawCastWindup(windup, frame, now) {
@@ -70,18 +51,6 @@ function drawCastWindup(windup, frame, now) {
   );
   skillLayer.stroke({ color, width: 4, alpha: 0.85 });
 
-  if (windup.skillId === "sword_cut") {
-    drawSwordQWindup(windup, frame, color, alpha);
-    return;
-  }
-  if (windup.skillId === "berserker_q") {
-    drawBerserkerQWindup(windup, frame, alpha);
-    return;
-  }
-  if (windup.skillId === "berserker_e") {
-    drawBerserkerEWindup(windup, frame, alpha);
-    return;
-  }
   if (windup.skillId === "taunt") {
     drawCircleWindup(windup, frame, color, alpha, windup.range || 400);
     return;
@@ -90,20 +59,8 @@ function drawCastWindup(windup, frame, now) {
     drawTargetLockWindup(windup, frame, color, alpha);
     return;
   }
-  if (windup.skillId === "berserker_r") {
-    drawBerserkerRWindup(windup, frame, color, alpha);
-    return;
-  }
-  if (windup.skillId === "fire_mage_q") {
-    drawDirectionalWindup(windup, frame, color, alpha, 10);
-    return;
-  }
   if (windup.skillId === "killer_q") {
     drawTargetLockWindup(windup, frame, color, alpha);
-    return;
-  }
-  if (windup.skillId === "fire_mage_r") {
-    drawFireMageRWindup(windup, frame, color, alpha);
     return;
   }
   if (windup.skillId === "ninja_q") {
@@ -132,57 +89,90 @@ function drawCastWindup(windup, frame, now) {
     );
     return;
   }
+  if (windup.skillId === "mage_q") {
+    drawMageLinearWindup(windup, frame, alpha, 0xfacc15, 0x67e8f9, 34);
+    return;
+  }
+  if (windup.skillId === "mage_w") {
+    drawMageLinearWindup(windup, frame, alpha, 0x67e8f9, 0xf9a8d4, 42);
+    return;
+  }
+  if (windup.skillId === "mage_e") {
+    drawMageLucentSingularityWindup(windup, frame, alpha);
+    return;
+  }
   if (windup.skillId === "mage_r") {
     drawMageFinalSparkWindup(windup, frame, alpha);
     return;
   }
 }
 
-function drawSwordQWindup(windup, frame, color, alpha) {
-  return;
-}
-
-function drawBerserkerQWindup(windup, frame, alpha) {
-  const config = skillClientConfig.berserker_q || {};
-  const origin = castWindupOrigin(windup);
-  drawBerserkerQRange(
-    origin.x,
-    origin.y,
-    config.innerRadius || 300,
-    config.range || windup.range || 425,
-    frame,
-    alpha,
+function drawMageLinearWindup(windup, frame, alpha, primary, accent, widthWorld) {
+  const range = windup.range || 1100;
+  const startX = frame.offsetX + windup.x * frame.scale;
+  const startY = frame.offsetY + windup.y * frame.scale;
+  const endX = frame.offsetX + (windup.x + (windup.dirX || 1) * range) * frame.scale;
+  const endY = frame.offsetY + (windup.y + (windup.dirY || 0) * range) * frame.scale;
+  const normalX = -(windup.dirY || 0);
+  const normalY = windup.dirX || 1;
+  const width = Math.max(7, widthWorld * frame.scale);
+  const progress = clamp(
+    (performance.now() - windup.startedAt) / Math.max(1, windup.durationMs || 1),
+    0,
+    1,
   );
+
+  skillLayer.moveTo(startX, startY);
+  skillLayer.lineTo(endX, endY);
+  skillLayer.stroke({ color: primary, width, alpha: 0.12 * alpha });
+  for (const side of [-1, 1]) {
+    const offset = side * width * 0.48;
+    skillLayer.moveTo(startX + normalX * offset, startY + normalY * offset);
+    skillLayer.lineTo(endX + normalX * offset, endY + normalY * offset);
+    skillLayer.stroke({
+      color: side < 0 ? accent : primary,
+      width: Math.max(1, width * 0.12),
+      alpha: 0.58 * alpha,
+    });
+  }
+  const chargeX = startX + (endX - startX) * progress;
+  const chargeY = startY + (endY - startY) * progress;
+  skillLayer.circle(chargeX, chargeY, Math.max(4, width * 0.26));
+  skillLayer.fill({ color: 0xffffff, alpha: 0.68 * alpha });
 }
 
-function drawBerserkerEWindup(windup, frame, alpha) {
-  const config = skillClientConfig.berserker_e || {};
-  const range = config.range || windup.range || 535;
-  const angle = ((config.coneAngleDegrees || 50) * Math.PI) / 180;
-  const center = Math.atan2(windup.dirY || 0, windup.dirX || 1);
-  const startAngle = center - angle / 2;
-  const endAngle = center + angle / 2;
-  const x = frame.offsetX + windup.x * frame.scale;
-  const y = frame.offsetY + windup.y * frame.scale;
-  const radius = range * frame.scale;
-  skillLayer.moveTo(x, y);
-  skillLayer.arc(x, y, radius, startAngle, endAngle);
-  skillLayer.closePath();
-  skillLayer.fill({ color: 0xdc2626, alpha: 0.1 * alpha });
-  skillLayer.moveTo(x, y);
-  skillLayer.arc(x, y, radius, startAngle, endAngle);
-  skillLayer.closePath();
-  skillLayer.stroke({ color: 0xf97316, width: 3, alpha: 0.75 * alpha });
-}
+function drawMageLucentSingularityWindup(windup, frame, alpha) {
+  const config = skillClientConfig.mage_e || {};
+  const x = frame.offsetX + windup.targetX * frame.scale;
+  const y = frame.offsetY + windup.targetY * frame.scale;
+  const radius = (config.radius || 310) * frame.scale;
+  const progress = clamp(
+    (performance.now() - windup.startedAt) / Math.max(1, windup.durationMs || 1),
+    0,
+    1,
+  );
+  const rotation = performance.now() / 220;
 
-function drawBerserkerRWindup(windup, frame, color, alpha) {
-  const config = skillClientConfig.berserker_r || {};
-  drawCircleWindup(windup, frame, color, alpha, config.range || windup.range || 460);
-  drawTargetLockWindup(windup, frame, color, alpha);
-}
-
-function drawFireMageRWindup(windup, frame, color, alpha) {
-  drawTargetLockWindup(windup, frame, color, alpha);
+  skillLayer.circle(x, y, radius);
+  skillLayer.fill({ color: 0xfacc15, alpha: 0.05 * alpha });
+  skillLayer.circle(x, y, radius);
+  skillLayer.stroke({ color: 0xf59e0b, width: 2, alpha: 0.64 * alpha });
+  for (let i = 0; i < 3; i++) {
+    const start = rotation + (Math.PI * 2 * i) / 3;
+    const ringRadius = radius * (0.34 + progress * 0.48 + i * 0.05);
+    skillLayer.moveTo(
+      x + Math.cos(start) * ringRadius,
+      y + Math.sin(start) * ringRadius,
+    );
+    skillLayer.arc(x, y, ringRadius, start, start + Math.PI * 1.05);
+    skillLayer.stroke({
+      color: i === 1 ? 0x67e8f9 : 0xfacc15,
+      width: Math.max(2, radius * 0.012),
+      alpha: (0.7 - i * 0.12) * alpha,
+    });
+  }
+  skillLayer.circle(x, y, Math.max(7, radius * 0.06));
+  skillLayer.fill({ color: 0xffffff, alpha: (0.25 + progress * 0.42) * alpha });
 }
 
 function drawNinjaQWindup(windup, frame, color, alpha) {
@@ -215,12 +205,6 @@ function drawNinjaQShadowWindup(x, y, expiresAt, windup, frame, color, alpha, ti
 }
 
 function castWindupOrigin(windup) {
-  if (windup.skillId === "berserker_q") {
-    const self = state.players.get(state.playerId);
-    if (self && !self.dead) {
-      return self;
-    }
-  }
   return windup;
 }
 
@@ -241,6 +225,7 @@ function drawDirectionalWindup(windup, frame, color, alpha, width) {
 }
 
 function drawMageFinalSparkWindup(windup, frame, alpha) {
+  const config = skillClientConfig.mage_r || {};
   const range = windup.range || 3400;
   const startX = frame.offsetX + windup.x * frame.scale;
   const startY = frame.offsetY + windup.y * frame.scale;
@@ -248,16 +233,37 @@ function drawMageFinalSparkWindup(windup, frame, alpha) {
     frame.offsetX + (windup.x + (windup.dirX || 1) * range) * frame.scale;
   const endY =
     frame.offsetY + (windup.y + (windup.dirY || 0) * range) * frame.scale;
-  const width = Math.max(4, 36 * frame.scale);
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const length = Math.hypot(dx, dy) || 1;
+  const normalX = -dy / length;
+  const normalY = dx / length;
+  const width = Math.max(12, (config.beamWidth || 200) * frame.scale);
+  const progress = clamp(
+    (performance.now() - windup.startedAt) / Math.max(1, windup.durationMs || 1),
+    0,
+    1,
+  );
   skillLayer.moveTo(startX, startY);
   skillLayer.lineTo(endX, endY);
-  skillLayer.stroke({ color: 0xfef3c7, width, alpha: 0.2 * alpha });
+  skillLayer.stroke({ color: 0xfacc15, width, alpha: (0.08 + progress * 0.08) * alpha });
   skillLayer.moveTo(startX, startY);
   skillLayer.lineTo(endX, endY);
-  skillLayer.stroke({ color: 0xfacc15, width: Math.max(2, width * 0.35), alpha: 0.7 * alpha });
-  skillLayer.moveTo(startX, startY);
-  skillLayer.lineTo(endX, endY);
-  skillLayer.stroke({ color: 0xffffff, width: 1, alpha: 0.85 * alpha });
+  skillLayer.stroke({ color: 0xfef3c7, width: Math.max(3, width * 0.16), alpha: 0.5 * alpha });
+  for (const side of [-1, 1]) {
+    const offset = side * width * 0.5;
+    skillLayer.moveTo(startX + normalX * offset, startY + normalY * offset);
+    skillLayer.lineTo(endX + normalX * offset, endY + normalY * offset);
+    skillLayer.stroke({
+      color: side < 0 ? 0x67e8f9 : 0xfacc15,
+      width: Math.max(2, width * 0.025),
+      alpha: 0.66 * alpha,
+    });
+  }
+  skillLayer.circle(startX, startY, width * (0.2 + progress * 0.3));
+  skillLayer.stroke({ color: 0xffffff, width: Math.max(2, width * 0.035), alpha: 0.76 * alpha });
+  skillLayer.circle(startX, startY, Math.max(5, width * 0.08));
+  skillLayer.fill({ color: 0xffffff, alpha: (0.22 + progress * 0.52) * alpha });
 }
 
 function drawCircleWindup(windup, frame, color, alpha, range) {
@@ -299,20 +305,8 @@ function castWindupColor(skillId) {
   if (skillId === "explorer_q" || skillId === "explorer_e" || skillId === "explorer_r") {
     return 0x38bdf8;
   }
-  if (skillId === "berserker_q" || skillId === "fire_mage_r") {
-    return 0xf97316;
-  }
-  if (skillId === "fire_mage_q" || skillId === "fire_mage_w") {
-    return 0xf97316;
-  }
   if (skillId === "killer_q") {
     return 0x8b5cf6;
-  }
-  if (skillId === "berserker_e") {
-    return 0xdc2626;
-  }
-  if (skillId === "berserker_r") {
-    return 0xef4444;
   }
   return 0x38bdf8;
 }
@@ -325,55 +319,6 @@ function interpolatedTick() {
     state.snapshotTick +
     ((performance.now() - state.snapshotAtMs) / 1000) * state.tickRate
   );
-}
-
-function showSwordQPreview(self, target) {
-  const preview = swordQPreviewData(self, target);
-  if (!preview) {
-    return;
-  }
-  showSwordQPreviewFromData(preview);
-}
-
-function swordQPreviewData(self, target) {
-  const tick = Number(els.tick.textContent || 0);
-  const qState = skillState(self, "sword_cut");
-  if ((qState?.level || 0) <= 0) {
-    return null;
-  }
-  const config = skillClientConfig.sword_cut || {};
-  let form = "line";
-  let range = config.range || 475;
-  if (swordEQWindowActive(self, config, tick)) {
-    form = "circle";
-    range = config.eqRadius || 375;
-  } else if ((qState?.stacks || 0) >= 2) {
-    form = "whirlwind";
-    range = config.whirlwindRange || 900;
-  }
-  const dx = target.x - self.x;
-  const dy = target.y - self.y;
-  const len = Math.hypot(dx, dy) || 1;
-  return {
-    kind: "sword_q",
-    form,
-    x: self.x,
-    y: self.y,
-    dirX: dx / len,
-    dirY: dy / len,
-    range,
-    radius: form === "whirlwind" ? config.whirlwindRadius || 70 : 0,
-    previewMs: config.previewMs || 450,
-  };
-}
-
-function showSwordQPreviewFromData(preview) {
-  const previewMs = preview.previewMs || 450;
-  state.skillPreview = {
-    ...preview,
-    previewMs,
-    expiresAt: performance.now() + previewMs,
-  };
 }
 
 function showTankEPreview(self) {
@@ -402,15 +347,6 @@ function showFrostMageRPreview(self) {
     previewMs,
     expiresAt: performance.now() + previewMs,
   };
-}
-
-function swordEQWindowActive(player, config, tick) {
-  const dashUntilTick = player.control?.dashUntilTick || 0;
-  if (dashUntilTick <= tick) {
-    return false;
-  }
-  const windowTicks = (config.eqWindowSeconds || 0.15) * state.tickRate;
-  return dashUntilTick - tick <= windowTicks;
 }
 
 function drawSkillPreview(frame) {

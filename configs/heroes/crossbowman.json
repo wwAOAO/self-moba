@@ -1,0 +1,44 @@
+[
+  {
+    "heroId": "crossbowman",
+    "name": "弩手",
+    "resource": "mp",
+    "base": {
+      "hp": 515,
+      "mp": 231.8,
+      "hpRegen5": 3.5,
+      "mpRegen5": 6.972,
+      "attack": 60,
+      "abilityHaste": 0,
+      "physicalDefense": 23,
+      "magicDefense": 30,
+      "moveSpeed": 330,
+      "attackRange": 550,
+      "attackSpeed": 0.658,
+      "attackWindupSeconds": 0.267,
+      "attackSpeedRatio": 0.658,
+      "critChance": 0
+    },
+    "growth": {
+      "hp": 89,
+      "mp": 35,
+      "hpRegen5": 0.55,
+      "mpRegen5": 0.4,
+      "attack": 2.36,
+      "physicalDefense": 3.4,
+      "magicDefense": 0.5,
+      "moveSpeed": 0,
+      "attackRange": 0,
+      "attackSpeed": 0.033,
+      "critChance": 0
+    },
+    "radius": 16,
+    "skills": {
+      "passive": "crossbowman_night_hunter",
+      "q": "crossbowman_tumble",
+      "w": "crossbowman_silver_bolts",
+      "e": "crossbowman_condemn",
+      "r": "crossbowman_final_hour"
+    }
+  }
+]

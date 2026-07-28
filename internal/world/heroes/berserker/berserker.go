@@ -54,22 +54,6 @@ func CastQ(w *world.World, entity *world.Entity, cast protocol.CastInput, state 
 	w.LockAttackAfterCast(entity, tick, tickRate)
 }
 
-func showQRange(w *world.World, entity *world.Entity, skill config.SkillConfig, tick uint64, expiresAt uint64) {
-	id := w.NextEffectID("effect:berserker_q:")
-	w.PutSkillEffect(world.SkillEffect{
-		ID:           id,
-		Kind:         "berserker_q",
-		Team:         entity.Team,
-		SourceID:     entity.ID,
-		SourceHeroID: entity.HeroID,
-		Start:        entity.Position,
-		Range:        skillRange(skill, 425),
-		Radius:       skillMeta(skill, "innerRadius", 300),
-		CreatedAt:    tick,
-		ExpiresAt:    expiresAt,
-	})
-}
-
 func releaseQ(w *world.World, entity *world.Entity, level int, skill config.SkillConfig, tick uint64, tickRate int) {
 	outerRadius := skillRange(skill, 425)
 	innerRadius := skillMeta(skill, "innerRadius", 300)
@@ -103,6 +87,38 @@ func releaseQ(w *world.World, entity *world.Entity, level int, skill config.Skil
 		}
 	}
 	healQ(w, entity, skill, healHits)
+	showQImpact(w, entity, skill, healHits, tick, tickRate)
+}
+
+func showQRange(w *world.World, entity *world.Entity, skill config.SkillConfig, tick uint64, expiresAt uint64) {
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:berserker_q_range:"),
+		Kind:         "berserker_q_range",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        entity.Position,
+		Range:        skillRange(skill, 425),
+		Radius:       skillMeta(skill, "innerRadius", 300),
+		CreatedAt:    tick,
+		ExpiresAt:    expiresAt,
+	})
+}
+
+func showQImpact(w *world.World, entity *world.Entity, skill config.SkillConfig, healHits int, tick uint64, tickRate int) {
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:berserker_q:"),
+		Kind:         "berserker_q",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        entity.Position,
+		Range:        skillRange(skill, 425),
+		Radius:       skillMeta(skill, "innerRadius", 300),
+		Count:        healHits,
+		CreatedAt:    tick,
+		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "effectSeconds", 0.45), tickRate),
+	})
 }
 
 func qDamage(entity *world.Entity, skill config.SkillConfig, level int, outer bool) float64 {
@@ -177,6 +193,20 @@ func ApplyWOnBasicHit(w *world.World, attacker *world.Entity, target *world.Enti
 	slow := skillList(skill, "slow", state.Level, []float64{0.2, 0.25, 0.3, 0.35, 0.4})
 	w.ApplyMoveSpeedSlow(target, slow, until)
 	w.ApplyAttackSpeedSlow(target, slow, until)
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:berserker_w:"),
+		Kind:         "berserker_w",
+		Team:         attacker.Team,
+		SourceID:     attacker.ID,
+		SourceHeroID: attacker.HeroID,
+		TargetID:     target.ID,
+		Start:        attacker.Position,
+		End:          target.Position,
+		Radius:       target.Radius,
+		Count:        bleedStacks(target, attacker.ID),
+		CreatedAt:    tick,
+		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "effectSeconds", 0.35), tickRate),
+	})
 }
 
 func CastE(w *world.World, entity *world.Entity, cast protocol.CastInput, state world.SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
@@ -206,10 +236,12 @@ func releaseE(w *world.World, entity *world.Entity, skill config.SkillConfig, ti
 		dir.X = 1
 	}
 	until := tick + secondsToTicks(skillMeta(skill, "slowSeconds", 1), tickRate)
+	pulled := 0
 	for _, target := range w.TargetsInCone(entity, dir, skillRange(skill, 535), skillMeta(skill, "coneAngleDegrees", 50)) {
 		if !canPullE(target) {
 			continue
 		}
+		pulled++
 		target.Position = w.ClampWorldPoint(world.Vector2{
 			X: entity.Position.X + dir.X*(entity.Radius+target.Radius+1),
 			Y: entity.Position.Y + dir.Y*(entity.Radius+target.Radius+1),
@@ -217,6 +249,20 @@ func releaseE(w *world.World, entity *world.Entity, skill config.SkillConfig, ti
 		w.ApplyAirborne(target, tick+world.ControlTicksAfterTenacity(target, secondsToTicks(skillMeta(skill, "knockupSeconds", 0.25), tickRate), tick), tick, tickRate)
 		w.ApplyMoveSpeedSlow(target, skillMeta(skill, "slow", 0.4), until)
 	}
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:berserker_e:"),
+		Kind:         "berserker_e",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        entity.Position,
+		Dir:          dir,
+		Range:        skillRange(skill, 535),
+		Width:        skillMeta(skill, "coneAngleDegrees", 50),
+		Count:        pulled,
+		CreatedAt:    tick,
+		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "effectSeconds", 0.38), tickRate),
+	})
 }
 
 func CastR(w *world.World, entity *world.Entity, cast protocol.CastInput, state world.SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
@@ -286,7 +332,6 @@ func startRWindup(w *world.World, entity *world.Entity, target *world.Entity, st
 	entity.Berserker.NoxianGuillotineLevel = state.Level
 	entity.Control.ActionLockedUntilTick = state.StacksExpireTick
 	entity.Skills[rID] = state
-	showRRange(w, entity, target, skill, tick, state.StacksExpireTick)
 	w.LockAttackAfterCast(entity, tick, tickRate)
 }
 
@@ -356,6 +401,7 @@ func releaseR(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 	skill := w.SkillConfig(rID)
 	normalCooldown := tick + cooldownTicksFor(entity, int(skillList(skill, "cooldownMs", level, []float64{120000, 100000, 80000})), tickRate)
 	state.CooldownUntilTick = normalCooldown
+	targetPosition := target.Position
 	jumpToRTarget(w, entity, target)
 	target.Combat.LastHitTick = tick
 	wasAlive := target.Stats.HP > 0
@@ -373,6 +419,22 @@ func releaseR(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 			w.RemoveDeadUnit(target)
 		}
 	}
+	dx, dy := normalize(targetPosition.X-entity.Position.X, targetPosition.Y-entity.Position.Y)
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:berserker_r:"),
+		Kind:         "berserker_r",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		TargetID:     target.ID,
+		Start:        entity.Position,
+		End:          targetPosition,
+		Dir:          world.Vector2{X: dx, Y: dy},
+		Radius:       target.Radius,
+		Count:        bleedStacks(target, entity.ID),
+		CreatedAt:    tick,
+		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "effectSeconds", 0.6), tickRate),
+	})
 	addRVision(w, entity, target.Position, skill, tick, tickRate)
 	entity.Skills[rID] = state
 }
@@ -469,25 +531,6 @@ func validRTarget(entity *world.Entity, target *world.Entity) bool {
 
 func rInRange(entity *world.Entity, target *world.Entity, skill config.SkillConfig) bool {
 	return entity != nil && target != nil && distance(entity.Position, target.Position) <= skillRange(skill, 460)+target.Radius
-}
-
-func showRRange(w *world.World, entity *world.Entity, target *world.Entity, skill config.SkillConfig, tick uint64, expiresAt uint64) {
-	if entity == nil || target == nil {
-		return
-	}
-	w.PutSkillEffect(world.SkillEffect{
-		ID:           w.NextEffectID("effect:berserker_r:"),
-		Kind:         "berserker_r",
-		Team:         entity.Team,
-		SourceID:     entity.ID,
-		SourceHeroID: entity.HeroID,
-		Start:        entity.Position,
-		End:          target.Position,
-		Range:        skillRange(skill, 460),
-		Radius:       target.Radius,
-		CreatedAt:    tick,
-		ExpiresAt:    expiresAt,
-	})
 }
 
 func addRVision(w *world.World, entity *world.Entity, center world.Vector2, skill config.SkillConfig, tick uint64, tickRate int) {

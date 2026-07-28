@@ -43,7 +43,7 @@
             "manaCost": 50,
             "apRatio": 0.65,
             "projectileRadius": 28,
-            "projectileSpeed": 3000,
+            "projectileSpeed": 1500,
             "castWindupSeconds": 0.25,
             "stunSeconds": 2
         },

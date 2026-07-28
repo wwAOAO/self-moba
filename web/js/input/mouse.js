@@ -26,6 +26,18 @@
   moveToPoint(point);
 }
 
+function handleCameraZoom(event) {
+  if (document.hidden || !document.hasFocus() || !event.deltaY) {
+    return;
+  }
+  event.preventDefault();
+  state.cameraScale = clamp(
+    Math.round((state.cameraScale - Math.sign(event.deltaY) * 0.01) * 100) / 100,
+    0.25,
+    0.5,
+  );
+}
+
 function updateAimPoint(event) {
   const point = screenToWorld(event);
   state.aimPoint = {

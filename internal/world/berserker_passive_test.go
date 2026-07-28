@@ -62,21 +62,41 @@ func TestBerserkerQOuterRingBleedsAndHeals(t *testing.T) {
 	if got := source.Stats.MP; got != 70 {
 		t.Fatalf("mp after q cast = %f, want 70", got)
 	}
-	effect := onlyBerserkerQEffect(t, w)
+	effect := findBerserkerQEffect(w, "berserker_q_range")
+	if effect == nil {
+		t.Fatal("missing berserker q windup range effect")
+	}
 	if got, want := effect.ExpiresAt, uint64(25); got != want {
 		t.Fatalf("q range expires = %v, want %v", got, want)
 	}
 	if got, want := effect.Range, 425.0; got != want {
-		t.Fatalf("q outer range = %f, want %f", got, want)
+		t.Fatalf("q windup range = %f, want %f", got, want)
 	}
 	if got, want := effect.Radius, 300.0; got != want {
-		t.Fatalf("q inner radius = %f, want %f", got, want)
+		t.Fatalf("q windup inner radius = %f, want %f", got, want)
 	}
+	rangeEffectID := effect.ID
 
 	w.Tick(25, 20)
 
-	if effect := findBerserkerQEffect(w); effect != nil {
+	if effect = findBerserkerQEffect(w, "berserker_q_range"); effect != nil {
 		t.Fatalf("q range after release = %+v, want nil", *effect)
+	}
+	effect = findBerserkerQEffect(w, "berserker_q")
+	if effect == nil {
+		t.Fatal("missing berserker q impact effect on release")
+	}
+	if effect.ID == rangeEffectID {
+		t.Fatalf("q impact reused windup range effect id %q", effect.ID)
+	}
+	if got, want := effect.CreatedAt, uint64(25); got != want {
+		t.Fatalf("q impact created at = %v, want %v", got, want)
+	}
+	if got, want := effect.Range, 425.0; got != want {
+		t.Fatalf("q effect outer range = %f, want %f", got, want)
+	}
+	if got, want := effect.Radius, 300.0; got != want {
+		t.Fatalf("q effect inner radius = %f, want %f", got, want)
 	}
 	if got := outerHero.Stats.HP; got != 886 {
 		t.Fatalf("outer hero hp = %v, want 886", got)
@@ -127,32 +147,41 @@ func TestBerserkerQWindupAllowsMovement(t *testing.T) {
 	if source.Position.X <= 1000 {
 		t.Fatalf("berserker did not move during q windup: %+v", source.Position)
 	}
-	foundEffect := false
-	for _, effect := range w.SkillEffects() {
-		if effect.Kind == "berserker_q" && effect.Start != source.Position {
-			t.Fatalf("q range center = %+v, want %+v", effect.Start, source.Position)
-		}
-		if effect.Kind == "berserker_q" {
-			foundEffect = true
-		}
-	}
-	if !foundEffect {
-		t.Fatal("missing berserker q range effect")
-	}
-}
-
-func onlyBerserkerQEffect(t *testing.T, w *World) SkillEffect {
-	t.Helper()
-	effect := findBerserkerQEffect(w)
+	effect := findBerserkerQSnapshotEffect(w, "berserker_q_range")
 	if effect == nil {
-		t.Fatal("missing berserker q range effect")
+		t.Fatal("missing q windup range effect while moving")
 	}
-	return *effect
+	if effect.Start.X <= 1000 {
+		t.Fatalf("q windup range did not follow moving berserker: %+v", effect.Start)
+	}
+
+	w.Tick(25, 20)
+	positionAtRelease := source.Position
+	w.Tick(26, 20)
+	if source.Position == positionAtRelease {
+		t.Fatalf("berserker did not keep moving after q release: %+v", source.Position)
+	}
+	effect = findBerserkerQSnapshotEffect(w, "berserker_q")
+	if effect == nil {
+		t.Fatal("missing q impact effect after release")
+	}
+	if effect.Start != source.Position {
+		t.Fatalf("q impact center = %+v, want moving berserker position %+v", effect.Start, source.Position)
+	}
 }
 
-func findBerserkerQEffect(w *World) *SkillEffect {
+func findBerserkerQEffect(w *World, kind string) *SkillEffect {
 	for _, effect := range w.skillEffects {
-		if effect.Kind == "berserker_q" {
+		if effect.Kind == kind {
+			return &effect
+		}
+	}
+	return nil
+}
+
+func findBerserkerQSnapshotEffect(w *World, kind string) *SkillEffect {
+	for _, effect := range w.SkillEffects() {
+		if effect.Kind == kind {
 			return &effect
 		}
 	}
@@ -458,11 +487,13 @@ func TestBerserkerRWalksIntoRangeBeforeWindup(t *testing.T) {
 		t.Fatalf("r stacks after range = %v, want 1", got)
 	}
 	effect := findBerserkerREffect(w)
-	if effect == nil {
-		t.Fatal("missing r range effect after range")
+	if effect != nil {
+		t.Fatalf("r windup range effect after range = %+v, want nil", *effect)
 	}
-	if got, want := effect.ExpiresAt, uint64(21); got != want {
-		t.Fatalf("r range expires = %v, want %v", got, want)
+	w.Tick(21, 20)
+	effect = findBerserkerREffect(w)
+	if effect == nil {
+		t.Fatal("missing r release effect")
 	}
 }
 

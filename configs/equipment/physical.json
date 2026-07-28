@@ -459,5 +459,97 @@
     "description": [
       "暴击率 +20%"
     ]
+  },
+  {
+    "equipmentId": "stinger",
+    "name": "蜂刺",
+    "category": "physical",
+    "tier": 2,
+    "price": 1100,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 10,
+      "attackSpeedBonus": 0.15
+    },
+    "description": [
+      "攻击力 +10",
+      "攻击速度 +15%"
+    ]
+  },
+  {
+    "equipmentId": "sheen",
+    "name": "耀光",
+    "category": "physical",
+    "tier": 2,
+    "price": 1200,
+    "sellRatio": 0.5,
+    "stats": {
+      "abilityPower": 30,
+      "mp": 300
+    },
+    "description": [
+      "法术强度 +30",
+      "法力 +300"
+    ]
+  },
+  {
+    "equipmentId": "phage",
+    "name": "净蚀",
+    "category": "physical",
+    "tier": 2,
+    "price": 1100,
+    "sellRatio": 0.5,
+    "stats": {
+      "attack": 10,
+      "hp": 300,
+      "attackSpeedBonus": 0.1
+    },
+    "description": [
+      "攻击力 +10",
+      "生命 +300",
+      "攻击速度 +10%"
+    ]
+  },
+  {
+    "equipmentId": "trinity_force",
+    "name": "三项之力",
+    "category": "physical",
+    "tier": 3,
+    "price": 3733,
+    "sellRatio": 0.5,
+    "uniqueGroup": "trinity_force",
+    "components": [
+      "stinger",
+      "sheen",
+      "phage"
+    ],
+    "stats": {
+      "attack": 20,
+      "abilityPower": 30,
+      "attackSpeedBonus": 0.25,
+      "critChance": 0.12,
+      "moveSpeedPercent": 0.12,
+      "hp": 300,
+      "mp": 300
+    },
+    "effects": {
+      "basicAttackTargetSlowChance": 0.25,
+      "basicAttackTargetSlow": 0.35,
+      "basicAttackTargetSlowSeconds": 2.5,
+      "spellbladeBasicAttackBonusRatio": 1.5,
+      "spellbladeCooldownSeconds": 2
+    },
+    "description": [
+      "攻击力 +20",
+      "法术强度 +30",
+      "攻击速度 +25%",
+      "暴击率 +12%",
+      "移动速度 +12%",
+      "生命 +300",
+      "法力 +300",
+      "唯一被动 - 减速：攻击时有 25% 几率使目标减速 35%，持续 2.5 秒",
+      "唯一被动 - 咒刃：施放技能后，下一次基础攻击额外造成 150% 攻击力的物理伤害，冷却 2 秒",
+      "合成费用 333 金币，总价 3733 金币"
+    ]
   }
 ]

@@ -14,6 +14,9 @@ func (w *World) applyCast(entity *Entity, cast protocol.CastInput, tick uint64, 
 		return
 	}
 	skill := w.castSkillConfig(cast.SkillID, skills)
+	if skill.Type == "passive" {
+		return
+	}
 	if w.trySpecialRecast(entity, cast, state, skill, tick, tickRate) {
 		return
 	}
@@ -21,14 +24,14 @@ func (w *World) applyCast(entity *Entity, cast protocol.CastInput, tick uint64, 
 		return
 	}
 	if handler := heroCastHandlerFor(entity.HeroID, cast.SkillID); handler != nil {
-		w.chargeEquipmentOnCast(entity)
+		w.chargeEquipmentOnCast(entity, tick)
 		handler(w, entity, cast, state, skill, tick, tickRate)
 		return
 	}
 	if skill.SkillID == "" {
 		return
 	}
-	w.chargeEquipmentOnCast(entity)
+	w.chargeEquipmentOnCast(entity, tick)
 	w.lockAttackAfterCast(entity, tick, tickRate)
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skill.CooldownMS, tickRate)
 	entity.Skills[cast.SkillID] = state

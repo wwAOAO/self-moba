@@ -100,6 +100,7 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 	w.triggerEquipmentHeroDamageManaShield(source, target, tickRate)
 	if context.BasicAttack {
 		w.triggerEquipmentBasicAttackAttackerSlow(source, target, tickRate)
+		w.triggerEquipmentBasicAttackTargetSlow(source, target, target.Combat.LastHitTick, tickRate)
 		w.triggerEquipmentBasicAttackStacks(source, target.Combat.LastHitTick, tickRate)
 		w.triggerEquipmentThorns(source, target, tickRate)
 	}

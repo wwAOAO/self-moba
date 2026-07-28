@@ -25,6 +25,9 @@ func canAttackTarget(attacker *Entity, target *Entity) bool {
 	if target.ID == attacker.ID || target.Team == attacker.Team {
 		return false
 	}
+	if target.Control.InvisibleUntilTick > 0 {
+		return false
+	}
 	return true
 }
 

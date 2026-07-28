@@ -68,8 +68,9 @@ function applySnapshot(snapshot) {
   const previousTargets = targetMap();
   const previousPlayers = state.players;
   state.map = snapshot.map;
+  const players = visiblePlayers(snapshot);
   state.players = new Map(
-    snapshot.players.map((player) => [
+    players.map((player) => [
       player.playerId,
       normalizePlayer(player),
     ]),
@@ -99,7 +100,7 @@ function applySnapshot(snapshot) {
   state.snapshotTick = snapshot.tick;
   state.snapshotAtMs = performance.now();
   els.tick.textContent = snapshot.tick;
-  els.playerCount.textContent = snapshot.players.length;
+  els.playerCount.textContent = players.length;
   const self = state.players.get(state.playerId);
   if (self?.message && self.messageTick === snapshot.tick) {
     setShopStatus(self.message);
@@ -130,7 +131,18 @@ function updateRewardTexts(previousPlayers, currentPlayers) {
     if (goldGain > 0) {
       spawnRewardText(current, `+${formatRewardAmount(goldGain)} G`, "gold");
     }
+    const healing = playerId === state.playerId ? healingTextAmount(previous, current) : 0;
+    if (healing >= 100) {
+      spawnRewardText(current, `+${formatRewardAmount(healing)}`, "heal");
+    }
   }
+}
+
+function healingTextAmount(previous, current) {
+  if (previous.dead || current.dead) {
+    return 0;
+  }
+  return Math.max(0, (current.stats?.hp || 0) - (previous.stats?.hp || 0));
 }
 
 function formatRewardAmount(value) {
@@ -151,6 +163,9 @@ function updateEffectFlashes(effects) {
     }
     state.seenEffectIds.add(effect.id);
     const self = state.players.get(state.playerId);
+    if (effect.kind === "crossbowman_tumble" && effect.sourceId === self?.id) {
+      state.moveTarget = null;
+    }
     if (effect.kind === "basic_arrow" && effect.sourceId === self?.id) {
       state.attackFlash = {
         x: self.x,
@@ -209,11 +224,15 @@ function showTargetDamage(id, target) {
     };
   }
   for (const event of damageEvents.slice(-maxDamageEventsPerTarget)) {
+    const localDamage = isLocalPlayerDamage(target, event, self);
+    if (!localDamage) {
+      continue;
+    }
     spawnDamageText(
       target,
       event.damage || 0,
       event.damageType || "physical",
-      isLocalPlayerDamage(target, event, self),
+      localDamage,
     );
   }
 }
@@ -265,6 +284,7 @@ function resetClientState() {
   state.snapshotAtMs = 0;
   state.pendingSnapshot = null;
   state.snapshotFrameScheduled = false;
+  closeShop();
 
   for (const effect of state.damageTexts) {
     effectLayer.removeChild(effect.node);
@@ -295,6 +315,12 @@ function castSkill(slot) {
     return;
   }
   if (
+    skillId === "crossbowman_tumble" &&
+    (self.buffs || []).some((buff) => buff.id === skillId)
+  ) {
+    return;
+  }
+  if (
     isSkillOnCooldown(self, skillId) &&
     !isNinjaShadowRecast(self, skillId) &&
     !isFrostMageERecast(self, skillId) &&
@@ -307,6 +333,7 @@ function castSkill(slot) {
   }
   const selected = currentTarget();
   const useAimPointFirst =
+    skillId === "crossbowman_tumble" ||
     skillId.startsWith("mage_") ||
     skillId === "fire_mage_q" ||
     skillId === "fire_mage_w" ||
@@ -413,7 +440,11 @@ function canCastDuringSwordEDash(player) {
 
 function addCastWindup(self, skillId, target, selectedTarget) {
   const config = skillClientConfig[skillId] || {};
-  if (skillId === "berserker_r") {
+  if (
+    skillId.startsWith("berserker_") ||
+    skillId.startsWith("fire_mage_") ||
+    skillId.startsWith("sword_")
+  ) {
     return;
   }
   const windupSeconds =
@@ -430,8 +461,6 @@ function addCastWindup(self, skillId, target, selectedTarget) {
   const dx = (target?.x ?? self.x + 1) - self.x;
   const dy = (target?.y ?? self.y) - self.y;
   const len = Math.hypot(dx, dy) || 1;
-  const preview =
-    skillId === "sword_cut" ? swordQPreviewData(self, target) : null;
   state.castWindups.push({
     id: `${skillId}:${now}`,
     skillId,
@@ -445,7 +474,6 @@ function addCastWindup(self, skillId, target, selectedTarget) {
     dirY: dy / len,
     range: config.range || 0,
     radius: config.landingRadius || config.whirlwindRadius || 0,
-    preview,
     startedAt: now,
     expiresAt: now + durationMs,
     durationMs,

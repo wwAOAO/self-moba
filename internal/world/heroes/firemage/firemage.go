@@ -212,7 +212,7 @@ func startW(w *world.World, entity *world.Entity, center world.Vector2, state wo
 	entity.Passive.FireWLevel = state.Level
 	entity.Control.ActionLockedUntilTick = tick + windupTicks
 	w.LockAttackAfterCast(entity, tick, tickRate)
-	showWEffect(w, entity, center, skill, tick, entity.Passive.FireWTriggerTick+2)
+	showWRange(w, entity, center, skill, tick, entity.Passive.FireWTriggerTick)
 }
 
 func ReleasePreparedW(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
@@ -256,6 +256,7 @@ func triggerW(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 		return
 	}
 	skill := w.SkillConfig(wID)
+	showWEffect(w, entity, center, skill, tick, tickRate)
 	rawDamage := skillList(skill, "baseDamage", level, []float64{75, 120, 165, 210, 255}) + float64(entity.Stats.AbilityPower)*skillMeta(skill, "apRatio", 0.6)
 	for _, target := range w.TargetsInRadius(entity, center, skillMeta(skill, "landingRadius", 260)) {
 		damageRaw := rawDamage
@@ -281,7 +282,21 @@ func triggerW(w *world.World, entity *world.Entity, tick uint64, tickRate int) {
 	}
 }
 
-func showWEffect(w *world.World, entity *world.Entity, center world.Vector2, skill config.SkillConfig, tick uint64, expiresAt uint64) {
+func showWRange(w *world.World, entity *world.Entity, center world.Vector2, skill config.SkillConfig, tick uint64, expiresAt uint64) {
+	w.PutSkillEffect(world.SkillEffect{
+		ID:           w.NextEffectID("effect:fire_mage_w_range:"),
+		Kind:         "fire_mage_w_range",
+		Team:         entity.Team,
+		SourceID:     entity.ID,
+		SourceHeroID: entity.HeroID,
+		Start:        center,
+		Radius:       skillMeta(skill, "landingRadius", 260),
+		CreatedAt:    tick,
+		ExpiresAt:    expiresAt,
+	})
+}
+
+func showWEffect(w *world.World, entity *world.Entity, center world.Vector2, skill config.SkillConfig, tick uint64, tickRate int) {
 	w.PutSkillEffect(world.SkillEffect{
 		ID:           w.NextEffectID("effect:fire_mage_w:"),
 		Kind:         "fire_mage_w",
@@ -291,7 +306,7 @@ func showWEffect(w *world.World, entity *world.Entity, center world.Vector2, ski
 		Start:        center,
 		Radius:       skillMeta(skill, "landingRadius", 260),
 		CreatedAt:    tick,
-		ExpiresAt:    expiresAt,
+		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "effectSeconds", 0.55), tickRate),
 	})
 }
 
@@ -330,7 +345,7 @@ func CastE(w *world.World, entity *world.Entity, cast protocol.CastInput, state 
 	if wasBurning {
 		spreadBurn(w, entity, target, skill, tick, tickRate)
 	}
-	showEEffect(w, entity, target.Position, skill, tick, tickRate)
+	showEEffect(w, entity, target, skill, wasBurning, tick, tickRate)
 }
 
 func eTarget(w *world.World, entity *world.Entity, cast protocol.CastInput, skill config.SkillConfig) *world.Entity {
@@ -380,17 +395,25 @@ func spreadBurn(w *world.World, entity *world.Entity, target *world.Entity, skil
 	}
 }
 
-func showEEffect(w *world.World, entity *world.Entity, center world.Vector2, skill config.SkillConfig, tick uint64, tickRate int) {
+func showEEffect(w *world.World, entity *world.Entity, target *world.Entity, skill config.SkillConfig, spread bool, tick uint64, tickRate int) {
+	count := 0
+	if spread {
+		count = 1
+	}
 	w.PutSkillEffect(world.SkillEffect{
 		ID:           w.NextEffectID("effect:fire_mage_e:"),
 		Kind:         "fire_mage_e",
 		Team:         entity.Team,
 		SourceID:     entity.ID,
 		SourceHeroID: entity.HeroID,
-		Start:        center,
-		Radius:       skillMeta(skill, "spreadRadius", 600),
+		TargetID:     target.ID,
+		Start:        entity.Position,
+		End:          target.Position,
+		Radius:       target.Radius,
+		Width:        skillMeta(skill, "spreadRadius", 600),
+		Count:        count,
 		CreatedAt:    tick,
-		ExpiresAt:    tick + secondsToTicks(0.25, tickRate),
+		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "effectSeconds", 0.38), tickRate),
 	})
 }
 

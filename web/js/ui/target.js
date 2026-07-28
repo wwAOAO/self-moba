@@ -4,10 +4,17 @@ function setTargetCard(target) {
   if (!target?.stats) {
     targetCards.style.display = "none";
     setHtmlIfChanged(els.target, "-");
-    setHtmlIfChanged(els.targetEquipment, "-");
     return;
   }
   const stats = target.stats;
+  const heroConfig = heroClientConfig[target.heroId] || {};
+  const resourceKind = entityResourceKind(target, heroConfig);
+  const hpRatio = Math.min(100, Math.max(0, ((stats.hp || 0) / (stats.maxHp || 1)) * 100));
+  const resourceRatio = Math.min(100, Math.max(0, ratio(
+    resourceKind === "sword_intent" ? target.passive?.swordIntent || 0 : stats.mp || 0,
+    resourceKind === "sword_intent" ? target.passive?.maxSwordIntent || 0 : stats.maxMp || 0,
+  ) * 100));
+  const resourceColor = { sword_intent: "f8fafc", rage: "ef4444", energy: "facc15" }[resourceKind] || "3b82f6";
   const airborneTicks = Math.max(
     0,
     (target.control?.airborneUntilTick || 0) -
@@ -15,49 +22,24 @@ function setTargetCard(target) {
   );
   const targetID = target.id || target.playerId || "";
   const idRow =
-    targetID && !targetID.startsWith("spawn:") ? `<div>${targetID}</div>` : "";
-  const showEquipment = target.kind === "player" || target.kind === "enemy_hero";
-  targetCards.style.display = "grid";
-  els.targetEquipment.parentElement.style.display = showEquipment ? "" : "none";
+    targetID && !targetID.startsWith("spawn:") ? `<span>${escapeHtml(targetID)}</span>` : "";
+  targetCards.style.display = "block";
   setHtmlIfChanged(els.target, `
-    <div>${targetLabel(target)}</div>
-    ${idRow}
+    <div class="target-heading"><strong>${targetLabel(target)}</strong>${idRow}</div>
     ${airborneTicks > 0 ? `<div>击飞 ${(airborneTicks / state.tickRate).toFixed(1)}s</div>` : ""}
-    <div>生命 ${formatHpWithShield(target)}</div>
-    ${formatTargetResource(target)}
-    <div class="stats-grid">
-      <span>攻击力 ${formatAttack(stats)}</span>
-      <span>法术强度 ${stats.abilityPower || 0}</span>
-      <span>攻击速度 ${formatNumber(stats.attackSpeed)}</span>
-      <span>技能急速 ${formatNumber(stats.abilityHaste || 0)}</span>
-      <span>物理防御 ${formatDefenseTip(stats.physicalDefense || 0, "物理")} ${formatPhysicalDefense(stats)}</span>
-      <span>魔法防御 ${formatDefenseTip(stats.magicDefense || 0, "魔法")} ${formatMagicDefense(stats)}</span>
-      <span>移动速度 ${formatNumber(stats.moveSpeed)}</span>
-      <span>攻击距离 ${formatNumber(stats.attackRange)}</span>
-      <span>暴击率 ${formatCritChance(target)}${formatCritChanceTip(target)}</span>
+    <div class="target-vitals">
+      <div class="vital hp"><div class="vital-fill" style="width:${hpRatio}%"></div><span>${formatHpWithShield(target)}</span></div>
+      ${resourceKind === "none" ? "" : `<div class="vital resource"><div class="vital-fill" style="width:${resourceRatio}%;background:#${resourceColor}"></div><span>${formatEntityResourceValue(target, heroConfig)}</span></div>`}
+    </div>
+    <div class="target-attributes" aria-label="目标属性">
+      <div class="attribute" title="攻击力"><span class="attribute-icon attack-icon">⚔</span><span class="attribute-value">${formatInteger(stats.attack)}</span></div>
+      <div class="attribute" title="法术强度"><span class="attribute-icon ability-power-icon">✦</span><span class="attribute-value">${formatInteger(stats.abilityPower)}</span></div>
+      <div class="attribute" title="物理防御"><span class="attribute-icon armor-icon" aria-hidden="true"></span><span class="attribute-value">${formatInteger(stats.physicalDefense)}</span></div>
+      <div class="attribute" title="魔法防御"><span class="attribute-icon magic-resist-icon" aria-hidden="true"></span><span class="attribute-value">${formatInteger(stats.magicDefense)}</span></div>
+      <div class="attribute" title="攻击速度"><span class="attribute-icon">»</span><span class="attribute-value">${formatNumber(stats.attackSpeed)}</span></div>
+      <div class="attribute" title="冷却"><span class="attribute-icon">◷</span><span class="attribute-value">${formatInteger(stats.abilityHaste)}</span></div>
+      <div class="attribute" title="暴击率"><span class="attribute-icon crit-icon">✹</span><span class="attribute-value">${formatInteger((stats.critChance || 0) * 100)}%</span></div>
+      <div class="attribute" title="移动速度"><span class="attribute-icon">➤</span><span class="attribute-value">${formatInteger(stats.moveSpeed)}</span></div>
     </div>
   `);
-  setHtmlIfChanged(
-    els.targetEquipment,
-    showEquipment ? formatTargetEquipment(target) : "-",
-  );
-}
-
-function formatTargetEquipment(target) {
-  const rows = (Array.isArray(target?.equipment) ? target.equipment : [])
-    .map(formatTargetEquipmentRow)
-    .filter(Boolean);
-  return rows.length ? `<div class="stats-grid">${rows.join("")}</div>` : "-";
-}
-
-function formatTargetEquipmentRow(equipment, index) {
-  const name = equipmentName(equipment);
-  if (name === "-") {
-    return "";
-  }
-  const tip = formatEquipmentTip(equipment);
-  const tipIcon = tip
-    ? `<span class="stat-tip" data-tip="${escapeHtml(tip)}">?</span>`
-    : "<span></span>";
-  return `<span>${index + 1}</span><span class="equipment-slot-row">${tipIcon}<span>${escapeHtml(name)}</span></span>`;
 }

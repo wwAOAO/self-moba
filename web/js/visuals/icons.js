@@ -8,6 +8,9 @@
   if (player.heroId === "archer") {
     return player.playerId === state.playerId ? 13 : 11;
   }
+  if (player.heroId === "crossbowman") {
+    return player.playerId === state.playerId ? 13 : 11;
+  }
   if (player.heroId === "tank") {
     return player.playerId === state.playerId ? 13 : 11;
   }
@@ -56,6 +59,9 @@ function playerModelShape(player) {
   }
   if (player.heroId === "archer") {
     return "archer";
+  }
+  if (player.heroId === "crossbowman") {
+    return "crossbow";
   }
   if (player.heroId === "tank") {
     return "octagon";
@@ -259,6 +265,39 @@ function drawBowArrowIcon(graphics, radius) {
     radius * 0.5,
     radius * 0.14,
   );
+  graphics.closePath();
+}
+
+function drawCrossbowIcon(graphics, radius) {
+  graphics.moveTo(-radius * 1.36, -radius * 0.12);
+  graphics.lineTo(radius * 1.12, -radius * 0.12);
+  graphics.lineTo(radius * 1.12, radius * 0.12);
+  graphics.lineTo(-radius * 1.36, radius * 0.12);
+  graphics.closePath();
+  graphics.moveTo(radius * 1.12, -radius * 0.4);
+  graphics.lineTo(radius * 1.5, 0);
+  graphics.lineTo(radius * 1.12, radius * 0.4);
+  graphics.closePath();
+
+  graphics.moveTo(-radius * 0.72, -radius * 1.22);
+  graphics.quadraticCurveTo(radius * 0.18, -radius * 0.92, radius * 0.55, -radius * 0.18);
+  graphics.lineTo(radius * 0.3, -radius * 0.08);
+  graphics.quadraticCurveTo(-radius * 0.02, -radius * 0.64, -radius * 0.72, -radius * 0.92);
+  graphics.closePath();
+  graphics.moveTo(-radius * 0.72, radius * 1.22);
+  graphics.quadraticCurveTo(radius * 0.18, radius * 0.92, radius * 0.55, radius * 0.18);
+  graphics.lineTo(radius * 0.3, radius * 0.08);
+  graphics.quadraticCurveTo(-radius * 0.02, radius * 0.64, -radius * 0.72, radius * 0.92);
+  graphics.closePath();
+  graphics.rect(-radius * 0.78, -radius * 0.92, radius * 0.12, radius * 1.84);
+
+  graphics.moveTo(-radius * 0.7, -radius * 0.2);
+  graphics.lineTo(-radius * 1.4, -radius * 0.56);
+  graphics.lineTo(-radius * 1.22, -radius * 0.08);
+  graphics.lineTo(-radius * 0.86, radius * 0.1);
+  graphics.lineTo(-radius * 1.18, radius * 0.84);
+  graphics.lineTo(-radius * 0.9, radius * 0.94);
+  graphics.lineTo(-radius * 0.48, radius * 0.08);
   graphics.closePath();
 }
 

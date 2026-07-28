@@ -26,6 +26,7 @@ type ControlState = state.ControlState
 type SwordState = state.SwordState
 type WarriorState = state.WarriorState
 type ArcherState = state.ArcherState
+type CrossbowmanState = state.CrossbowmanState
 type MageState = state.MageState
 type TankState = state.TankState
 type BerserkerState = state.BerserkerState
@@ -72,6 +73,7 @@ type Entity struct {
 	Sword        SwordState
 	Warrior      WarriorState
 	Archer       ArcherState
+	Crossbowman  CrossbowmanState
 	Mage         MageState
 	Tank         TankState
 	Berserker    BerserkerState

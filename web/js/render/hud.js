@@ -45,7 +45,7 @@ function spawnRewardText(target, textValue, kind) {
   const text = new PIXI.Text({
     text: textValue,
     style: {
-      fill: kind === "gold" ? 0xffd700 : 0x3b82f6,
+      fill: kind === "gold" ? 0xffd700 : kind === "heal" ? 0x22c55e : 0x3b82f6,
       fontFamily: "Microsoft YaHei, PingFang SC, Noto Sans SC, Arial, sans-serif",
       fontSize: 10,
       fontWeight: "900",
@@ -93,13 +93,14 @@ function updateBars(sprite, target) {
   if (!stats) {
     return;
   }
-  drawHealthBar(sprite.hpFill, target, -34);
+  const barY = -(playerModelRadius(target) + 10);
+  drawHealthBar(sprite.hpFill, target, barY);
   if (sprite.resourceFill) {
     drawBar(
       sprite.resourceFill,
       playerResourceColor(target),
       playerResourceRatio(target),
-      -28,
+      barY + 6,
     );
   }
 }

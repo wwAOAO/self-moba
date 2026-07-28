@@ -19,6 +19,7 @@ async function bootPixi() {
     state.aimPoint = screenToWorld(event);
   });
   app.canvas.addEventListener("pointerdown", handlePointerDown);
+  app.canvas.addEventListener("wheel", handleCameraZoom, { passive: false });
   loadGameConfigs();
 }
 
@@ -130,6 +131,7 @@ function renderEquipmentOptions(equipment) {
   els.shopItem.innerHTML = groups
     .flatMap(([label, category]) => renderEquipmentTierGroups(label, category, equipment))
     .join("");
+  renderShopItems(equipment);
 }
 
 function renderEquipmentTierGroups(label, category, equipment) {
@@ -208,6 +210,7 @@ function heroRole(hero) {
       frostmage: "mage",
       fire_mage: "mage",
       archer: "marksman",
+      crossbowman: "marksman",
       gunner: "marksman",
       explorer: "marksman",
       blade: "fighter",
@@ -231,6 +234,7 @@ function heroDisplayName(hero) {
     warrior: "圣骑士",
     warriors: "圣骑士",
     archer: "弓箭手",
+    crossbowman: "弩手",
     mage: "光明法师",
     tank: "石头人",
     gunner: "手枪手",
