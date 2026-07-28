@@ -93,13 +93,13 @@ func (w *World) SpawnHero(playerID string, hero config.HeroConfig, team Team) {
 }
 
 func (w *World) SpawnBattleUnits() {
-	w.spawnUnit("spawn:fountain:blue", EntityKindFountain, TeamBlue, w.spawnPosition(TeamBlue).X, w.spawnPosition(TeamBlue).Y, 90, Stats{
+	w.spawnUnit("spawn:fountain:blue", EntityKindFountain, TeamBlue, w.spawnPosition(TeamBlue).X, w.spawnPosition(TeamBlue).Y, 128, Stats{
 		HP:                 99999,
 		MaxHP:              99999,
 		PhysicalPenPercent: 0.3,
 		MagicPenPercent:    0.3,
 	})
-	w.spawnUnit("spawn:fountain:red", EntityKindFountain, TeamRed, w.spawnPosition(TeamRed).X, w.spawnPosition(TeamRed).Y, 90, Stats{
+	w.spawnUnit("spawn:fountain:red", EntityKindFountain, TeamRed, w.spawnPosition(TeamRed).X, w.spawnPosition(TeamRed).Y, 128, Stats{
 		HP:                 99999,
 		MaxHP:              99999,
 		PhysicalPenPercent: 0.3,
@@ -183,6 +183,7 @@ func (w *World) spawnUnit(id string, kind EntityKind, team Team, x float64, y fl
 	w.entities[id] = entity
 }
 
+// unitTemplate 返回战场单位的基础属性与世界碰撞半径。
 func unitTemplate(kind EntityKind) (Stats, float64, bool) {
 	switch kind {
 	case EntityKindDummy:
@@ -196,13 +197,13 @@ func unitTemplate(kind EntityKind) (Stats, float64, bool) {
 	case EntityKindSiegeMinion:
 		return Stats{HP: 900, MaxHP: 900, Attack: 40, MoveSpeed: 2.4, AttackRange: 280, AttackSpeed: 1}, 26, true
 	case EntityKindTower:
-		return Stats{HP: 2600, MaxHP: 2600, Attack: 180, PhysicalDefense: 80, MagicDefense: 60, AttackRange: 620, AttackSpeed: 0.75}, 28, true
+		return Stats{HP: 2600, MaxHP: 2600, Attack: 180, PhysicalDefense: 80, MagicDefense: 60, AttackRange: 620, AttackSpeed: 0.75}, 72, true
 	case EntityKindBarracks:
-		return Stats{HP: 3200, MaxHP: 3200, PhysicalDefense: 55, MagicDefense: 45}, 32, true
+		return Stats{HP: 3200, MaxHP: 3200, PhysicalDefense: 55, MagicDefense: 45}, 88, true
 	case EntityKindCrystal:
-		return Stats{HP: 4500, MaxHP: 4500, PhysicalDefense: 70, MagicDefense: 70}, 38, true
+		return Stats{HP: 4500, MaxHP: 4500, PhysicalDefense: 70, MagicDefense: 70}, 104, true
 	case EntityKindFountain:
-		return Stats{HP: 99999, MaxHP: 99999}, 90, true
+		return Stats{HP: 99999, MaxHP: 99999}, 128, true
 	case EntityKindFruit:
 		return Stats{HP: 1, MaxHP: 1}, 22, true
 	case EntityKindWard:

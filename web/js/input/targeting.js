@@ -78,6 +78,7 @@ function nearestAttackTarget(point, range) {
     return best?.id || '';
 }
 
+/** 按模型形状检测单位，并为建筑保留最小屏幕点击区域。 */
 function hitTestUnit(screenPoint, worldPoint, unit) {
     const visual = unitVisual(unit.kind || 'dummy');
     const isPlayerModel = unit.kind === 'player';
@@ -92,15 +93,20 @@ function hitTestUnit(screenPoint, worldPoint, unit) {
     }
     const size = Math.max(18, unit.radius);
     const padding = 10;
-    const dx = Math.abs(worldPoint.x - unit.x);
-    const dy = Math.abs(worldPoint.y - unit.y);
+    const dx = Math.abs(screenPoint.x - sx);
+    const dy = Math.abs(screenPoint.y - sy);
+    const minimumRadius = unit.kind === 'tower' || unit.kind === 'barracks' || unit.kind === 'crystal' ? 22 : 18;
     if (visual.shape === 'circle') {
-        return Math.hypot(dx, dy) <= size + padding;
+        return Math.hypot(dx, dy) <= Math.max(minimumRadius, (size + padding) * state.frame.scale);
     }
     if (visual.shape === 'tower') {
-        return dx <= size + padding && dy <= size * 1.3 + padding;
+        return (
+            dx <= Math.max(minimumRadius, (size + padding) * state.frame.scale) &&
+            dy <= Math.max(minimumRadius, (size * 1.3 + padding) * state.frame.scale)
+        );
     }
-    return dx <= size + padding && dy <= size + padding;
+    const hitRadius = Math.max(minimumRadius, (size + padding) * state.frame.scale);
+    return dx <= hitRadius && dy <= hitRadius;
 }
 
 function screenDistanceToTarget(point, unit) {

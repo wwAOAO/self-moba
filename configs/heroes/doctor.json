@@ -30,7 +30,7 @@
             "attackSpeed": 0.028,
             "critChance": 0
         },
-        "radius": 22,
+        "radius": 34,
         "skills": {
             "passive": "doctor_passive",
             "q": "doctor_q",

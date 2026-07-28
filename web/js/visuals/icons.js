@@ -64,8 +64,9 @@ function playerModelShape(player) {
     return 'circle';
 }
 
+/** 使用固定屏幕下限检测英雄模型，确保缩远和触控场景仍可可靠选中。 */
 function hitTestPlayerModel(dx, dy, player) {
-    const radius = playerModelRadius(player) + 4;
+    const radius = Math.max(18, playerModelRadius(player) + 4);
     if (playerModelShape(player) === 'square') {
         return Math.abs(dx) <= radius && Math.abs(dy) <= radius;
     }
@@ -537,7 +538,11 @@ function drawFireIcon(graphics, radius, dead, teamColor) {
     graphics.quadraticCurveTo(radius * 0.72, radius * 1.14, 0, radius * 1.18);
     graphics.closePath();
     graphics.fill(outer);
-    graphics.stroke({ color: dead ? 0x111827 : 0x7f1d1d, width: 1, alpha: dead ? 0.45 : 0.95 });
+    graphics.stroke({
+        color: dead ? 0x111827 : 0x7f1d1d,
+        width: 1,
+        alpha: dead ? 0.45 : 0.95,
+    });
 
     graphics.moveTo(0, radius * 0.92);
     graphics.quadraticCurveTo(-radius * 0.58, radius * 0.46, -radius * 0.34, -radius * 0.12);
@@ -590,7 +595,11 @@ function drawSnowflakeIcon(graphics, radius, dead, teamColor) {
     graphics.fill({ color: edge, alpha: dead ? 0.1 : 0.18 });
     drawCrystal();
     graphics.fill({ color, alpha: dead ? 0.72 : 0.96 });
-    graphics.stroke({ color: edge, width: Math.max(1, radius * 0.06), alpha: dead ? 0.45 : 0.85 });
+    graphics.stroke({
+        color: edge,
+        width: Math.max(1, radius * 0.06),
+        alpha: dead ? 0.45 : 0.85,
+    });
     drawCrystal(Math.PI / 6, 0.54);
     graphics.fill({ color: ice, alpha: dead ? 0.38 : 0.58 });
     graphics.circle(0, 0, radius * 0.12);
@@ -650,6 +659,7 @@ function unitCollisionRadius(unit) {
     return unitModelRadius(unit);
 }
 
+/** 返回非玩家英雄的屏幕命中半径，最小值用于保障缩远后的可操作性。 */
 function unitHitRadius(unit) {
-    return unitModelDisplayRadius(unit) + 8;
+    return Math.max(18, unitModelDisplayRadius(unit) + 8);
 }

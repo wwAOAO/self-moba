@@ -32,7 +32,7 @@
             "attackSpeed": 0.0098,
             "critChance": 0
         },
-        "radius": 22,
+        "radius": 38,
         "skills": {
             "passive": "butcher_passive",
             "q": "butcher_q",

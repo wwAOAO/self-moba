@@ -9,6 +9,7 @@ import (
 	"testing"
 )
 
+// TestMeatHookDamagesAndPullsEnemy 验证肉钩伤害及按双方碰撞半径计算的拉拽终点。
 func TestMeatHookDamagesAndPullsEnemy(t *testing.T) {
 	w, butcher := testWorld(t)
 	prepareQ(butcher, 1)
@@ -38,14 +39,16 @@ func TestMeatHookDamagesAndPullsEnemy(t *testing.T) {
 	if !sawPull {
 		t.Fatal("hook did not start pulling the target")
 	}
-	if got := startHP - target.Stats.HP; got != 257 {
-		t.Fatalf("damage = %v, want 257", got)
+	if got := startHP - target.Stats.HP; got != 254 {
+		t.Fatalf("damage = %v, want 254", got)
 	}
-	if target.Position.X > 1042 || target.Position.X < 1040 {
-		t.Fatalf("pulled x = %v, want about 1041", target.Position.X)
+	wantX := butcher.Position.X + butcher.Radius + target.Radius + 1
+	if math.Abs(target.Position.X-wantX) > 1 {
+		t.Fatalf("pulled x = %v, want about %v", target.Position.X, wantX)
 	}
 }
 
+// TestMeatHookPullsAllyWithoutDamageAndHalvesCooldown 验证友军钩的无伤害、冷却和拉拽终点。
 func TestMeatHookPullsAllyWithoutDamageAndHalvesCooldown(t *testing.T) {
 	w, butcher := testWorld(t)
 	prepareQ(butcher, 1)
@@ -64,8 +67,9 @@ func TestMeatHookPullsAllyWithoutDamageAndHalvesCooldown(t *testing.T) {
 	if got := butcher.Skills[qID].CooldownUntilTick; got != 220 {
 		t.Fatalf("ally hook cooldown = %d, want 220", got)
 	}
-	if ally.Position.X > 1044 {
-		t.Fatalf("ally was not pulled to butcher: x=%v", ally.Position.X)
+	wantX := butcher.Position.X + butcher.Radius + ally.Radius + 1
+	if math.Abs(ally.Position.X-wantX) > 1 {
+		t.Fatalf("ally pulled x = %v, want about %v", ally.Position.X, wantX)
 	}
 }
 

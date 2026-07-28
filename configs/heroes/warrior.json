@@ -30,7 +30,7 @@
             "attackSpeed": 0.0365,
             "critChance": 0
         },
-        "radius": 18,
+        "radius": 34,
         "skills": {
             "passive": "warrior_toughness",
             "q": "slash",

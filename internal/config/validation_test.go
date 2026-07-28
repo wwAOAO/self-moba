@@ -2,6 +2,31 @@ package config
 
 import "testing"
 
+// TestHeroRadiiMatchWorldScale 验证所有英雄采用与地图比例匹配的职业体型半径。
+func TestHeroRadiiMatchWorldScale(t *testing.T) {
+	heroes, err := LoadHeroes("../../configs/heroes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]float64{
+		"archer": 28, "crossbowman": 28, "gunner": 28, "explorer": 28,
+		"mage": 28, "fire_mage": 28, "frostmage": 28,
+		"killer": 30, "ninja": 30, "shadow_assassin": 30,
+		"blade": 32, "sword": 32, "monk": 32,
+		"berserker": 34, "warrior": 34, "doctor": 34,
+		"robot": 36, "butcher": 38, "tank": 38,
+	}
+	for heroID, radius := range want {
+		hero, ok := heroes.Get(heroID)
+		if !ok {
+			t.Fatalf("hero %s is missing", heroID)
+		}
+		if hero.Radius != radius {
+			t.Fatalf("hero %s radius = %v, want %v", heroID, hero.Radius, radius)
+		}
+	}
+}
+
 func TestValidateGameConfigLoadsCurrentTables(t *testing.T) {
 	heroes, err := LoadHeroes("../../configs/heroes")
 	if err != nil {

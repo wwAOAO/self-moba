@@ -896,6 +896,38 @@ func TestArcherRUsesMapEdgeRange(t *testing.T) {
 	}
 }
 
+// TestArcherEHawkshotRespectsConfiguredRange 验证超远目标不会让猎鹰超过技能配置射程。
+func TestArcherEHawkshotRespectsConfiguredRange(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(archerHeroID)
+	if !ok {
+		t.Fatal("archer hero not found")
+	}
+	w.SpawnHero("archer", hero, TeamBlue)
+	archer := w.entities[playerEntityID("archer")]
+	learnSkill(archer, archerESkillID, 1)
+	state := archer.Skills[archerESkillID]
+	state.Stacks = 1
+	archer.Skills[archerESkillID] = state
+	placeEntity(archer, 1000, 1000)
+
+	w.ApplyInput("archer", protocolPlayerInputCast(archerESkillID, 8000, 1000), 10, nil, 20)
+	var hawk *SkillEffect
+	for _, effect := range w.SkillEffects() {
+		if effect.Kind == "archer_hawk" {
+			hawk = &effect
+			break
+		}
+	}
+	if hawk == nil {
+		t.Fatal("archer e hawk effect missing")
+	}
+	wantRange := w.skillConfig(archerESkillID).Range
+	if got := math.Hypot(hawk.End.X-archer.Position.X, hawk.End.Y-archer.Position.Y); math.Abs(got-wantRange) > 0.000001 {
+		t.Fatalf("archer e range = %f, want %f", got, wantRange)
+	}
+}
+
 func TestFrostMageBasicAttackFiresProjectile(t *testing.T) {
 	w := testWorld(t)
 	hero, ok := w.heroes.Get(frostmageHeroID)

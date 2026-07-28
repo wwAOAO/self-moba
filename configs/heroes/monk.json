@@ -32,7 +32,7 @@
             "attackSpeed": 0.03,
             "critChance": 0
         },
-        "radius": 16,
+        "radius": 32,
         "skills": {
             "passive": "monk_passive",
             "q": "monk_q",

@@ -30,7 +30,7 @@
             "attackSpeed": 0.035,
             "critChance": 0
         },
-        "radius": 17,
+        "radius": 32,
         "skills": {
             "passive": "sword_edge",
             "q": "sword_cut",

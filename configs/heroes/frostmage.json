@@ -32,7 +32,7 @@
             "attackSpeed": 0.0136,
             "critChance": 0
         },
-        "radius": 16,
+        "radius": 28,
         "skills": {
             "passive": "frostmage_passive",
             "q": "frostmage_q",

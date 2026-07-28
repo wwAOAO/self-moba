@@ -21,6 +21,7 @@ function finishCastWindup(windup) {
     windup.finished = true;
 }
 
+/** 绘制技能蓄力提示；全图技能按当前地图尺寸展示世界范围。 */
 function drawCastWindup(windup, frame, now) {
     const progress = clamp((now - windup.startedAt) / Math.max(1, windup.durationMs || 1), 0, 1);
     const alpha = 1 - progress * 0.35;
@@ -55,7 +56,13 @@ function drawCastWindup(windup, frame, now) {
         return;
     }
     if (windup.skillId === 'arrow_rain') {
-        drawDirectionalWindup(windup, frame, color, alpha, 10);
+        drawDirectionalWindup(
+            { ...windup, range: Math.hypot(state.map.width || 8000, state.map.height || 8000) },
+            frame,
+            color,
+            alpha,
+            10,
+        );
         return;
     }
     if (windup.skillId === 'explorer_e') {

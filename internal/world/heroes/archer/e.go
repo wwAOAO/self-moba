@@ -7,6 +7,7 @@ import (
 	"math"
 )
 
+// ApplyE 消耗一层鹰击长空充能，并在配置射程内派出提供视野的猎鹰。
 func ApplyE(w *world.World, entity *world.Entity, cast protocol.CastInput, state world.SkillState, skill config.SkillConfig, tick uint64, tickRate int) {
 	if entity == nil || entity.HeroID != heroID {
 		return
@@ -27,6 +28,12 @@ func ApplyE(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	dx, dy := normalize(target.X-entity.Position.X, target.Y-entity.Position.Y)
 	if dx == 0 && dy == 0 {
 		dx = 1
+	}
+	if skill.Range > 0 && distance(entity.Position, target) > skill.Range {
+		target = w.ClampWorldPoint(world.Vector2{
+			X: entity.Position.X + dx*skill.Range,
+			Y: entity.Position.Y + dy*skill.Range,
+		})
 	}
 	speed := skillMeta(skill, "projectileSpeed", 1800)
 	travelSeconds := distance(entity.Position, target) / speed

@@ -141,6 +141,7 @@ func TestBaseRegenRestoresHPAndMPOverTime(t *testing.T) {
 	}
 }
 
+// TestFountainsSpawnAtTeamSpawnPositions 验证双方泉水的位置、半径与不可攻击约束。
 func TestFountainsSpawnAtTeamSpawnPositions(t *testing.T) {
 	w := testWorld(t)
 	blue := w.entities["spawn:fountain:blue"]
@@ -151,11 +152,15 @@ func TestFountainsSpawnAtTeamSpawnPositions(t *testing.T) {
 	if blue.Position != w.spawnPosition(TeamBlue) || red.Position != w.spawnPosition(TeamRed) {
 		t.Fatalf("fountain positions = %+v/%+v, want %+v/%+v", blue.Position, red.Position, w.spawnPosition(TeamBlue), w.spawnPosition(TeamRed))
 	}
+	if blue.Radius != 128 || red.Radius != 128 {
+		t.Fatalf("fountain radii = %v/%v, want 128/128", blue.Radius, red.Radius)
+	}
 	if canAttackTarget(&Entity{ID: "attacker", Team: TeamRed, Stats: Stats{HP: 100}}, blue) {
 		t.Fatal("fountain should not be attackable")
 	}
 }
 
+// TestBattleStructuresSpawnForBothTeams 验证双方建筑使用设计规定的位置和世界碰撞半径。
 func TestBattleStructuresSpawnForBothTeams(t *testing.T) {
 	w := testWorld(t)
 	structures := []struct {
@@ -164,10 +169,10 @@ func TestBattleStructuresSpawnForBothTeams(t *testing.T) {
 		distance float64
 		radius   float64
 	}{
-		{"", EntityKindCrystal, 1100, 38},
-		{"", EntityKindBarracks, 1800, 32},
-		{":1", EntityKindTower, 2900, 28},
-		{":2", EntityKindTower, 4100, 28},
+		{"", EntityKindCrystal, 1100, 104},
+		{"", EntityKindBarracks, 1800, 88},
+		{":1", EntityKindTower, 2900, 72},
+		{":2", EntityKindTower, 4100, 72},
 	}
 
 	for _, team := range []Team{TeamBlue, TeamRed} {

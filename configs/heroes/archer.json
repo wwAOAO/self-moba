@@ -32,7 +32,7 @@
             "attackSpeed": 0.0333,
             "critChance": 0
         },
-        "radius": 16,
+        "radius": 28,
         "skills": {
             "passive": "archer_focus",
             "q": "shot",

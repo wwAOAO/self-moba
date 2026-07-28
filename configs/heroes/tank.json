@@ -31,7 +31,7 @@
             "attackSpeed": 0.034,
             "critChance": 0
         },
-        "radius": 22,
+        "radius": 38,
         "skills": {
             "passive": "tank_armor",
             "q": "slam",

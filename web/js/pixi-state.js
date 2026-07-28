@@ -32,7 +32,7 @@ const state = {
     snapshotTick: 0,
     snapshotAtMs: 0,
     tickRate: 20,
-    cameraScale: 0.25,
+    cameraScale: 0.4,
     frame: { scale: 1, offsetX: 0, offsetY: 0 },
 };
 

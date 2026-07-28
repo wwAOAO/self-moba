@@ -32,7 +32,7 @@
             "attackSpeed": 0.0113,
             "critChance": 0
         },
-        "radius": 18,
+        "radius": 36,
         "skills": {
             "passive": "robot_passive",
             "q": "robot_q",
