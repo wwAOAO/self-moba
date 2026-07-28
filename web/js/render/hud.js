@@ -88,7 +88,7 @@ function syncDamageTexts(frame, deltaMS) {
     }
 }
 
-/** 按模型实际顶部位置更新固定屏幕尺寸的玩家血条和资源条。 */
+/** 按模型实际顶部位置更新玩家血条，并为有资源的英雄绘制资源条。 */
 function updateBars(sprite, target, barY) {
     const stats = target?.stats || target;
     if (!stats) {
@@ -96,9 +96,13 @@ function updateBars(sprite, target, barY) {
     }
     drawBar(sprite.hpBack, 0x24312b, 1, barY);
     drawHealthBar(sprite.hpFill, target, barY);
-    if (sprite.resourceFill) {
+    const heroConfig = heroClientConfig[target?.heroId || els.heroId.value] || {};
+    if (sprite.resourceFill && entityResourceKind(target, heroConfig) !== 'none') {
         drawBar(sprite.resourceBack, 0x24312b, 1, barY + 6);
         drawBar(sprite.resourceFill, playerResourceColor(target), playerResourceRatio(target), barY + 6);
+    } else {
+        sprite.resourceBack?.clear();
+        sprite.resourceFill?.clear();
     }
 }
 
@@ -154,6 +158,19 @@ function drawBar(graphics, color, value, y) {
     graphics.stroke({ color: 0x172026, width: 1, alpha: 0.85 });
 }
 
+/** 根据观察者阵营返回头顶生命条颜色。 */
+function healthBarColor(entity) {
+    if (entity?.team === 'neutral') {
+        return 0xfacc15;
+    }
+    const viewerTeam = state.players.get(state.playerId)?.team || state.team;
+    if (entity?.team && viewerTeam && entity.team !== viewerTeam) {
+        return 0xef4444;
+    }
+    return 0x22c55e;
+}
+
+/** 绘制包含护盾分段的固定屏幕尺寸生命条。 */
 function drawHealthBar(graphics, entity, y) {
     const stats = entity?.stats || entity || {};
     const maxHp = stats.maxHp || 0;
@@ -166,7 +183,7 @@ function drawHealthBar(graphics, entity, y) {
     graphics.clear();
     if (hpWidth > 0) {
         graphics.rect(-18, y, hpWidth, 4);
-        graphics.fill(0x22c55e);
+        graphics.fill(healthBarColor(entity));
     }
     if (shieldWidth > 0) {
         graphics.rect(-18 + hpWidth, y, shieldWidth, 4);

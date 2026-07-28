@@ -1636,7 +1636,25 @@ function drawShadowAssassinQRevealEffect(effect, frame) {
     }
 }
 
+/**
+ * 绘制影刃 W 的银红飞刀，突出高速投掷与锋利刃口。
+ * @param {object} effect 服务端同步的投射物效果。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ */
 function drawShadowAssassinWEffect(effect, frame) {
+    drawShadowBladeProjectile(effect, frame, 0xf8fafc, 0xb91c1c, 0x450a0a, false);
+}
+
+/**
+ * 绘制影刃专属飞刀轮廓与运动残影，供 W 和 R 共用一致的武器造型。
+ * @param {object} effect 服务端同步的投射物效果。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ * @param {number} bladeColor 刀身填充颜色。
+ * @param {number} edgeColor 刃口与刀脊颜色。
+ * @param {number} trailColor 运动残影颜色。
+ * @param {boolean} spectral 是否绘制 R 的幽影外层。
+ */
+function drawShadowBladeProjectile(effect, frame, bladeColor, edgeColor, trailColor, spectral) {
     const position = projectileDrawPosition(effect, { fromSnapshot: true });
     const x = frame.offsetX + position.x * frame.scale;
     const y = frame.offsetY + position.y * frame.scale;
@@ -1645,16 +1663,70 @@ function drawShadowAssassinWEffect(effect, frame) {
     const forwardY = Math.sin(angle);
     const sideX = -forwardY;
     const sideY = forwardX;
-    const length = Math.max(12, (effect.radius || 18) * frame.scale * 0.7);
-    const width = Math.max(4, length * 0.24);
+    const length = Math.max(14, (effect.radius || 18) * frame.scale * 0.82);
+    const width = Math.max(5, length * 0.34);
+    const trailLength = length * (spectral ? 1.9 : 1.45);
+
+    // 先绘制沿飞行方向收窄的残影，避免刀身被半透明轨迹覆盖。
+    skillLayer
+        .moveTo(x - forwardX * trailLength + sideX * width * 0.55, y - forwardY * trailLength + sideY * width * 0.55)
+        .lineTo(x + forwardX * length * 0.18, y + forwardY * length * 0.18)
+        .lineTo(x - forwardX * trailLength - sideX * width * 0.55, y - forwardY * trailLength - sideY * width * 0.55)
+        .closePath();
+    skillLayer.fill({ color: trailColor, alpha: spectral ? 0.2 : 0.16 });
+
+    if (spectral) {
+        skillLayer
+            .moveTo(x + forwardX * length * 1.16, y + forwardY * length * 1.16)
+            .lineTo(
+                x - forwardX * length * 0.72 + sideX * width * 1.25,
+                y - forwardY * length * 0.72 + sideY * width * 1.25,
+            )
+            .lineTo(x - forwardX * length * 0.48, y - forwardY * length * 0.48)
+            .lineTo(
+                x - forwardX * length * 0.72 - sideX * width * 1.25,
+                y - forwardY * length * 0.72 - sideY * width * 1.25,
+            )
+            .closePath();
+        skillLayer.stroke({ color: edgeColor, width: 4, alpha: 0.24 });
+    }
 
     skillLayer
-        .moveTo(x + forwardX * length, y + forwardY * length)
-        .lineTo(x - forwardX * length + sideX * width, y - forwardY * length + sideY * width)
-        .lineTo(x - forwardX * length - sideX * width, y - forwardY * length - sideY * width)
+        .moveTo(x + forwardX * length * 1.18, y + forwardY * length * 1.18)
+        .lineTo(x - forwardX * length * 0.06 + sideX * width, y - forwardY * length * 0.06 + sideY * width)
+        .lineTo(
+            x - forwardX * length * 0.38 + sideX * width * 0.42,
+            y - forwardY * length * 0.38 + sideY * width * 0.42,
+        )
+        .lineTo(
+            x - forwardX * length * 0.92 + sideX * width * 0.72,
+            y - forwardY * length * 0.92 + sideY * width * 0.72,
+        )
+        .lineTo(x - forwardX * length * 0.66, y - forwardY * length * 0.66)
+        .lineTo(
+            x - forwardX * length * 0.92 - sideX * width * 0.72,
+            y - forwardY * length * 0.92 - sideY * width * 0.72,
+        )
+        .lineTo(
+            x - forwardX * length * 0.38 - sideX * width * 0.42,
+            y - forwardY * length * 0.38 - sideY * width * 0.42,
+        )
+        .lineTo(x - forwardX * length * 0.06 - sideX * width, y - forwardY * length * 0.06 - sideY * width)
         .closePath();
-    skillLayer.fill({ color: 0xe5e7eb, alpha: 0.96 });
-    skillLayer.stroke({ color: 0xb91c1c, width: 2, alpha: 0.9 });
+    skillLayer.fill({ color: bladeColor, alpha: 0.97 });
+    skillLayer.stroke({ color: edgeColor, width: spectral ? 2.4 : 2, alpha: 0.94 });
+
+    skillLayer
+        .moveTo(x + forwardX * length * 0.88, y + forwardY * length * 0.88)
+        .lineTo(x - forwardX * length * 0.55, y - forwardY * length * 0.55);
+    skillLayer.stroke({ color: edgeColor, width: 1.5, alpha: 0.82 });
+    skillLayer
+        .moveTo(x + sideX * width * 0.28, y + sideY * width * 0.28)
+        .lineTo(x + forwardX * length * 0.22, y + forwardY * length * 0.22)
+        .lineTo(x - sideX * width * 0.28, y - sideY * width * 0.28)
+        .lineTo(x - forwardX * length * 0.18, y - forwardY * length * 0.18)
+        .closePath();
+    skillLayer.fill({ color: edgeColor, alpha: 0.9 });
 }
 
 function drawShadowAssassinEEffect(effect, frame) {
@@ -1682,25 +1754,13 @@ function drawShadowAssassinEMarkEffect(effect, frame) {
     skillLayer.stroke({ color: 0xfef2f2, width: 2, alpha: 0.82 });
 }
 
+/**
+ * 绘制影刃 R 的冷白紫影飞刀，幽影外层用于区分大招刀阵。
+ * @param {object} effect 服务端同步的投射物效果。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ */
 function drawShadowAssassinREffect(effect, frame) {
-    const position = projectileDrawPosition(effect, { fromSnapshot: true });
-    const x = frame.offsetX + position.x * frame.scale;
-    const y = frame.offsetY + position.y * frame.scale;
-    const angle = Math.atan2(effect.dirY || 0, effect.dirX || 1);
-    const forwardX = Math.cos(angle);
-    const forwardY = Math.sin(angle);
-    const sideX = -forwardY;
-    const sideY = forwardX;
-    const length = Math.max(11, (effect.radius || 18) * frame.scale * 0.65);
-    const width = Math.max(4, length * 0.26);
-
-    skillLayer
-        .moveTo(x + forwardX * length, y + forwardY * length)
-        .lineTo(x - forwardX * length + sideX * width, y - forwardY * length + sideY * width)
-        .lineTo(x - forwardX * length - sideX * width, y - forwardY * length - sideY * width)
-        .closePath();
-    skillLayer.fill({ color: 0xddd6fe, alpha: 0.94 });
-    skillLayer.stroke({ color: 0x581c87, width: 2, alpha: 0.92 });
+    drawShadowBladeProjectile(effect, frame, 0xede9fe, 0x7e22ce, 0x2e1065, true);
 }
 
 function drawMonkECrippleEffect(effect, frame) {

@@ -1,5 +1,5 @@
 // 静态资源缓存版本，修改前端脚本后必须同步递增。
-const version = '20260728-2';
+const version = '20260728-3';
 
 const scripts = [
     'https://cdn.jsdelivr.net/npm/pixi.js@8.2.6/dist/pixi.min.js',

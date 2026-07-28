@@ -1,3 +1,4 @@
+/** 更新目标卡生命、属性及完整减益状态。 */
 function setTargetCard(target) {
     const targetCards = els.target.closest('.target-cards') || els.target.parentElement;
     if (!target?.stats) {
@@ -20,7 +21,8 @@ function setTargetCard(target) {
         ),
     );
     const resourceColor = { sword_intent: 'f8fafc', rage: 'ef4444', energy: 'facc15' }[resourceKind] || '3b82f6';
-    const airborneTicks = Math.max(0, (target.control?.airborneUntilTick || 0) - Number(els.tick.textContent || 0));
+    const tick = Number(els.tick.textContent || 0);
+    const debuffs = displayStatuses(target, tick).filter(status => status.kind !== 'buff');
     const targetID = target.id || target.playerId || '';
     const idRow = targetID && !targetID.startsWith('spawn:') ? `<span>${escapeHtml(targetID)}</span>` : '';
     targetCards.style.display = 'block';
@@ -28,11 +30,11 @@ function setTargetCard(target) {
         els.target,
         `
     <div class="target-heading"><strong>${targetLabel(target)}</strong>${idRow}</div>
-    ${airborneTicks > 0 ? `<div>击飞 ${(airborneTicks / state.tickRate).toFixed(1)}s</div>` : ''}
     <div class="target-vitals">
       <div class="vital hp"><div class="vital-fill" style="width:${hpRatio}%"></div><span>${formatHpWithShield(target)}</span></div>
       ${resourceKind === 'none' ? '' : `<div class="vital resource"><div class="vital-fill" style="width:${resourceRatio}%;background:#${resourceColor}"></div><span>${formatEntityResourceValue(target, heroConfig)}</span></div>`}
     </div>
+    ${formatTargetDebuffs(debuffs, tick)}
     <div class="target-attributes" aria-label="目标属性">
       <div class="attribute" title="攻击力"><span class="attribute-icon attack-icon">⚔</span><span class="attribute-value">${formatInteger(stats.attack)}</span></div>
       <div class="attribute" title="法术强度"><span class="attribute-icon ability-power-icon">✦</span><span class="attribute-value">${formatInteger(stats.abilityPower)}</span></div>
@@ -45,4 +47,18 @@ function setTargetCard(target) {
     </div>
   `,
     );
+}
+
+/** 渲染目标身上的完整减益名称、强度、层数和剩余时间。 */
+function formatTargetDebuffs(debuffs, tick) {
+    if (!debuffs.length) {
+        return '';
+    }
+    const rows = debuffs
+        .map(
+            status =>
+                `<div class="target-debuff-row"><span><b>${escapeHtml(status.icon)}</b>${escapeHtml(status.name)}</span><span>${escapeHtml(formatStatusDetails(status, tick))}</span></div>`,
+        )
+        .join('');
+    return `<div class="target-debuffs"><div class="target-section-title">减益</div>${rows}</div>`;
 }

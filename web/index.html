@@ -200,6 +200,33 @@
             .target-vitals .vital span {
                 font-size: 9px;
             }
+            .target-debuffs {
+                display: grid;
+                gap: 4px;
+                margin-bottom: 7px;
+                padding: 6px 0;
+                border-top: 1px solid #5f3838;
+                border-bottom: 1px solid #405057;
+            }
+            .target-section-title {
+                color: #f29b9b;
+                font-weight: 800;
+            }
+            .target-debuff-row {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) max-content;
+                gap: 8px;
+                color: #dce5e7;
+            }
+            .target-debuff-row > span:first-child {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .target-debuff-row b {
+                margin-right: 5px;
+                color: #ff8585;
+            }
             .target-attributes {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
@@ -510,6 +537,20 @@
                 display: flex;
                 gap: 5px;
             }
+            #buffs .status-groups,
+            #buffs .status-group {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+            #buffs .status-groups {
+                gap: 9px;
+            }
+            #buffs .status-heading {
+                color: #aebcc1;
+                font-size: 10px;
+                font-weight: 800;
+            }
             #buffs .buff-row,
             #buffs .skill-row {
                 display: flex;
@@ -520,6 +561,16 @@
                 border: 1px solid #66767d;
                 background: rgba(7, 12, 15, 0.9);
                 font-size: 10px;
+            }
+            #buffs .status-group.debuff .buff-row {
+                border-color: #a95555;
+            }
+            #buffs .status-group.buff .buff-row {
+                border-color: #477c61;
+            }
+            #buffs .status-icon {
+                margin-right: 4px;
+                color: #f6d365;
             }
 
             .stat-tip {

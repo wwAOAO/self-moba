@@ -130,6 +130,10 @@ message BuffSnapshot {
   bool negative = 4;
   double ability_haste = 5;
   uint64 explosion_at_tick = 6;
+  // stacks 是可叠加状态的当前层数。
+  int32 stacks = 7;
+  // tooltip 描述状态强度和其他玩法细节。
+  string tooltip = 8;
 }
 
 message EquipmentSlot {
@@ -269,6 +273,18 @@ message ControlSnapshot {
   uint64 stunned_until_tick = 8;
   uint64 rooted_until_tick = 9;
   uint64 mage_illumination_until = 10;
+  // taunted_until_tick 是嘲讽结束的服务端 tick。
+  uint64 taunted_until_tick = 11;
+  // suppressed_until_tick 是压制结束的服务端 tick。
+  uint64 suppressed_until_tick = 12;
+  // attack_speed_slow 是攻速降低比例，取值范围为 0 到 1。
+  double attack_speed_slow = 13;
+  // attack_speed_slow_until 是攻速降低结束的服务端 tick。
+  uint64 attack_speed_slow_until = 14;
+  // grievous_wounds 是重伤比例，取值范围为 0 到 1。
+  double grievous_wounds = 15;
+  // grievous_wounds_until 是重伤结束的服务端 tick。
+  uint64 grievous_wounds_until = 16;
 }
 
 message WarriorSnapshot {

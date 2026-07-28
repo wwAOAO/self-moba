@@ -258,6 +258,7 @@ func buildPassiveSnapshot(state world.PassiveState) protocol.PassiveSnapshot {
 	}
 }
 
+// buildControlSnapshot 构建客户端展示和交互所需的控制与减益状态。
 func buildControlSnapshot(state world.ControlState) protocol.ControlSnapshot {
 	return protocol.ControlSnapshot{
 		AirborneUntilTick:     state.AirborneUntilTick,
@@ -265,11 +266,17 @@ func buildControlSnapshot(state world.ControlState) protocol.ControlSnapshot {
 		InvisibleUntilTick:    state.InvisibleUntilTick,
 		ActionLockedUntilTick: state.ActionLockedUntilTick,
 		StunnedUntilTick:      state.StunnedUntilTick,
+		TauntedUntilTick:      state.TauntedUntilTick,
+		SuppressedUntilTick:   state.SuppressedUntilTick,
 		SilencedUntilTick:     state.SilencedUntilTick,
 		TenacityUntilTick:     state.TenacityUntilTick,
 		MoveSpeedSlow:         state.MoveSpeedSlow,
 		MoveSpeedSlowUntil:    state.MoveSpeedSlowUntil,
 		RootedUntilTick:       state.RootedUntilTick,
+		AttackSpeedSlow:       state.AttackSpeedSlow,
+		AttackSpeedSlowUntil:  state.AttackSpeedSlowUntil,
+		GrievousWounds:        state.GrievousWounds,
+		GrievousWoundsUntil:   state.GrievousWoundsUntil,
 		MageIlluminationUntil: state.MageIlluminationUntil,
 	}
 }

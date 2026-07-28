@@ -296,17 +296,29 @@ type PassiveSnapshot struct {
 }
 
 type ControlSnapshot struct {
-	AirborneUntilTick     uint64  `json:"airborneUntilTick"`
-	DashUntilTick         uint64  `json:"dashUntilTick"`
-	InvisibleUntilTick    uint64  `json:"invisibleUntilTick,omitempty"`
-	ActionLockedUntilTick uint64  `json:"actionLockedUntilTick"`
-	StunnedUntilTick      uint64  `json:"stunnedUntilTick"`
-	SilencedUntilTick     uint64  `json:"silencedUntilTick"`
-	TenacityUntilTick     uint64  `json:"tenacityUntilTick"`
-	MoveSpeedSlow         float64 `json:"moveSpeedSlow"`
-	MoveSpeedSlowUntil    uint64  `json:"moveSpeedSlowUntil"`
-	RootedUntilTick       uint64  `json:"rootedUntilTick,omitempty"`
-	MageIlluminationUntil uint64  `json:"mageIlluminationUntil,omitempty"`
+	AirborneUntilTick     uint64 `json:"airborneUntilTick"`
+	DashUntilTick         uint64 `json:"dashUntilTick"`
+	InvisibleUntilTick    uint64 `json:"invisibleUntilTick,omitempty"`
+	ActionLockedUntilTick uint64 `json:"actionLockedUntilTick"`
+	StunnedUntilTick      uint64 `json:"stunnedUntilTick"`
+	// TauntedUntilTick 是嘲讽控制结束的服务端 tick。
+	TauntedUntilTick uint64 `json:"tauntedUntilTick,omitempty"`
+	// SuppressedUntilTick 是压制控制结束的服务端 tick。
+	SuppressedUntilTick uint64  `json:"suppressedUntilTick,omitempty"`
+	SilencedUntilTick   uint64  `json:"silencedUntilTick"`
+	TenacityUntilTick   uint64  `json:"tenacityUntilTick"`
+	MoveSpeedSlow       float64 `json:"moveSpeedSlow"`
+	MoveSpeedSlowUntil  uint64  `json:"moveSpeedSlowUntil"`
+	RootedUntilTick     uint64  `json:"rootedUntilTick,omitempty"`
+	// AttackSpeedSlow 是当前攻速降低比例，取值范围为 0 到 1。
+	AttackSpeedSlow float64 `json:"attackSpeedSlow,omitempty"`
+	// AttackSpeedSlowUntil 是攻速降低结束的服务端 tick。
+	AttackSpeedSlowUntil uint64 `json:"attackSpeedSlowUntil,omitempty"`
+	// GrievousWounds 是当前重伤比例，取值范围为 0 到 1。
+	GrievousWounds float64 `json:"grievousWounds,omitempty"`
+	// GrievousWoundsUntil 是重伤结束的服务端 tick。
+	GrievousWoundsUntil   uint64 `json:"grievousWoundsUntil,omitempty"`
+	MageIlluminationUntil uint64 `json:"mageIlluminationUntil,omitempty"`
 }
 
 type WarriorSnapshot struct {

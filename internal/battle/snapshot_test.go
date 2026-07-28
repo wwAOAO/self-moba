@@ -81,6 +81,30 @@ func TestUnitSnapshotIncludesNegativeBuffs(t *testing.T) {
 	t.Fatal("enemy hero unit not found")
 }
 
+// TestSnapshotIncludesDisplayableControlDebuffs 验证客户端可获得完整的控制与减益状态。
+func TestSnapshotIncludesDisplayableControlDebuffs(t *testing.T) {
+	w, heroes := testSnapshotWorld(t)
+	hero, ok := heroes.Get("butcher")
+	if !ok {
+		t.Fatal("missing butcher hero")
+	}
+	w.SpawnHero("p1", hero, world.TeamBlue)
+	player := w.EntityByID("player:p1")
+	player.Control.TauntedUntilTick = 20
+	player.Control.SuppressedUntilTick = 30
+	player.Control.AttackSpeedSlow = 0.25
+	player.Control.AttackSpeedSlowUntil = 40
+	player.Control.GrievousWounds = 0.4
+	player.Control.GrievousWoundsUntil = 50
+
+	control := BuildSnapshot("room-1", 10, w).Players[0].Control
+	if control.TauntedUntilTick != 20 || control.SuppressedUntilTick != 30 ||
+		control.AttackSpeedSlow != 0.25 || control.AttackSpeedSlowUntil != 40 ||
+		control.GrievousWounds != 0.4 || control.GrievousWoundsUntil != 50 {
+		t.Fatalf("control snapshot = %+v", control)
+	}
+}
+
 func TestSnapshotIncludesNinjaPassiveTargetCooldowns(t *testing.T) {
 	w, heroes := testSnapshotWorld(t)
 	hero, ok := heroes.Get("ninja")

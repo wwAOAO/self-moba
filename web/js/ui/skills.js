@@ -297,53 +297,34 @@ function formatHeroSkillState(player, tick) {
     return '';
 }
 
+/** 将自身状态按减益和增益分区渲染。 */
 function formatPlayerBuffs(player, tick) {
-    const rows = [];
-    for (const buff of player.buffs || []) {
-        rows.push(formatBuffRow(buff, tick));
+    const statuses = displayStatuses(player, tick);
+    const debuffs = statuses.filter(status => status.kind !== 'buff');
+    const buffs = statuses.filter(status => status.kind === 'buff');
+    const groups = [];
+    if (debuffs.length) {
+        groups.push(formatStatusGroup('减益', 'debuff', debuffs, tick));
     }
-    rows.push(...formatControlBuffRows(player, tick));
+    if (buffs.length) {
+        groups.push(formatStatusGroup('增益', 'buff', buffs, tick));
+    }
     const heroBuffs = formatHeroSkillState(player, tick);
-    if (heroBuffs) {
-        rows.push(heroBuffs);
-    }
-    return rows.length ? `<div class="skill-list">${rows.join('')}</div>` : '';
+    return groups.length || heroBuffs ? `<div class="status-groups">${groups.join('')}</div>${heroBuffs}` : '';
 }
 
-function formatControlBuffRows(player, tick) {
-    const control = player.control || {};
-    return [
-        controlBuffRow('击飞', control.airborneUntilTick, tick),
-        controlBuffRow('眩晕', control.stunnedUntilTick, tick),
-        controlBuffRow('沉默', control.silencedUntilTick, tick),
-        controlBuffRow('禁锢', control.rootedUntilTick, tick),
-        controlBuffRow('韧性', control.tenacityUntilTick, tick),
-        controlBuffRow('减速', control.moveSpeedSlowUntil, tick),
-        controlBuffRow('启明', control.mageIlluminationUntil, tick),
-    ].filter(Boolean);
+/** 渲染一个状态分区。 */
+function formatStatusGroup(title, className, statuses, tick) {
+    return `<div class="status-group ${className}"><span class="status-heading">${title}</span>${statuses
+        .map(status => formatStatusRow(status, tick))
+        .join('')}</div>`;
 }
 
-function controlBuffRow(name, untilTick, tick) {
-    if (!untilTick || untilTick <= tick) {
-        return '';
-    }
-    return `<div class="buff-row"><strong>${name}</strong><span>${((untilTick - tick) / state.tickRate).toFixed(1)}s</span></div>`;
-}
-
-function formatBuffRow(buff, tick) {
-    const name = escapeHtml(formatBuffName(buff));
-    const tip = buff.tooltip ? `<span class="stat-tip" data-tip="${escapeHtml(buff.tooltip)}">?</span>` : '';
-    const remain =
-        buff.expiresAtTick > 0 ? `${Math.max(0, (buff.expiresAtTick - tick) / state.tickRate).toFixed(1)}s` : '∞';
-    const status = buff.stacks > 0 ? `${buff.stacks}层 · ${remain}` : remain;
-    return `<div class="buff-row"><strong>${name}${tip}</strong><span>${status}</span></div>`;
-}
-
-function formatBuffName(buff) {
-    if (buff.id === 'debug_ability_haste') {
-        return `+${formatNumber(buff.abilityHaste || 0)}技能急速`;
-    }
-    return buff.name || buff.id || 'buff';
+/** 渲染状态名称、层数、强度和倒计时。 */
+function formatStatusRow(status, tick) {
+    const tip = status.tooltip ? `<span class="stat-tip" data-tip="${escapeHtml(status.tooltip)}">?</span>` : '';
+    const details = escapeHtml(formatStatusDetails(status, tick));
+    return `<div class="buff-row"><strong><span class="status-icon">${escapeHtml(status.icon)}</span>${escapeHtml(status.name)}${tip}</strong><span>${details}</span></div>`;
 }
 
 function formatArcherSkillState(player, tick) {

@@ -320,6 +320,7 @@ function createStatusLabel() {
     return label;
 }
 
+/** 在场上仅显示最高优先级硬控及其倒计时。 */
 function updateStatusLabel(sprite, target, y, x = 0) {
     if (!sprite.statusLabel) {
         return;
@@ -328,51 +329,18 @@ function updateStatusLabel(sprite, target, y, x = 0) {
         sprite.statusLabel.visible = false;
         return;
     }
-    const statuses = abnormalStatuses(target);
+    const tick = Number(els.tick.textContent || 0);
+    const statuses = displayStatuses(target, tick).filter(status => status.kind === 'control');
     if (!statuses.length) {
         sprite.statusLabel.visible = false;
         return;
     }
-    sprite.statusLabel.text = statuses.join(' ');
+    const primary = statuses[0];
+    const additional = statuses.length > 1 ? ` +${statuses.length - 1}` : '';
+    sprite.statusLabel.text = `${primary.icon} ${formatStatusDuration(primary, tick)}${additional}`;
     sprite.statusLabel.x = x;
     sprite.statusLabel.y = y;
     sprite.statusLabel.visible = true;
-}
-
-function abnormalStatuses(target) {
-    const tick = Number(els.tick.textContent || 0);
-    const statuses = [];
-    if ((target.control?.airborneUntilTick || 0) > tick) {
-        statuses.push('↑');
-    }
-    if ((target.control?.actionLockedUntilTick || 0) > tick) {
-        statuses.push('⊘');
-    }
-    if ((target.control?.stunnedUntilTick || 0) > tick) {
-        statuses.push('✦');
-    }
-    if ((target.control?.silencedUntilTick || 0) > tick) {
-        statuses.push('×');
-    }
-    if ((target.control?.rootedUntilTick || 0) > tick) {
-        statuses.push('⛓');
-    }
-    if ((target.control?.tenacityUntilTick || 0) > tick) {
-        statuses.push('◆');
-    }
-    if ((target.control?.moveSpeedSlowUntil || 0) > tick) {
-        statuses.push('⌄');
-    }
-    if ((target.control?.mageIlluminationUntil || 0) > tick) {
-        statuses.push('☀');
-    }
-    for (const buff of target.buffs || []) {
-        if (!buff.negative || !buff.expiresAtTick || buff.expiresAtTick <= tick) {
-            continue;
-        }
-        statuses.push('●');
-    }
-    return statuses;
 }
 
 function normalizeUnit(unit) {

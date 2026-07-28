@@ -1,4 +1,5 @@
-﻿function setStatsCard(player) {
+﻿/** 更新本地英雄属性与底部生命、资源信息。 */
+function setStatsCard(player) {
     if (!player?.stats) {
         els.statLevel.textContent = '-';
         els.statExp.textContent = '-';
@@ -29,6 +30,7 @@
         els.heroPortrait.textContent = '英';
         els.hudHpFill.style.width = '0';
         els.hudResourceFill.style.width = '0';
+        els.hudResourceFill.parentElement.hidden = true;
         els.abilityHasteBtn.textContent = '+200急速';
         return;
     }
@@ -45,6 +47,7 @@
     setEquipmentCard(player);
     const resourceLabel = formatResource(resourceKind);
     const hasResource = resourceLabel !== '';
+    els.hudResourceFill.parentElement.hidden = !hasResource;
     setStatPairVisible(els.statResourceLabel, els.statResource, hasResource);
     els.statResource.textContent = hasResource ? resourceLabel : '-';
     els.statHp.textContent = formatHpWithShield(player);

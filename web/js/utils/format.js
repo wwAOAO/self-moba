@@ -208,6 +208,136 @@ function formatResource(resource) {
     return resource;
 }
 
+/** 将仍在生效的控制、减益和增益归一化为统一的前端展示状态。 */
+function displayStatuses(target, tick) {
+    const statuses = [];
+    const control = target?.control || {};
+    pushTimedStatus(statuses, tick, 'suppressed', '压制', '压', 'control', 700, control.suppressedUntilTick);
+    pushTimedStatus(statuses, tick, 'airborne', '击飞', '飞', 'control', 650, control.airborneUntilTick);
+    pushTimedStatus(statuses, tick, 'stunned', '眩晕', '晕', 'control', 600, control.stunnedUntilTick);
+    pushTimedStatus(statuses, tick, 'taunted', '嘲讽', '嘲', 'control', 550, control.tauntedUntilTick);
+    pushTimedStatus(statuses, tick, 'rooted', '禁锢', '锢', 'control', 500, control.rootedUntilTick);
+    pushTimedStatus(statuses, tick, 'silenced', '沉默', '默', 'control', 450, control.silencedUntilTick);
+    pushTimedStatus(
+        statuses,
+        tick,
+        'move_speed_slow',
+        '移动减速',
+        '缓',
+        'debuff',
+        300,
+        control.moveSpeedSlowUntil,
+        formatStatusPercent(control.moveSpeedSlow),
+    );
+    pushTimedStatus(
+        statuses,
+        tick,
+        'attack_speed_slow',
+        '攻速降低',
+        '攻',
+        'debuff',
+        280,
+        control.attackSpeedSlowUntil,
+        formatStatusPercent(control.attackSpeedSlow),
+    );
+    pushTimedStatus(
+        statuses,
+        tick,
+        'grievous_wounds',
+        '重伤',
+        '伤',
+        'debuff',
+        260,
+        control.grievousWoundsUntil,
+        formatStatusPercent(control.grievousWounds),
+    );
+    pushTimedStatus(
+        statuses,
+        tick,
+        'mage_illumination',
+        '启明标记',
+        '光',
+        'debuff',
+        240,
+        control.mageIlluminationUntil,
+    );
+
+    const knownIDs = new Set(statuses.map(status => status.id));
+    for (const buff of target?.buffs || []) {
+        if ((buff.expiresAtTick || 0) > 0 && buff.expiresAtTick <= tick) {
+            continue;
+        }
+        if (knownIDs.has(buff.id)) {
+            continue;
+        }
+        statuses.push({
+            id: buff.id || 'status',
+            name: buff.name || buff.id || '状态',
+            icon: statusIconForBuff(buff),
+            kind: buff.negative ? 'debuff' : 'buff',
+            priority: buff.negative ? 100 : 0,
+            expiresAtTick: buff.expiresAtTick || 0,
+            stacks: buff.stacks || 0,
+            value: '',
+            tooltip: buff.tooltip || '',
+        });
+    }
+    return statuses.sort((left, right) => right.priority - left.priority || left.name.localeCompare(right.name));
+}
+
+/** 追加一个尚未结束的定时状态。 */
+function pushTimedStatus(statuses, tick, id, name, icon, kind, priority, expiresAtTick, value = '') {
+    if (!expiresAtTick || expiresAtTick <= tick) {
+        return;
+    }
+    statuses.push({ id, name, icon, kind, priority, expiresAtTick, stacks: 0, value, tooltip: '' });
+}
+
+/** 将比例型状态强度格式化为百分比。 */
+function formatStatusPercent(value) {
+    return value > 0 ? `${Math.round(value * 100)}%` : '';
+}
+
+/** 根据 Buff 标识返回便于快速识别的单字图标。 */
+function statusIconForBuff(buff) {
+    const id = String(buff?.id || '');
+    if (id.includes('bleed')) {
+        return '血';
+    }
+    if (id.includes('burn')) {
+        return '灼';
+    }
+    if (id.includes('shred') || id.includes('cleaver')) {
+        return '破';
+    }
+    return buff?.negative ? '减' : '增';
+}
+
+/** 格式化状态剩余时间；永久状态不显示倒计时。 */
+function formatStatusDuration(status, tick) {
+    if (!status?.expiresAtTick) {
+        return '';
+    }
+    const seconds = Math.max(0, (status.expiresAtTick - tick) / state.tickRate);
+    return seconds < 1 ? `${seconds.toFixed(1)}s` : `${Math.ceil(seconds)}s`;
+}
+
+/** 格式化状态的强度、层数和剩余时间摘要。 */
+function formatStatusDetails(status, tick) {
+    const details = [];
+    if (status?.value) {
+        details.push(status.value);
+    }
+    if ((status?.stacks || 0) > 0) {
+        details.push(`${status.stacks}层`);
+    }
+    const duration = formatStatusDuration(status, tick);
+    if (duration) {
+        details.push(duration);
+    }
+    return details.join(' · ');
+}
+
 function escapeHtml(value) {
     return String(value)
         .replaceAll('&', '&amp;')

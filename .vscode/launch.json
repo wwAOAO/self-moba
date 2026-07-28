@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "服务端：Go",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server"
+        },
+        {
+            "name": "前端：Chrome",
+            "type": "pwa-chrome",
+            "request": "launch",
+            "url": "http://localhost:6969",
+            "webRoot": "${workspaceFolder}/web"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "全栈：服务端 + 前端",
+            "configurations": ["服务端：Go", "前端：Chrome"]
+        }
+    ]
+}
