@@ -32,6 +32,7 @@ import (
 	_ "l-battle/internal/world/heroes/monk"
 	_ "l-battle/internal/world/heroes/ninja"
 	_ "l-battle/internal/world/heroes/robot"
+	_ "l-battle/internal/world/heroes/shadowassassin"
 	_ "l-battle/internal/world/heroes/sword"
 	_ "l-battle/internal/world/heroes/tank"
 	_ "l-battle/internal/world/heroes/warrior"

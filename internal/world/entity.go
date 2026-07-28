@@ -30,6 +30,8 @@ type CrossbowmanState = state.CrossbowmanState
 type MageState = state.MageState
 type TankState = state.TankState
 type BerserkerState = state.BerserkerState
+type ShadowAssassinState = state.ShadowAssassinState
+type ShadowAssassinBleedState = state.ShadowAssassinBleedState
 type NinjaState = state.NinjaState
 type PassiveState = state.PassiveState
 type KillerVoracityMark = state.KillerVoracityMark
@@ -48,40 +50,41 @@ type LaneState = state.LaneState
 type PendingMinionSpawn = state.PendingMinionSpawn
 
 type Entity struct {
-	ID           string
-	Kind         EntityKind
-	Team         Team
-	PlayerID     string
-	HeroID       string
-	Level        int
-	SkillPoints  int
-	Gold         float64
-	Equipment    []EquipmentSlot
-	Buffs        []BuffState
-	Exp          float64
-	TotalExp     float64
-	NextLevelExp float64
-	Position     Vector2
-	Stats        Stats
-	Message      string
-	MessageTick  uint64
-	Radius       float64
-	Skills       map[string]SkillState
-	Combat       CombatState
-	Control      ControlState
-	Passive      PassiveState
-	Sword        SwordState
-	Warrior      WarriorState
-	Archer       ArcherState
-	Crossbowman  CrossbowmanState
-	Mage         MageState
-	Tank         TankState
-	Berserker    BerserkerState
-	Ninja        NinjaState
-	Death        DeathState
-	Intent       IntentState
-	Lane         LaneState
-	Regen        RegenState
+	ID             string
+	Kind           EntityKind
+	Team           Team
+	PlayerID       string
+	HeroID         string
+	Level          int
+	SkillPoints    int
+	Gold           float64
+	Equipment      []EquipmentSlot
+	Buffs          []BuffState
+	Exp            float64
+	TotalExp       float64
+	NextLevelExp   float64
+	Position       Vector2
+	Stats          Stats
+	Message        string
+	MessageTick    uint64
+	Radius         float64
+	Skills         map[string]SkillState
+	Combat         CombatState
+	Control        ControlState
+	Passive        PassiveState
+	Sword          SwordState
+	Warrior        WarriorState
+	Archer         ArcherState
+	Crossbowman    CrossbowmanState
+	Mage           MageState
+	Tank           TankState
+	Berserker      BerserkerState
+	ShadowAssassin ShadowAssassinState
+	Ninja          NinjaState
+	Death          DeathState
+	Intent         IntentState
+	Lane           LaneState
+	Regen          RegenState
 }
 
 const (

@@ -3,3 +3,4 @@
 .cache/
 .bin/
 .nats/
+node_modules/

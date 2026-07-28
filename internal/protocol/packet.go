@@ -94,39 +94,74 @@ type MapSnapshot struct {
 	Height float64 `json:"height"`
 }
 
+// PlayerSnapshot 描述客户端渲染和交互所需的玩家英雄权威状态。
 type PlayerSnapshot struct {
-	PlayerID       string                `json:"playerId"`
-	HeroID         string                `json:"heroId"`
-	Team           string                `json:"team"`
-	Level          int                   `json:"level"`
-	MaxLevel       int                   `json:"maxLevel"`
-	SkillPoints    int                   `json:"skillPoints"`
-	Gold           float64               `json:"gold"`
-	Equipment      []EquipmentSlot       `json:"equipment"`
-	Exp            float64               `json:"exp"`
-	TotalExp       float64               `json:"totalExp"`
-	NextLevelExp   float64               `json:"nextLevelExp"`
-	Message        string                `json:"message,omitempty"`
-	MessageTick    uint64                `json:"messageTick,omitempty"`
-	X              float64               `json:"x"`
-	Y              float64               `json:"y"`
-	Stats          StatsSnapshot         `json:"stats"`
-	Skills         []SkillSnapshot       `json:"skills"`
-	Buffs          []BuffSnapshot        `json:"buffs,omitempty"`
-	Passive        PassiveSnapshot       `json:"passive"`
-	LastHitTick    uint64                `json:"lastHitTick"`
-	LastDamage     int                   `json:"lastDamage"`
-	LastDamageType string                `json:"lastDamageType"`
-	DamageEvents   []DamageEventSnapshot `json:"damageEvents,omitempty"`
-	Dead           bool                  `json:"dead"`
-	RespawnTick    uint64                `json:"respawnTick"`
-	RespawnIn      float64               `json:"respawnIn"`
-	Control        ControlSnapshot       `json:"control"`
-	Sword          SwordSnapshot         `json:"sword"`
-	Warrior        WarriorSnapshot       `json:"warrior"`
-	Tank           TankSnapshot          `json:"tank"`
-	Archer         ArcherSnapshot        `json:"archer"`
-	Ninja          NinjaSnapshot         `json:"ninja"`
+	// PlayerID 是玩家在房间内的唯一标识。
+	PlayerID string `json:"playerId"`
+	// HeroID 是玩家当前使用的英雄配置标识。
+	HeroID string `json:"heroId"`
+	// Team 是玩家所属阵营。
+	Team string `json:"team"`
+	// Level 是英雄当前等级。
+	Level int `json:"level"`
+	// MaxLevel 是英雄允许达到的最高等级。
+	MaxLevel int `json:"maxLevel"`
+	// SkillPoints 是当前未分配的技能点数。
+	SkillPoints int `json:"skillPoints"`
+	// Gold 是玩家当前持有的金币数。
+	Gold float64 `json:"gold"`
+	// Equipment 是固定槽位顺序的装备快照。
+	Equipment []EquipmentSlot `json:"equipment"`
+	// Exp 是当前等级内的经验值。
+	Exp float64 `json:"exp"`
+	// TotalExp 是玩家累计获得的经验值。
+	TotalExp float64 `json:"totalExp"`
+	// NextLevelExp 是升到下一级所需的累计经验值。
+	NextLevelExp float64 `json:"nextLevelExp"`
+	// Message 是本次状态变更产生的可选提示消息。
+	Message string `json:"message,omitempty"`
+	// MessageTick 是提示消息产生的服务端 tick。
+	MessageTick uint64 `json:"messageTick,omitempty"`
+	// X 是英雄中心在地图中的横坐标，单位为世界单位。
+	X float64 `json:"x"`
+	// Y 是英雄中心在地图中的纵坐标，单位为世界单位。
+	Y float64 `json:"y"`
+	// Radius 是英雄的权威碰撞半径，单位为世界单位。
+	Radius float64 `json:"radius"`
+	// Stats 是英雄当前生效的战斗属性。
+	Stats StatsSnapshot `json:"stats"`
+	// Skills 是英雄各技能的等级和冷却状态。
+	Skills []SkillSnapshot `json:"skills"`
+	// Buffs 是英雄当前生效的增益和减益状态。
+	Buffs []BuffSnapshot `json:"buffs,omitempty"`
+	// Passive 是跨英雄通用的被动状态快照。
+	Passive PassiveSnapshot `json:"passive"`
+	// LastHitTick 是英雄最近一次受到伤害的服务端 tick。
+	LastHitTick uint64 `json:"lastHitTick"`
+	// LastDamage 是英雄最近一次受到的伤害值。
+	LastDamage int `json:"lastDamage"`
+	// LastDamageType 是英雄最近一次受到的伤害类型。
+	LastDamageType string `json:"lastDamageType"`
+	// DamageEvents 是尚需客户端展示的伤害事件。
+	DamageEvents []DamageEventSnapshot `json:"damageEvents,omitempty"`
+	// Dead 表示英雄当前是否处于死亡状态。
+	Dead bool `json:"dead"`
+	// RespawnTick 是英雄计划复活的服务端 tick。
+	RespawnTick uint64 `json:"respawnTick"`
+	// RespawnIn 是距离复活的剩余秒数。
+	RespawnIn float64 `json:"respawnIn"`
+	// Control 是英雄当前的控制状态。
+	Control ControlSnapshot `json:"control"`
+	// Sword 是剑客英雄的专属状态。
+	Sword SwordSnapshot `json:"sword"`
+	// Warrior 是圣骑士英雄的专属状态。
+	Warrior WarriorSnapshot `json:"warrior"`
+	// Tank 是石头人英雄的专属状态。
+	Tank TankSnapshot `json:"tank"`
+	// Archer 是弓箭手英雄的专属状态。
+	Archer ArcherSnapshot `json:"archer"`
+	// Ninja 是忍者英雄的专属状态。
+	Ninja NinjaSnapshot `json:"ninja"`
 }
 
 type BuffSnapshot struct {

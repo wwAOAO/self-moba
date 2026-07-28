@@ -6,6 +6,7 @@ import (
 	"l-battle/internal/world"
 )
 
+// BuildSnapshot 根据指定 tick 的权威世界状态构建客户端完整快照。
 func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot {
 	players := w.Players()
 	dummies := w.Dummies()
@@ -46,6 +47,7 @@ func BuildSnapshot(roomID string, tick uint64, w *world.World) protocol.Snapshot
 			MessageTick:    entity.MessageTick,
 			X:              entity.Position.X,
 			Y:              entity.Position.Y,
+			Radius:         entity.Radius,
 			Stats:          stats,
 			Skills:         buildSkillSnapshots(entity.Skills),
 			Buffs:          buildBuffSnapshots(w.ActiveBuffs(&entity, tick)),

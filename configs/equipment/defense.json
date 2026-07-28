@@ -1,526 +1,418 @@
 [
-  {
-    "equipmentId": "wooden_shield",
-    "name": "木盾",
-    "category": "defense",
-    "tier": 1,
-    "price": 435,
-    "sellRatio": 0.5,
-    "stats": {
-      "hp": 110,
-      "physicalDefense": 9,
-      "hpRegen5": 8
+    {
+        "equipmentId": "wooden_shield",
+        "name": "木盾",
+        "category": "defense",
+        "tier": 1,
+        "price": 435,
+        "sellRatio": 0.5,
+        "stats": {
+            "hp": 110,
+            "physicalDefense": 9,
+            "hpRegen5": 8
+        },
+        "effects": {
+            "heroHitSmallHeal": true,
+            "heroHitHeal": 5,
+            "minionBasicAttackBonusDamage": 5,
+            "minionBasicAttackBonusDamageType": "physical"
+        },
+        "description": ["生命 +110", "物理防御 +9", "生命/5秒 +8", "普攻小兵 +5 物理伤害", "被英雄命中回血 +5"]
     },
-    "effects": {
-      "heroHitSmallHeal": true,
-      "heroHitHeal": 5,
-      "minionBasicAttackBonusDamage": 5,
-      "minionBasicAttackBonusDamageType": "physical"
+    {
+        "equipmentId": "steel_helmet",
+        "name": "钢盔",
+        "category": "defense",
+        "tier": 1,
+        "price": 450,
+        "sellRatio": 0.5,
+        "stats": {
+            "hp": 110,
+            "physicalDefense": 10,
+            "magicDefense": 10
+        },
+        "effects": {
+            "minionBasicAttackBonusDamage": 5,
+            "minionBasicAttackBonusDamageType": "physical"
+        },
+        "description": ["生命 +110", "物理防御 +10", "魔法防御 +10", "普攻小兵 +5 物理伤害"]
     },
-    "description": [
-      "生命 +110",
-      "物理防御 +9",
-      "生命/5秒 +8",
-      "普攻小兵 +5 物理伤害",
-      "被英雄命中回血 +5"
-    ]
-  },
-  {
-    "equipmentId": "steel_helmet",
-    "name": "钢盔",
-    "category": "defense",
-    "tier": 1,
-    "price": 450,
-    "sellRatio": 0.5,
-    "stats": {
-      "hp": 110,
-      "physicalDefense": 10,
-      "magicDefense": 10
+    {
+        "equipmentId": "ruby_crystal",
+        "name": "红水晶",
+        "category": "defense",
+        "tier": 1,
+        "price": 400,
+        "sellRatio": 0.5,
+        "stats": {
+            "hp": 150
+        },
+        "description": ["生命 +150"]
     },
-    "effects": {
-      "minionBasicAttackBonusDamage": 5,
-      "minionBasicAttackBonusDamageType": "physical"
+    {
+        "equipmentId": "rejuvenation_bead",
+        "name": "治疗宝珠",
+        "category": "defense",
+        "tier": 1,
+        "price": 150,
+        "sellRatio": 0.5,
+        "stats": {
+            "hpRegen5": 5
+        },
+        "description": ["生命/5秒 +5"]
     },
-    "description": [
-      "生命 +110",
-      "物理防御 +10",
-      "魔法防御 +10",
-      "普攻小兵 +5 物理伤害"
-    ]
-  },
-  {
-    "equipmentId": "ruby_crystal",
-    "name": "红水晶",
-    "category": "defense",
-    "tier": 1,
-    "price": 400,
-    "sellRatio": 0.5,
-    "stats": {
-      "hp": 150
+    {
+        "equipmentId": "giant_belt",
+        "name": "巨人腰带",
+        "category": "defense",
+        "tier": 1,
+        "price": 900,
+        "sellRatio": 0.5,
+        "stats": {
+            "hp": 350
+        },
+        "description": ["生命 +350"]
     },
-    "description": [
-      "生命 +150"
-    ]
-  },
-  {
-    "equipmentId": "rejuvenation_bead",
-    "name": "治疗宝珠",
-    "category": "defense",
-    "tier": 1,
-    "price": 150,
-    "sellRatio": 0.5,
-    "stats": {
-      "hpRegen5": 5
+    {
+        "equipmentId": "kindlegem",
+        "name": "燃烧宝石",
+        "category": "defense",
+        "tier": 2,
+        "price": 800,
+        "sellRatio": 0.5,
+        "components": ["ruby_crystal", "ruby_crystal"],
+        "stats": {
+            "hp": 250,
+            "abilityHaste": 10
+        },
+        "description": ["生命 +250", "技能急速 +10"]
     },
-    "description": [
-      "生命/5秒 +5"
-    ]
-  },
-  {
-    "equipmentId": "giant_belt",
-    "name": "巨人腰带",
-    "category": "defense",
-    "tier": 1,
-    "price": 900,
-    "sellRatio": 0.5,
-    "stats": {
-      "hp": 350
+    {
+        "equipmentId": "cloth_armor",
+        "name": "布甲",
+        "category": "defense",
+        "tier": 1,
+        "price": 300,
+        "sellRatio": 0.5,
+        "stats": {
+            "physicalDefense": 15
+        },
+        "description": ["物理防御 +15"]
     },
-    "description": [
-      "生命 +350"
-    ]
-  },
-  {
-    "equipmentId": "kindlegem",
-    "name": "燃烧宝石",
-    "category": "defense",
-    "tier": 2,
-    "price": 800,
-    "sellRatio": 0.5,
-    "components": [
-      "ruby_crystal",
-      "ruby_crystal"
-    ],
-    "stats": {
-      "hp": 250,
-      "abilityHaste": 10
+    {
+        "equipmentId": "chain_vest",
+        "name": "锁子甲",
+        "category": "defense",
+        "tier": 2,
+        "price": 800,
+        "sellRatio": 0.5,
+        "components": ["cloth_armor"],
+        "stats": {
+            "physicalDefense": 30
+        },
+        "description": ["物理防御 +30"]
     },
-    "description": [
-      "生命 +250",
-      "技能急速 +10"
-    ]
-  },
-  {
-    "equipmentId": "cloth_armor",
-    "name": "布甲",
-    "category": "defense",
-    "tier": 1,
-    "price": 300,
-    "sellRatio": 0.5,
-    "stats": {
-      "physicalDefense": 15
+    {
+        "equipmentId": "bramble_vest",
+        "name": "棘刺背心",
+        "category": "defense",
+        "tier": 2,
+        "price": 800,
+        "sellRatio": 0.5,
+        "components": ["cloth_armor", "cloth_armor"],
+        "stats": {
+            "physicalDefense": 30
+        },
+        "effects": {
+            "thornsDamageFlat": 4,
+            "thornsBonusArmorRatio": 0.1,
+            "thornsGrievousWounds": 0.25,
+            "thornsGrievousWoundsSeconds": 3
+        },
+        "description": [
+            "护甲 +30",
+            "荆棘：被普通攻击命中后，对攻击者造成 4 (+10%额外护甲) 魔法伤害；若攻击者是英雄，施加3秒25%重伤"
+        ]
     },
-    "description": [
-      "物理防御 +15"
-    ]
-  },
-  {
-    "equipmentId": "chain_vest",
-    "name": "锁子甲",
-    "category": "defense",
-    "tier": 2,
-    "price": 800,
-    "sellRatio": 0.5,
-    "components": [
-      "cloth_armor"
-    ],
-    "stats": {
-      "physicalDefense": 30
+    {
+        "equipmentId": "null_magic_mantle",
+        "name": "抗魔斗篷",
+        "category": "defense",
+        "tier": 1,
+        "price": 450,
+        "sellRatio": 0.5,
+        "stats": {
+            "magicDefense": 20
+        },
+        "description": ["魔法防御 +20"]
     },
-    "description": [
-      "物理防御 +30"
-    ]
-  },
-  {
-    "equipmentId": "bramble_vest",
-    "name": "棘刺背心",
-    "category": "defense",
-    "tier": 2,
-    "price": 800,
-    "sellRatio": 0.5,
-    "components": [
-      "cloth_armor",
-      "cloth_armor"
-    ],
-    "stats": {
-      "physicalDefense": 30
+    {
+        "equipmentId": "negatron_cloak",
+        "name": "负极斗篷",
+        "category": "defense",
+        "tier": 2,
+        "price": 740,
+        "sellRatio": 0.5,
+        "components": ["null_magic_mantle"],
+        "stats": {
+            "magicDefense": 48
+        },
+        "description": ["魔法防御 +48"]
     },
-    "effects": {
-      "thornsDamageFlat": 4,
-      "thornsBonusArmorRatio": 0.1,
-      "thornsGrievousWounds": 0.25,
-      "thornsGrievousWoundsSeconds": 3
+    {
+        "equipmentId": "glacial_buckler",
+        "name": "冰川护甲",
+        "category": "defense",
+        "tier": 2,
+        "price": 1250,
+        "sellRatio": 0.5,
+        "components": ["chain_vest", "sapphire_crystal"],
+        "stats": {
+            "physicalDefense": 45,
+            "mp": 300,
+            "abilityHaste": 15
+        },
+        "description": ["技能急速 +15", "法力 +300", "物理防御 +45"]
     },
-    "description": [
-      "护甲 +30",
-      "荆棘：被普通攻击命中后，对攻击者造成 4 (+10%额外护甲) 魔法伤害；若攻击者是英雄，施加3秒25%重伤"
-    ]
-  },
-  {
-    "equipmentId": "null_magic_mantle",
-    "name": "抗魔斗篷",
-    "category": "defense",
-    "tier": 1,
-    "price": 450,
-    "sellRatio": 0.5,
-    "stats": {
-      "magicDefense": 20
+    {
+        "equipmentId": "catalyst_of_aeons",
+        "name": "催化神石",
+        "category": "defense",
+        "tier": 2,
+        "price": 900,
+        "sellRatio": 0.5,
+        "components": ["ruby_crystal", "sapphire_crystal"],
+        "stats": {
+            "hp": 290,
+            "mp": 325
+        },
+        "effects": {
+            "levelUpRestoreHpRatio": 0.1,
+            "levelUpRestoreMpRatio": 0.1
+        },
+        "description": ["生命 +290", "法力 +325", "升级回复生命 10% / 法力 10%"]
     },
-    "description": [
-      "魔法防御 +20"
-    ]
-  },
-  {
-    "equipmentId": "negatron_cloak",
-    "name": "负极斗篷",
-    "category": "defense",
-    "tier": 2,
-    "price": 740,
-    "sellRatio": 0.5,
-    "components": [
-      "null_magic_mantle"
-    ],
-    "stats": {
-      "magicDefense": 48
+    {
+        "equipmentId": "jungle_fist",
+        "name": "紫雨林之拳",
+        "category": "defense",
+        "tier": 2,
+        "price": 1000,
+        "sellRatio": 0.5,
+        "components": ["ruby_crystal", "short_sword"],
+        "stats": {
+            "hp": 300,
+            "attack": 15
+        },
+        "description": ["攻击力 +15", "生命 +300"]
     },
-    "description": [
-      "魔法防御 +48"
-    ]
-  },
-  {
-    "equipmentId": "glacial_buckler",
-    "name": "冰川护甲",
-    "category": "defense",
-    "tier": 2,
-    "price": 1250,
-    "sellRatio": 0.5,
-    "components": [
-      "chain_vest",
-      "sapphire_crystal"
-    ],
-    "stats": {
-      "physicalDefense": 45,
-      "mp": 300,
-      "abilityHaste": 15
+    {
+        "equipmentId": "crystalline_bracer",
+        "name": "晶体护腕",
+        "category": "defense",
+        "tier": 2,
+        "price": 800,
+        "sellRatio": 0.5,
+        "components": ["ruby_crystal", "rejuvenation_bead"],
+        "stats": {
+            "hp": 200,
+            "baseHpRegenBonus": 1
+        },
+        "description": ["生命值 +200", "基础生命回复 +100%"]
     },
-    "description": [
-      "技能急速 +15",
-      "法力 +300",
-      "物理防御 +45"
-    ]
-  },
-  {
-    "equipmentId": "catalyst_of_aeons",
-    "name": "催化神石",
-    "category": "defense",
-    "tier": 2,
-    "price": 900,
-    "sellRatio": 0.5,
-    "components": [
-      "ruby_crystal",
-      "sapphire_crystal"
-    ],
-    "stats": {
-      "hp": 290,
-      "mp": 325
+    {
+        "equipmentId": "raptor_cloak",
+        "name": "猛禽斗篷",
+        "category": "defense",
+        "tier": 2,
+        "price": 850,
+        "sellRatio": 0.5,
+        "components": ["cloth_armor", "ruby_crystal"],
+        "stats": {
+            "physicalDefense": 30,
+            "hp": 300
+        },
+        "effects": {
+            "outOfCombatMoveSpeed": 20,
+            "outOfCombatSeconds": 5
+        },
+        "description": ["生命 +300", "物理防御 +30", "脱战移动速度 +20"]
     },
-    "effects": {
-      "levelUpRestoreHpRatio": 0.1,
-      "levelUpRestoreMpRatio": 0.1
+    {
+        "equipmentId": "randuins_omen",
+        "name": "兰顿之兆",
+        "category": "defense",
+        "tier": 3,
+        "price": 2900,
+        "sellRatio": 0.5,
+        "components": ["chain_vest", "ruby_crystal", "ruby_crystal"],
+        "stats": {
+            "physicalDefense": 60,
+            "hp": 350,
+            "critDamageReduce": 0.2
+        },
+        "effects": {
+            "basicAttackAttackerSlow": 0.05,
+            "basicAttackAttackerSlowSeconds": 1
+        },
+        "description": ["生命 +350", "物理防御 +60", "暴击伤害减免 +20%", "被普攻时减速攻击者 5%"]
     },
-    "description": [
-      "生命 +290",
-      "法力 +325",
-      "升级回复生命 10% / 法力 10%"
-    ]
-  },
-  {
-    "equipmentId": "jungle_fist",
-    "name": "紫雨林之拳",
-    "category": "defense",
-    "tier": 2,
-    "price": 1000,
-    "sellRatio": 0.5,
-    "components": [
-      "ruby_crystal",
-      "short_sword"
-    ],
-    "stats": {
-      "hp": 300,
-      "attack": 15
+    {
+        "equipmentId": "force_of_nature",
+        "name": "自然之力",
+        "category": "defense",
+        "tier": 3,
+        "price": 2800,
+        "sellRatio": 0.5,
+        "components": ["null_magic_mantle", "kindlegem"],
+        "stats": {
+            "magicDefense": 60,
+            "hp": 400,
+            "moveSpeedPercent": 0.05
+        },
+        "effects": {
+            "magicHitMoveSpeedPercentPerStack": 0.01,
+            "magicHitMagicDefensePerStack": 10,
+            "magicHitMaxStacks": 8
+        },
+        "description": ["生命 +400", "魔法防御 +60", "移动速度 +5%", "受到魔法伤害时 +1%移动速度 / +10魔抗，最多8层"]
     },
-    "description": [
-      "攻击力 +15",
-      "生命 +300"
-    ]
-  },
-  {
-    "equipmentId": "crystalline_bracer",
-    "name": "晶体护腕",
-    "category": "defense",
-    "tier": 2,
-    "price": 800,
-    "sellRatio": 0.5,
-    "components": [
-      "ruby_crystal",
-      "rejuvenation_bead"
-    ],
-    "stats": {
-      "hp": 200,
-      "baseHpRegenBonus": 1
+    {
+        "equipmentId": "warmogs_armor",
+        "name": "狂徒铠甲",
+        "category": "defense",
+        "tier": 3,
+        "price": 3100,
+        "sellRatio": 0.7,
+        "components": ["giant_belt", "giant_belt", "crystalline_bracer"],
+        "stats": {
+            "hp": 1000,
+            "baseHpRegenBonus": 1
+        },
+        "effects": {
+            "equipmentHpMultiplier": 0.15,
+            "warmogRequiredBonusHp": 2000,
+            "warmogOutOfCombatSeconds": 8,
+            "warmogMinionOutOfCombatSeconds": 3,
+            "warmogHealMaxHpRatio": 0.05,
+            "warmogTickSeconds": 0.5
+        },
+        "description": [
+            "生命值 +1000",
+            "基础生命回复 +100%",
+            "狂徒之活力：获得相当于15%装备生命值的额外生命值",
+            "狂徒之心：至少2000额外生命值且8秒内未受伤害（小兵/野怪为3秒）后，每0.5秒回复5%最大生命值"
+        ]
     },
-    "description": [
-      "生命值 +200",
-      "基础生命回复 +100%"
-    ]
-  },
-  {
-    "equipmentId": "raptor_cloak",
-    "name": "猛禽斗篷",
-    "category": "defense",
-    "tier": 2,
-    "price": 850,
-    "sellRatio": 0.5,
-    "components": [
-      "cloth_armor",
-      "ruby_crystal"
-    ],
-    "stats": {
-      "physicalDefense": 30,
-      "hp": 300
+    {
+        "equipmentId": "unending_despair",
+        "name": "无终恨意",
+        "category": "defense",
+        "tier": 3,
+        "price": 2800,
+        "sellRatio": 0.5,
+        "components": ["chain_vest", "kindlegem", "ruby_crystal"],
+        "stats": {
+            "hp": 400,
+            "physicalDefense": 50,
+            "abilityHaste": 15
+        },
+        "effects": {
+            "endlessDespairRadius": 650,
+            "endlessDespairTickSeconds": 4,
+            "endlessDespairBonusHpRatio": 0.03,
+            "endlessDespairHealDamageRatio": 2.5
+        },
+        "description": [
+            "生命值 +400",
+            "护甲 +50",
+            "技能急速 +15",
+            "苦楚：与英雄进入战斗后，每4秒对650码内敌方英雄造成3%额外生命值魔法伤害，并治疗250%已造成伤害"
+        ]
     },
-    "effects": {
-      "outOfCombatMoveSpeed": 20,
-      "outOfCombatSeconds": 5
+    {
+        "equipmentId": "gargoyle_stoneplate",
+        "name": "石像鬼石板甲",
+        "category": "defense",
+        "tier": 3,
+        "price": 3200,
+        "sellRatio": 0.5,
+        "components": ["chain_vest", "null_magic_mantle", "ruby_crystal"],
+        "stats": {
+            "physicalDefense": 40,
+            "magicDefense": 40,
+            "hp": 350
+        },
+        "effects": {
+            "stoneplateShieldMaxHpRatio": 0.2,
+            "stoneplateResistPercent": 0.05,
+            "stoneplateCooldownSeconds": 120
+        },
+        "description": [
+            "生命 +350",
+            "物理防御 +40",
+            "魔法防御 +40",
+            "获得20%最大生命护盾；护盾存在时双抗 +5%；受伤后120秒刷新"
+        ]
     },
-    "description": [
-      "生命 +300",
-      "物理防御 +30",
-      "脱战移动速度 +20"
-    ]
-  },
-  {
-    "equipmentId": "randuins_omen",
-    "name": "兰顿之兆",
-    "category": "defense",
-    "tier": 3,
-    "price": 2900,
-    "sellRatio": 0.5,
-    "components": [
-      "chain_vest",
-      "ruby_crystal",
-      "ruby_crystal"
-    ],
-    "stats": {
-      "physicalDefense": 60,
-      "hp": 350,
-      "critDamageReduce": 0.2
+    {
+        "equipmentId": "sunfire_aegis",
+        "name": "日炎圣盾",
+        "category": "defense",
+        "tier": 3,
+        "price": 3000,
+        "sellRatio": 0.5,
+        "components": ["chain_vest", "ruby_crystal", "ruby_crystal"],
+        "stats": {
+            "physicalDefense": 40,
+            "magicDefense": 30,
+            "hp": 450,
+            "abilityHaste": 15
+        },
+        "effects": {
+            "sunfireBurnSeconds": 3,
+            "sunfireBurnFlatMin": 20,
+            "sunfireBurnFlatMax": 40,
+            "sunfireBurnBonusHpRatio": 0.01,
+            "sunfireRadius": 325,
+            "sunfireMinionMultiplier": 1.5,
+            "sunfireMonsterMultiplier": 3,
+            "sunfireStackDamageBonus": 0.12,
+            "sunfireMaxStacks": 6,
+            "sunfireStackSeconds": 5
+        },
+        "description": [
+            "生命 +450",
+            "物理防御 +40",
+            "魔法防御 +30",
+            "技能急速 +15",
+            "承受/造成伤害后献祭周围敌人3秒：每秒造成20-40 +1%额外生命魔法伤害",
+            "对小兵伤害 +50%，对野怪伤害 +200%",
+            "献祭命中英雄/史诗野怪叠层，每层伤害 +12%，最多6层"
+        ]
     },
-    "effects": {
-      "basicAttackAttackerSlow": 0.05,
-      "basicAttackAttackerSlowSeconds": 1
-    },
-    "description": [
-      "生命 +350",
-      "物理防御 +60",
-      "暴击伤害减免 +20%",
-      "被普攻时减速攻击者 5%"
-    ]
-  },
-  {
-    "equipmentId": "force_of_nature",
-    "name": "自然之力",
-    "category": "defense",
-    "tier": 3,
-    "price": 2800,
-    "sellRatio": 0.5,
-    "components": [
-      "null_magic_mantle",
-      "kindlegem"
-    ],
-    "stats": {
-      "magicDefense": 60,
-      "hp": 400,
-      "moveSpeedPercent": 0.05
-    },
-    "effects": {
-      "magicHitMoveSpeedPercentPerStack": 0.01,
-      "magicHitMagicDefensePerStack": 10,
-      "magicHitMaxStacks": 8
-    },
-    "description": [
-      "生命 +400",
-      "魔法防御 +60",
-      "移动速度 +5%",
-      "受到魔法伤害时 +1%移动速度 / +10魔抗，最多8层"
-    ]
-  },
-  {
-    "equipmentId": "warmogs_armor",
-    "name": "狂徒铠甲",
-    "category": "defense",
-    "tier": 3,
-    "price": 3100,
-    "sellRatio": 0.7,
-    "components": [
-      "giant_belt",
-      "giant_belt",
-      "crystalline_bracer"
-    ],
-    "stats": {
-      "hp": 1000,
-      "baseHpRegenBonus": 1
-    },
-    "effects": {
-      "equipmentHpMultiplier": 0.15,
-      "warmogRequiredBonusHp": 2000,
-      "warmogOutOfCombatSeconds": 8,
-      "warmogMinionOutOfCombatSeconds": 3,
-      "warmogHealMaxHpRatio": 0.05,
-      "warmogTickSeconds": 0.5
-    },
-    "description": [
-      "生命值 +1000",
-      "基础生命回复 +100%",
-      "狂徒之活力：获得相当于15%装备生命值的额外生命值",
-      "狂徒之心：至少2000额外生命值且8秒内未受伤害（小兵/野怪为3秒）后，每0.5秒回复5%最大生命值"
-    ]
-  },
-  {
-    "equipmentId": "unending_despair",
-    "name": "无终恨意",
-    "category": "defense",
-    "tier": 3,
-    "price": 2800,
-    "sellRatio": 0.5,
-    "components": [
-      "chain_vest",
-      "kindlegem",
-      "ruby_crystal"
-    ],
-    "stats": {
-      "hp": 400,
-      "physicalDefense": 50,
-      "abilityHaste": 15
-    },
-    "effects": {
-      "endlessDespairRadius": 650,
-      "endlessDespairTickSeconds": 4,
-      "endlessDespairBonusHpRatio": 0.03,
-      "endlessDespairHealDamageRatio": 2.5
-    },
-    "description": [
-      "生命值 +400",
-      "护甲 +50",
-      "技能急速 +15",
-      "苦楚：与英雄进入战斗后，每4秒对650码内敌方英雄造成3%额外生命值魔法伤害，并治疗250%已造成伤害"
-    ]
-  },
-  {
-    "equipmentId": "gargoyle_stoneplate",
-    "name": "石像鬼石板甲",
-    "category": "defense",
-    "tier": 3,
-    "price": 3200,
-    "sellRatio": 0.5,
-    "components": [
-      "chain_vest",
-      "null_magic_mantle",
-      "ruby_crystal"
-    ],
-    "stats": {
-      "physicalDefense": 40,
-      "magicDefense": 40,
-      "hp": 350
-    },
-    "effects": {
-      "stoneplateShieldMaxHpRatio": 0.2,
-      "stoneplateResistPercent": 0.05,
-      "stoneplateCooldownSeconds": 120
-    },
-    "description": [
-      "生命 +350",
-      "物理防御 +40",
-      "魔法防御 +40",
-      "获得20%最大生命护盾；护盾存在时双抗 +5%；受伤后120秒刷新"
-    ]
-  },
-  {
-    "equipmentId": "sunfire_aegis",
-    "name": "日炎圣盾",
-    "category": "defense",
-    "tier": 3,
-    "price": 3000,
-    "sellRatio": 0.5,
-    "components": [
-      "chain_vest",
-      "ruby_crystal",
-      "ruby_crystal"
-    ],
-    "stats": {
-      "physicalDefense": 40,
-      "magicDefense": 30,
-      "hp": 450,
-      "abilityHaste": 15
-    },
-    "effects": {
-      "sunfireBurnSeconds": 3,
-      "sunfireBurnFlatMin": 20,
-      "sunfireBurnFlatMax": 40,
-      "sunfireBurnBonusHpRatio": 0.01,
-      "sunfireRadius": 325,
-      "sunfireMinionMultiplier": 1.5,
-      "sunfireMonsterMultiplier": 3,
-      "sunfireStackDamageBonus": 0.12,
-      "sunfireMaxStacks": 6,
-      "sunfireStackSeconds": 5
-    },
-    "description": [
-      "生命 +450",
-      "物理防御 +40",
-      "魔法防御 +30",
-      "技能急速 +15",
-      "承受/造成伤害后献祭周围敌人3秒：每秒造成20-40 +1%额外生命魔法伤害",
-      "对小兵伤害 +50%，对野怪伤害 +200%",
-      "献祭命中英雄/史诗野怪叠层，每层伤害 +12%，最多6层"
-    ]
-  },
-  {
-    "equipmentId": "thornmail",
-    "name": "荆棘之甲",
-    "category": "defense",
-    "tier": 3,
-    "price": 2450,
-    "sellRatio": 0.5,
-    "components": [
-      "bramble_vest",
-      "chain_vest",
-      "ruby_crystal"
-    ],
-    "stats": {
-      "hp": 150,
-      "physicalDefense": 100
-    },
-    "effects": {
-      "thornsDamageFlat": 20,
-      "thornsBonusArmorRatio": 0.1,
-      "thornsGrievousWounds": 0.4,
-      "thornsGrievousWoundsSeconds": 3
-    },
-    "description": [
-      "生命值 +150",
-      "护甲 +100",
-      "荆棘：被普通攻击命中后，对攻击者造成 20 (+10%额外护甲) 魔法伤害；若攻击者是英雄，施加3秒40%重伤"
-    ]
-  }
+    {
+        "equipmentId": "thornmail",
+        "name": "荆棘之甲",
+        "category": "defense",
+        "tier": 3,
+        "price": 2450,
+        "sellRatio": 0.5,
+        "components": ["bramble_vest", "chain_vest", "ruby_crystal"],
+        "stats": {
+            "hp": 150,
+            "physicalDefense": 100
+        },
+        "effects": {
+            "thornsDamageFlat": 20,
+            "thornsBonusArmorRatio": 0.1,
+            "thornsGrievousWounds": 0.4,
+            "thornsGrievousWoundsSeconds": 3
+        },
+        "description": [
+            "生命值 +150",
+            "护甲 +100",
+            "荆棘：被普通攻击命中后，对攻击者造成 20 (+10%额外护甲) 魔法伤害；若攻击者是英雄，施加3秒40%重伤"
+        ]
+    }
 ]

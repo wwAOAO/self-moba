@@ -93,6 +93,18 @@ func (w *World) PutProjectile(projectile *Projectile) {
 	}
 }
 
+func (w *World) RecallProjectileGroup(groupID string) {
+	if w == nil || groupID == "" {
+		return
+	}
+	for _, projectile := range w.projectiles {
+		if projectile.GroupID != groupID || !projectile.Recallable || projectile.Returning {
+			continue
+		}
+		projectile.Returning = true
+	}
+}
+
 func (w *World) ProjectileByID(id string) *Projectile {
 	if w == nil || id == "" {
 		return nil

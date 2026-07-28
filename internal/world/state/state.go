@@ -298,6 +298,28 @@ type BerserkerState struct {
 	NoxianGuillotineRestore     uint64
 }
 
+type ShadowAssassinState struct {
+	QEmpowered           bool
+	QLevel               int
+	ETargetID            string
+	EDamageAmp           float64
+	EDamageUntil         uint64
+	RActive              bool
+	RUntil               uint64
+	RLevel               int
+	RGroupID             string
+	RMoveSpeedMultiplier float64
+	Bleeds               map[string]ShadowAssassinBleedState
+}
+
+type ShadowAssassinBleedState struct {
+	Level         int
+	ExpiresAtTick uint64
+	NextTick      uint64
+	Remainder     float64
+	EffectID      string
+}
+
 type NinjaState struct {
 	ShadowPosition       geom.Vector2
 	ShadowExpiresAt      uint64

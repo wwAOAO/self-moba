@@ -82,10 +82,7 @@
         "cooldownMs": 130000,
         "range": 1000,
         "type": "dash_circle_aoe",
-        "description": [
-            "R:势不可挡",
-            "效果：石头人冲击目标区域，对范围内所有敌人造成魔法伤害，并将他们击飞1.5秒"
-        ],
+        "description": ["R:势不可挡", "效果：石头人冲击目标区域，对范围内所有敌人造成魔法伤害，并将他们击飞1.5秒"],
         "meta": {
             "manaCost": 100,
             "apRatio": 0.8,

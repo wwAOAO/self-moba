@@ -1,0 +1,111 @@
+[
+    {
+        "skillId": "shadow_assassin_passive",
+        "name": "怜悯之心",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": ["影刃对被减速、眩晕、禁锢或压制的目标造成10%额外物理伤害。"],
+        "meta": {
+            "physicalDamageBonus": 0.1
+        }
+    },
+    {
+        "skillId": "shadow_assassin_q",
+        "name": "刺客诡道",
+        "cooldownMs": 8000,
+        "range": 0,
+        "type": "self_buff",
+        "description": [
+            "瞬间强化下一次普通攻击并重置普攻，附带30/60/90/120/150（+30%额外攻击力）物理伤害。",
+            "命中敌方英雄时施加持续6秒的流血，共造成10/20/30/40/50（+120%额外攻击力）物理伤害，并持续暴露目标视野和减速10%。"
+        ],
+        "meta": {
+            "bleedBonusAdRatio": 1.2,
+            "bleedDurationSeconds": 6,
+            "bleedTickSeconds": 1,
+            "bleedSlow": 0.1,
+            "bonusAdRatio": 0.3
+        },
+        "metaLists": {
+            "manaCost": [40, 45, 50, 55, 60],
+            "cooldownMs": [8000, 7000, 6000, 5000, 4000],
+            "bonusDamage": [30, 60, 90, 120, 150],
+            "bleedDamage": [10, 20, 30, 40, 50]
+        }
+    },
+    {
+        "skillId": "shadow_assassin_w",
+        "name": "斩草除根",
+        "cooldownMs": 10000,
+        "range": 850,
+        "type": "directional_projectile",
+        "description": [
+            "向扇形范围掷出飞刀，抵达最远距离后立即折返。飞出与收回均可造成30/55/80/105/130（+60%额外攻击力）物理伤害。",
+            "每段命中使敌人减速20%/25%/30%/35%/40%，持续2秒。"
+        ],
+        "meta": {
+            "bonusAdRatio": 0.6,
+            "bladeCount": 7,
+            "coneAngleDegrees": 50,
+            "projectileSpeed": 1700,
+            "projectileRadius": 55,
+            "projectileLifetimeSeconds": 2.5,
+            "slowSeconds": 2
+        },
+        "metaLists": {
+            "manaCost": [60, 65, 70, 75, 80],
+            "baseDamage": [30, 55, 80, 105, 130],
+            "slow": [0.2, 0.25, 0.3, 0.35, 0.4]
+        }
+    },
+    {
+        "skillId": "shadow_assassin_e",
+        "name": "割喉之战",
+        "cooldownMs": 18000,
+        "range": 700,
+        "type": "targeted_blink",
+        "description": [
+            "瞬间位移至700码内一名敌方英雄身后并禁锢目标1秒。不能以小兵、野怪或守卫为目标。",
+            "接下来3秒内，影刃对该目标造成的所有伤害提高3%/6%/9%/12%/15%。"
+        ],
+        "meta": {
+            "damageAmpSeconds": 3,
+            "landingPadding": 8,
+            "rootSeconds": 1,
+            "effectSeconds": 0.3
+        },
+        "metaLists": {
+            "manaCost": [35, 40, 45, 50, 55],
+            "cooldownMs": [18000, 16000, 14000, 12000, 10000],
+            "damageAmp": [0.03, 0.06, 0.09, 0.12, 0.15]
+        }
+    },
+    {
+        "skillId": "shadow_assassin_r",
+        "name": "暗影突袭",
+        "cooldownMs": 75000,
+        "range": 0,
+        "type": "self_buff",
+        "description": [
+            "向四周释放一圈飞刀并进入持续2.5秒的隐身，期间移动速度提高40%。",
+            "隐身结束时飞刀全部回收。向外扩散与向内回收分别造成120/190/260（+90%额外攻击力）物理伤害，每个敌人每段最多受到一次伤害。",
+            "隐身期间普通攻击、释放技能或再次释放暗影突袭会立刻显形并提前回收飞刀。"
+        ],
+        "meta": {
+            "bonusAdRatio": 0.9,
+            "bladeCount": 24,
+            "invisibilitySeconds": 2.5,
+            "moveSpeedBonus": 0.4,
+            "projectileRadius": 55,
+            "projectileRange": 550,
+            "projectileSpeed": 1200,
+            "returnLifetimeSeconds": 5
+        },
+        "metaLists": {
+            "manaCost": [80, 90, 100],
+            "cooldownMs": [75000, 65000, 55000],
+            "damage": [120, 190, 260]
+        }
+    }
+]

@@ -1,116 +1,116 @@
 [
-  {
-    "skillId": "crossbowman_night_hunter",
-    "name": "暗夜猎手",
-    "cooldownMs": 0,
-    "range": 2000,
-    "type": "passive",
-    "description": [
-      "朝着2000码内视野中的敌方英雄移动时，获得30移动速度。",
-      "终极时刻期间，移动速度加成提升至90。",
-      "脱离范围或不再朝向敌方英雄后，加成持续2秒。"
-    ],
-    "meta": {
-      "moveSpeedBonus": 30,
-      "ultimateMoveSpeedBonus": 90,
-      "lingerSeconds": 2
-    }
-  },
-  {
-    "skillId": "crossbowman_tumble",
-    "name": "闪避突袭",
-    "cooldownMs": 6000,
-    "range": 300,
-    "type": "dash",
-    "description": [
-      "向鼠标方向翻滚300码，无法穿越墙体。",
-      "6秒内下一次普攻造成额外物理伤害，伤害为75/85/95/105/115%总攻击力。",
-      "强化普攻触发或6秒强化时间结束后，闪避突袭才开始进入冷却。",
-      "施放时重置普攻，额外伤害不享受暴击倍率。",
-      "终极时刻期间，冷却时间按大招等级减少30%/40%/50%，并获得1秒隐身。"
-    ],
-    "meta": {
-      "manaCost": 30,
-      "empowerDurationSeconds": 6,
-      "invisibilitySeconds": 1,
-      "effectSeconds": 0.35
+    {
+        "skillId": "crossbowman_night_hunter",
+        "name": "暗夜猎手",
+        "cooldownMs": 0,
+        "range": 2000,
+        "type": "passive",
+        "description": [
+            "朝着2000码内视野中的敌方英雄移动时，获得30移动速度。",
+            "终极时刻期间，移动速度加成提升至90。",
+            "脱离范围或不再朝向敌方英雄后，加成持续2秒。"
+        ],
+        "meta": {
+            "moveSpeedBonus": 30,
+            "ultimateMoveSpeedBonus": 90,
+            "lingerSeconds": 2
+        }
     },
-    "metaLists": {
-      "cooldownMs": [6000, 5000, 4000, 3000, 2000],
-      "totalAdRatio": [0.75, 0.85, 0.95, 1.05, 1.15],
-      "ultimateCooldownReduction": [0.3, 0.4, 0.5]
-    }
-  },
-  {
-    "skillId": "crossbowman_silver_bolts",
-    "name": "圣银弩箭",
-    "cooldownMs": 0,
-    "range": 0,
-    "type": "passive",
-    "description": [
-      "对同一目标连续普攻或技能命中时叠加持续5秒的圣银弩箭层数，重复命中会刷新持续时间，第三段触发真实伤害并清除层数。",
-      "真实伤害为目标最大生命值的6%/7%/8%/9%/10%，且不低于50/65/80/95/110。",
-      "对野怪造成的伤害最多为140/155/170/185/200。",
-      "切换命中目标会清除前一目标的层数。"
-    ],
-    "meta": {
-      "stackDurationSeconds": 5,
-      "procEffectSeconds": 0.45
+    {
+        "skillId": "crossbowman_tumble",
+        "name": "闪避突袭",
+        "cooldownMs": 6000,
+        "range": 300,
+        "type": "dash",
+        "description": [
+            "向鼠标方向翻滚300码，无法穿越墙体。",
+            "6秒内下一次普攻造成额外物理伤害，伤害为75/85/95/105/115%总攻击力。",
+            "强化普攻触发或6秒强化时间结束后，闪避突袭才开始进入冷却。",
+            "施放时重置普攻，额外伤害不享受暴击倍率。",
+            "终极时刻期间，冷却时间按大招等级减少30%/40%/50%，并获得1秒隐身。"
+        ],
+        "meta": {
+            "manaCost": 30,
+            "empowerDurationSeconds": 6,
+            "invisibilitySeconds": 1,
+            "effectSeconds": 0.35
+        },
+        "metaLists": {
+            "cooldownMs": [6000, 5000, 4000, 3000, 2000],
+            "totalAdRatio": [0.75, 0.85, 0.95, 1.05, 1.15],
+            "ultimateCooldownReduction": [0.3, 0.4, 0.5]
+        }
     },
-    "metaLists": {
-      "minimumDamage": [50, 65, 80, 95, 110],
-      "maxHealthRatio": [0.06, 0.07, 0.08, 0.09, 0.1],
-      "monsterDamageCap": [140, 155, 170, 185, 200]
-    }
-  },
-  {
-    "skillId": "crossbowman_condemn",
-    "name": "恶魔审判",
-    "cooldownMs": 20000,
-    "range": 550,
-    "type": "targeted_projectile",
-    "description": [
-      "消耗90法力，0.2秒前摇后发射可被风墙拦截的弩箭，将目标击退470码。",
-      "造成50/85/120/155/190（+50%额外攻击力）物理伤害。",
-      "目标撞到墙体或地形时，受到等额额外物理伤害并眩晕1.5秒。"
-    ],
-    "meta": {
-      "manaCost": 90,
-      "castWindupSeconds": 0.2,
-      "bonusAdRatio": 0.5,
-      "projectileSpeed": 2200,
-      "projectileRadius": 18,
-      "projectileLifetimeSeconds": 2,
-      "knockbackDistance": 470,
-      "knockbackSeconds": 0.25,
-      "stunSeconds": 1.5,
-      "impactEffectSeconds": 0.5
+    {
+        "skillId": "crossbowman_silver_bolts",
+        "name": "圣银弩箭",
+        "cooldownMs": 0,
+        "range": 0,
+        "type": "passive",
+        "description": [
+            "对同一目标连续普攻或技能命中时叠加持续5秒的圣银弩箭层数，重复命中会刷新持续时间，第三段触发真实伤害并清除层数。",
+            "真实伤害为目标最大生命值的6%/7%/8%/9%/10%，且不低于50/65/80/95/110。",
+            "对野怪造成的伤害最多为140/155/170/185/200。",
+            "切换命中目标会清除前一目标的层数。"
+        ],
+        "meta": {
+            "stackDurationSeconds": 5,
+            "procEffectSeconds": 0.45
+        },
+        "metaLists": {
+            "minimumDamage": [50, 65, 80, 95, 110],
+            "maxHealthRatio": [0.06, 0.07, 0.08, 0.09, 0.1],
+            "monsterDamageCap": [140, 155, 170, 185, 200]
+        }
     },
-    "metaLists": {
-      "cooldownMs": [20000, 18000, 16000, 14000, 12000],
-      "baseDamage": [50, 85, 120, 155, 190]
-    }
-  },
-  {
-    "skillId": "crossbowman_final_hour",
-    "name": "终极时刻",
-    "cooldownMs": 100000,
-    "range": 0,
-    "type": "self_buff",
-    "description": [
-      "消耗80法力，持续8/10/12秒，获得35/50/65额外攻击力。",
-      "持续期间闪避突袭冷却缩短30%/40%/50%，翻滚时隐身1秒，暗夜猎手移速加成提升至90。",
-      "3秒内被弩手伤害命中的敌方英雄阵亡时，终极时刻延长4秒。"
-    ],
-    "meta": {
-      "manaCost": 80,
-      "damageMarkSeconds": 3,
-      "extensionSeconds": 4
+    {
+        "skillId": "crossbowman_condemn",
+        "name": "恶魔审判",
+        "cooldownMs": 20000,
+        "range": 550,
+        "type": "targeted_projectile",
+        "description": [
+            "消耗90法力，0.2秒前摇后发射可被风墙拦截的弩箭，将目标击退470码。",
+            "造成50/85/120/155/190（+50%额外攻击力）物理伤害。",
+            "目标撞到墙体或地形时，受到等额额外物理伤害并眩晕1.5秒。"
+        ],
+        "meta": {
+            "manaCost": 90,
+            "castWindupSeconds": 0.2,
+            "bonusAdRatio": 0.5,
+            "projectileSpeed": 2200,
+            "projectileRadius": 18,
+            "projectileLifetimeSeconds": 2,
+            "knockbackDistance": 470,
+            "knockbackSeconds": 0.25,
+            "stunSeconds": 1.5,
+            "impactEffectSeconds": 0.5
+        },
+        "metaLists": {
+            "cooldownMs": [20000, 18000, 16000, 14000, 12000],
+            "baseDamage": [50, 85, 120, 155, 190]
+        }
     },
-    "metaLists": {
-      "cooldownMs": [100000, 85000, 70000],
-      "durationSeconds": [8, 10, 12],
-      "bonusAttack": [35, 50, 65]
+    {
+        "skillId": "crossbowman_final_hour",
+        "name": "终极时刻",
+        "cooldownMs": 100000,
+        "range": 0,
+        "type": "self_buff",
+        "description": [
+            "消耗80法力，持续8/10/12秒，获得35/50/65额外攻击力。",
+            "持续期间闪避突袭冷却缩短30%/40%/50%，翻滚时隐身1秒，暗夜猎手移速加成提升至90。",
+            "3秒内被弩手伤害命中的敌方英雄阵亡时，终极时刻延长4秒。"
+        ],
+        "meta": {
+            "manaCost": 80,
+            "damageMarkSeconds": 3,
+            "extensionSeconds": 4
+        },
+        "metaLists": {
+            "cooldownMs": [100000, 85000, 70000],
+            "durationSeconds": [8, 10, 12],
+            "bonusAttack": [35, 50, 65]
+        }
     }
-  }
 ]

@@ -32,6 +32,22 @@ func TestSwordCritChanceSnapshotUsesPassiveMultiplier(t *testing.T) {
 	}
 }
 
+// TestPlayerSnapshotIncludesCollisionRadius 验证客户端收到英雄配置中的权威碰撞半径。
+func TestPlayerSnapshotIncludesCollisionRadius(t *testing.T) {
+	w, heroes := testSnapshotWorld(t)
+	hero, ok := heroes.Get("archer")
+	if !ok {
+		t.Fatal("missing archer hero")
+	}
+	w.SpawnHero("p1", hero, world.TeamBlue)
+
+	snapshot := BuildSnapshot("room-1", 1, w)
+
+	if got := snapshot.Players[0].Radius; got != hero.Radius {
+		t.Fatalf("player radius = %f, want %f", got, hero.Radius)
+	}
+}
+
 func TestUnitSnapshotIncludesNegativeBuffs(t *testing.T) {
 	w, heroes := testSnapshotWorld(t)
 	hero, ok := heroes.Get("berserker")

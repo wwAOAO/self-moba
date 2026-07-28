@@ -30,6 +30,10 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 		target.Combat.DamageEventsTick = target.Combat.LastHitTick
 		return
 	}
+	if damageType == "physical" {
+		damage = int(math.Round(float64(damage) * w.heroPhysicalDamageMultiplier(source, target, target.Combat.LastHitTick)))
+	}
+	damage = int(math.Round(float64(damage) * w.heroDamageMultiplier(source, target, damageType, target.Combat.LastHitTick)))
 	if context.BasicAttack && target.Stats.BasicAttackBlock > 0 {
 		damage = int(math.Round(float64(damage) * (1 - clamp(target.Stats.BasicAttackBlock, 0, 1))))
 		if damage < 1 {

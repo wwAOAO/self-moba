@@ -59,6 +59,157 @@ func TestKillerStats(t *testing.T) {
 	}
 }
 
+func TestShadowAssassinStats(t *testing.T) {
+	heroes, err := LoadHeroes("../../configs/heroes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hero, ok := heroes.Get("shadow_assassin")
+	if !ok {
+		t.Fatal("shadow assassin hero is missing")
+	}
+
+	if hero.Resource != "mp" {
+		t.Fatalf("resource = %q, want mp", hero.Resource)
+	}
+	if hero.Name != "影刃" {
+		t.Fatalf("name = %q, want 影刃", hero.Name)
+	}
+	if hero.Base.HP != 588 || hero.Growth.HP != 95 ||
+		hero.Base.HPRegen5 != 8.5 || hero.Growth.HPRegen5 != 0.75 ||
+		hero.Base.MP != 377.2 || hero.Growth.MP != 37 ||
+		hero.Base.MPRegen5 != 7.6 || hero.Growth.MPRegen5 != 0.8 ||
+		hero.Base.Attack != 68 || hero.Growth.Attack != 3.1 ||
+		hero.Base.AttackSpeed != 0.625 || hero.Growth.AttackSpeed != 0.029 ||
+		hero.Base.PhysicalDefense != 30 || hero.Growth.PhysicalDefense != 3.5 ||
+		hero.Base.MagicDefense != 39 || hero.Growth.MagicDefense != 1.25 ||
+		hero.Base.MoveSpeed != 335 || hero.Base.AttackRange != 125 {
+		t.Fatalf("shadow assassin stats do not match the configured base attributes: %+v", hero)
+	}
+}
+
+func TestShadowAssassinQConfig(t *testing.T) {
+	skills, err := LoadSkills("../../configs/skills")
+	if err != nil {
+		t.Fatal(err)
+	}
+	skill, ok := skills.Get("shadow_assassin_q")
+	if !ok {
+		t.Fatal("shadow assassin q is missing")
+	}
+	if skill.Name != "刺客诡道" || skill.Type != "self_buff" || skill.CooldownMS != 8000 ||
+		skill.Meta["bonusAdRatio"] != 0.3 || skill.Meta["bleedBonusAdRatio"] != 1.2 ||
+		skill.Meta["bleedDurationSeconds"] != 6 || skill.Meta["bleedSlow"] != 0.1 {
+		t.Fatalf("shadow assassin q metadata does not match: %+v", skill)
+	}
+	for key, want := range map[string][]float64{
+		"manaCost":    {40, 45, 50, 55, 60},
+		"cooldownMs":  {8000, 7000, 6000, 5000, 4000},
+		"bonusDamage": {30, 60, 90, 120, 150},
+		"bleedDamage": {10, 20, 30, 40, 50},
+	} {
+		got := skill.MetaLists[key]
+		if len(got) != len(want) {
+			t.Fatalf("%s = %v, want %v", key, got, want)
+		}
+		for index := range want {
+			if got[index] != want[index] {
+				t.Fatalf("%s = %v, want %v", key, got, want)
+			}
+		}
+	}
+}
+
+func TestShadowAssassinWConfig(t *testing.T) {
+	skills, err := LoadSkills("../../configs/skills")
+	if err != nil {
+		t.Fatal(err)
+	}
+	skill, ok := skills.Get("shadow_assassin_w")
+	if !ok {
+		t.Fatal("shadow assassin w is missing")
+	}
+	if skill.Name != "斩草除根" || skill.Type != "directional_projectile" || skill.CooldownMS != 10000 || skill.Range != 850 ||
+		skill.Meta["bonusAdRatio"] != 0.6 || skill.Meta["slowSeconds"] != 2 {
+		t.Fatalf("shadow assassin w metadata does not match: %+v", skill)
+	}
+	for key, want := range map[string][]float64{
+		"manaCost":   {60, 65, 70, 75, 80},
+		"baseDamage": {30, 55, 80, 105, 130},
+		"slow":       {0.2, 0.25, 0.3, 0.35, 0.4},
+	} {
+		got := skill.MetaLists[key]
+		if len(got) != len(want) {
+			t.Fatalf("%s = %v, want %v", key, got, want)
+		}
+		for index := range want {
+			if got[index] != want[index] {
+				t.Fatalf("%s = %v, want %v", key, got, want)
+			}
+		}
+	}
+}
+
+func TestShadowAssassinEConfig(t *testing.T) {
+	skills, err := LoadSkills("../../configs/skills")
+	if err != nil {
+		t.Fatal(err)
+	}
+	skill, ok := skills.Get("shadow_assassin_e")
+	if !ok {
+		t.Fatal("shadow assassin e is missing")
+	}
+	if skill.Name != "割喉之战" || skill.Type != "targeted_blink" || skill.CooldownMS != 18000 || skill.Range != 700 ||
+		skill.Meta["rootSeconds"] != 1 || skill.Meta["damageAmpSeconds"] != 3 {
+		t.Fatalf("shadow assassin e metadata does not match: %+v", skill)
+	}
+	for key, want := range map[string][]float64{
+		"manaCost":   {35, 40, 45, 50, 55},
+		"cooldownMs": {18000, 16000, 14000, 12000, 10000},
+		"damageAmp":  {0.03, 0.06, 0.09, 0.12, 0.15},
+	} {
+		got := skill.MetaLists[key]
+		if len(got) != len(want) {
+			t.Fatalf("%s = %v, want %v", key, got, want)
+		}
+		for index := range want {
+			if got[index] != want[index] {
+				t.Fatalf("%s = %v, want %v", key, got, want)
+			}
+		}
+	}
+}
+
+func TestShadowAssassinRConfig(t *testing.T) {
+	skills, err := LoadSkills("../../configs/skills")
+	if err != nil {
+		t.Fatal(err)
+	}
+	skill, ok := skills.Get("shadow_assassin_r")
+	if !ok {
+		t.Fatal("shadow assassin r is missing")
+	}
+	if skill.Name != "暗影突袭" || skill.Type != "self_buff" || skill.CooldownMS != 75000 ||
+		skill.Meta["invisibilitySeconds"] != 2.5 || skill.Meta["moveSpeedBonus"] != 0.4 || skill.Meta["bonusAdRatio"] != 0.9 {
+		t.Fatalf("shadow assassin r metadata does not match: %+v", skill)
+	}
+	for key, want := range map[string][]float64{
+		"manaCost":   {80, 90, 100},
+		"cooldownMs": {75000, 65000, 55000},
+		"damage":     {120, 190, 260},
+	} {
+		got := skill.MetaLists[key]
+		if len(got) != len(want) {
+			t.Fatalf("%s = %v, want %v", key, got, want)
+		}
+		for index := range want {
+			if got[index] != want[index] {
+				t.Fatalf("%s = %v, want %v", key, got, want)
+			}
+		}
+	}
+}
+
 func TestCrossbowmanStats(t *testing.T) {
 	heroes, err := LoadHeroes("../../configs/heroes")
 	if err != nil {

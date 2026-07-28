@@ -42,6 +42,8 @@ type HeroHooks struct {
 	BasicAttackMultiplier          func(w *World, attacker *Entity, target *Entity, tick uint64) float64
 	BasicAttackBonusPhysicalDamage func(w *World, attacker *Entity, target *Entity, tick uint64, tickRate int) int
 	BasicAttackBonusMagicDamage    func(w *World, attacker *Entity, target *Entity, tick uint64, tickRate int) int
+	PhysicalDamageMultiplier       func(w *World, attacker *Entity, target *Entity, tick uint64) float64
+	DamageMultiplier               func(w *World, attacker *Entity, target *Entity, damageType string, tick uint64) float64
 
 	FocusBonusDamage func(w *World, attacker *Entity, target *Entity, tick uint64) int
 	ApplyFrostShot   func(w *World, source *Entity, target *Entity, tick uint64, tickRate int)
@@ -183,6 +185,24 @@ func (w *World) heroBasicAttackBonusPhysicalDamage(attacker *Entity, target *Ent
 		return h(w, attacker, target, tick, tickRate)
 	}
 	return 0
+}
+
+func (w *World) heroPhysicalDamageMultiplier(attacker *Entity, target *Entity, tick uint64) float64 {
+	if h := heroHooksForEntity(attacker).PhysicalDamageMultiplier; h != nil {
+		if multiplier := h(w, attacker, target, tick); multiplier > 0 {
+			return multiplier
+		}
+	}
+	return 1
+}
+
+func (w *World) heroDamageMultiplier(attacker *Entity, target *Entity, damageType string, tick uint64) float64 {
+	if h := heroHooksForEntity(attacker).DamageMultiplier; h != nil {
+		if multiplier := h(w, attacker, target, damageType, tick); multiplier > 0 {
+			return multiplier
+		}
+	}
+	return 1
 }
 
 func (w *World) heroActiveBuffs(entity *Entity, tick uint64) []BuffState {

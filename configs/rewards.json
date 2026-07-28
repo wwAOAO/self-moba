@@ -1,81 +1,81 @@
 {
-  "minion": {
-    "shareMultiplier": 1.24,
-    "shareMinPlayers": 2,
-    "shareRadius": 1500,
-    "killExp": {
-      "melee_minion": 58.88,
-      "ranged_minion": 31,
-      "siege_minion": 75,
-      "super_minion": 75
+    "minion": {
+        "shareMultiplier": 1.24,
+        "shareMinPlayers": 2,
+        "shareRadius": 1500,
+        "killExp": {
+            "melee_minion": 58.88,
+            "ranged_minion": 31,
+            "siege_minion": 75,
+            "super_minion": 75
+        },
+        "killGold": {
+            "melee_minion": 20,
+            "ranged_minion": 14,
+            "siege_minion": 50,
+            "super_minion": 45
+        }
     },
-    "killGold": {
-      "melee_minion": 20,
-      "ranged_minion": 14,
-      "siege_minion": 50,
-      "super_minion": 45
-    }
-  },
-  "jungle": {
-    "killExp": {
-      "blue_buff": 100,
-      "red_buff": 100,
-      "gromp": 130,
-      "murk_wolf": 100,
-      "raptor": 105,
-      "krug_camp": 160,
-      "rift_scuttler": 70
+    "jungle": {
+        "killExp": {
+            "blue_buff": 100,
+            "red_buff": 100,
+            "gromp": 130,
+            "murk_wolf": 100,
+            "raptor": 105,
+            "krug_camp": 160,
+            "rift_scuttler": 70
+        },
+        "killGold": {
+            "blue_buff": 160,
+            "red_buff": 160,
+            "gromp": 120,
+            "raptor": 90,
+            "murk_wolf": 100,
+            "krug_camp": 110
+        }
     },
-    "killGold": {
-      "blue_buff": 160,
-      "red_buff": 160,
-      "gromp": 120,
-      "raptor": 90,
-      "murk_wolf": 100,
-      "krug_camp": 110
-    }
-  },
-  "jungleScaling": {
-    "startAverageLevel": 3,
-    "capAverageLevel": 9,
-    "maxMultiplier": 1.5
-  },
-  "epic": {
-    "rift_herald": {
-      "participantExp": 600,
-      "nonParticipantTeamPoolExp": 800,
-      "nonParticipantSplit": "equal"
+    "jungleScaling": {
+        "startAverageLevel": 3,
+        "capAverageLevel": 9,
+        "maxMultiplier": 1.5
     },
-    "elemental_dragon": {
-      "minExp": 150,
-      "maxExp": 510,
-      "split": "nearby_allies",
-      "catchUpBonus": true
+    "epic": {
+        "rift_herald": {
+            "participantExp": 600,
+            "nonParticipantTeamPoolExp": 800,
+            "nonParticipantSplit": "equal"
+        },
+        "elemental_dragon": {
+            "minExp": 150,
+            "maxExp": 510,
+            "split": "nearby_allies",
+            "catchUpBonus": true
+        },
+        "baron_nashor": {
+            "split": "team_equal",
+            "scalesWithGameTime": true,
+            "teamGold": 300
+        }
     },
-    "baron_nashor": {
-      "split": "team_equal",
-      "scalesWithGameTime": true,
-      "teamGold": 300
+    "heroKill": {
+        "gold": 300,
+        "baseNextLevelExpMultiplier": 0.75,
+        "levelDiffStepMultiplier": 0.2,
+        "higherLevelMinMultiplier": 0.4,
+        "lowerLevelMaxBonusMultiplier": 0.6,
+        "nearbyRadius": 1600,
+        "deadGraceSeconds": 10,
+        "nearbyAliveHeroShare": true,
+        "assistExpTiers": [
+            { "minLevel": 1, "maxLevel": 6, "multiplier": 0.66 },
+            { "minLevel": 7, "maxLevel": 8, "multiplier": 0.82 },
+            { "minLevel": 9, "maxLevel": 18, "multiplier": 0.9 }
+        ]
+    },
+    "structure": {
+        "teamExp": {
+            "tower": 300
+        }
     }
-  },
-  "heroKill": {
-    "gold": 300,
-    "baseNextLevelExpMultiplier": 0.75,
-    "levelDiffStepMultiplier": 0.2,
-    "higherLevelMinMultiplier": 0.4,
-    "lowerLevelMaxBonusMultiplier": 0.6,
-    "nearbyRadius": 1600,
-    "deadGraceSeconds": 10,
-    "nearbyAliveHeroShare": true,
-    "assistExpTiers": [
-      { "minLevel": 1, "maxLevel": 6, "multiplier": 0.66 },
-      { "minLevel": 7, "maxLevel": 8, "multiplier": 0.82 },
-      { "minLevel": 9, "maxLevel": 18, "multiplier": 0.9 }
-    ]
-  },
-  "structure": {
-    "teamExp": {
-      "tower": 300
-    }
-  }
 }

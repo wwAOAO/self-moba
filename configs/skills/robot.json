@@ -77,10 +77,7 @@
         "cooldownMs": 9000,
         "range": 300,
         "type": "empowered_basic_attack",
-        "description": [
-            "E:能量铁拳",
-            "效果：机器人为机械手臂充能，在5秒内下一次普通攻击造成双倍伤害，并将目标击飞"
-        ],
+        "description": ["E:能量铁拳", "效果：机器人为机械手臂充能，在5秒内下一次普通攻击造成双倍伤害，并将目标击飞"],
         "meta": {
             "manaCost": 25,
             "durationSeconds": 5,

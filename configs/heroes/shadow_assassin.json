@@ -1,0 +1,44 @@
+[
+    {
+        "heroId": "shadow_assassin",
+        "name": "影刃",
+        "resource": "mp",
+        "base": {
+            "hp": 588,
+            "mp": 377.2,
+            "hpRegen5": 8.5,
+            "mpRegen5": 7.6,
+            "attack": 68,
+            "abilityHaste": 0,
+            "physicalDefense": 30,
+            "magicDefense": 39,
+            "moveSpeed": 335,
+            "attackRange": 125,
+            "attackSpeed": 0.625,
+            "attackWindupSeconds": 0.25,
+            "attackSpeedRatio": 0.625,
+            "critChance": 0
+        },
+        "growth": {
+            "hp": 95,
+            "mp": 37,
+            "hpRegen5": 0.75,
+            "mpRegen5": 0.8,
+            "attack": 3.1,
+            "physicalDefense": 3.5,
+            "magicDefense": 1.25,
+            "moveSpeed": 0,
+            "attackRange": 0,
+            "attackSpeed": 0.029,
+            "critChance": 0
+        },
+        "radius": 16,
+        "skills": {
+            "passive": "shadow_assassin_passive",
+            "q": "shadow_assassin_q",
+            "w": "shadow_assassin_w",
+            "e": "shadow_assassin_e",
+            "r": "shadow_assassin_r"
+        }
+    }
+]

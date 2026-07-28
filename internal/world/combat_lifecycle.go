@@ -25,6 +25,7 @@ func (w *World) killPlayer(target *Entity, tick uint64, tickRate int) {
 	target.Passive.RobotWMoveSpeed = 0
 	target.Passive.RobotArcMarks = nil
 	target.Passive.Bleeds = nil
+	target.ShadowAssassin = ShadowAssassinState{}
 	for _, entity := range w.entities {
 		if entity.Intent.AttackTargetID == target.ID {
 			entity.Intent.AttackTargetID = ""

@@ -1,179 +1,177 @@
 ﻿function spawnDamageText(target, damage, damageType, highlighted = false) {
-  if (!damage) {
-    return;
-  }
-  const sameFrameOffset = state.damageTexts.filter(
-    (effect) => effect.targetId === (target.id || target.playerId),
-  ).length;
-  const text = new PIXI.Text({
-    text: `-${damage}`,
-    style: {
-      fill: damageTextColor(damageType),
-      fontFamily: "Microsoft YaHei, PingFang SC, Noto Sans SC, Arial, sans-serif",
-      fontSize: highlighted ? 12 : 10,
-      fontWeight: "900",
-      ...(highlighted ? { stroke: { color: 0xffffff, width: 2 } } : {}),
-    },
-  });
-  text.anchor.set(0.5, 0.5);
-  effectLayer.addChild(text);
-  state.damageTexts.push({
-    node: text,
-    targetId: target.id || target.playerId,
-    x: target.x,
-    y: target.y - 42 - sameFrameOffset * 100,
-    age: 0,
-    lifetime: 1200,
-  });
-  trimFloatingTexts();
+    if (!damage) {
+        return;
+    }
+    const sameFrameOffset = state.damageTexts.filter(
+        effect => effect.targetId === (target.id || target.playerId),
+    ).length;
+    const text = new PIXI.Text({
+        text: `-${damage}`,
+        style: {
+            fill: damageTextColor(damageType),
+            fontFamily: 'Microsoft YaHei, PingFang SC, Noto Sans SC, Arial, sans-serif',
+            fontSize: highlighted ? 12 : 10,
+            fontWeight: '900',
+            ...(highlighted ? { stroke: { color: 0xffffff, width: 2 } } : {}),
+        },
+    });
+    text.anchor.set(0.5, 0.5);
+    effectLayer.addChild(text);
+    state.damageTexts.push({
+        node: text,
+        targetId: target.id || target.playerId,
+        x: target.x,
+        y: target.y - 42 - sameFrameOffset * 100,
+        age: 0,
+        lifetime: 1200,
+    });
+    trimFloatingTexts();
 }
 
 function damageTextColor(damageType) {
-  if (damageType === "magic") {
-    return 0x8b5cf6;
-  }
-  if (damageType === "true") {
-    return 0xe5e7eb;
-  }
-  return 0xff3333;
+    if (damageType === 'magic') {
+        return 0x8b5cf6;
+    }
+    if (damageType === 'true') {
+        return 0xe5e7eb;
+    }
+    return 0xff3333;
 }
 
 function spawnRewardText(target, textValue, kind) {
-  const sameFrameOffset = state.damageTexts.filter(
-    (effect) => effect.targetId === (target.id || target.playerId),
-  ).length;
-  const text = new PIXI.Text({
-    text: textValue,
-    style: {
-      fill: kind === "gold" ? 0xffd700 : kind === "heal" ? 0x22c55e : 0x3b82f6,
-      fontFamily: "Microsoft YaHei, PingFang SC, Noto Sans SC, Arial, sans-serif",
-      fontSize: 10,
-      fontWeight: "900",
-      // stroke: { color: 0x111827, width: 2 },
-    },
-  });
-  text.anchor.set(0.5, 0.5);
-  effectLayer.addChild(text);
-  state.damageTexts.push({
-    node: text,
-    targetId: target.id || target.playerId,
-    x: target.x,
-    y: target.y - 42 - sameFrameOffset * 100,
-    age: 0,
-    lifetime: 1200,
-  });
-  trimFloatingTexts();
+    const sameFrameOffset = state.damageTexts.filter(
+        effect => effect.targetId === (target.id || target.playerId),
+    ).length;
+    const text = new PIXI.Text({
+        text: textValue,
+        style: {
+            fill: kind === 'gold' ? 0xffd700 : kind === 'heal' ? 0x22c55e : 0x3b82f6,
+            fontFamily: 'Microsoft YaHei, PingFang SC, Noto Sans SC, Arial, sans-serif',
+            fontSize: 10,
+            fontWeight: '900',
+            // stroke: { color: 0x111827, width: 2 },
+        },
+    });
+    text.anchor.set(0.5, 0.5);
+    effectLayer.addChild(text);
+    state.damageTexts.push({
+        node: text,
+        targetId: target.id || target.playerId,
+        x: target.x,
+        y: target.y - 42 - sameFrameOffset * 100,
+        age: 0,
+        lifetime: 1200,
+    });
+    trimFloatingTexts();
 }
 
 function trimFloatingTexts() {
-  while (state.damageTexts.length > maxActiveFloatingTexts) {
-    const effect = state.damageTexts.shift();
-    effectLayer.removeChild(effect.node);
-  }
+    while (state.damageTexts.length > maxActiveFloatingTexts) {
+        const effect = state.damageTexts.shift();
+        effectLayer.removeChild(effect.node);
+    }
 }
 
 function syncDamageTexts(frame, deltaMS) {
-  for (let i = state.damageTexts.length - 1; i >= 0; i--) {
-    const effect = state.damageTexts[i];
-    effect.age += deltaMS;
-    const progress = effect.age / effect.lifetime;
-    if (progress >= 1) {
-      effectLayer.removeChild(effect.node);
-      state.damageTexts.splice(i, 1);
-      continue;
+    for (let i = state.damageTexts.length - 1; i >= 0; i--) {
+        const effect = state.damageTexts[i];
+        effect.age += deltaMS;
+        const progress = effect.age / effect.lifetime;
+        if (progress >= 1) {
+            effectLayer.removeChild(effect.node);
+            state.damageTexts.splice(i, 1);
+            continue;
+        }
+        effect.node.x = frame.offsetX + effect.x * frame.scale;
+        effect.node.y = frame.offsetY + (effect.y - progress * 80) * frame.scale;
+        effect.node.alpha = 1 - progress;
     }
-    effect.node.x = frame.offsetX + effect.x * frame.scale;
-    effect.node.y = frame.offsetY + (effect.y - progress * 80) * frame.scale;
-    effect.node.alpha = 1 - progress;
-  }
 }
 
-function updateBars(sprite, target) {
-  const stats = target?.stats || target;
-  if (!stats) {
-    return;
-  }
-  const barY = -(playerModelRadius(target) + 10);
-  drawHealthBar(sprite.hpFill, target, barY);
-  if (sprite.resourceFill) {
-    drawBar(
-      sprite.resourceFill,
-      playerResourceColor(target),
-      playerResourceRatio(target),
-      barY + 6,
-    );
-  }
+/** 按模型实际顶部位置更新固定屏幕尺寸的玩家血条和资源条。 */
+function updateBars(sprite, target, barY) {
+    const stats = target?.stats || target;
+    if (!stats) {
+        return;
+    }
+    drawBar(sprite.hpBack, 0x24312b, 1, barY);
+    drawHealthBar(sprite.hpFill, target, barY);
+    if (sprite.resourceFill) {
+        drawBar(sprite.resourceBack, 0x24312b, 1, barY + 6);
+        drawBar(sprite.resourceFill, playerResourceColor(target), playerResourceRatio(target), barY + 6);
+    }
 }
 
-function updateUnitBars(sprite, unit) {
-  if (unit.kind === "fountain") {
-    sprite.hpFill.clear();
-    return;
-  }
-  drawHealthBar(sprite.hpFill, unit, -(unitModelDisplayRadius(unit) + 16));
+/** 按模型实际顶部位置更新固定屏幕尺寸的单位血条。 */
+function updateUnitBars(sprite, unit, barY) {
+    if (unit.kind === 'fountain') {
+        sprite.hpFill.clear();
+        return;
+    }
+    drawHealthBar(sprite.hpFill, unit, barY);
 }
 
 function playerResourceRatio(player) {
-  const heroConfig = heroClientConfig[player?.heroId || els.heroId.value] || {};
-  const kind = entityResourceKind(player, heroConfig);
-  if (kind === "sword_intent") {
-    return ratio(player?.passive?.swordIntent || 0, player?.passive?.maxSwordIntent || 0);
-  }
-  return ratio(player?.stats?.mp || 0, player?.stats?.maxMp || 0);
+    const heroConfig = heroClientConfig[player?.heroId || els.heroId.value] || {};
+    const kind = entityResourceKind(player, heroConfig);
+    if (kind === 'sword_intent') {
+        return ratio(player?.passive?.swordIntent || 0, player?.passive?.maxSwordIntent || 0);
+    }
+    return ratio(player?.stats?.mp || 0, player?.stats?.maxMp || 0);
 }
 
 function playerResourceColor(player) {
-  const heroConfig = heroClientConfig[player?.heroId || els.heroId.value] || {};
-  const kind = entityResourceKind(player, heroConfig);
-  if (kind === "sword_intent") {
-    return 0xf8fafc;
-  }
-  if (kind === "rage") {
-    return 0xef4444;
-  }
-  if (kind === "energy") {
-    return 0xfacc15;
-  }
-  return 0x3b82f6;
+    const heroConfig = heroClientConfig[player?.heroId || els.heroId.value] || {};
+    const kind = entityResourceKind(player, heroConfig);
+    if (kind === 'sword_intent') {
+        return 0xf8fafc;
+    }
+    if (kind === 'rage') {
+        return 0xef4444;
+    }
+    if (kind === 'energy') {
+        return 0xfacc15;
+    }
+    return 0x3b82f6;
 }
 
 function colorForTeam(team) {
-  if (team === "red") {
-    return 0xef4444;
-  }
-  if (team === "blue") {
-    return 0x2563eb;
-  }
-  return 0x94a3b8;
+    if (team === 'red') {
+        return 0xef4444;
+    }
+    if (team === 'blue') {
+        return 0x2563eb;
+    }
+    return 0x94a3b8;
 }
 
 function drawBar(graphics, color, value, y) {
-  graphics.clear();
-  const width = 36 * value;
-  graphics.roundRect(-18, y, width, 4, 1);
-  graphics.fill(color);
-  graphics.roundRect(-18, y, 36, 4, 1);
-  graphics.stroke({ color: 0x172026, width: 1, alpha: 0.85 });
+    graphics.clear();
+    const width = 36 * value;
+    graphics.roundRect(-18, y, width, 4, 1);
+    graphics.fill(color);
+    graphics.roundRect(-18, y, 36, 4, 1);
+    graphics.stroke({ color: 0x172026, width: 1, alpha: 0.85 });
 }
 
 function drawHealthBar(graphics, entity, y) {
-  const stats = entity?.stats || entity || {};
-  const maxHp = stats.maxHp || 0;
-  const hp = Math.max(0, stats.hp || 0);
-  const shield = shieldValue(entity);
-  const total = hp + shield;
-  const scale = maxHp > 0 ? 36 / Math.max(maxHp, total) : 0;
-  const hpWidth = Math.min(36, hp * scale);
-  const shieldWidth = Math.min(36 - hpWidth, shield * scale);
-  graphics.clear();
-  if (hpWidth > 0) {
-    graphics.rect(-18, y, hpWidth, 4);
-    graphics.fill(0x22c55e);
-  }
-  if (shieldWidth > 0) {
-    graphics.rect(-18 + hpWidth, y, shieldWidth, 4);
-    graphics.fill(0xf8fafc);
-  }
-  graphics.roundRect(-18, y, 36, 4, 1);
-  graphics.stroke({ color: 0x172026, width: 1, alpha: 0.85 });
+    const stats = entity?.stats || entity || {};
+    const maxHp = stats.maxHp || 0;
+    const hp = Math.max(0, stats.hp || 0);
+    const shield = shieldValue(entity);
+    const total = hp + shield;
+    const scale = maxHp > 0 ? 36 / Math.max(maxHp, total) : 0;
+    const hpWidth = Math.min(36, hp * scale);
+    const shieldWidth = Math.min(36 - hpWidth, shield * scale);
+    graphics.clear();
+    if (hpWidth > 0) {
+        graphics.rect(-18, y, hpWidth, 4);
+        graphics.fill(0x22c55e);
+    }
+    if (shieldWidth > 0) {
+        graphics.rect(-18 + hpWidth, y, shieldWidth, 4);
+        graphics.fill(0xf8fafc);
+    }
+    graphics.roundRect(-18, y, 36, 4, 1);
+    graphics.stroke({ color: 0x172026, width: 1, alpha: 0.85 });
 }

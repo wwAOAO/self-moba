@@ -29,7 +29,7 @@ func (w *World) SkillEffects() []SkillEffect {
 		if source := w.entities[projectile.SourceID]; source != nil {
 			sourceHeroID = source.HeroID
 		}
-		if projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == gunnerRSkillID || projectile.SkillID == robotQSkillID || projectile.SkillID == explorerQSkillID || projectile.SkillID == explorerWSkillID || projectile.SkillID == explorerESkillID || projectile.SkillID == explorerRSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID || projectile.SkillID == fireMageQSkillID || projectile.SkillID == fireMageRSkillID || projectile.SkillID == frostmageQSkillID || projectile.SkillID == frostmageESkillID || projectile.SkillID == doctorQSkillID || projectile.SkillID == killerQSkillID || projectile.SkillID == killerRSkillID || projectile.SkillID == monkQSkillID || projectile.SkillID == ninjaQSkillID || projectile.Kind == "crossbowman_condemn" || projectile.Kind == "butcher_q" || isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot" {
+		if projectile.SkillID == tankQSkillID || projectile.SkillID == gunnerQSkillID || projectile.SkillID == gunnerRSkillID || projectile.SkillID == robotQSkillID || projectile.SkillID == explorerQSkillID || projectile.SkillID == explorerWSkillID || projectile.SkillID == explorerESkillID || projectile.SkillID == explorerRSkillID || projectile.SkillID == archerWSkillID || projectile.SkillID == archerRSkillID || projectile.SkillID == mageQSkillID || projectile.SkillID == mageWSkillID || projectile.SkillID == mageESkillID || projectile.SkillID == fireMageQSkillID || projectile.SkillID == fireMageRSkillID || projectile.SkillID == frostmageQSkillID || projectile.SkillID == frostmageESkillID || projectile.SkillID == doctorQSkillID || projectile.SkillID == killerQSkillID || projectile.SkillID == killerRSkillID || projectile.SkillID == shadowAssassinWSkillID || projectile.SkillID == shadowAssassinRSkillID || projectile.SkillID == monkQSkillID || projectile.SkillID == ninjaQSkillID || projectile.Kind == "crossbowman_condemn" || projectile.Kind == "butcher_q" || isBasicAttackProjectileKind(projectile.Kind) || projectile.Kind == "fountain_shot" {
 			start = projectile.Position
 		}
 		if projectile.SkillID == tankQSkillID {
@@ -50,7 +50,7 @@ func (w *World) SkillEffects() []SkillEffect {
 			Range:        projectile.Range,
 			Radius:       projectile.Radius,
 			Count:        projectile.DisplayCount,
-			Speed:        projectile.SpeedPerTick,
+			Speed:        projectileSnapshotSpeed(projectile),
 			CreatedAt:    createdAt,
 			ExpiresAt:    projectile.ExpiresAt,
 		})
@@ -59,6 +59,16 @@ func (w *World) SkillEffects() []SkillEffect {
 		}
 	}
 	return effects
+}
+
+func projectileSnapshotSpeed(projectile *Projectile) float64 {
+	if projectile == nil {
+		return 0
+	}
+	if projectile.SkillID == shadowAssassinRSkillID && !projectile.Returning && projectile.Traveled >= projectile.Range {
+		return 0
+	}
+	return projectile.SpeedPerTick
 }
 
 func updateTrackingProjectileDir(projectile *Projectile, target *Entity) {

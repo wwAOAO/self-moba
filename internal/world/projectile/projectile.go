@@ -31,6 +31,8 @@ type Projectile struct {
 	EffectRatio  float64
 	EffectTicks  uint64
 	Returning    bool
+	Boomerang    bool
+	Recallable   bool
 	FromShadow   bool
 	CreatedAt    uint64
 	ExpiresAt    uint64
