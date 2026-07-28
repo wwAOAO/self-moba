@@ -73,6 +73,7 @@ func attackWindupTicks(attacker *Entity, tickRate int) uint64 {
 	return uint64(ticks)
 }
 
+// releasePendingAttack 在前摇结束时重新校验目标与攻击距离后释放普攻。
 func (w *World) releasePendingAttack(attacker *Entity, tick uint64, tickRate int) {
 	if attacker == nil || attacker.Combat.PendingAttackTargetID == "" || tick < attacker.Combat.AttackReleaseTick {
 		return
@@ -84,6 +85,9 @@ func (w *World) releasePendingAttack(attacker *Entity, tick uint64, tickRate int
 		return
 	}
 	if attacker.HeroID == warriorHeroID && tick < attacker.Warrior.JudgmentUntilTick {
+		return
+	}
+	if distance(attacker.Position, target.Position) > w.attackReachAtTick(attacker, target, tick) {
 		return
 	}
 	w.resolveBasicAttack(attacker, target, tick, tickRate)

@@ -460,7 +460,8 @@ func TestBasicAttackUsesWindupBeforeDamage(t *testing.T) {
 	}
 }
 
-func TestBasicAttackWindupCompletesWhenTargetMovesOutOfRange(t *testing.T) {
+// TestBasicAttackWindupCancelsWhenTargetMovesOutOfRange 验证目标离开射程后不会产生远距离命中。
+func TestBasicAttackWindupCancelsWhenTargetMovesOutOfRange(t *testing.T) {
 	w := testWorld(t)
 	hero := testHeroConfig()
 	hero.Base.AttackRange = 120
@@ -484,8 +485,8 @@ func TestBasicAttackWindupCompletesWhenTargetMovesOutOfRange(t *testing.T) {
 	}
 	tickAttackRelease(t, w, player, 20)
 
-	if target.Combat.LastDamage <= 0 {
-		t.Fatal("basic attack should complete after windup even if target moved out of range")
+	if target.Combat.LastDamage != 0 {
+		t.Fatalf("basic attack damage = %d, want 0 after target moved out of range", target.Combat.LastDamage)
 	}
 }
 

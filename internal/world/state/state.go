@@ -615,10 +615,20 @@ type IntentState struct {
 	AttackPausedTill uint64
 }
 
+// LaneState 保存兵线路线、归线和临时仇恨状态。
 type LaneState struct {
-	Active         bool
-	RouteTarget    geom.Vector2
+	// Active 表示该单位是否由兵线路线 AI 控制。
+	Active bool
+	// RouteTarget 是该单位沿兵线推进的最终世界坐标。
+	RouteTarget geom.Vector2
+	// LastOnLaneTick 是该单位最后一次位于兵线容许距离内的服务端 tick。
 	LastOnLaneTick uint64
+	// Returning 表示该单位正在强制归线，归线完成前不得重新索敌。
+	Returning bool
+	// AggroTargetID 是英雄伤害事件触发的临时高优先级目标 ID。
+	AggroTargetID string
+	// AggroUntilTick 是临时仇恨结束的服务端 tick。
+	AggroUntilTick uint64
 }
 
 type PendingMinionSpawn struct {

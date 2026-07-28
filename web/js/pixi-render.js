@@ -1,9 +1,10 @@
 ﻿function draw(ticker) {
+    syncSpritePositions(ticker.deltaMS);
     const frame = calculateFrame();
     drawMap(frame);
     drawEffects(frame);
     syncUnits(frame, ticker.deltaMS);
-    syncSprites(frame, ticker.deltaMS);
+    syncSprites(frame);
     syncDamageTexts(frame, ticker.deltaMS);
     drawMinimap();
 }

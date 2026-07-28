@@ -22,6 +22,7 @@ func (w *World) applyAOEDamage(source *Entity, target *Entity, damage int, damag
 	w.applyResolvedDamage(source, target, damage, damageType, sustainAOESkill, tickRate)
 }
 
+// applyResolvedDamage 结算最终伤害，并触发装备、英雄钩子及附近小兵仇恨。
 func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, damageType string, context sustainContext, tickRate int) {
 	if damage <= 0 {
 		target.Combat.LastDamage = 0
@@ -98,6 +99,9 @@ func (w *World) applyResolvedDamage(source *Entity, target *Entity, damage int, 
 	target.Combat.LastDamage = actualDamage
 	if len(target.Combat.DamageEvents) > 0 {
 		target.Combat.DamageEvents[len(target.Combat.DamageEvents)-1].Damage = actualDamage
+	}
+	if actualDamage > 0 {
+		w.provokeLaneMinions(source, target, target.Combat.LastHitTick, tickRate)
 	}
 	w.triggerEquipmentDamageTaken(target, source, target.Combat.LastHitTick, tickRate)
 	w.triggerEquipmentLowHealthShield(target, tickRate)

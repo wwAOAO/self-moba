@@ -3,7 +3,8 @@
     "private": true,
     "scripts": {
         "format": "prettier --write \"web/**/*.{js,json,css,html}\" \"configs/**/*.json\"",
-        "format:check": "prettier --check \"web/**/*.{js,json,css,html}\" \"configs/**/*.json\""
+        "format:check": "prettier --check \"web/**/*.{js,json,css,html}\" \"configs/**/*.json\"",
+        "test:client": "node --test web/js/pixi-render.test.js"
     },
     "devDependencies": {
         "prettier": "^3.6.2"

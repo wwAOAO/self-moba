@@ -6,14 +6,26 @@ import (
 )
 
 const (
+	// minionWaveIntervalSeconds 是两波小兵之间的秒数。
 	minionWaveIntervalSeconds = 30
-	minionWaveCount           = 7
-	minionSpawnGapSeconds     = 0.55
-	laneMinionAggroRange      = 450
-	laneMinionReturnDistance  = 500
-	laneMinionReturnSeconds   = 5
-	laneMinionMoveSpeed       = 260
-	laneMinionAvoidLookahead  = 120
+	// minionWaveCount 是保留的标准波次单位数量。
+	minionWaveCount = 7
+	// minionSpawnGapSeconds 是同波小兵依次出生的秒数。
+	minionSpawnGapSeconds = 0.55
+	// laneMinionAggroRange 是小兵的基础索敌与仇恨响应范围，单位为世界距离。
+	laneMinionAggroRange = 450
+	// laneMinionReturnDistance 是允许小兵偏离兵线的最大世界距离。
+	laneMinionReturnDistance = 500
+	// laneMinionReturnSeconds 是偏离兵线后进入强制归线的秒数。
+	laneMinionReturnSeconds = 5
+	// laneMinionAggroSeconds 是英雄伤害触发的小兵强制仇恨秒数。
+	laneMinionAggroSeconds = 2.5
+	// laneMinionMoveSpeed 是兵线小兵的固定世界移动速度。
+	laneMinionMoveSpeed = 260
+	// laneMinionAvoidLookahead 是普通局部避障的前视世界距离。
+	laneMinionAvoidLookahead = 120
+	// laneMinionReturnArrival 是完成强制归线的世界距离阈值。
+	laneMinionReturnArrival = 32
 )
 
 func (w *World) tickMinionWaves(tick uint64, tickRate int) {
@@ -118,6 +130,7 @@ func applyMinionGrowth(stats *Stats, kind EntityKind, tick uint64) {
 	}
 }
 
+// tickLaneMinion 推进单个小兵的归线、索敌、攻击和路线移动行为。
 func (w *World) tickLaneMinion(minion *Entity, tick uint64, tickRate int) {
 	if minion == nil || minion.Stats.HP <= 0 || tickRate <= 0 {
 		return
@@ -128,53 +141,132 @@ func (w *World) tickLaneMinion(minion *Entity, tick uint64, tickRate int) {
 		routeEnd = w.spawnPosition(oppositeTeam(minion.Team))
 		minion.Lane.RouteTarget = routeEnd
 	}
-	if distancePointToSegment(minion.Position, routeStart, routeEnd) <= laneMinionReturnDistance {
+	routeDistance := distancePointToSegment(minion.Position, routeStart, routeEnd)
+	if routeDistance <= laneMinionReturnDistance {
 		minion.Lane.LastOnLaneTick = tick
 	}
-	if minion.Intent.AttackTargetID != "" && tick-minion.Lane.LastOnLaneTick >= secondsToTicks(laneMinionReturnSeconds, tickRate) {
+	if routeDistance > laneMinionReturnDistance && tick >= minion.Lane.LastOnLaneTick+secondsToTicks(laneMinionReturnSeconds, tickRate) {
+		minion.Lane.Returning = true
+	}
+	if minion.Lane.Returning {
+		minion.Intent.AttackTargetID = ""
+		minion.Lane.AggroTargetID = ""
+		minion.Lane.AggroUntilTick = 0
+		minion.Combat.PendingAttackTargetID = ""
+		minion.Combat.AttackReleaseTick = 0
+		destination := laneMoveTarget(minion.Position, routeStart, routeEnd)
+		if routeDistance <= laneMinionReturnArrival {
+			minion.Lane.Returning = false
+			minion.Lane.LastOnLaneTick = tick
+		} else {
+			w.moveToward(minion, w.laneMoveTargetAvoidingBlockers(minion, destination), movementStepAtTick(minion, tickRate, tick), 8)
+			return
+		}
+	}
+
+	target := w.selectLaneTarget(minion, tick)
+	if target == nil {
 		minion.Intent.AttackTargetID = ""
 		minion.Combat.PendingAttackTargetID = ""
 		minion.Combat.AttackReleaseTick = 0
 		destination := laneMoveTarget(minion.Position, routeStart, routeEnd)
-		w.moveToward(minion, w.laneMoveTargetAvoidingAllies(minion, destination), movementStepAtTick(minion, tickRate, tick), 8)
+		w.moveToward(minion, w.laneMoveTargetAvoidingBlockers(minion, destination), movementStepAtTick(minion, tickRate, tick), 8)
 		return
 	}
-
-	target := w.entities[minion.Intent.AttackTargetID]
-	if !canAttackTarget(minion, target) || distance(minion.Position, target.Position) > laneMinionAggroRange+target.Radius {
-		target = w.nearestLaneTarget(minion)
-		if target != nil {
-			minion.Intent.AttackTargetID = target.ID
-		} else {
-			minion.Intent.AttackTargetID = ""
-		}
+	if minion.Intent.AttackTargetID != target.ID {
+		minion.Intent.AttackTargetID = target.ID
+		minion.Combat.PendingAttackTargetID = ""
+		minion.Combat.AttackReleaseTick = 0
 	}
-	if canAttackTarget(minion, target) {
-		if distance(minion.Position, target.Position) <= w.attackReachAtTick(minion, target, tick) {
-			w.applyAttack(minion, target, tick, tickRate)
-			return
-		}
-		w.moveToward(minion, w.laneMoveTargetAvoidingAllies(minion, target.Position), movementStepAtTick(minion, tickRate, tick), 0)
+	if distance(minion.Position, target.Position) <= w.attackReachAtTick(minion, target, tick) {
+		w.applyAttack(minion, target, tick, tickRate)
 		return
 	}
-	destination := laneMoveTarget(minion.Position, routeStart, routeEnd)
-	w.moveToward(minion, w.laneMoveTargetAvoidingAllies(minion, destination), movementStepAtTick(minion, tickRate, tick), 8)
+	w.moveToward(minion, w.laneMoveTargetAvoidingBlockers(minion, target.Position), movementStepAtTick(minion, tickRate, tick), 0)
 }
 
-func (w *World) nearestLaneTarget(minion *Entity) *Entity {
+// selectLaneTarget 保留同级当前目标，并在更高优先级目标出现时稳定转火。
+func (w *World) selectLaneTarget(minion *Entity, tick uint64) *Entity {
+	current := w.entities[minion.Intent.AttackTargetID]
+	if !w.isLaneTargetInDetectionRange(minion, current, tick) {
+		current = nil
+	}
+	best := w.nearestLaneTarget(minion, tick)
+	if current == nil || best == nil || w.laneTargetPriority(minion, best, tick) < w.laneTargetPriority(minion, current, tick) {
+		return best
+	}
+	return current
+}
+
+// nearestLaneTarget 按玩法优先级、距离和实体 ID 选择确定性的最佳目标。
+func (w *World) nearestLaneTarget(minion *Entity, tick uint64) *Entity {
 	var best *Entity
+	bestPriority := math.MaxInt
 	bestDistance := math.MaxFloat64
-	for _, target := range w.entities {
-		if !canAttackTarget(minion, target) || !isLaneTarget(target) {
+	for _, target := range w.entitiesInStableOrder() {
+		if !w.isLaneTargetInDetectionRange(minion, target, tick) {
 			continue
 		}
+		priority := w.laneTargetPriority(minion, target, tick)
 		d := distance(minion.Position, target.Position)
-		if d <= laneMinionAggroRange+target.Radius && d < bestDistance {
+		if priority < bestPriority || priority == bestPriority && d < bestDistance {
 			best = target
+			bestPriority = priority
 			bestDistance = d
 		}
 	}
 	return best
+}
+
+// isLaneTargetInDetectionRange 判断目标是否有效且位于小兵的索敌或攻击距离内。
+func (w *World) isLaneTargetInDetectionRange(minion *Entity, target *Entity, tick uint64) bool {
+	if !canAttackTarget(minion, target) || !isLaneTarget(target) {
+		return false
+	}
+	detectionRange := math.Max(laneMinionAggroRange+target.Radius, w.attackReachAtTick(minion, target, tick))
+	return distance(minion.Position, target.Position) <= detectionRange
+}
+
+// laneTargetPriority 返回越小越优先的目标级别，临时英雄仇恨高于常规索敌。
+func (w *World) laneTargetPriority(minion *Entity, target *Entity, tick uint64) int {
+	if minion.Lane.AggroTargetID == target.ID && tick < minion.Lane.AggroUntilTick {
+		return 0
+	}
+	if attacked := w.entities[target.Intent.AttackTargetID]; attacked != nil && attacked.Team == minion.Team {
+		if IsHeroUnit(attacked) {
+			return 1
+		}
+		if isMinion(attacked) {
+			return 2
+		}
+	}
+	if isMinion(target) {
+		return 3
+	}
+	if IsHeroUnit(target) {
+		return 4
+	}
+	return 5
+}
+
+// provokeLaneMinions 让英雄伤害事件触发目标友方小兵的限时仇恨。
+func (w *World) provokeLaneMinions(source *Entity, target *Entity, tick uint64, tickRate int) {
+	if source == nil || target == nil || !IsHeroUnit(source) || source.Team == target.Team || tickRate <= 0 {
+		return
+	}
+	if !IsHeroUnit(target) && !isMinion(target) {
+		return
+	}
+	for _, minion := range w.entitiesInStableOrder() {
+		if !minion.Lane.Active || minion.Lane.Returning || minion.Team != target.Team || !canAttackTarget(minion, source) {
+			continue
+		}
+		if distance(minion.Position, target.Position) > laneMinionAggroRange+target.Radius {
+			continue
+		}
+		minion.Lane.AggroTargetID = source.ID
+		minion.Lane.AggroUntilTick = tick + secondsToTicks(laneMinionAggroSeconds, tickRate)
+	}
 }
 
 func isLaneTarget(entity *Entity) bool {
@@ -201,10 +293,11 @@ func (w *World) tickTower(tower *Entity, tick uint64, tickRate int) {
 	w.applyAttack(tower, target, tick, tickRate)
 }
 
+// nearestTowerTarget 按距离和稳定实体顺序选择防御塔目标。
 func (w *World) nearestTowerTarget(tower *Entity, tick uint64) *Entity {
 	var best *Entity
 	bestDistance := math.MaxFloat64
-	for _, target := range w.entities {
+	for _, target := range w.entitiesInStableOrder() {
 		if !isTowerTarget(tower, target) {
 			continue
 		}
@@ -235,7 +328,8 @@ func laneMoveTarget(position Vector2, routeStart Vector2, routeEnd Vector2) Vect
 	return routeEnd
 }
 
-func (w *World) laneMoveTargetAvoidingAllies(minion *Entity, target Vector2) Vector2 {
+// laneMoveTargetAvoidingBlockers 为路线上的友军和友方建筑生成稳定的局部绕行点。
+func (w *World) laneMoveTargetAvoidingBlockers(minion *Entity, target Vector2) Vector2 {
 	dx, dy := normalize(target.X-minion.Position.X, target.Y-minion.Position.Y)
 	if dx == 0 && dy == 0 {
 		return target
@@ -243,7 +337,8 @@ func (w *World) laneMoveTargetAvoidingAllies(minion *Entity, target Vector2) Vec
 	perpX, perpY := -dy, dx
 	bestForward := math.MaxFloat64
 	bestClearance := 0.0
-	for _, other := range w.entities {
+	bestIsStructure := false
+	for _, other := range w.entitiesInStableOrder() {
 		if other == nil || other.ID == minion.ID || other.Team != minion.Team || !isCollisionEntity(other) {
 			continue
 		}
@@ -251,7 +346,11 @@ func (w *World) laneMoveTargetAvoidingAllies(minion *Entity, target Vector2) Vec
 		ry := other.Position.Y - minion.Position.Y
 		forward := rx*dx + ry*dy
 		clearance := minion.Radius + other.Radius + 8
-		if forward <= 0 || forward > laneMinionAvoidLookahead || forward >= bestForward {
+		lookahead := float64(laneMinionAvoidLookahead)
+		if isStructure(other) {
+			lookahead += clearance
+		}
+		if forward <= 0 || forward > lookahead || forward >= bestForward {
 			continue
 		}
 		side := rx*perpX + ry*perpY
@@ -260,14 +359,19 @@ func (w *World) laneMoveTargetAvoidingAllies(minion *Entity, target Vector2) Vec
 		}
 		bestForward = forward
 		bestClearance = clearance
+		bestIsStructure = isStructure(other)
 	}
 	if bestForward == math.MaxFloat64 {
 		return target
 	}
+	forwardStep := float64(laneMinionAvoidLookahead)
+	if bestIsStructure {
+		forwardStep = bestForward + bestClearance
+	}
 	sideStep := bestClearance * laneMinionAvoidSide(minion)
 	return Vector2{
-		X: clamp(minion.Position.X+dx*laneMinionAvoidLookahead+perpX*sideStep, 0, w.width),
-		Y: clamp(minion.Position.Y+dy*laneMinionAvoidLookahead+perpY*sideStep, 0, w.height),
+		X: clamp(minion.Position.X+dx*forwardStep+perpX*sideStep, 0, w.width),
+		Y: clamp(minion.Position.Y+dy*forwardStep+perpY*sideStep, 0, w.height),
 	}
 }
 

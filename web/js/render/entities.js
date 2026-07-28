@@ -2,8 +2,8 @@
 // 英雄图标最大绘制外延约为基础半径的 1.66 倍，覆盖层使用更保守的定位系数。
 const modelOverlayExtentRatio = 1.75;
 
-/** 平滑同步玩家位置、权威碰撞范围和界面状态。 */
-function syncSprites(frame, deltaMS) {
+/** 在镜头计算前推进玩家平滑坐标，确保镜头与模型使用同一帧的位置。 */
+function syncSpritePositions(deltaMS) {
     const smoothing = 1 - Math.exp(-deltaMS / 80);
 
     for (const [playerId, sprite] of state.sprites) {
@@ -23,14 +23,25 @@ function syncSprites(frame, deltaMS) {
 
         sprite.targetX = player.x;
         sprite.targetY = player.y;
+        sprite.x += (sprite.targetX - sprite.x) * smoothing;
+        sprite.y += (sprite.targetY - sprite.y) * smoothing;
+    }
+}
+
+/** 使用已推进的玩家坐标同步权威碰撞范围和界面状态。 */
+function syncSprites(frame) {
+    for (const player of state.players.values()) {
+        const sprite = state.sprites.get(player.playerId);
+        if (!sprite) {
+            continue;
+        }
+
         redrawPlayerBody(sprite, player);
         updatePlayerCollisionCircle(sprite, player);
         const barY = -(playerModelRadius(player) * modelOverlayExtentRatio + 10);
         updateBars(sprite, player, barY);
         updatePlayerLabel(sprite, player);
         updateStatusLabel(sprite, player, barY + 5, 24);
-        sprite.x += (sprite.targetX - sprite.x) * smoothing;
-        sprite.y += (sprite.targetY - sprite.y) * smoothing;
         sprite.node.x = frame.offsetX + sprite.x * frame.scale;
         sprite.node.y = frame.offsetY + sprite.y * frame.scale;
         sprite.node.alpha = (player.control?.invisibleUntilTick || 0) > interpolatedTick() ? 0.45 : 1;

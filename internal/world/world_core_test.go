@@ -573,6 +573,7 @@ func TestTowerAutomaticallyAttacksNearestEnemyUnit(t *testing.T) {
 	}
 }
 
+// TestLaneMinionReturnsAfterLeavingRouteTooLong 验证强制归线期间不会反复重新索敌。
 func TestLaneMinionReturnsAfterLeavingRouteTooLong(t *testing.T) {
 	w := testWorld(t)
 	w.spawnMinionWave(TeamBlue, 1)
@@ -597,10 +598,143 @@ func TestLaneMinionReturnsAfterLeavingRouteTooLong(t *testing.T) {
 	minion.Intent.AttackTargetID = target.ID
 	minion.Lane.LastOnLaneTick = 1
 
-	w.Tick(102, 20)
+	startDistance := distancePointToSegment(minion.Position, routeStart, routeEnd)
+	for tick := uint64(102); tick <= 112; tick++ {
+		w.Tick(tick, 20)
+		if minion.Intent.AttackTargetID != "" {
+			t.Fatalf("tick %d attack target = %q, want empty while returning", tick, minion.Intent.AttackTargetID)
+		}
+	}
 
-	if minion.Intent.AttackTargetID != "" {
-		t.Fatalf("attack target = %q, want cleared", minion.Intent.AttackTargetID)
+	if !minion.Lane.Returning {
+		t.Fatal("minion should remain in returning state before reaching lane")
+	}
+	if got := distancePointToSegment(minion.Position, routeStart, routeEnd); got >= startDistance {
+		t.Fatalf("distance to lane = %f, want less than %f", got, startDistance)
+	}
+}
+
+// TestLaneMinionHeroDamageAggroExpires 验证英雄伤害触发限时仇恨并在到期后恢复常规优先级。
+func TestLaneMinionHeroDamageAggroExpires(t *testing.T) {
+	w := testWorld(t)
+	hero := testHeroConfig()
+	w.SpawnHero("blue", hero, TeamBlue)
+	w.SpawnHero("red", hero, TeamRed)
+	blueHero := w.entities[playerEntityID("blue")]
+	redHero := w.entities[playerEntityID("red")]
+	placeEntity(blueHero, 3000, 3000)
+	placeEntity(redHero, 3100, 3000)
+	minion := &Entity{
+		ID:       "spawn:test-blue-aggro",
+		Kind:     EntityKindMeleeMinion,
+		Team:     TeamBlue,
+		Position: Vector2{X: 2950, Y: 3000},
+		Radius:   20,
+		Stats:    Stats{HP: 445, MaxHP: 445, MoveSpeed: laneMinionMoveSpeed, AttackRange: 125, AttackSpeed: 1.25},
+		Lane:     LaneState{Active: true, RouteTarget: w.spawnPosition(TeamRed), LastOnLaneTick: 10},
+	}
+	enemyMinion := &Entity{
+		ID:       "spawn:test-red-priority",
+		Kind:     EntityKindMeleeMinion,
+		Team:     TeamRed,
+		Position: Vector2{X: 3000, Y: 3000},
+		Radius:   20,
+		Stats:    Stats{HP: 445, MaxHP: 445},
+	}
+	w.entities[minion.ID] = minion
+	w.entities[enemyMinion.ID] = enemyMinion
+	blueHero.Combat.LastHitTick = 10
+	w.applyDamage(redHero, blueHero, 10, 20)
+
+	if minion.Lane.AggroTargetID != redHero.ID || minion.Lane.AggroUntilTick != 60 {
+		t.Fatalf("aggro = %q until %d, want %q until 60", minion.Lane.AggroTargetID, minion.Lane.AggroUntilTick, redHero.ID)
+	}
+	if target := w.selectLaneTarget(minion, 10); target != redHero {
+		t.Fatalf("aggro target = %v, want red hero", target)
+	}
+	if target := w.selectLaneTarget(minion, 60); target != enemyMinion {
+		t.Fatalf("post-aggro target = %v, want enemy minion", target)
+	}
+}
+
+// TestLaneMinionTargetPriority 验证攻击友方英雄者优先于普通小兵，普通小兵优先于空闲英雄。
+func TestLaneMinionTargetPriority(t *testing.T) {
+	w := testWorld(t)
+	minion := &Entity{
+		ID:       "spawn:test-blue-priority",
+		Kind:     EntityKindMeleeMinion,
+		Team:     TeamBlue,
+		Position: Vector2{X: 3000, Y: 3000},
+		Radius:   20,
+		Stats:    Stats{HP: 445, MaxHP: 445, AttackRange: 125},
+		Lane:     LaneState{Active: true},
+	}
+	allyHero := &Entity{ID: "ally:hero", Kind: EntityKindEnemyHero, Team: TeamBlue, Position: minion.Position, Stats: Stats{HP: 1000}}
+	enemyHero := &Entity{ID: "enemy:hero", Kind: EntityKindEnemyHero, Team: TeamRed, Position: Vector2{X: 3100, Y: 3000}, Stats: Stats{HP: 1000}, Intent: IntentState{AttackTargetID: allyHero.ID}}
+	enemyMinion := &Entity{ID: "enemy:minion", Kind: EntityKindMeleeMinion, Team: TeamRed, Position: Vector2{X: 3050, Y: 3000}, Stats: Stats{HP: 445}}
+	w.entities[minion.ID] = minion
+	w.entities[allyHero.ID] = allyHero
+	w.entities[enemyHero.ID] = enemyHero
+	w.entities[enemyMinion.ID] = enemyMinion
+
+	if target := w.nearestLaneTarget(minion, 1); target != enemyHero {
+		t.Fatalf("target attacking allied hero = %v, want enemy hero", target)
+	}
+	enemyHero.Intent.AttackTargetID = ""
+	if target := w.nearestLaneTarget(minion, 1); target != enemyMinion {
+		t.Fatalf("normal target = %v, want enemy minion", target)
+	}
+}
+
+// TestRangedLaneMinionDetectsTargetsWithinAttackRange 验证远程小兵不会因基础索敌范围较短而丢失可攻击目标。
+func TestRangedLaneMinionDetectsTargetsWithinAttackRange(t *testing.T) {
+	w := testWorld(t)
+	minion := &Entity{ID: "spawn:test-blue-ranged", Kind: EntityKindRangedMinion, Team: TeamBlue, Position: Vector2{X: 1000, Y: 1000}, Radius: 18, Stats: Stats{HP: 315, AttackRange: 550}}
+	target := &Entity{ID: "spawn:test-red-ranged-target", Kind: EntityKindMeleeMinion, Team: TeamRed, Position: Vector2{X: 1520, Y: 1000}, Radius: 20, Stats: Stats{HP: 445}}
+	w.entities[minion.ID] = minion
+	w.entities[target.ID] = target
+
+	if got := w.nearestLaneTarget(minion, 1); got != target {
+		t.Fatalf("ranged minion target = %v, want target within attack range", got)
+	}
+}
+
+// TestLaneMinionTargetTieUsesStableID 验证等优先级等距离目标使用稳定 ID 决胜。
+func TestLaneMinionTargetTieUsesStableID(t *testing.T) {
+	w := testWorld(t)
+	minion := &Entity{ID: "spawn:test-blue-tie", Kind: EntityKindMeleeMinion, Team: TeamBlue, Position: Vector2{X: 1000, Y: 1000}, Stats: Stats{HP: 445}}
+	targetA := &Entity{ID: "enemy:a", Kind: EntityKindMeleeMinion, Team: TeamRed, Position: Vector2{X: 1100, Y: 1000}, Stats: Stats{HP: 445}}
+	targetB := &Entity{ID: "enemy:b", Kind: EntityKindMeleeMinion, Team: TeamRed, Position: Vector2{X: 900, Y: 1000}, Stats: Stats{HP: 445}}
+	w.entities[minion.ID] = minion
+	w.entities[targetB.ID] = targetB
+	w.entities[targetA.ID] = targetA
+
+	if got := w.nearestLaneTarget(minion, 1); got != targetA {
+		t.Fatalf("tied target = %v, want stable lower ID", got)
+	}
+}
+
+// TestLaneMinionDetoursAroundBlockingFriendlyStructure 验证友方建筑与路线相交时生成侧向绕行点。
+func TestLaneMinionDetoursAroundBlockingFriendlyStructure(t *testing.T) {
+	w := testWorld(t)
+	minion := &Entity{ID: "spawn:test-blue-detour-2", Kind: EntityKindMeleeMinion, Team: TeamBlue, Position: Vector2{X: 1000, Y: 1000}, Radius: 20, Stats: Stats{HP: 445}}
+	tower := &Entity{ID: "spawn:test-blue-blocking-tower", Kind: EntityKindTower, Team: TeamBlue, Position: Vector2{X: 1160, Y: 1000}, Radius: 72, Stats: Stats{HP: 2600}}
+	w.entities[minion.ID] = minion
+	w.entities[tower.ID] = tower
+
+	detour := w.laneMoveTargetAvoidingBlockers(minion, Vector2{X: 2000, Y: 1000})
+	if detour.Y == minion.Position.Y {
+		t.Fatalf("detour = %+v, want lateral offset around blocking tower", detour)
+	}
+	if detour.X <= tower.Position.X {
+		t.Fatalf("detour = %+v, want waypoint beyond blocking tower", detour)
+	}
+	for step := 0; step < 160; step++ {
+		destination := w.laneMoveTargetAvoidingBlockers(minion, Vector2{X: 2000, Y: 1000})
+		w.moveToward(minion, destination, laneMinionMoveSpeed/20, 8)
+	}
+	if minion.Position.X <= tower.Position.X+tower.Radius+minion.Radius {
+		t.Fatalf("minion position = %+v, want past blocking tower", minion.Position)
 	}
 }
 

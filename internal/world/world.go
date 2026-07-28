@@ -2,6 +2,7 @@ package world
 
 import (
 	"l-battle/internal/config"
+	"sort"
 )
 
 const (
@@ -120,6 +121,7 @@ func NewWorld(heroes *config.HeroStore, skills *config.SkillStore, levels *confi
 	return w
 }
 
+// Tick 按稳定实体顺序推进一个服务端战斗 tick。
 func (w *World) Tick(tick uint64, tickRate int) {
 	w.expireWindWalls(tick)
 	w.expireSkillEffects(tick)
@@ -129,7 +131,7 @@ func (w *World) Tick(tick uint64, tickRate int) {
 	w.tickSiegeMinionSplashBurns(tick, tickRate)
 	w.tickFountains(tick, tickRate)
 	w.tickPassiveGold(tick, tickRate)
-	for _, entity := range w.entities {
+	for _, entity := range w.entitiesInStableOrder() {
 		w.tickHeroEntity(entity, tick, tickRate)
 		w.tickUntargetable(entity, tick)
 		w.tickInvisible(entity, tick)
@@ -168,6 +170,22 @@ func (w *World) Tick(tick uint64, tickRate int) {
 		w.tickWarmog(entity, tick, tickRate)
 		w.tickPlayer(entity, tick, tickRate)
 	}
+}
+
+// entitiesInStableOrder 返回按实体 ID 排序的快照，保证逐 tick 行为不依赖 Go map 遍历顺序。
+func (w *World) entitiesInStableOrder() []*Entity {
+	ids := make([]string, 0, len(w.entities))
+	for id := range w.entities {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	entities := make([]*Entity, 0, len(ids))
+	for _, id := range ids {
+		if entity := w.entities[id]; entity != nil {
+			entities = append(entities, entity)
+		}
+	}
+	return entities
 }
 
 func (w *World) tickUntargetable(entity *Entity, tick uint64) {
