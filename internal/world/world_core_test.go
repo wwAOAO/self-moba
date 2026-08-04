@@ -657,6 +657,23 @@ func TestLaneMinionHeroDamageAggroExpires(t *testing.T) {
 	}
 }
 
+func TestLaneMinionIgnoresHeroDamageToAlliedMinion(t *testing.T) {
+	w := testWorld(t)
+	source := &Entity{ID: "enemy:hero", Kind: EntityKindEnemyHero, Team: TeamRed, Position: Vector2{X: 3100, Y: 3000}, Stats: Stats{HP: 1000}}
+	target := &Entity{ID: "ally:target-minion", Kind: EntityKindMeleeMinion, Team: TeamBlue, Position: Vector2{X: 3000, Y: 3000}, Stats: Stats{HP: 445}}
+	guard := &Entity{ID: "ally:guard-minion", Kind: EntityKindMeleeMinion, Team: TeamBlue, Position: Vector2{X: 2950, Y: 3000}, Stats: Stats{HP: 445}, Lane: LaneState{Active: true}}
+	w.entities[source.ID] = source
+	w.entities[target.ID] = target
+	w.entities[guard.ID] = guard
+	target.Combat.LastHitTick = 10
+
+	w.applyDamage(source, target, 10, 20)
+
+	if guard.Lane.AggroTargetID != "" || guard.Lane.AggroUntilTick != 0 {
+		t.Fatalf("guard aggro = %q until %d, want no aggro from attacking a minion", guard.Lane.AggroTargetID, guard.Lane.AggroUntilTick)
+	}
+}
+
 // TestLaneMinionTargetPriority 验证攻击友方英雄者优先于普通小兵，普通小兵优先于空闲英雄。
 func TestLaneMinionTargetPriority(t *testing.T) {
 	w := testWorld(t)

@@ -24,6 +24,12 @@ func ApplyR(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	entity.Warrior.JusticeTargetID = target.ID
 	entity.Warrior.JusticeLevel = state.Level
 	entity.Control.ActionLockedUntilTick = entity.Warrior.JusticeReleaseTick
+	dx := target.Position.X - entity.Position.X
+	dy := target.Position.Y - entity.Position.Y
+	if length := math.Hypot(dx, dy); length > 0 {
+		entity.Facing = world.Vector2{X: dx / length, Y: dy / length}
+	}
+	beginAction(entity, "r", rID, tick, entity.Warrior.JusticeReleaseTick)
 	entity.Skills[rID] = state
 }
 

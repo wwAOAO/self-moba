@@ -14,6 +14,22 @@ func normalize(dx float64, dy float64) (float64, float64) {
 	return dx / length, dy / length
 }
 
+func beginAction(entity *world.Entity, action string, skillID string, target world.Vector2, tick uint64, endsAt uint64) {
+	if entity == nil {
+		return
+	}
+	dx, dy := normalize(target.X-entity.Position.X, target.Y-entity.Position.Y)
+	if dx != 0 || dy != 0 {
+		entity.Facing = world.Vector2{X: dx, Y: dy}
+	}
+	entity.Action = world.ActionState{
+		Name:          action,
+		SkillID:       skillID,
+		StartedAtTick: tick,
+		EndsAtTick:    endsAt,
+	}
+}
+
 func distance(a world.Vector2, b world.Vector2) float64 {
 	return math.Hypot(a.X-b.X, a.Y-b.Y)
 }

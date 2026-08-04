@@ -24,7 +24,8 @@
             "whirlwindRadius": 80,
             "whirlwindSpeed": 1400,
             "castWindupSeconds": 0.328,
-            "minCastWindupSeconds": 0.09
+            "minCastWindupSeconds": 0.09,
+            "effectSeconds": 0.34
         },
         "metaLists": {
             "baseDamage": [20, 45, 70, 95, 120],
@@ -44,7 +45,8 @@
         ],
         "meta": {
             "durationSeconds": 4,
-            "placeDistance": 180
+            "placeDistance": 180,
+            "castActionSeconds": 0.3
         },
         "metaLists": {
             "width": [300, 350, 400, 450, 500],

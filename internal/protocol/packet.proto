@@ -121,6 +121,13 @@ message PlayerSnapshot {
   repeated BuffSnapshot buffs = 30;
   repeated DamageEventSnapshot damage_events = 31;
   NinjaSnapshot ninja = 32;
+  double radius = 33;
+  double facing_x = 34;
+  double facing_y = 35;
+  string action = 36;
+  string skill_id = 37;
+  uint64 action_started_at_tick = 38;
+  uint64 action_ends_at_tick = 39;
 }
 
 message BuffSnapshot {

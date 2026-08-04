@@ -53,6 +53,8 @@ func ApplyE(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	entity.Control.DashEnd = end
 	entity.Control.DashUntilTick = tick + travelTicks
 	entity.Control.ActionLockedUntilTick = entity.Control.DashUntilTick
+	entity.Facing = world.Vector2{X: dx, Y: dy}
+	beginAction(entity, "e", eID, tick, entity.Control.DashUntilTick)
 	w.PutSkillEffect(world.SkillEffect{
 		ID:           w.NextEffectID("effect:blade_e_whirlwind:"),
 		Kind:         "blade_e_whirlwind",

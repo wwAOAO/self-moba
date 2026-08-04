@@ -23,6 +23,7 @@ type SkillState = state.SkillState
 type CombatState = state.CombatState
 type DamageEvent = state.DamageEvent
 type ControlState = state.ControlState
+type ActionState = state.ActionState
 type SwordState = state.SwordState
 type WarriorState = state.WarriorState
 type ArcherState = state.ArcherState
@@ -64,6 +65,7 @@ type Entity struct {
 	TotalExp       float64
 	NextLevelExp   float64
 	Position       Vector2
+	Facing         Vector2
 	Stats          Stats
 	Message        string
 	MessageTick    uint64
@@ -71,6 +73,7 @@ type Entity struct {
 	Skills         map[string]SkillState
 	Combat         CombatState
 	Control        ControlState
+	Action         ActionState
 	Passive        PassiveState
 	Sword          SwordState
 	Warrior        WarriorState

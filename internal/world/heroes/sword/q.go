@@ -33,6 +33,8 @@ func ApplyQ(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	entity.Sword.QForm = form
 	entity.Sword.QRange = qRange
 	entity.Control.ActionLockedUntilTick = tick + windupTicks
+	actionTicks := secondsToTicks(skillMeta(skill, "effectSeconds", 0.34), tickRate)
+	beginAction(entity, "q", qID, entity.Sword.QTarget, tick, entity.Sword.QReleaseTick+actionTicks)
 	entity.Skills[qID] = state
 }
 

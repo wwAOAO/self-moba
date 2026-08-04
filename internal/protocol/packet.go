@@ -128,6 +128,18 @@ type PlayerSnapshot struct {
 	Y float64 `json:"y"`
 	// Radius 是英雄的权威碰撞半径，单位为世界单位。
 	Radius float64 `json:"radius"`
+	// FacingX 是英雄动作朝向的水平单位向量分量。
+	FacingX float64 `json:"facingX,omitempty"`
+	// FacingY 是英雄动作朝向的垂直单位向量分量。
+	FacingY float64 `json:"facingY,omitempty"`
+	// Action 是当前人物动作名称，空值表示没有服务端动作窗口。
+	Action string `json:"action,omitempty"`
+	// SkillID 是当前人物动作对应的技能标识。
+	SkillID string `json:"skillId,omitempty"`
+	// ActionStartedAtTick 是当前人物动作开始的服务端 tick。
+	ActionStartedAtTick uint64 `json:"actionStartedAtTick,omitempty"`
+	// ActionEndsAtTick 是当前人物动作结束的服务端 tick。
+	ActionEndsAtTick uint64 `json:"actionEndsAtTick,omitempty"`
 	// Stats 是英雄当前生效的战斗属性。
 	Stats StatsSnapshot `json:"stats"`
 	// Skills 是英雄各技能的等级和冷却状态。

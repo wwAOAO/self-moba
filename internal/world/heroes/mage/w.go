@@ -83,5 +83,6 @@ func ApplyW(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	entity.Mage.PrismaticBarrierTarget = w.ClampWorldPoint(world.Vector2{X: cast.TargetX, Y: cast.TargetY})
 	entity.Mage.PrismaticBarrierLevel = state.Level
 	entity.Control.ActionLockedUntilTick = entity.Mage.PrismaticBarrierReleaseTick
+	beginAction(entity, "w", wID, entity.Mage.PrismaticBarrierTarget, tick, tick+max(windupTicks, secondsToTicks(0.4, tickRate)))
 	entity.Skills[wID] = state
 }

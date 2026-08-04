@@ -21,6 +21,7 @@ func ApplyW(w *world.World, entity *world.Entity, _ protocol.CastInput, state wo
 	state.Stacks = 1
 	state.StacksExpireTick = tick + windupTicks
 	entity.Control.ActionLockedUntilTick = state.StacksExpireTick
+	beginAction(entity, "w", wID, tick, tick+secondsToTicks(skillMeta(skill, "castActionSeconds", 0.45), tickRate))
 	entity.Skills[wID] = state
 }
 

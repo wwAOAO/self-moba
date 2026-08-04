@@ -64,6 +64,22 @@ func normalize(dx float64, dy float64) (float64, float64) {
 	return dx / length, dy / length
 }
 
+func beginAction(entity *world.Entity, action string, skillID string, target world.Vector2, tick uint64, endsAt uint64) {
+	if entity == nil {
+		return
+	}
+	dx, dy := normalize(target.X-entity.Position.X, target.Y-entity.Position.Y)
+	if dx != 0 || dy != 0 {
+		entity.Facing = world.Vector2{X: dx, Y: dy}
+	}
+	entity.Action = world.ActionState{
+		Name:          action,
+		SkillID:       skillID,
+		StartedAtTick: tick,
+		EndsAtTick:    endsAt,
+	}
+}
+
 func canAttackTarget(attacker *world.Entity, target *world.Entity) bool {
 	if attacker == nil || target == nil {
 		return false

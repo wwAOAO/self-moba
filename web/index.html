@@ -285,6 +285,14 @@
                 font-size: 34px;
                 font-weight: 900;
             }
+            .portrait.has-icon {
+                background-image: var(--hero-icon), radial-gradient(circle at 50% 38%, #35454d, #121a1e 68%);
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size:
+                    64px 64px,
+                    auto;
+            }
 
             .portrait-meta {
                 display: flex;
@@ -1047,7 +1055,7 @@
 
             <section class="hud" aria-label="英雄战斗界面">
                 <div class="portrait-block">
-                    <div id="heroPortrait" class="portrait" title="英雄头像">英</div>
+                    <div id="heroPortrait" class="portrait" role="img" aria-label="英雄头像" title="英雄头像">英</div>
                     <div class="portrait-meta">
                         <span>Lv <b id="statLevel">-</b></span
                         ><span>◈ <b id="equipGold">-</b></span>
@@ -1196,6 +1204,6 @@
             </div>
         </main>
 
-        <script type="module" src="/js/main.js?v=20260728-2"></script>
+        <script type="module" src="/js/main.js?v=20260729-20"></script>
     </body>
 </html>

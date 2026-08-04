@@ -208,3 +208,79 @@ const unitLayer = new PIXI.Container();
 const playerLayer = new PIXI.Container();
 const skillLayer = new PIXI.Graphics();
 const effectLayer = new PIXI.Container();
+// 首批英雄 2D 模型资源路径，后续英雄沿用相同注册方式逐步迁移。
+const heroModelAssetPaths = Object.freeze({
+    sword: '/assets/heroes/sword/model.png?v=20260729-2',
+    blade: '/assets/heroes/blade/model.png?v=20260729-2',
+    mage: '/assets/heroes/mage/model.png?v=20260730-1',
+    warrior: '/assets/heroes/warrior/model.png?v=20260730-2',
+});
+// 已制作动画的英雄资源路径；方向表首行是四帧待机，其余十二帧是走路循环。
+const heroAnimationAssetPaths = Object.freeze({
+    sword: {
+        directions: {
+            up: '/assets/heroes/sword/animation-up.png?v=20260730-1',
+            right: '/assets/heroes/sword/animation-right.png?v=20260730-1',
+            down: '/assets/heroes/sword/animation-down.png?v=20260730-1',
+            left: '/assets/heroes/sword/animation-left.png?v=20260730-1',
+        },
+        actions: {
+            attack: '/assets/heroes/sword/action-attack.png?v=20260730-2',
+            q: '/assets/heroes/sword/action-q.png?v=20260729-1',
+            w: '/assets/heroes/sword/action-w.png?v=20260729-1',
+            e: '/assets/heroes/sword/action-e.png?v=20260729-1',
+            r: '/assets/heroes/sword/action-r.png?v=20260729-1',
+        },
+    },
+    blade: {
+        directions: {
+            up: '/assets/heroes/blade/animation-up.png?v=20260729-1',
+            right: '/assets/heroes/blade/animation-right.png?v=20260729-1',
+            down: '/assets/heroes/blade/animation-down.png?v=20260729-1',
+            left: '/assets/heroes/blade/animation-left.png?v=20260729-1',
+        },
+        actions: {
+            attack: '/assets/heroes/blade/action-attack.png?v=20260730-2',
+            q: '/assets/heroes/blade/action-q.png?v=20260729-1',
+            w: '/assets/heroes/blade/action-w.png?v=20260729-1',
+            e: '/assets/heroes/blade/action-e.png?v=20260729-1',
+            r: '/assets/heroes/blade/action-r.png?v=20260729-1',
+        },
+    },
+    // 光明法师使用四方向待机、走路、普通攻击与 Q/W/E/R 施法动作，光效仍由特效层绘制。
+    mage: {
+        directions: {
+            up: '/assets/heroes/mage/animation-up.png?v=20260730-2',
+            right: '/assets/heroes/mage/animation-right.png?v=20260730-2',
+            down: '/assets/heroes/mage/animation-down.png?v=20260730-2',
+            left: '/assets/heroes/mage/animation-left.png?v=20260730-2',
+        },
+        actions: {
+            attack: '/assets/heroes/mage/action-attack.png?v=20260730-1',
+            q: '/assets/heroes/mage/action-q.png?v=20260730-1',
+            w: '/assets/heroes/mage/action-w.png?v=20260730-1',
+            e: '/assets/heroes/mage/action-e.png?v=20260730-1',
+            r: '/assets/heroes/mage/action-r.png?v=20260730-1',
+        },
+    },
+    // 圣骑士人物动作只包含身体与大剑，护盾、旋风和圣剑仍由特效层绘制。
+    warrior: {
+        directions: {
+            up: '/assets/heroes/warrior/animation-up.png?v=20260731-1',
+            right: '/assets/heroes/warrior/animation-right.png?v=20260731-1',
+            down: '/assets/heroes/warrior/animation-down.png?v=20260731-1',
+            left: '/assets/heroes/warrior/animation-left.png?v=20260731-1',
+        },
+        actions: {
+            attack: '/assets/heroes/warrior/action-attack.png?v=20260731-1',
+            q: '/assets/heroes/warrior/action-q.png?v=20260731-1',
+            w: '/assets/heroes/warrior/action-w.png?v=20260731-1',
+            e: '/assets/heroes/warrior/action-e.png?v=20260731-1',
+            r: '/assets/heroes/warrior/action-r.png?v=20260731-1',
+        },
+    },
+});
+// 已成功加载的英雄模型纹理；缺失项继续使用矢量图标。
+const heroModelTextures = new Map();
+// 已切分的英雄动画帧，按英雄和四方向保存待机、走路、普通攻击与技能序列。
+const heroModelAnimations = new Map();

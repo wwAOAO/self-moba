@@ -252,3 +252,43 @@ func TestBladeRGrantsRageAndPreventsDeath(t *testing.T) {
 		t.Fatalf("hp after r expired = %v, want 0", blade.Stats.HP)
 	}
 }
+
+func TestBladeActionsExposeAnimationWindows(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(bladeHeroID)
+	if !ok {
+		t.Fatal("blade hero not found")
+	}
+	w.SpawnHero("blade", hero, TeamBlue)
+	w.SpawnHero("red", testHeroConfig(), TeamRed)
+	blade := w.entities[playerEntityID("blade")]
+	target := w.entities[playerEntityID("red")]
+	placeEntity(blade, 1000, 1000)
+	placeEntity(target, 1200, 1000)
+	for _, skillID := range []string{"blade_q", "blade_w", "blade_e", "blade_r"} {
+		learnSkill(blade, skillID, 1)
+	}
+
+	w.ApplyInput("blade", protocolPlayerInputCast("blade_q", blade.Position.X, blade.Position.Y), 10, nil, 20)
+	if blade.Action.Name != "q" || blade.Action.SkillID != "blade_q" || blade.Action.StartedAtTick != 10 || blade.Action.EndsAtTick != 20 {
+		t.Fatalf("blade q action = %+v", blade.Action)
+	}
+
+	w.ApplyInput("blade", protocolPlayerInputCast("blade_w", blade.Position.X, blade.Position.Y), 30, nil, 20)
+	if blade.Action.Name != "w" || blade.Action.SkillID != "blade_w" || blade.Action.StartedAtTick != 30 || blade.Action.EndsAtTick != 39 {
+		t.Fatalf("blade w action = %+v", blade.Action)
+	}
+
+	w.ApplyInput("blade", protocolPlayerInputCast("blade_e", 1650, 1000), 50, nil, 20)
+	if blade.Action.Name != "e" || blade.Action.SkillID != "blade_e" || blade.Action.StartedAtTick != 50 || blade.Action.EndsAtTick != 58 {
+		t.Fatalf("blade e action = %+v", blade.Action)
+	}
+	if blade.Facing.X <= 0 || blade.Facing.Y != 0 {
+		t.Fatalf("blade e facing = %+v, want right", blade.Facing)
+	}
+
+	w.ApplyInput("blade", protocolPlayerInputCast("blade_r", blade.Position.X, blade.Position.Y), 70, nil, 20)
+	if blade.Action.Name != "r" || blade.Action.SkillID != "blade_r" || blade.Action.StartedAtTick != 70 || blade.Action.EndsAtTick != 80 {
+		t.Fatalf("blade r action = %+v", blade.Action)
+	}
+}

@@ -13,6 +13,8 @@ func ApplyR(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 		return
 	}
 	center := target.Position
+	actionEndsAt := tick + secondsToTicks(skillMeta(skill, "selfActionLockSeconds", 1), tickRate)
+	beginAction(entity, "r", rID, center, tick, actionEndsAt)
 	entity.Position = w.ClampWorldPoint(world.Vector2{X: target.Position.X - entity.Radius - target.Radius - 18, Y: target.Position.Y})
 	entity.Intent = world.IntentState{}
 	hits := rTargets(w, entity, center, skill, tick)
@@ -41,7 +43,7 @@ func ApplyR(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	qState.StacksExpireTick = 0
 	entity.Skills[qID] = qState
 	entity.Sword.LastBreathUntilTick = tick + secondsToTicks(skillMeta(skill, "lastBreathDurationSeconds", 15), tickRate)
-	entity.Control.ActionLockedUntilTick = tick + secondsToTicks(skillMeta(skill, "selfActionLockSeconds", 1), tickRate)
+	entity.Control.ActionLockedUntilTick = actionEndsAt
 	w.PutSkillEffect(world.SkillEffect{
 		ID:           w.NextEffectID("effect:sword_r:"),
 		Kind:         "sword_r",

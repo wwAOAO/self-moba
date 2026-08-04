@@ -40,7 +40,7 @@ function drawCastWindup(windup, frame, now) {
     skillLayer.stroke({ color, width: 4, alpha: 0.85 });
 
     if (windup.skillId === 'taunt') {
-        drawCircleWindup(windup, frame, color, alpha, windup.range || 400);
+        drawTankGroundSlamWindup(windup, frame, alpha);
         return;
     }
     if (windup.skillId === 'justice') {
@@ -98,6 +98,33 @@ function drawCastWindup(windup, frame, now) {
     if (windup.skillId === 'mage_r') {
         drawMageFinalSparkWindup(windup, frame, alpha);
         return;
+    }
+}
+
+/**
+ * 绘制石头人 E 蓄力时从双拳落点向外蔓延的岩层裂缝。
+ * @param {object} windup 本地施法蓄力状态。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ * @param {number} alpha 蓄力提示透明度。
+ */
+function drawTankGroundSlamWindup(windup, frame, alpha) {
+    const x = frame.offsetX + windup.x * frame.scale;
+    const y = frame.offsetY + windup.y * frame.scale;
+    const radius = (windup.range || 400) * frame.scale;
+    const progress = clamp((performance.now() - windup.startedAt) / Math.max(1, windup.durationMs || 1), 0, 1);
+    skillLayer.circle(x, y, radius);
+    skillLayer.fill({ color: 0x78350f, alpha: 0.08 * alpha });
+    skillLayer.circle(x, y, radius * (0.28 + progress * 0.72));
+    skillLayer.stroke({ color: 0xf59e0b, width: Math.max(3, radius * 0.018), alpha: 0.78 * alpha });
+    for (let index = 0; index < 10; index++) {
+        const angle = (Math.PI * 2 * index) / 10 + (index % 2) * 0.12;
+        drawTankRockCrack(x, y, angle, radius * progress * (0.68 + (index % 3) * 0.13), alpha, index);
+    }
+    for (const side of [-1, 1]) {
+        const fistX = x + side * radius * 0.12;
+        skillLayer.circle(fistX, y, Math.max(6, radius * 0.055));
+        skillLayer.fill({ color: 0xa8a29e, alpha: (0.32 + progress * 0.52) * alpha });
+        skillLayer.stroke({ color: 0x44403c, width: 2, alpha: 0.82 * alpha });
     }
 }
 
@@ -333,6 +360,10 @@ function showFrostMageRPreview(self) {
     };
 }
 
+/**
+ * 绘制技能释放后的短暂范围预览，并在到期后清理本地状态。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ */
 function drawSkillPreview(frame) {
     const preview = state.skillPreview;
     if (!preview) {
@@ -345,6 +376,18 @@ function drawSkillPreview(frame) {
     const alpha = Math.max(0, (preview.expiresAt - performance.now()) / (preview.previewMs || 450));
     const x = frame.offsetX + preview.x * frame.scale;
     const y = frame.offsetY + preview.y * frame.scale;
+    if (preview.kind === 'tank_e') {
+        drawTankGroundSlamWindup(
+            {
+                ...preview,
+                startedAt: preview.expiresAt - preview.previewMs,
+                durationMs: preview.previewMs,
+            },
+            frame,
+            alpha,
+        );
+        return;
+    }
     if (preview.form === 'circle') {
         skillLayer.circle(x, y, preview.range * frame.scale);
         skillLayer.stroke({ color: 0x38bdf8, width: 3, alpha: 0.65 * alpha });

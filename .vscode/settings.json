@@ -7,8 +7,8 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSaveMode": "file",
-    "typescript.suggest.autoImports": true,
-    "typescript.preferences.importModuleSpecifier": "relative",
+    "js/ts.suggest.autoImports": true,
+    "js/ts.preferences.importModuleSpecifier": "relative",
     "[typescript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },

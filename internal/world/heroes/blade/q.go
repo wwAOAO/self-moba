@@ -35,6 +35,7 @@ func ApplyQ(w *world.World, entity *world.Entity, _ protocol.CastInput, state wo
 		CreatedAt:    tick,
 		ExpiresAt:    tick + secondsToTicks(skillMeta(skill, "healEffectSeconds", 0.7), tickRate),
 	})
+	beginAction(entity, "q", qID, tick, tick+secondsToTicks(skillMeta(skill, "castActionSeconds", 0.5), tickRate))
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skill.CooldownMS, tickRate)
 	entity.Skills[qID] = state
 	w.LockAttackAfterCast(entity, tick, tickRate)

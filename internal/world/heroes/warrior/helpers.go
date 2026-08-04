@@ -52,6 +52,18 @@ func secondsToTicks(seconds float64, tickRate int) uint64 {
 	return uint64(math.Ceil(seconds * float64(tickRate)))
 }
 
+func beginAction(entity *world.Entity, action string, skillID string, tick uint64, endsAt uint64) {
+	if entity == nil {
+		return
+	}
+	entity.Action = world.ActionState{
+		Name:          action,
+		SkillID:       skillID,
+		StartedAtTick: tick,
+		EndsAtTick:    endsAt,
+	}
+}
+
 func cooldownTicksFor(entity *world.Entity, cooldownMS int, tickRate int) uint64 {
 	seconds := float64(cooldownMS) / 1000
 	if entity != nil && entity.Stats.AbilityHaste > 0 {

@@ -25,6 +25,7 @@ func ApplyE(w *world.World, entity *world.Entity, state world.SkillState, skill 
 	entity.Warrior.JudgmentSpinsRemaining = spins
 	entity.Warrior.JudgmentLevel = state.Level
 	entity.Warrior.JudgmentHits = make(map[string]int)
+	beginAction(entity, "e", eID, tick, entity.Warrior.JudgmentUntilTick)
 	state.CooldownUntilTick = 0
 	entity.Skills[eID] = state
 }
@@ -75,6 +76,9 @@ func finishE(w *world.World, entity *world.Entity, skill config.SkillConfig, tic
 }
 
 func clearE(entity *world.Entity) {
+	if entity.Action.Name == "e" && entity.Action.SkillID == eID {
+		entity.Action = world.ActionState{}
+	}
 	entity.Warrior.JudgmentUntilTick = 0
 	entity.Warrior.JudgmentNextSpinTick = 0
 	entity.Warrior.JudgmentSpinIntervalTicks = 0

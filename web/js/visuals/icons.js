@@ -17,7 +17,7 @@ function playerModelShape(player) {
         return 'crossbow';
     }
     if (player.heroId === 'tank') {
-        return 'octagon';
+        return 'stone_golem';
     }
     if (player.heroId === 'mage') {
         return 'mage';
@@ -71,6 +71,93 @@ function hitTestPlayerModel(dx, dy, player) {
         return Math.abs(dx) <= radius && Math.abs(dy) <= radius;
     }
     return Math.hypot(dx, dy) <= radius;
+}
+
+/**
+ * 使用统一入口绘制英雄模型或固定尺寸 HUD 图标。
+ * @param {PIXI.Graphics} graphics Pixi 矢量绘图对象。
+ * @param {object} player 至少包含 heroId、team 和 dead 的英雄快照。
+ * @param {number} radius 图标的屏幕半径，单位为像素。
+ * @param {boolean} isSelf 是否使用自身英雄的高对比描边。
+ */
+function drawHeroModelIcon(graphics, player, radius, isSelf = false) {
+    const shape = playerModelShape(player);
+    const teamColor = colorForTeam(player.team);
+    if (shape === 'triangle') {
+        graphics.moveTo(0, -radius);
+        graphics.lineTo(radius * 0.92, radius * 0.7);
+        graphics.lineTo(-radius * 0.92, radius * 0.7);
+        graphics.closePath();
+    } else if (shape === 'archer') {
+        drawBowArrowIcon(graphics, radius);
+    } else if (shape === 'crossbow') {
+        drawCrossbowIcon(graphics, radius);
+    } else if (shape === 'square') {
+        graphics.rect(-radius, -radius, radius * 2, radius * 2);
+    } else if (shape === 'stone_golem') {
+        drawStoneGolemIcon(graphics, radius);
+    } else if (shape === 'katana') {
+        drawKatanaIcon(graphics, radius);
+    } else if (shape === 'warrior') {
+        drawWarriorIcon(graphics, radius);
+    } else if (shape === 'sword') {
+        drawSwordIcon(graphics, radius);
+    } else if (shape === 'mage') {
+        drawMageIcon(graphics, radius);
+    } else if (shape === 'fire') {
+        drawFireIcon(graphics, radius, player.dead, teamColor);
+        return;
+    } else if (shape === 'snowflake') {
+        drawSnowflakeIcon(graphics, radius, player.dead, teamColor);
+        return;
+    } else if (shape === 'gunner') {
+        drawGunnerIcon(graphics, radius);
+    } else if (shape === 'ninja') {
+        drawNinjaIcon(graphics, radius);
+    } else if (shape === 'explorer') {
+        drawExplorerHatIcon(graphics, radius);
+    } else if (shape === 'blade') {
+        drawBladeIcon(graphics, radius);
+    } else if (shape === 'killer') {
+        drawKillerIcon(graphics, radius);
+    } else if (shape === 'shadow_assassin') {
+        drawShadowAssassinIcon(graphics, radius);
+    } else if (shape === 'berserker') {
+        drawBerserkerIcon(graphics, radius);
+    } else if (shape === 'robot') {
+        drawRobotIcon(graphics, radius);
+    } else if (shape === 'doctor') {
+        drawDoctorIcon(graphics, radius, player.dead, teamColor);
+        return;
+    } else if (shape === 'monk') {
+        drawMonkIcon(graphics, radius);
+    } else if (shape === 'butcher') {
+        drawButcherIcon(graphics, radius);
+    } else {
+        graphics.circle(0, 0, radius);
+    }
+
+    graphics.fill(player.dead ? 0x6b7280 : teamColor);
+    if (shape === 'mage' || shape === 'ninja') {
+        return;
+    }
+    const useDarkStroke =
+        shape === 'archer' ||
+        shape === 'gunner' ||
+        shape === 'berserker' ||
+        shape === 'blade' ||
+        shape === 'killer' ||
+        shape === 'shadow_assassin' ||
+        shape === 'robot' ||
+        shape === 'explorer' ||
+        shape === 'stone_golem' ||
+        shape === 'monk' ||
+        shape === 'butcher';
+    graphics.stroke({
+        color: player.dead ? 0x111827 : useDarkStroke ? 0x000000 : isSelf ? 0xffffff : 0x172026,
+        width: useDarkStroke ? Math.max(1, radius * 0.08) : isSelf ? Math.max(2, radius * 0.1) : 1,
+        alpha: player.dead ? 0.45 : 1,
+    });
 }
 
 function drawSwordIcon(graphics, radius) {
@@ -147,41 +234,25 @@ function drawKatanaIcon(graphics, radius) {
     graphics.closePath();
 }
 
+/** 绘制在默认镜头下仍能辨认的弓与单支箭轮廓。 */
 function drawBowArrowIcon(graphics, radius) {
-    graphics.moveTo(-radius * 1.22, -radius * 0.14);
-    graphics.lineTo(radius * 1.05, -radius * 0.14);
-    graphics.lineTo(radius * 1.05, radius * 0.14);
-    graphics.lineTo(-radius * 1.22, radius * 0.14);
+    graphics.moveTo(-radius * 0.42, -radius * 1.34);
+    graphics.quadraticCurveTo(-radius * 1.35, -radius * 0.72, -radius * 1.35, 0);
+    graphics.quadraticCurveTo(-radius * 1.35, radius * 0.72, -radius * 0.42, radius * 1.34);
+    graphics.lineTo(-radius * 0.18, radius * 1.03);
+    graphics.quadraticCurveTo(-radius * 0.94, radius * 0.52, -radius * 0.94, 0);
+    graphics.quadraticCurveTo(-radius * 0.94, -radius * 0.52, -radius * 0.18, -radius * 1.03);
     graphics.closePath();
-    graphics.moveTo(radius * 1.05, -radius * 0.42);
+    graphics.rect(-radius * 0.52, -radius * 0.12, radius * 1.55, radius * 0.24);
+    graphics.moveTo(radius * 0.92, -radius * 0.44);
     graphics.lineTo(radius * 1.42, 0);
-    graphics.lineTo(radius * 1.05, radius * 0.42);
+    graphics.lineTo(radius * 0.92, radius * 0.44);
     graphics.closePath();
-    graphics.moveTo(-radius * 1.22, -radius * 0.14);
-    graphics.lineTo(-radius * 1.58, -radius * 0.44);
-    graphics.lineTo(-radius * 1.38, 0);
-    graphics.lineTo(-radius * 1.58, radius * 0.44);
-    graphics.lineTo(-radius * 1.22, radius * 0.14);
-    graphics.closePath();
-    graphics.moveTo(-radius * 0.32, -radius * 1.25);
-    graphics.lineTo(-radius * 0.2, -radius * 1.25);
-    graphics.lineTo(-radius * 0.2, -radius * 0.24);
-    graphics.lineTo(-radius * 0.32, -radius * 0.24);
-    graphics.closePath();
-    graphics.moveTo(-radius * 0.32, radius * 0.24);
-    graphics.lineTo(-radius * 0.2, radius * 0.24);
-    graphics.lineTo(-radius * 0.2, radius * 1.25);
-    graphics.lineTo(-radius * 0.32, radius * 1.25);
-    graphics.closePath();
-    graphics.moveTo(-radius * 0.18, -radius * 1.25);
-    graphics.quadraticCurveTo(radius * 0.76, -radius * 1.05, radius * 0.78, -radius * 0.14);
-    graphics.lineTo(radius * 0.5, -radius * 0.14);
-    graphics.quadraticCurveTo(radius * 0.42, -radius * 0.82, -radius * 0.18, -radius * 1.25);
-    graphics.closePath();
-    graphics.moveTo(radius * 0.5, radius * 0.14);
-    graphics.lineTo(radius * 0.78, radius * 0.14);
-    graphics.quadraticCurveTo(radius * 0.76, radius * 1.05, -radius * 0.18, radius * 1.25);
-    graphics.quadraticCurveTo(radius * 0.42, radius * 0.82, radius * 0.5, radius * 0.14);
+    graphics.moveTo(-radius * 0.42, -radius * 0.12);
+    graphics.lineTo(-radius * 0.78, -radius * 0.46);
+    graphics.lineTo(-radius * 0.68, 0);
+    graphics.lineTo(-radius * 0.78, radius * 0.46);
+    graphics.lineTo(-radius * 0.42, radius * 0.12);
     graphics.closePath();
 }
 
@@ -283,34 +354,27 @@ function drawKillerIcon(graphics, radius) {
     graphics.closePath();
 }
 
+/** 绘制以兜帽和单侧月牙刃为核心的影刃剪影。 */
 function drawShadowAssassinIcon(graphics, radius) {
-    // Angular hood and swept-back blades give Shadow Blade a unique silhouette.
-    graphics.moveTo(0, -radius * 1.42);
-    graphics.lineTo(radius * 0.78, -radius * 0.58);
-    graphics.lineTo(radius * 0.62, radius * 0.42);
-    graphics.lineTo(0, radius * 1.08);
-    graphics.lineTo(-radius * 0.62, radius * 0.42);
-    graphics.lineTo(-radius * 0.78, -radius * 0.58);
+    graphics.moveTo(0, -radius * 1.46);
+    graphics.quadraticCurveTo(radius * 0.9, -radius * 0.92, radius * 0.86, radius * 0.12);
+    graphics.lineTo(radius * 0.48, radius * 1.12);
+    graphics.lineTo(0, radius * 1.42);
+    graphics.lineTo(-radius * 0.48, radius * 1.12);
+    graphics.lineTo(-radius * 0.86, radius * 0.12);
+    graphics.quadraticCurveTo(-radius * 0.9, -radius * 0.92, 0, -radius * 1.46);
     graphics.closePath();
 
-    graphics.moveTo(-radius * 0.48, -radius * 0.18);
-    graphics.lineTo(-radius * 1.42, radius * 0.12);
-    graphics.lineTo(-radius * 0.7, radius * 0.42);
-    graphics.lineTo(-radius * 1.18, radius * 1.24);
-    graphics.lineTo(-radius * 0.2, radius * 0.6);
-    graphics.closePath();
-
-    graphics.moveTo(radius * 0.48, -radius * 0.18);
-    graphics.lineTo(radius * 1.42, radius * 0.12);
-    graphics.lineTo(radius * 0.7, radius * 0.42);
-    graphics.lineTo(radius * 1.18, radius * 1.24);
-    graphics.lineTo(radius * 0.2, radius * 0.6);
-    graphics.closePath();
-
-    graphics.moveTo(-radius * 0.42, -radius * 0.18);
-    graphics.lineTo(0, radius * 0.08);
-    graphics.lineTo(radius * 0.42, -radius * 0.18);
+    graphics.moveTo(-radius * 0.56, -radius * 0.12);
+    graphics.lineTo(0, radius * 0.12);
+    graphics.lineTo(radius * 0.56, -radius * 0.12);
     graphics.lineTo(0, radius * 0.38);
+    graphics.closePath();
+
+    graphics.moveTo(radius * 0.7, -radius * 0.7);
+    graphics.quadraticCurveTo(radius * 1.55, 0, radius * 0.72, radius * 1.12);
+    graphics.lineTo(radius * 0.48, radius * 0.72);
+    graphics.quadraticCurveTo(radius * 1.04, 0, radius * 0.7, -radius * 0.7);
     graphics.closePath();
 }
 
@@ -366,39 +430,19 @@ function pointAt(angle, length) {
     };
 }
 
+/** 绘制横向阔刀，使刀客与剑客、圣骑士形成不同主轮廓。 */
 function drawBladeIcon(graphics, radius) {
-    graphics.moveTo(-radius * 1.42, radius * 0.08);
-    graphics.quadraticCurveTo(-radius * 0.82, -radius * 0.12, 0, -radius * 0.16);
-    graphics.quadraticCurveTo(radius * 0.82, -radius * 0.12, radius * 1.42, radius * 0.08);
-    graphics.quadraticCurveTo(radius * 0.78, radius * 0.42, 0, radius * 0.46);
-    graphics.quadraticCurveTo(-radius * 0.78, radius * 0.42, -radius * 1.42, radius * 0.08);
+    graphics.moveTo(-radius * 1.58, 0);
+    graphics.quadraticCurveTo(-radius * 0.42, -radius * 0.78, radius * 0.84, -radius * 0.48);
+    graphics.lineTo(radius * 0.84, radius * 0.32);
+    graphics.quadraticCurveTo(-radius * 0.4, radius * 0.58, -radius * 1.58, 0);
     graphics.closePath();
-
-    graphics.moveTo(-radius * 0.82, -radius * 0.04);
-    graphics.quadraticCurveTo(-radius * 0.42, -radius * 0.78, 0, -radius * 1.3);
-    graphics.quadraticCurveTo(radius * 0.42, -radius * 0.78, radius * 0.82, -radius * 0.04);
-    graphics.quadraticCurveTo(radius * 0.36, radius * 0.12, 0, radius * 0.14);
-    graphics.quadraticCurveTo(-radius * 0.36, radius * 0.12, -radius * 0.82, -radius * 0.04);
-    graphics.closePath();
-
-    graphics.rect(-radius * 0.72, -radius * 0.08, radius * 1.44, radius * 0.18);
-
-    graphics.moveTo(-radius * 0.58, radius * 0.32);
-    graphics.quadraticCurveTo(-radius * 0.5, radius * 0.88, -radius * 0.72, radius * 1.36);
-    graphics.lineTo(-radius * 0.5, radius * 1.45);
-    graphics.quadraticCurveTo(-radius * 0.24, radius * 0.84, -radius * 0.36, radius * 0.3);
-    graphics.closePath();
-
-    graphics.moveTo(radius * 0.58, radius * 0.32);
-    graphics.quadraticCurveTo(radius * 0.5, radius * 0.88, radius * 0.72, radius * 1.36);
-    graphics.lineTo(radius * 0.5, radius * 1.45);
-    graphics.quadraticCurveTo(radius * 0.24, radius * 0.84, radius * 0.36, radius * 0.3);
-    graphics.closePath();
-
-    graphics.moveTo(-radius * 0.16, radius * 0.4);
-    graphics.lineTo(0, radius * 0.72);
-    graphics.lineTo(radius * 0.16, radius * 0.4);
-    graphics.lineTo(0, radius * 1.12);
+    graphics.rect(radius * 0.76, -radius * 0.62, radius * 0.22, radius * 1.08);
+    graphics.rect(radius * 0.98, -radius * 0.28, radius * 0.68, radius * 0.4);
+    graphics.moveTo(radius * 1.56, -radius * 0.38);
+    graphics.lineTo(radius * 1.82, -radius * 0.2);
+    graphics.lineTo(radius * 1.82, radius * 0.04);
+    graphics.lineTo(radius * 1.56, radius * 0.22);
     graphics.closePath();
 }
 
@@ -439,14 +483,42 @@ function drawRobotIcon(graphics, radius) {
     graphics.rect(radius * 0.76, -radius * 0.22, radius * 0.36, radius * 0.72);
 }
 
-function drawDoctorIcon(graphics, radius) {
-    graphics.roundRect(-radius * 0.58, -radius * 1.12, radius * 1.16, radius * 2.24, radius * 0.26);
-    graphics.rect(-radius * 0.34, -radius * 1.38, radius * 0.68, radius * 0.34);
-    graphics.roundRect(-radius * 0.76, -radius * 0.42, radius * 1.52, radius * 0.86, radius * 0.12);
-    graphics.rect(-radius * 0.14, -radius * 0.76, radius * 0.28, radius * 1.52);
-    graphics.rect(-radius * 0.58, -radius * 0.14, radius * 1.16, radius * 0.28);
-    graphics.circle(radius * 0.42, radius * 0.74, radius * 0.14);
-    graphics.circle(-radius * 0.34, radius * 0.78, radius * 0.1);
+/** 绘制带高对比医疗十字的急救箱，并直接完成填充与描边。 */
+function drawDoctorIcon(graphics, radius, dead, teamColor) {
+    graphics.roundRect(-radius * 1.08, -radius * 0.82, radius * 2.16, radius * 1.72, radius * 0.22);
+    graphics.fill(dead ? 0x6b7280 : teamColor);
+    graphics.stroke({ color: 0x111827, width: Math.max(1, radius * 0.09), alpha: dead ? 0.45 : 1 });
+
+    graphics.roundRect(-radius * 0.48, -radius * 1.2, radius * 0.96, radius * 0.42, radius * 0.12);
+    graphics.fill(dead ? 0x6b7280 : teamColor);
+    graphics.stroke({ color: 0x111827, width: Math.max(1, radius * 0.09), alpha: dead ? 0.45 : 1 });
+
+    graphics.rect(-radius * 0.18, -radius * 0.58, radius * 0.36, radius * 1.18);
+    graphics.rect(-radius * 0.58, -radius * 0.18, radius * 1.16, radius * 0.36);
+    graphics.fill(dead ? 0xd1d5db : 0xfff4d6);
+}
+
+/** 绘制具有岩石棱角、双眼和中央裂纹的石头人头像。 */
+function drawStoneGolemIcon(graphics, radius) {
+    graphics.moveTo(-radius * 1.18, -radius * 0.58);
+    graphics.lineTo(-radius * 0.62, -radius * 1.26);
+    graphics.lineTo(-radius * 0.08, -radius * 1.02);
+    graphics.lineTo(radius * 0.5, -radius * 1.32);
+    graphics.lineTo(radius * 1.18, -radius * 0.56);
+    graphics.lineTo(radius * 1.02, radius * 0.72);
+    graphics.lineTo(radius * 0.42, radius * 1.18);
+    graphics.lineTo(-radius * 0.54, radius * 1.08);
+    graphics.lineTo(-radius * 1.14, radius * 0.46);
+    graphics.closePath();
+    graphics.rect(-radius * 0.7, -radius * 0.3, radius * 0.44, radius * 0.2);
+    graphics.rect(radius * 0.26, -radius * 0.3, radius * 0.44, radius * 0.2);
+    graphics.moveTo(-radius * 0.08, -radius * 0.02);
+    graphics.lineTo(radius * 0.18, radius * 0.22);
+    graphics.lineTo(-radius * 0.08, radius * 0.5);
+    graphics.lineTo(radius * 0.16, radius * 0.78);
+    graphics.lineTo(-radius * 0.28, radius * 0.54);
+    graphics.lineTo(-radius * 0.04, radius * 0.24);
+    graphics.closePath();
 }
 
 function drawMonkIcon(graphics, radius) {

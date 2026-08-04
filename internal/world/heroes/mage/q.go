@@ -84,5 +84,6 @@ func ApplyQ(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	entity.Mage.LightBindingTarget = w.ClampWorldPoint(world.Vector2{X: cast.TargetX, Y: cast.TargetY})
 	entity.Mage.LightBindingLevel = state.Level
 	entity.Control.ActionLockedUntilTick = entity.Mage.LightBindingReleaseTick
+	beginAction(entity, "q", qID, entity.Mage.LightBindingTarget, tick, tick+max(windupTicks, secondsToTicks(0.4, tickRate)))
 	entity.Skills[qID] = state
 }

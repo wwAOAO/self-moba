@@ -188,5 +188,6 @@ func ApplyE(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	entity.Mage.LucentSingularityTarget = target
 	entity.Mage.LucentSingularityLevel = state.Level
 	entity.Control.ActionLockedUntilTick = entity.Mage.LucentSingularityReleaseTick
+	beginAction(entity, "e", eID, target, tick, tick+max(windupTicks, secondsToTicks(0.4, tickRate)))
 	entity.Skills[eID] = state
 }

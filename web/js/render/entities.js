@@ -1,10 +1,65 @@
 ﻿/** 平滑同步玩家位置、权威碰撞范围和界面状态。 */
-// 英雄图标最大绘制外延约为基础半径的 1.66 倍，覆盖层使用更保守的定位系数。
-const modelOverlayExtentRatio = 1.75;
+// 2D 英雄模型相对于碰撞半径的完整边长比例。
+const heroModelSizeRatio = 6;
+// 英雄血条、资源条和名字使用模型半边尺寸作为安全外延。
+const heroModelOverlayExtentRatio = heroModelSizeRatio / 2;
+// 矢量单位最大绘制外延约为基础半径的 1.66 倍，覆盖层使用更保守的定位系数。
+const unitModelOverlayExtentRatio = 1.75;
+// 英雄待机动画每帧持续时间，单位为毫秒。
+const heroIdleFrameMs = 320;
+// 英雄走路动画每帧持续时间，单位为毫秒。
+const heroWalkFrameMs = 60;
+// 英雄走路动画的基准移动速度，单位为世界单位/秒；剑客与刀客均为 345。
+const heroWalkReferenceSpeed = 345;
+// 英雄走路动画允许的最短单帧时长，单位为毫秒，避免高速时动作闪烁。
+const heroWalkMinFrameMs = 40;
+// 英雄走路动画允许的最长单帧时长，单位为毫秒，避免减速时动作停滞。
+const heroWalkMaxFrameMs = 95;
+// 网络位置变化小于该世界距离时不更新人物朝向。
+const playerFacingMovementThreshold = 0.5;
+// 四方向切换边界的迟滞角，单位为弧度，避免斜向移动时反复闪烁。
+const playerFacingDirectionHysteresis = Math.PI / 18;
+// 四方向对应的朝向中心角，角度约定为上 0、右 π/2、下 π、左 -π/2。
+const playerFacingDirectionAngles = Object.freeze({
+    up: 0,
+    right: Math.PI / 2,
+    down: Math.PI,
+    left: -Math.PI / 2,
+});
+// 到达目标后的短暂宽限时间，避免网络快照间隔造成走路循环闪回待机。
+const playerWalkingGraceMs = 140;
+// 服务端动作名称与普通攻击、技能动作精灵表的键保持一一对应。
+const heroActionNames = Object.freeze(['attack', 'q', 'w', 'e', 'r']);
+// 圣骑士审判旋转的单帧持续时间，单位为毫秒。
+const warriorJudgmentFrameMs = 90;
+
+/** 判断快照中的英雄普通攻击或技能动作是否存在对应素材且仍在服务端动作窗口内。 */
+function activeHeroAction(player, tick) {
+    const animations = heroModelAnimations.get(player?.heroId);
+    if (!animations?.up?.[player?.action] || !heroActionNames.includes(player.action)) {
+        return '';
+    }
+    const startedAtTick = Number(player.actionStartedAtTick);
+    const endsAtTick = Number(player.actionEndsAtTick);
+    if (!Number.isFinite(startedAtTick) || !Number.isFinite(endsAtTick) || endsAtTick <= startedAtTick) {
+        return '';
+    }
+    return tick >= startedAtTick && tick < endsAtTick ? player.action : '';
+}
+
+/** 将服务端动作时间窗口映射为指定英雄动作序列的当前帧。 */
+function heroActionFrameIndex(player, tick, frameCount) {
+    const startedAtTick = Number(player.actionStartedAtTick);
+    const endsAtTick = Number(player.actionEndsAtTick);
+    const duration = Math.max(1, endsAtTick - startedAtTick);
+    const progress = Math.max(0, Math.min(0.999999, (tick - startedAtTick) / duration));
+    return Math.min(frameCount - 1, Math.floor(progress * frameCount));
+}
 
 /** 在镜头计算前推进玩家平滑坐标，确保镜头与模型使用同一帧的位置。 */
 function syncSpritePositions(deltaMS) {
     const smoothing = 1 - Math.exp(-deltaMS / 80);
+    const now = performance.now();
 
     for (const [playerId, sprite] of state.sprites) {
         if (!state.players.has(playerId)) {
@@ -21,10 +76,27 @@ function syncSpritePositions(deltaMS) {
             playerLayer.addChild(sprite.node);
         }
 
+        const movementX = player.x - sprite.targetX;
+        const movementY = player.y - sprite.targetY;
+        const serverFacingX = Number(player.facingX);
+        const serverFacingY = Number(player.facingY);
+        const hasServerActionFacing =
+            activeHeroAction(player, interpolatedTick()) && Math.hypot(serverFacingX, serverFacingY) >= 0.01;
+        if (hasServerActionFacing) {
+            sprite.facingAngle = playerFacingAngle(serverFacingX, serverFacingY, sprite.facingAngle);
+            sprite.facingDirection = playerFacingDirection(sprite.facingAngle, sprite.facingDirection);
+        } else if (Math.hypot(movementX, movementY) >= playerFacingMovementThreshold) {
+            sprite.facingAngle = playerFacingAngle(movementX, movementY, sprite.facingAngle);
+            sprite.facingDirection = playerFacingDirection(sprite.facingAngle, sprite.facingDirection);
+            sprite.lastMoveAt = now;
+        }
         sprite.targetX = player.x;
         sprite.targetY = player.y;
         sprite.x += (sprite.targetX - sprite.x) * smoothing;
         sprite.y += (sprite.targetY - sprite.y) * smoothing;
+        sprite.moving =
+            Math.hypot(sprite.targetX - sprite.x, sprite.targetY - sprite.y) >= playerFacingMovementThreshold ||
+            now - sprite.lastMoveAt <= playerWalkingGraceMs;
     }
 }
 
@@ -37,8 +109,9 @@ function syncSprites(frame) {
         }
 
         redrawPlayerBody(sprite, player);
+        updatePlayerModelAnimation(sprite, player);
         updatePlayerCollisionCircle(sprite, player);
-        const barY = -(playerModelRadius(player) * modelOverlayExtentRatio + 10);
+        const barY = -(playerModelRadius(player) * heroModelOverlayExtentRatio + 10);
         updateBars(sprite, player, barY);
         updatePlayerLabel(sprite, player);
         updateStatusLabel(sprite, player, barY + 5, 24);
@@ -77,7 +150,7 @@ function syncUnits(frame, deltaMS) {
         sprite.targetX = unit.x;
         sprite.targetY = unit.y;
         redrawUnitBody(sprite, unit);
-        const overlayRadius = unitModelDisplayRadius(unit) * modelOverlayExtentRatio;
+        const overlayRadius = unitModelDisplayRadius(unit) * unitModelOverlayExtentRatio;
         updateUnitBars(sprite, unit, -(overlayRadius + 16));
         updateUnitCollisionCircle(sprite, unit, frame);
         updateStatusLabel(sprite, unit, -(overlayRadius + 30));
@@ -104,10 +177,11 @@ function updateUnitCollisionCircle(sprite, unit, frame) {
     sprite.collision.stroke({ color: 0x172026, width: 1, alpha: 0.65 });
 }
 
-/** 创建玩家模型及其状态、资源和碰撞提示图层。 */
+/** 创建玩家场景节点，并将世界尺寸模型与固定屏幕尺寸覆盖层分层挂载。 */
 function createPlayer(player) {
     const node = new PIXI.Container();
     const body = new PIXI.Graphics();
+    const model = new PIXI.AnimatedSprite([PIXI.Texture.EMPTY]);
     const collision = new PIXI.Graphics();
     const hpBack = new PIXI.Graphics();
     const hpFill = new PIXI.Graphics();
@@ -125,15 +199,24 @@ function createPlayer(player) {
     });
 
     label.anchor.set(0.5, 0);
-    node.addChild(statusLabel, hpBack, hpFill, resourceBack, resourceFill, collision, body, label);
+    model.anchor.set(0.5);
+    model.visible = false;
+    node.addChild(statusLabel, hpBack, hpFill, resourceBack, resourceFill, collision, body, model, label);
     return {
         node,
         body,
+        model,
         collision,
         x: player.x,
         y: player.y,
         targetX: player.x,
         targetY: player.y,
+        facingAngle: 0,
+        facingDirection: 'up',
+        lastMoveAt: 0,
+        moving: false,
+        animationName: '',
+        modelAssetKey: '',
         hpBack,
         hpFill,
         resourceBack,
@@ -149,103 +232,125 @@ function updatePlayerLabel(sprite, player) {
         return;
     }
     sprite.label.text = player.dead ? `${player.playerId} ${Math.ceil(player.respawnIn || 0)}s` : player.playerId;
-    sprite.label.y = playerModelRadius(player) * modelOverlayExtentRatio + 6;
+    sprite.label.y = playerModelRadius(player) * heroModelOverlayExtentRatio + 6;
     sprite.label.alpha = player.dead ? 0.65 : 1;
 }
 
+/** 优先绘制世界尺寸的 2D 英雄模型，资源不可用时回退统一矢量图标。 */
 function redrawPlayerBody(sprite, player) {
     const isSelf = player.playerId === state.playerId;
     const radius = playerModelRadius(player);
+    const modelAnimation = heroModelAnimations.get(player.heroId);
+    const directionAnimation = modelAnimation?.[sprite.facingDirection] || modelAnimation?.up || modelAnimation;
+    const modelTexture = directionAnimation?.idle?.[0] || heroModelTextures.get(player.heroId);
     sprite.body.clear();
-    const shape = playerModelShape(player);
-    if (shape === 'triangle') {
-        sprite.body.moveTo(0, -radius);
-        sprite.body.lineTo(radius * 0.92, radius * 0.7);
-        sprite.body.lineTo(-radius * 0.92, radius * 0.7);
-        sprite.body.closePath();
-    } else if (shape === 'archer') {
-        drawBowArrowIcon(sprite.body, radius);
-    } else if (shape === 'crossbow') {
-        drawCrossbowIcon(sprite.body, radius);
-    } else if (shape === 'square') {
-        sprite.body.rect(-radius, -radius, radius * 2, radius * 2);
-    } else if (shape === 'octagon') {
-        drawChamferedOctagon(sprite.body, radius);
-    } else if (shape === 'katana') {
-        drawKatanaIcon(sprite.body, radius);
-    } else if (shape === 'warrior') {
-        drawWarriorIcon(sprite.body, radius);
-    } else if (shape === 'sword') {
-        drawSwordIcon(sprite.body, radius);
-    } else if (shape === 'mage') {
-        drawMageIcon(sprite.body, radius);
-    } else if (shape === 'fire') {
-        drawFireIcon(sprite.body, radius, player.dead, colorForTeam(player.team));
+    if (modelTexture) {
+        sprite.body.circle(0, 0, radius * 1.48);
+        sprite.body.fill({ color: colorForTeam(player.team), alpha: player.dead ? 0.12 : 0.28 });
+        sprite.body.stroke({ color: player.dead ? 0x374151 : colorForTeam(player.team), width: 2, alpha: 0.9 });
+        if (sprite.modelAssetKey !== player.heroId) {
+            sprite.model.textures = directionAnimation?.idle || [modelTexture];
+            sprite.model.gotoAndStop(0);
+            sprite.modelAssetKey = player.heroId;
+            sprite.animationName = '';
+        }
+        sprite.model.scale.set((radius * heroModelSizeRatio) / Math.max(1, sprite.model.texture.frame.height));
+        sprite.model.position.set(0, 0);
+        sprite.model.rotation = 0;
+        sprite.model.alpha = player.dead ? 0.48 : 1;
+        sprite.model.visible = true;
         return;
-    } else if (shape === 'snowflake') {
-        drawSnowflakeIcon(sprite.body, radius, player.dead, colorForTeam(player.team));
-        return;
-    } else if (shape === 'gunner') {
-        drawGunnerIcon(sprite.body, radius);
-    } else if (shape === 'ninja') {
-        drawNinjaIcon(sprite.body, radius);
-    } else if (shape === 'explorer') {
-        drawExplorerHatIcon(sprite.body, radius);
-    } else if (shape === 'blade') {
-        drawBladeIcon(sprite.body, radius);
-    } else if (shape === 'killer') {
-        drawKillerIcon(sprite.body, radius);
-    } else if (shape === 'shadow_assassin') {
-        drawShadowAssassinIcon(sprite.body, radius);
-    } else if (shape === 'berserker') {
-        drawBerserkerIcon(sprite.body, radius);
-    } else if (shape === 'robot') {
-        drawRobotIcon(sprite.body, radius);
-    } else if (shape === 'doctor') {
-        drawDoctorIcon(sprite.body, radius);
-    } else if (shape === 'monk') {
-        drawMonkIcon(sprite.body, radius);
-    } else if (shape === 'butcher') {
-        drawButcherIcon(sprite.body, radius);
-    } else {
-        sprite.body.circle(0, 0, radius);
     }
-    sprite.body.fill(player.dead ? 0x6b7280 : colorForTeam(player.team));
-    if (shape !== 'archer' && shape !== 'mage' && shape !== 'ninja') {
-        sprite.body.stroke({
-            color: player.dead
-                ? 0x111827
-                : shape === 'gunner' ||
-                    shape === 'berserker' ||
-                    shape === 'blade' ||
-                    shape === 'killer' ||
-                    shape === 'shadow_assassin' ||
-                    shape === 'robot' ||
-                    shape === 'explorer' ||
-                    shape === 'doctor' ||
-                    shape === 'monk' ||
-                    shape === 'butcher'
-                  ? 0x000000
-                  : isSelf
-                    ? 0xffffff
-                    : 0x172026,
-            width:
-                shape === 'gunner' ||
-                shape === 'berserker' ||
-                shape === 'blade' ||
-                shape === 'killer' ||
-                shape === 'shadow_assassin' ||
-                shape === 'robot' ||
-                shape === 'explorer' ||
-                shape === 'doctor' ||
-                shape === 'monk' ||
-                shape === 'butcher'
-                    ? 1
-                    : isSelf
-                      ? 2
-                      : 1,
-            alpha: player.dead ? 0.45 : 1,
-        });
+    sprite.model.visible = false;
+    drawHeroModelIcon(sprite.body, player, radius, isSelf);
+}
+
+/** 根据移动向量计算人物朝向角，为后续四方向素材选择保留稳定状态。 */
+function playerFacingAngle(deltaX, deltaY, previousAngle = 0) {
+    if (Math.hypot(deltaX, deltaY) < playerFacingMovementThreshold) {
+        return previousAngle;
+    }
+    const angle = Math.atan2(deltaY, deltaX) + Math.PI / 2;
+    return Math.atan2(Math.sin(angle), Math.cos(angle));
+}
+
+/**
+ * 将连续朝向角归入上、右、下、左四方向，并在当前方向边界保留 10° 迟滞。
+ * @param {number} angle 以向上为零点的朝向角，单位为弧度。
+ * @param {'up'|'right'|'down'|'left'} previousDirection 上一帧采用的方向。
+ * @returns {'up'|'right'|'down'|'left'} 当前稳定方向。
+ */
+function playerFacingDirection(angle, previousDirection = 'up') {
+    const normalizedAngle = Math.atan2(Math.sin(angle), Math.cos(angle));
+    let candidate = 'left';
+    if (normalizedAngle >= -Math.PI / 4 && normalizedAngle < Math.PI / 4) {
+        candidate = 'up';
+    } else if (normalizedAngle >= Math.PI / 4 && normalizedAngle < (Math.PI * 3) / 4) {
+        candidate = 'right';
+    } else if (normalizedAngle >= (Math.PI * 3) / 4 || normalizedAngle < (-Math.PI * 3) / 4) {
+        candidate = 'down';
+    }
+    if (candidate === previousDirection || !(previousDirection in playerFacingDirectionAngles)) {
+        return candidate;
+    }
+    const previousAngle = playerFacingDirectionAngles[previousDirection];
+    const angularDistance = Math.abs(
+        Math.atan2(Math.sin(normalizedAngle - previousAngle), Math.cos(normalizedAngle - previousAngle)),
+    );
+    return angularDistance >= Math.PI / 4 + playerFacingDirectionHysteresis ? candidate : previousDirection;
+}
+
+/**
+ * 根据实际移动速度计算英雄走路动画的单帧时长。
+ * @param {number} moveSpeed 当前移动速度，单位为世界单位/秒。
+ * @returns {number} 受上下限约束的单帧时长，单位为毫秒。
+ */
+function heroWalkFrameDuration(moveSpeed) {
+    const normalizedSpeed = Number(moveSpeed);
+    const effectiveSpeed =
+        Number.isFinite(normalizedSpeed) && normalizedSpeed > 0 ? normalizedSpeed : heroWalkReferenceSpeed;
+    return Math.max(
+        heroWalkMinFrameMs,
+        Math.min(heroWalkMaxFrameMs, (heroWalkFrameMs * heroWalkReferenceSpeed) / effectiveSpeed),
+    );
+}
+
+/** 在英雄四方向待机、走路、普通攻击、技能动作和死亡状态间切换 Pixi 原生逐帧动画。 */
+function updatePlayerModelAnimation(sprite, player) {
+    const animations = heroModelAnimations.get(player.heroId);
+    if (!sprite.model.visible || !animations) {
+        return;
+    }
+    const directionAnimations = animations[sprite.facingDirection] || animations.up || animations;
+    const tick = interpolatedTick();
+    const actionName = activeHeroAction(player, tick);
+    const stateName = player.dead ? 'dead' : actionName || (sprite.moving ? 'walk' : 'idle');
+    const actionTextures = actionName ? directionAnimations[actionName] : null;
+    const animationName = `${sprite.facingDirection}:${stateName}:${player.actionStartedAtTick || 0}`;
+    const moving = stateName === 'walk';
+    const action = Boolean(actionTextures);
+    const loopingAction = player.heroId === 'warrior' && actionName === 'e';
+    const frameDuration = moving ? heroWalkFrameDuration(player.stats?.moveSpeed) : heroIdleFrameMs;
+    sprite.model.loop = loopingAction || !action;
+    sprite.model.animationSpeed = loopingAction
+        ? 1000 / (warriorJudgmentFrameMs * 60)
+        : action
+          ? 1
+          : 1000 / (frameDuration * 60);
+    if (sprite.animationName !== animationName) {
+        sprite.animationName = animationName;
+        sprite.model.textures = action ? actionTextures : moving ? directionAnimations.walk : directionAnimations.idle;
+        if (player.dead) {
+            sprite.model.gotoAndStop(0);
+        } else if (loopingAction) {
+            sprite.model.gotoAndPlay(0);
+        } else if (action) {
+            sprite.model.gotoAndStop(heroActionFrameIndex(player, tick, actionTextures.length));
+        } else {
+            sprite.model.gotoAndPlay(0);
+        }
+    } else if (action && !loopingAction) {
+        sprite.model.gotoAndStop(heroActionFrameIndex(player, tick, actionTextures.length));
     }
 }
 
@@ -304,7 +409,7 @@ function redrawUnitBody(sprite, unit) {
     if (unit.kind !== 'fountain') {
         sprite.body.stroke({ color: 0xf2f7f3, width: 2 });
     }
-    sprite.label.y = modelRadius * modelOverlayExtentRatio + 6;
+    sprite.label.y = modelRadius * unitModelOverlayExtentRatio + 6;
 }
 
 function unitLabelVisible(kind) {

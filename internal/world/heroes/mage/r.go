@@ -144,5 +144,6 @@ func ApplyR(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	entity.Mage.FinalSparkTarget = w.ClampWorldPoint(world.Vector2{X: cast.TargetX, Y: cast.TargetY})
 	entity.Mage.FinalSparkLevel = state.Level
 	entity.Control.ActionLockedUntilTick = entity.Mage.FinalSparkReleaseTick
+	beginAction(entity, "r", rID, entity.Mage.FinalSparkTarget, tick, tick+max(windupTicks, secondsToTicks(0.4, tickRate)))
 	entity.Skills[rID] = state
 }

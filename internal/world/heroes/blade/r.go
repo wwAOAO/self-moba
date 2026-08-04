@@ -14,6 +14,7 @@ func ApplyR(w *world.World, entity *world.Entity, _ protocol.CastInput, state wo
 	entity.Control.UndyingRageUntil = tick + secondsToTicks(skillMeta(skill, "durationSeconds", 5), tickRate)
 	entity.Control.UndyingRageMinHP = math.Round(skillList(skill, "minHP", state.Level, []float64{30, 50, 70}))
 	gainRage(entity, skillList(skill, "rageGain", state.Level, []float64{50, 75, 100}), tick)
+	beginAction(entity, "r", rID, tick, tick+secondsToTicks(skillMeta(skill, "castActionSeconds", 0.5), tickRate))
 	w.PutSkillEffect(world.SkillEffect{
 		ID:           w.NextEffectID("effect:blade_r_rage:"),
 		Kind:         "blade_r_rage",

@@ -249,12 +249,12 @@ func (w *World) laneTargetPriority(minion *Entity, target *Entity, tick uint64) 
 	return 5
 }
 
-// provokeLaneMinions 让英雄伤害事件触发目标友方小兵的限时仇恨。
+// provokeLaneMinions 让英雄对敌方英雄造成伤害时触发目标友方小兵的限时仇恨。
 func (w *World) provokeLaneMinions(source *Entity, target *Entity, tick uint64, tickRate int) {
 	if source == nil || target == nil || !IsHeroUnit(source) || source.Team == target.Team || tickRate <= 0 {
 		return
 	}
-	if !IsHeroUnit(target) && !isMinion(target) {
+	if !IsHeroUnit(target) {
 		return
 	}
 	for _, minion := range w.entitiesInStableOrder() {

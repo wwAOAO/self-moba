@@ -13,6 +13,7 @@ func (w *World) killPlayer(target *Entity, tick uint64, tickRate int) {
 		LastDeathPosition: target.Position,
 	}
 	target.Intent = IntentState{}
+	target.Action = ActionState{}
 	target.Warrior = WarriorState{}
 	target.Passive.Shield = 0
 	target.Passive.MaxShield = 0

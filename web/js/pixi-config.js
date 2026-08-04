@@ -1,9 +1,11 @@
+/** 初始化 Pixi 舞台、渲染层与英雄模型资源，并在配置加载后启动游戏循环。 */
 async function bootPixi() {
     await app.init({
         resizeTo: els.stage,
         antialias: true,
         backgroundColor: 0x9eb89f,
     });
+    await loadHeroModelAssets();
     els.stage.appendChild(app.canvas);
     app.stage.addChild(worldLayer);
     worldLayer.addChild(gridLayer);
@@ -25,6 +27,83 @@ async function bootPixi() {
     app.canvas.addEventListener('pointerdown', handlePointerDown);
     app.canvas.addEventListener('wheel', handleCameraZoom, { passive: false });
     loadGameConfigs();
+}
+
+/** 预加载已注册的英雄 2D 模型，单个资源失败时保留矢量降级。 */
+async function loadHeroModelAssets() {
+    await Promise.all([
+        ...Object.entries(heroModelAssetPaths).map(async ([heroId, path]) => {
+            try {
+                heroModelTextures.set(heroId, await PIXI.Assets.load(path));
+            } catch (error) {
+                console.warn('load hero model failed', heroId, error);
+            }
+        }),
+        ...Object.entries(heroAnimationAssetPaths).map(([heroId, assetPaths]) =>
+            loadHeroAnimationAsset(heroId, assetPaths),
+        ),
+    ]);
+}
+
+/** 加载指定英雄的待机、走路、普通攻击和 Q/W/E/R 技能动作精灵表。 */
+async function loadHeroAnimationAsset(heroId, assetPaths) {
+    try {
+        const [directionEntries, actionEntries] = await Promise.all([
+            Promise.all(
+                Object.entries(assetPaths.directions).map(async ([direction, path]) => {
+                    const frames = splitHeroAnimationFrames(await PIXI.Assets.load(path));
+                    return [
+                        direction,
+                        {
+                            idle: frames.slice(0, 4),
+                            walk: frames.slice(4, 16),
+                        },
+                    ];
+                }),
+            ),
+            Promise.all(
+                Object.entries(assetPaths.actions).map(async ([action, path]) => [
+                    action,
+                    splitHeroAnimationFrames(await PIXI.Assets.load(path)),
+                ]),
+            ),
+        ]);
+        const actionFrames = Object.fromEntries(actionEntries);
+        const directions = ['up', 'right', 'down', 'left'];
+        const baseAnimations = Object.fromEntries(directionEntries);
+        const directionAnimations = directions.map((direction, directionIndex) => [
+            direction,
+            {
+                ...baseAnimations[direction],
+                ...Object.fromEntries(
+                    Object.entries(actionFrames).map(([action, frames]) => [
+                        action,
+                        frames.slice(directionIndex * 4, directionIndex * 4 + 4),
+                    ]),
+                ),
+            },
+        ]);
+        heroModelAnimations.set(heroId, Object.fromEntries(directionAnimations));
+    } catch (error) {
+        console.warn('load hero animation failed', heroId, error);
+    }
+}
+
+/** 将英雄四列四行精灵表切成十六张等尺寸 Pixi 子纹理。 */
+function splitHeroAnimationFrames(sheetTexture) {
+    const columns = 4;
+    const rows = 4;
+    const frameWidth = Math.floor(sheetTexture.width / columns);
+    const frameHeight = Math.floor(sheetTexture.height / rows);
+    return Array.from({ length: columns * rows }, (_, index) => {
+        const frame = new PIXI.Rectangle(
+            (index % columns) * frameWidth,
+            Math.floor(index / columns) * frameHeight,
+            frameWidth,
+            frameHeight,
+        );
+        return new PIXI.Texture({ source: sheetTexture.source, frame });
+    });
 }
 
 async function loadGameConfigs() {

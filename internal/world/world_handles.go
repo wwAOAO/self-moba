@@ -150,6 +150,7 @@ func (w *World) InterruptControl(entity *Entity) {
 	entity.Control.DashUntilTick = 0
 	entity.Control.DashStartTick = 0
 	entity.Control.ActionLockedUntilTick = 0
+	entity.Action = ActionState{}
 }
 
 func (w *World) RemoveAllShields(entity *Entity) {

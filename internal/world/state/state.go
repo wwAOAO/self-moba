@@ -168,6 +168,13 @@ type ControlState struct {
 	MageFinalSparkRefund    float64
 }
 
+type ActionState struct {
+	Name          string
+	SkillID       string
+	StartedAtTick uint64
+	EndsAtTick    uint64
+}
+
 type SwordState struct {
 	SweepingBladeStacks      int
 	SweepingBladeTargetUntil map[string]uint64

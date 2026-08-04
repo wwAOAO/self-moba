@@ -48,6 +48,50 @@ func TestPlayerSnapshotIncludesCollisionRadius(t *testing.T) {
 	}
 }
 
+func TestPlayerSnapshotIncludesActionState(t *testing.T) {
+	w, heroes := testSnapshotWorld(t)
+	hero, ok := heroes.Get("sword")
+	if !ok {
+		t.Fatal("missing sword hero")
+	}
+	w.SpawnHero("p1", hero, world.TeamBlue)
+	player := w.EntityByID("player:p1")
+	player.Facing = world.Vector2{X: 1, Y: 0}
+	player.Action = world.ActionState{
+		Name:          "q",
+		SkillID:       "sword_cut",
+		StartedAtTick: 10,
+		EndsAtTick:    24,
+	}
+
+	got := BuildSnapshot("room-1", 12, w).Players[0]
+
+	if got.FacingX != 1 || got.FacingY != 0 || got.Action != "q" || got.SkillID != "sword_cut" ||
+		got.ActionStartedAtTick != 10 || got.ActionEndsAtTick != 24 {
+		t.Fatalf("player action snapshot = %+v", got)
+	}
+}
+
+func TestPlayerSnapshotHidesCancelledBasicAttackAction(t *testing.T) {
+	w, heroes := testSnapshotWorld(t)
+	hero, ok := heroes.Get("sword")
+	if !ok {
+		t.Fatal("missing sword hero")
+	}
+	w.SpawnHero("p1", hero, world.TeamBlue)
+	player := w.EntityByID("player:p1")
+	player.Action = world.ActionState{Name: "attack", StartedAtTick: 10, EndsAtTick: 15}
+	player.Combat.PendingAttackTargetID = "enemy:hero-1"
+
+	if got := BuildSnapshot("room-1", 12, w).Players[0].Action; got != "attack" {
+		t.Fatalf("pending basic attack action = %q, want attack", got)
+	}
+	player.Combat.PendingAttackTargetID = ""
+	if got := BuildSnapshot("room-1", 13, w).Players[0].Action; got != "" {
+		t.Fatalf("cancelled basic attack action = %q, want empty", got)
+	}
+}
+
 func TestUnitSnapshotIncludesNegativeBuffs(t *testing.T) {
 	w, heroes := testSnapshotWorld(t)
 	hero, ok := heroes.Get("berserker")

@@ -34,6 +34,7 @@
         ],
         "meta": {
             "apRatio": 1.5,
+            "castActionSeconds": 0.5,
             "healEffectSeconds": 0.7,
             "healEffectRadius": 90
         },
@@ -53,6 +54,7 @@
         "description": ["W：蔑视", "效果：减少周围敌方英雄的攻击力和移动速度，持续4秒。"],
         "meta": {
             "castWindupSeconds": 0.3,
+            "castActionSeconds": 0.45,
             "durationSeconds": 4
         },
         "metaLists": {
@@ -93,9 +95,10 @@
         "description": [
             "R：无尽怒火",
             "效果：立即获得怒气，并在接下来的5秒内免疫死亡，生命值最低降至1点。",
-            "特殊机制：可以在被眩晕、沉默或压制时施放。有0.5秒的施法延迟。"
+            "特殊机制：可以在被眩晕、沉默或压制时施放。人物有0.5秒启动动作，效果立即生效。"
         ],
         "meta": {
+            "castActionSeconds": 0.5,
             "durationSeconds": 5,
             "effectRadius": 110
         },

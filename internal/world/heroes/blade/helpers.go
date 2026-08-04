@@ -2,6 +2,7 @@ package blade
 
 import (
 	"l-battle/internal/config"
+	"l-battle/internal/world"
 	"math"
 )
 
@@ -20,4 +21,16 @@ func secondsToTicks(seconds float64, tickRate int) uint64 {
 		return 0
 	}
 	return uint64(math.Ceil(seconds * float64(tickRate)))
+}
+
+func beginAction(entity *world.Entity, action string, skillID string, tick uint64, endsAt uint64) {
+	if entity == nil {
+		return
+	}
+	entity.Action = world.ActionState{
+		Name:          action,
+		SkillID:       skillID,
+		StartedAtTick: tick,
+		EndsAtTick:    endsAt,
+	}
 }

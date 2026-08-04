@@ -595,6 +595,11 @@ function drawCrossbowmanCondemnImpact(effect, frame) {
     }
 }
 
+/**
+ * 绘制由多层横向风带、翻卷气流和漂浮风尘组成的剑客风墙。
+ * @param {object} effect 服务端同步的风墙中心、方向、宽度与持续时间。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ */
 function drawWindWallEffect(effect, frame) {
     const half = effect.width / 2;
     const dirX = effect.dirX || 1;
@@ -605,7 +610,10 @@ function drawWindWallEffect(effect, frame) {
     const startY = frame.offsetY + (effect.y - dirY * half) * frame.scale;
     const endX = frame.offsetX + (effect.x + dirX * half) * frame.scale;
     const endY = frame.offsetY + (effect.y + dirY * half) * frame.scale;
-    const alpha = Math.min(1, effectAlpha(effect) * 3.4);
+    const remainingTicks = Math.max(0, (effect.expiresAt || 0) - interpolatedTick());
+    const alpha = effect.createdAt
+        ? Math.min(1, effectAlpha(effect) * 3.4)
+        : Math.min(1, remainingTicks / Math.max(1, state.tickRate * 0.3));
     const time = performance.now();
     const wallDepth = Math.max(30, 56 * frame.scale);
     const length = Math.hypot(endX - startX, endY - startY) || 1;
@@ -651,12 +659,15 @@ function drawWindWallEffect(effect, frame) {
         skillLayer.fill({ color: 0xf8fafc, alpha: 0.42 * alpha });
     }
 
-    for (let i = 0; i < 4; i++) {
-        const t = (i + 0.5) / 4;
+    for (let i = 0; i < 6; i++) {
+        const t = (i + 0.5) / 6;
         const px = startX + (endX - startX) * t;
         const py = startY + (endY - startY) * t;
-        skillLayer.circle(px, py, wallDepth * (0.28 + (i % 2) * 0.08));
-        skillLayer.stroke({ color: 0xbae6fd, width: 2, alpha: 0.18 * alpha });
+        const curlRadius = wallDepth * (0.2 + (i % 2) * 0.08);
+        const curlStart = time / 180 + i * 1.4;
+        skillLayer.moveTo(px + Math.cos(curlStart) * curlRadius, py + Math.sin(curlStart) * curlRadius);
+        skillLayer.arc(px, py, curlRadius, curlStart, curlStart + Math.PI * 1.55);
+        skillLayer.stroke({ color: i % 2 ? 0xffffff : 0xbae6fd, width: 3, alpha: 0.48 * alpha });
     }
 }
 
@@ -977,6 +988,11 @@ function drawWarriorRSwordEffect(effect, frame) {
     }
 }
 
+/**
+ * 绘制石头人 W 强化攻击命中后的扇形岩层震波。
+ * @param {object} effect 服务端同步的震波范围与方向。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ */
 function drawTankAftershockEffect(effect, frame) {
     const range = effect.range || 300;
     const angle = ((effect.radius || 70) * Math.PI) / 180;
@@ -987,27 +1003,93 @@ function drawTankAftershockEffect(effect, frame) {
     const y = frame.offsetY + effect.y * frame.scale;
     const radius = range * frame.scale;
     const alpha = effectAlpha(effect);
+    const progress = 1 - alpha;
     skillLayer.moveTo(x, y);
     skillLayer.arc(x, y, radius, startAngle, endAngle);
     skillLayer.closePath();
-    skillLayer.fill({ color: 0xfacc15, alpha: 0.14 * alpha });
+    skillLayer.fill({ color: 0x92400e, alpha: 0.16 * alpha });
     skillLayer.moveTo(x, y);
-    skillLayer.arc(x, y, radius, startAngle, endAngle);
+    skillLayer.arc(x, y, radius * (0.72 + progress * 0.28), startAngle, endAngle);
     skillLayer.closePath();
-    skillLayer.stroke({ color: 0xd97706, width: 2, alpha: 0.8 * alpha });
+    skillLayer.stroke({ color: 0xf59e0b, width: 4, alpha: 0.82 * alpha });
+
+    for (let index = 0; index < 7; index++) {
+        const crackAngle = startAngle + (angle * (index + 0.5)) / 7;
+        const length = radius * (0.58 + (index % 3) * 0.16);
+        drawTankRockCrack(x, y, crackAngle, length, alpha, index);
+        const rockX = x + Math.cos(crackAngle) * length * 0.82;
+        const rockY = y + Math.sin(crackAngle) * length * 0.82;
+        const rockSize = Math.max(4, radius * (0.026 + (index % 2) * 0.012));
+        skillLayer
+            .moveTo(rockX, rockY - rockSize * (1.3 - progress * 0.4))
+            .lineTo(rockX + rockSize, rockY)
+            .lineTo(rockX + rockSize * 0.2, rockY + rockSize * 0.72)
+            .lineTo(rockX - rockSize, rockY + rockSize * 0.2)
+            .closePath();
+        skillLayer.fill({ color: index % 2 ? 0x78716c : 0xa16207, alpha: 0.9 * alpha });
+    }
 }
 
+/**
+ * 绘制石头人 R 落地时的环形冲击、放射地裂与飞散岩块。
+ * @param {object} effect 服务端同步的落点效果。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ */
 function drawTankImpactEffect(effect, frame) {
     const x = frame.offsetX + effect.x * frame.scale;
     const y = frame.offsetY + effect.y * frame.scale;
     const radius = (effect.radius || 250) * frame.scale;
     const alpha = effectAlpha(effect);
-    skillLayer.circle(x, y, radius);
-    skillLayer.fill({ color: 0x94a3b8, alpha: 0.14 * alpha });
-    skillLayer.circle(x, y, radius);
-    skillLayer.stroke({ color: 0x475569, width: 3, alpha: 0.85 * alpha });
-    skillLayer.circle(x, y, Math.max(8, radius * 0.12));
-    skillLayer.fill({ color: 0xe2e8f0, alpha: 0.22 * alpha });
+    const progress = 1 - alpha;
+    skillLayer.circle(x, y, radius * (0.34 + progress * 0.66));
+    skillLayer.fill({ color: 0x292524, alpha: 0.2 * alpha });
+    for (let ring = 0; ring < 3; ring++) {
+        skillLayer.circle(x, y, radius * (0.24 + progress * 0.62 + ring * 0.08));
+        skillLayer.stroke({
+            color: ring === 1 ? 0xf59e0b : 0x57534e,
+            width: Math.max(2, radius * (0.035 - ring * 0.006)),
+            alpha: (0.88 - ring * 0.18) * alpha,
+        });
+    }
+    for (let index = 0; index < 12; index++) {
+        const angle = (Math.PI * 2 * index) / 12 + (index % 2) * 0.13;
+        drawTankRockCrack(x, y, angle, radius * (0.62 + (index % 3) * 0.15), alpha, index);
+        const distance = radius * (0.32 + progress * 0.62);
+        const rockSize = Math.max(4, radius * (0.025 + (index % 3) * 0.008));
+        const rockX = x + Math.cos(angle) * distance;
+        const rockY = y + Math.sin(angle) * distance - Math.sin(progress * Math.PI) * radius * 0.22;
+        skillLayer.rect(rockX - rockSize / 2, rockY - rockSize / 2, rockSize, rockSize);
+        skillLayer.fill({ color: index % 2 ? 0x78716c : 0xa8a29e, alpha: 0.88 * alpha });
+    }
+    skillLayer.circle(x, y, Math.max(10, radius * 0.13));
+    skillLayer.fill({ color: 0xfbbf24, alpha: 0.3 * alpha });
+}
+
+/**
+ * 绘制一条带分叉的石质地裂，供石头人 W、E、R 复用。
+ * @param {number} x 裂缝起点屏幕横坐标。
+ * @param {number} y 裂缝起点屏幕纵坐标。
+ * @param {number} angle 裂缝延伸弧度。
+ * @param {number} length 裂缝屏幕长度。
+ * @param {number} alpha 当前透明度。
+ * @param {number} seed 用于稳定控制折线方向的序号。
+ */
+function drawTankRockCrack(x, y, angle, length, alpha, seed) {
+    const sideAngle = angle + Math.PI / 2;
+    const bend = ((seed % 3) - 1) * length * 0.08;
+    const midX = x + Math.cos(angle) * length * 0.48 + Math.cos(sideAngle) * bend;
+    const midY = y + Math.sin(angle) * length * 0.48 + Math.sin(sideAngle) * bend;
+    const endX = x + Math.cos(angle) * length;
+    const endY = y + Math.sin(angle) * length;
+    skillLayer.moveTo(x, y).lineTo(midX, midY).lineTo(endX, endY);
+    skillLayer.stroke({ color: 0x292524, width: Math.max(2, length * 0.018), alpha: 0.9 * alpha });
+    skillLayer
+        .moveTo(midX, midY)
+        .lineTo(
+            midX + Math.cos(angle + (seed % 2 ? 0.72 : -0.72)) * length * 0.22,
+            midY + Math.sin(angle + (seed % 2 ? 0.72 : -0.72)) * length * 0.22,
+        );
+    skillLayer.stroke({ color: 0xf59e0b, width: Math.max(1, length * 0.008), alpha: 0.58 * alpha });
 }
 
 function drawBasicArrowEffect(effect, frame) {
@@ -3476,6 +3558,11 @@ function drawFireMageBlazeExplosions(frame) {
     }
 }
 
+/**
+ * 绘制剑客第三段 Q 向前推进的龙卷风，包含漏斗风环、旋转剑气和卷入的风尘。
+ * @param {object} effect 服务端同步的龙卷投射物位置、方向与范围。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ */
 function drawSwordWhirlwindEffect(effect, frame) {
     const tick = interpolatedTick();
     const ageTicks = Math.max(0, tick - (effect.createdAt || tick));
@@ -3485,67 +3572,88 @@ function drawSwordWhirlwindEffect(effect, frame) {
     const sx = frame.offsetX + x * frame.scale;
     const sy = frame.offsetY + y * frame.scale;
     const radius = (effect.radius || 70) * frame.scale;
-    const rotation = performance.now() / 90;
-    const dir = Math.atan2(effect.dirY || 0, effect.dirX || 1);
-    const tail = Math.max(24, radius * 1.8);
-    skillLayer.moveTo(sx - Math.cos(dir) * tail, sy - Math.sin(dir) * tail);
-    skillLayer.lineTo(sx, sy);
-    skillLayer.stroke({ color: 0x38bdf8, width: Math.max(5, radius * 0.28), alpha: 0.18 });
-    skillLayer.moveTo(sx - Math.cos(dir) * tail * 0.55, sy - Math.sin(dir) * tail * 0.55);
-    skillLayer.lineTo(sx + Math.cos(dir) * radius * 0.35, sy + Math.sin(dir) * radius * 0.35);
-    skillLayer.stroke({ color: 0xe0f2fe, width: Math.max(2, radius * 0.08), alpha: 0.62 });
-    skillLayer.circle(sx, sy, radius);
-    skillLayer.fill({ color: 0x38bdf8, alpha: 0.06 });
-    for (let i = 0; i < 3; i++) {
-        const start = rotation + (Math.PI * 2 * i) / 3;
-        skillLayer.moveTo(sx + Math.cos(start) * radius * 0.28, sy + Math.sin(start) * radius * 0.28);
-        skillLayer.arc(sx, sy, radius * (0.55 + i * 0.18), start, start + Math.PI * 1.15);
+    const rotation = performance.now() / 75;
+    const dirX = effect.dirX || 1;
+    const dirY = effect.dirY || 0;
+    const sideX = -dirY;
+    const sideY = dirX;
+    const tail = Math.max(36, radius * 3.6);
+    skillLayer
+        .moveTo(sx - dirX * tail, sy - dirY * tail)
+        .lineTo(sx + sideX * radius * 0.9, sy + sideY * radius * 0.9)
+        .lineTo(sx + dirX * radius * 0.75, sy + dirY * radius * 0.75)
+        .lineTo(sx - sideX * radius * 0.9, sy - sideY * radius * 0.9)
+        .closePath();
+    skillLayer.fill({ color: 0x38bdf8, alpha: 0.1 });
+
+    for (let i = 0; i < 5; i++) {
+        const depth = i / 5;
+        const cx = sx - dirX * tail * depth * 0.72;
+        const cy = sy - dirY * tail * depth * 0.72;
+        const ringRadius = radius * (1 - depth * 0.62);
+        const start = rotation + i * 1.1;
+        skillLayer.moveTo(cx + Math.cos(start) * ringRadius, cy + Math.sin(start) * ringRadius);
+        skillLayer.arc(cx, cy, ringRadius, start, start + Math.PI * 1.45);
         skillLayer.stroke({
-            color: i === 1 ? 0xe0f2fe : 0x38bdf8,
-            width: Math.max(2, radius * 0.08),
-            alpha: 0.75 - i * 0.12,
+            color: i % 2 ? 0xffffff : 0x7dd3fc,
+            width: Math.max(3, radius * (0.16 - i * 0.018)),
+            alpha: 0.9 - i * 0.1,
         });
     }
-    skillLayer.circle(sx, sy, Math.max(6, radius * 0.24));
-    skillLayer.fill({ color: 0xf0f9ff, alpha: 0.28 });
+
+    for (let i = 0; i < 12; i++) {
+        const particleDepth = ((i / 12 + performance.now() / 900) % 1) * tail;
+        const spread = Math.sin(rotation + i * 1.8) * radius * (0.25 + particleDepth / tail);
+        const px = sx - dirX * particleDepth + sideX * spread;
+        const py = sy - dirY * particleDepth + sideY * spread;
+        skillLayer.circle(px, py, Math.max(2, radius * (0.055 + (i % 3) * 0.018)));
+        skillLayer.fill({ color: i % 2 ? 0xffffff : 0xbae6fd, alpha: 0.5 });
+    }
+    skillLayer.circle(sx, sy, Math.max(8, radius * 0.3));
+    skillLayer.fill({ color: 0xf8fafc, alpha: 0.42 });
 }
 
+/**
+ * 绘制剑客前两段 Q 向前扫出的月牙剑气，横向覆盖技能宽度且锋尖走完整段伤害范围。
+ * @param {object} effect 服务端同步的剑气起终点、宽度与持续时间。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ */
 function drawSwordQEffect(effect, frame) {
     const alpha = Math.min(1, effectAlpha(effect) * 3.2);
     const progress = 1 - effectAlpha(effect);
     const startX = frame.offsetX + effect.x * frame.scale;
     const startY = frame.offsetY + effect.y * frame.scale;
-    const endX = frame.offsetX + (effect.endX || effect.x) * frame.scale;
-    const endY = frame.offsetY + (effect.endY || effect.y) * frame.scale;
+    const endX = frame.offsetX + (effect.endX ?? effect.x) * frame.scale;
+    const endY = frame.offsetY + (effect.endY ?? effect.y) * frame.scale;
     const dx = endX - startX;
     const dy = endY - startY;
     const len = Math.hypot(dx, dy) || 1;
-    const nx = -dy / len;
-    const ny = dx / len;
-    const width = Math.max(16, (effect.width || 55) * frame.scale * 1.35);
-    const trim = len * progress * 0.12;
-    const sx = startX + (dx / len) * trim;
-    const sy = startY + (dy / len) * trim;
-    const ex = endX - (dx / len) * trim * 0.35;
-    const ey = endY - (dy / len) * trim * 0.35;
-    skillLayer.moveTo(sx, sy);
-    skillLayer.lineTo(ex, ey);
-    skillLayer.stroke({ color: 0x0ea5e9, width, alpha: 0.34 * alpha });
-    skillLayer.moveTo(sx - nx * width * 0.08, sy - ny * width * 0.08);
-    skillLayer.lineTo(ex - nx * width * 0.02, ey - ny * width * 0.02);
-    skillLayer.stroke({ color: 0xffffff, width: Math.max(3, width * 0.18), alpha: 0.92 * alpha });
-    skillLayer.moveTo(sx + nx * width * 0.28, sy + ny * width * 0.28);
-    skillLayer.lineTo(ex + nx * width * 0.08, ey + ny * width * 0.08);
-    skillLayer.stroke({ color: 0xe0f2fe, width: Math.max(3, width * 0.14), alpha: 0.88 * alpha });
-    skillLayer.moveTo(sx - nx * width * 0.22, sy - ny * width * 0.22);
-    skillLayer.lineTo(ex - nx * width * 0.12, ey - ny * width * 0.12);
-    skillLayer.stroke({ color: 0x38bdf8, width: Math.max(3, width * 0.1), alpha: 0.72 * alpha });
-    skillLayer.circle(ex, ey, Math.max(8, width * 0.24));
-    skillLayer.fill({ color: 0xf0f9ff, alpha: 0.42 * alpha });
-    skillLayer.circle(sx, sy, Math.max(5, width * 0.16));
-    skillLayer.fill({ color: 0x7dd3fc, alpha: 0.24 * alpha });
+    const halfWidth = Math.max(9, (effect.width || 55) * frame.scale);
+    const travel = progress * (2 - progress);
+    const angle = Math.atan2(dy, dx);
+    const sweep = 1.08;
+    const radius = halfWidth / Math.sin(sweep);
+    const frontX = startX + dx * travel;
+    const frontY = startY + dy * travel;
+    const x = frontX - Math.cos(angle) * radius;
+    const y = frontY - Math.sin(angle) * radius;
+
+    skillLayer.moveTo(x + Math.cos(angle - sweep) * radius * 1.04, y + Math.sin(angle - sweep) * radius * 1.04);
+    skillLayer.arc(x, y, radius * 1.04, angle - sweep, angle + sweep);
+    skillLayer.stroke({ color: 0xcbd5e1, width: Math.max(5, radius * 0.28), alpha: 0.24 * alpha });
+    skillLayer.moveTo(x + Math.cos(angle - sweep) * radius, y + Math.sin(angle - sweep) * radius);
+    skillLayer.arc(x, y, radius, angle - sweep, angle + sweep);
+    skillLayer.stroke({ color: 0xf8fafc, width: Math.max(3, radius * 0.15), alpha: 0.96 * alpha });
+    skillLayer.moveTo(x + Math.cos(angle - sweep) * radius * 0.78, y + Math.sin(angle - sweep) * radius * 0.78);
+    skillLayer.arc(x, y, radius * 0.78, angle - sweep, angle + sweep);
+    skillLayer.stroke({ color: 0xffffff, width: Math.max(2, radius * 0.055), alpha: 0.78 * alpha });
 }
 
+/**
+ * 绘制剑客 EQ 连招触发的环形剑气，表现贴身旋转出刀。
+ * @param {object} effect 服务端同步的圆斩中心与范围。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ */
 function drawSwordQCircleEffect(effect, frame) {
     const alpha = Math.min(1, effectAlpha(effect) * 2.2);
     const progress = 1 - effectAlpha(effect);
@@ -3569,6 +3677,11 @@ function drawSwordQCircleEffect(effect, frame) {
     skillLayer.fill({ color: 0xf0f9ff, alpha: 0.18 * alpha });
 }
 
+/**
+ * 绘制剑客 E 位移期间贴地掠过的风痕、流线和终点风环。
+ * @param {object} effect 服务端同步的位移起终点与持续时间。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ */
 function drawSwordEEffect(effect, frame) {
     const alpha = effectAlpha(effect);
     const startX = frame.offsetX + effect.x * frame.scale;
@@ -3580,46 +3693,82 @@ function drawSwordEEffect(effect, frame) {
     const len = Math.hypot(dx, dy) || 1;
     const nx = -dy / len;
     const ny = dx / len;
+    const progress = 1 - alpha;
+    const gustWidth = Math.max(12, (effect.radius || 36) * frame.scale * 0.7);
     skillLayer.moveTo(startX, startY);
     skillLayer.lineTo(endX, endY);
-    skillLayer.stroke({ color: 0x0ea5e9, width: 14, alpha: 0.16 * alpha });
-    skillLayer.moveTo(startX + nx * 10, startY + ny * 10);
-    skillLayer.lineTo(endX + nx * 4, endY + ny * 4);
-    skillLayer.stroke({ color: 0xe0f2fe, width: 3, alpha: 0.78 * alpha });
-    skillLayer.moveTo(startX - nx * 8, startY - ny * 8);
-    skillLayer.lineTo(endX - nx * 5, endY - ny * 5);
-    skillLayer.stroke({ color: 0x38bdf8, width: 2, alpha: 0.62 * alpha });
-    skillLayer.circle(endX, endY, Math.max(8, (effect.radius || 36) * frame.scale * 0.45));
-    skillLayer.stroke({ color: 0xe0f2fe, width: 2, alpha: 0.65 * alpha });
-}
-
-function drawSwordREffect(effect, frame) {
-    const alpha = Math.min(1, effectAlpha(effect) * 2);
-    const x = frame.offsetX + (effect.endX || effect.x) * frame.scale;
-    const y = frame.offsetY + (effect.endY || effect.y) * frame.scale;
-    const radius = (effect.radius || 450) * frame.scale;
-    const progress = 1 - effectAlpha(effect);
-    skillLayer.circle(x, y, radius * (0.28 + progress * 0.72));
-    skillLayer.fill({ color: 0x0f172a, alpha: 0.09 * alpha });
-    skillLayer.circle(x, y, radius);
-    skillLayer.stroke({ color: 0x38bdf8, width: 3, alpha: 0.5 * alpha });
-    const blades = Math.max(5, effect.count || 5);
-    for (let i = 0; i < blades; i++) {
-        const angle = -Math.PI / 2 + (Math.PI * 2 * i) / blades + progress * 0.8;
-        const inner = radius * 0.18;
-        const outer = radius * (0.42 + (i % 2) * 0.14);
-        skillLayer.moveTo(x + Math.cos(angle) * inner, y + Math.sin(angle) * inner);
-        skillLayer.lineTo(x + Math.cos(angle) * outer, y + Math.sin(angle) * outer);
+    skillLayer.stroke({ color: 0x38bdf8, width: gustWidth * 1.7, alpha: 0.1 * alpha });
+    for (let i = -3; i <= 3; i++) {
+        const offset = i * gustWidth * 0.42;
+        const wave = Math.sin(progress * Math.PI * 4 + i * 1.3) * gustWidth * 0.32;
+        skillLayer.moveTo(startX + nx * offset, startY + ny * offset);
+        skillLayer.lineTo(endX + nx * (offset * 0.2 + wave), endY + ny * (offset * 0.2 + wave));
         skillLayer.stroke({
-            color: i % 2 ? 0xe0f2fe : 0x38bdf8,
-            width: Math.max(2, radius * 0.018),
-            alpha: 0.82 * alpha,
+            color: i === 0 ? 0xffffff : i % 2 ? 0x7dd3fc : 0x38bdf8,
+            width: Math.max(2, gustWidth * (i === 0 ? 0.2 : 0.11)),
+            alpha: (0.86 - Math.abs(i) * 0.12) * alpha,
         });
     }
-    skillLayer.circle(x, y, Math.max(10, radius * 0.08));
-    skillLayer.fill({ color: 0xf8fafc, alpha: 0.22 * alpha });
+    for (let i = 0; i < 8; i++) {
+        const t = (i / 8 + progress) % 1;
+        const px = startX + dx * t + nx * Math.sin(i * 2.1 + progress * 7) * gustWidth;
+        const py = startY + dy * t + ny * Math.sin(i * 2.1 + progress * 7) * gustWidth;
+        skillLayer.circle(px, py, Math.max(2, gustWidth * (0.12 + (i % 2) * 0.05)));
+        skillLayer.fill({ color: i % 2 ? 0xffffff : 0xbae6fd, alpha: 0.46 * alpha });
+    }
+    skillLayer.circle(endX, endY, gustWidth * (0.75 + progress * 0.45));
+    skillLayer.stroke({ color: 0xe0f2fe, width: 3, alpha: 0.72 * alpha });
 }
 
+/**
+ * 绘制剑客 R 围绕单个目标收束的旋风斩、短剑光与中心风眼。
+ * @param {object} effect 服务端同步的大招中心、范围与命中数量。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ */
+function drawSwordREffect(effect, frame) {
+    const alpha = Math.min(1, effectAlpha(effect) * 2);
+    const x = frame.offsetX + (effect.endX ?? effect.x) * frame.scale;
+    const y = frame.offsetY + (effect.endY ?? effect.y) * frame.scale;
+    const radius = Math.min(effect.radius || 450, 180) * frame.scale;
+    const progress = 1 - effectAlpha(effect);
+    const rotation = performance.now() / 68;
+    for (let ring = 0; ring < 3; ring++) {
+        const ringRadius = radius * (0.42 + ring * 0.22) * (0.82 + progress * 0.18);
+        const start = rotation * (ring % 2 ? -1 : 1) + ring * 1.1;
+        skillLayer.moveTo(x + Math.cos(start) * ringRadius, y + Math.sin(start) * ringRadius);
+        skillLayer.arc(x, y, ringRadius, start, start + Math.PI * (1.05 + ring * 0.08));
+        skillLayer.stroke({
+            color: ring % 2 ? 0xffffff : 0x38bdf8,
+            width: Math.max(3, radius * (0.04 - ring * 0.006)),
+            alpha: (0.82 - ring * 0.12) * alpha,
+        });
+    }
+    const blades = 6;
+    for (let i = 0; i < blades; i++) {
+        const angle = rotation + (Math.PI * 2 * i) / blades + progress * 1.4;
+        const inner = radius * (0.18 + (i % 2) * 0.1);
+        const outer = radius * (0.56 + (i % 3) * 0.1);
+        skillLayer.moveTo(x + Math.cos(angle) * inner, y + Math.sin(angle) * inner);
+        skillLayer.lineTo(x + Math.cos(angle + 0.2) * outer, y + Math.sin(angle + 0.2) * outer);
+        skillLayer.stroke({
+            color: i % 2 ? 0xe0f2fe : 0x38bdf8,
+            width: Math.max(2, radius * 0.022),
+            alpha: (0.76 - (i % 3) * 0.1) * alpha,
+        });
+    }
+    const finisherAngle = rotation + 0.6;
+    skillLayer.moveTo(x - Math.cos(finisherAngle) * radius * 0.68, y - Math.sin(finisherAngle) * radius * 0.68);
+    skillLayer.lineTo(x + Math.cos(finisherAngle) * radius * 0.68, y + Math.sin(finisherAngle) * radius * 0.68);
+    skillLayer.stroke({ color: 0xffffff, width: Math.max(4, radius * 0.03), alpha: 0.86 * alpha });
+    skillLayer.circle(x, y, Math.max(12, radius * 0.1));
+    skillLayer.fill({ color: 0xf8fafc, alpha: 0.28 * alpha });
+}
+
+/**
+ * 绘制石头人 Q 的高速棱角岩片与碎石尾迹。
+ * @param {object} effect 服务端同步的投射物效果。
+ * @param {object} frame 当前世界到屏幕的变换参数。
+ */
 function drawTankShardEffect(effect, frame) {
     const tickDelta = clamp(interpolatedTick() - Number(els.tick.textContent || 0), 0, 1);
     const smoothX = effect.x + (effect.dirX || 0) * (effect.speed || 0) * tickDelta;
@@ -3627,8 +3776,29 @@ function drawTankShardEffect(effect, frame) {
     const sx = frame.offsetX + smoothX * frame.scale;
     const sy = frame.offsetY + smoothY * frame.scale;
     const radius = Math.max(5, (effect.radius || 45) * frame.scale);
-    skillLayer.circle(sx, sy, radius * 0.65);
-    skillLayer.fill({ color: 0x8b5e34, alpha: 0.85 });
-    skillLayer.circle(sx, sy, radius);
-    skillLayer.stroke({ color: 0x5c4033, width: 2, alpha: 0.75 });
+    const dirX = effect.dirX || 1;
+    const dirY = effect.dirY || 0;
+    const sideX = -dirY;
+    const sideY = dirX;
+    for (let index = 3; index >= 1; index--) {
+        const distance = radius * (1.15 + index * 0.72);
+        const debrisSize = Math.max(2, radius * (0.18 - index * 0.025));
+        const debrisX = sx - dirX * distance + sideX * (index % 2 ? radius * 0.34 : -radius * 0.28);
+        const debrisY = sy - dirY * distance + sideY * (index % 2 ? radius * 0.34 : -radius * 0.28);
+        skillLayer.circle(debrisX, debrisY, debrisSize);
+        skillLayer.fill({ color: 0xa8a29e, alpha: 0.55 - index * 0.08 });
+    }
+    skillLayer
+        .moveTo(sx + dirX * radius * 1.15, sy + dirY * radius * 1.15)
+        .lineTo(sx + sideX * radius * 0.82, sy + sideY * radius * 0.82)
+        .lineTo(sx - dirX * radius * 0.95 + sideX * radius * 0.34, sy - dirY * radius * 0.95 + sideY * radius * 0.34)
+        .lineTo(sx - dirX * radius * 0.72 - sideX * radius * 0.7, sy - dirY * radius * 0.72 - sideY * radius * 0.7)
+        .lineTo(sx + dirX * radius * 0.25 - sideX * radius * 0.92, sy + dirY * radius * 0.25 - sideY * radius * 0.92)
+        .closePath();
+    skillLayer.fill({ color: 0x78716c, alpha: 0.98 });
+    skillLayer.stroke({ color: 0x292524, width: 3, alpha: 0.92 });
+    skillLayer
+        .moveTo(sx + dirX * radius * 0.7, sy + dirY * radius * 0.7)
+        .lineTo(sx - dirX * radius * 0.4 + sideX * radius * 0.2, sy - dirY * radius * 0.4 + sideY * radius * 0.2);
+    skillLayer.stroke({ color: 0xfbbf24, width: 2, alpha: 0.78 });
 }

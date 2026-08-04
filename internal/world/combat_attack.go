@@ -46,9 +46,15 @@ func (w *World) startAttackWindup(attacker *Entity, target *Entity, tick uint64,
 	if attacker == nil || target == nil {
 		return
 	}
+	dx, dy := normalize(target.Position.X-attacker.Position.X, target.Position.Y-attacker.Position.Y)
+	if dx != 0 || dy != 0 {
+		attacker.Facing = Vector2{X: dx, Y: dy}
+	}
+	releaseTick := tick + attackWindupTicks(attacker, tickRate)
 	attacker.Combat.PendingAttackTargetID = target.ID
-	attacker.Combat.AttackReleaseTick = tick + attackWindupTicks(attacker, tickRate)
+	attacker.Combat.AttackReleaseTick = releaseTick
 	attacker.Combat.NextAttackTick = tick + attackCooldownTicks(EffectiveAttackSpeedAtTick(attacker, tick), tickRate)
+	attacker.Action = ActionState{Name: "attack", StartedAtTick: tick, EndsAtTick: releaseTick}
 }
 
 func attackWindupTicks(attacker *Entity, tickRate int) uint64 {

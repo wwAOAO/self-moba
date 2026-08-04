@@ -445,6 +445,12 @@ func TestBasicAttackUsesWindupBeforeDamage(t *testing.T) {
 
 	w.ApplyInput("p1", protocolPlayerInputAttack(target.ID), 10, nil, 20)
 	w.Tick(10, 20)
+	if player.Action.Name != "attack" || player.Action.StartedAtTick != 10 || player.Action.EndsAtTick != 15 {
+		t.Fatalf("basic attack action = %+v", player.Action)
+	}
+	if player.Facing.X <= 0 || player.Facing.Y != 0 {
+		t.Fatalf("basic attack facing = %+v, want right", player.Facing)
+	}
 	if target.Combat.LastDamage != 0 {
 		t.Fatalf("damage during attack windup = %v, want 0", target.Combat.LastDamage)
 	}
@@ -1040,6 +1046,9 @@ func TestSwordEAllowsSkillCastsOnlyNearDashEnd(t *testing.T) {
 	learnSkill(player, swordESkillID, 1)
 
 	w.ApplyInput("sword", protocolPlayerInputCast(swordESkillID, target.Position.X, target.Position.Y), 10, nil, 20)
+	if player.Action.Name != "e" || player.Action.SkillID != swordESkillID || player.Action.StartedAtTick != 10 || player.Action.EndsAtTick != 17 {
+		t.Fatalf("sword e action = %+v", player.Action)
+	}
 	w.ApplyInput("sword", protocolPlayerInputCast(swordQSkillID, target.Position.X, target.Position.Y), 11, nil, 20)
 	if player.Sword.QPending {
 		t.Fatal("sword q should not cast before final 0.2s of e dash")
@@ -1052,6 +1061,38 @@ func TestSwordEAllowsSkillCastsOnlyNearDashEnd(t *testing.T) {
 	}
 	if got := player.Sword.QForm; got != "circle" {
 		t.Fatalf("sword q form = %q, want circle", got)
+	}
+	if player.Action.Name != "q" || player.Action.SkillID != swordQSkillID || player.Action.StartedAtTick != 13 || player.Action.EndsAtTick != 27 {
+		t.Fatalf("sword q action = %+v", player.Action)
+	}
+}
+
+func TestSwordWAndRActionsExposeAnimationWindows(t *testing.T) {
+	w := testWorld(t)
+	hero, ok := w.heroes.Get(swordHeroID)
+	if !ok {
+		t.Fatal("sword hero not found")
+	}
+	w.SpawnHero("sword", hero, TeamBlue)
+	player := w.entities[playerEntityID("sword")]
+	target := w.entities["enemy:hero-1"]
+	placeEntity(player, 1000, 1000)
+	placeEntity(target, 1200, 1000)
+	learnSkill(player, swordWSkillID, 1)
+	learnSkill(player, swordRSkillID, 1)
+
+	w.ApplyInput("sword", protocolPlayerInputCast(swordWSkillID, 1400, 1000), 10, nil, 20)
+	if player.Action.Name != "w" || player.Action.SkillID != swordWSkillID || player.Action.StartedAtTick != 10 || player.Action.EndsAtTick != 16 {
+		t.Fatalf("sword w action = %+v", player.Action)
+	}
+
+	target.Control.AirborneUntilTick = 60
+	w.ApplyInput("sword", protocolPlayerInputCast(swordRSkillID, target.Position.X, target.Position.Y), 20, nil, 20)
+	if player.Action.Name != "r" || player.Action.SkillID != swordRSkillID || player.Action.StartedAtTick != 20 || player.Action.EndsAtTick != 40 {
+		t.Fatalf("sword r action = %+v", player.Action)
+	}
+	if player.Facing.X <= 0 || player.Facing.Y != 0 {
+		t.Fatalf("sword action facing = %+v, want right", player.Facing)
 	}
 }
 

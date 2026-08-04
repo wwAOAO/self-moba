@@ -57,6 +57,7 @@ func ApplyQ(w *world.World, entity *world.Entity, state world.SkillState, skill 
 	entity.Warrior.DecisiveStrikeLevel = state.Level
 	entity.Warrior.DecisiveStrikeMoveSpeedBonus = skillMeta(skill, "moveSpeedBonus", 0.3)
 	entity.Combat.NextAttackTick = tick
+	beginAction(entity, "q", qID, tick, tick+secondsToTicks(skillMeta(skill, "castActionSeconds", 0.4), tickRate))
 	w.PutSkillEffect(world.SkillEffect{
 		ID:           w.NextEffectID("effect:warrior_q_light:"),
 		Kind:         "warrior_q_light",

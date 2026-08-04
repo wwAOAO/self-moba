@@ -53,6 +53,7 @@ func ApplyE(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 	entity.Control.DashStart = entity.Position
 	entity.Control.DashEnd = dashEnd
 	entity.Control.DashUntilTick = tick + secondsToTicks(skillMeta(skill, "dashDurationSeconds", 0.35), tickRate)
+	beginAction(entity, "e", eID, target.Position, tick, entity.Control.DashUntilTick)
 	w.PutSkillEffect(world.SkillEffect{
 		ID:           w.NextEffectID("effect:sword_e:"),
 		Kind:         "sword_e",

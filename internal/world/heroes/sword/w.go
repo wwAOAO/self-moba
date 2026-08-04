@@ -25,6 +25,8 @@ func ApplyW(w *world.World, entity *world.Entity, cast protocol.CastInput, state
 		Width:     width,
 		ExpiresAt: tick + secondsToTicks(skillMeta(skill, "durationSeconds", windWallDuration), tickRate),
 	})
+	actionEndsAt := tick + secondsToTicks(skillMeta(skill, "castActionSeconds", 0.3), tickRate)
+	beginAction(entity, "w", wID, world.Vector2{X: cast.TargetX, Y: cast.TargetY}, tick, actionEndsAt)
 	state.CooldownUntilTick = tick + cooldownTicksFor(entity, skillMetaListMS(skill, "cooldownMs", state.Level, []float64{26000, 24000, 22000, 20000, 18000}), tickRate)
 	w.LockAttackAfterCast(entity, tick, tickRate)
 	entity.Skills[wID] = state

@@ -1,4 +1,77 @@
-﻿/** 更新本地英雄属性与底部生命、资源信息。 */
+﻿// HUD 图标按英雄和阵营缓存，避免属性刷新时重复读取 GPU 像素。
+const heroPortraitCache = new Map();
+
+/** 将统一的 Pixi 英雄图标渲染为 HUD 可复用的透明位图。 */
+async function renderHeroPortrait(player) {
+    const graphics = new PIXI.Graphics();
+    drawHeroModelIcon(graphics, { ...player, dead: false }, 20, true);
+    try {
+        const canvas = await app.renderer.extract.canvas({ target: graphics, resolution: 2, antialias: true });
+        return canvas.toDataURL('image/png');
+    } finally {
+        graphics.destroy();
+    }
+}
+
+/** 更新固定屏幕尺寸的 HUD 英雄图标，并在渲染失败时退回名称首字。 */
+function setHeroPortrait(player, heroName) {
+    els.heroPortrait.title = heroName;
+    els.heroPortrait.setAttribute('aria-label', heroName);
+    if (!player?.heroId) {
+        els.heroPortrait.dataset.iconKey = '';
+        els.heroPortrait.classList.remove('has-icon');
+        els.heroPortrait.style.removeProperty('--hero-icon');
+        els.heroPortrait.textContent = heroName.slice(0, 1);
+        return;
+    }
+
+    const modelAssetPath = heroModelAssetPaths[player.heroId];
+    if (modelAssetPath) {
+        const modelIconKey = `model:${player.heroId}`;
+        if (els.heroPortrait.dataset.iconKey !== modelIconKey) {
+            els.heroPortrait.dataset.iconKey = modelIconKey;
+            els.heroPortrait.textContent = '';
+            els.heroPortrait.style.setProperty('--hero-icon', `url("${modelAssetPath}")`);
+            els.heroPortrait.classList.add('has-icon');
+        }
+        return;
+    }
+
+    const iconKey = `${player.heroId}:${player.team || 'neutral'}`;
+    if (
+        els.heroPortrait.dataset.iconKey === iconKey &&
+        (els.heroPortrait.classList.contains('has-icon') || heroPortraitCache.has(iconKey))
+    ) {
+        return;
+    }
+    els.heroPortrait.dataset.iconKey = iconKey;
+    els.heroPortrait.textContent = '';
+    let iconPromise = heroPortraitCache.get(iconKey);
+    if (!iconPromise) {
+        iconPromise = renderHeroPortrait(player).catch(error => {
+            heroPortraitCache.delete(iconKey);
+            throw error;
+        });
+        heroPortraitCache.set(iconKey, iconPromise);
+    }
+    iconPromise
+        .then(dataUrl => {
+            if (els.heroPortrait.dataset.iconKey !== iconKey) {
+                return;
+            }
+            els.heroPortrait.style.setProperty('--hero-icon', `url("${dataUrl}")`);
+            els.heroPortrait.classList.add('has-icon');
+        })
+        .catch(() => {
+            if (els.heroPortrait.dataset.iconKey !== iconKey) {
+                return;
+            }
+            els.heroPortrait.classList.remove('has-icon');
+            els.heroPortrait.textContent = heroName.slice(0, 1);
+        });
+}
+
+/** 更新本地英雄属性与底部生命、资源信息。 */
 function setStatsCard(player) {
     if (!player?.stats) {
         els.statLevel.textContent = '-';
@@ -27,7 +100,7 @@ function setStatsCard(player) {
         els.statOmnivamp.textContent = '-';
         els.statLifeSteal.textContent = '-';
         els.statHealingPower.textContent = '-';
-        els.heroPortrait.textContent = '英';
+        setHeroPortrait(null, '英雄头像');
         els.hudHpFill.style.width = '0';
         els.hudResourceFill.style.width = '0';
         els.hudResourceFill.parentElement.hidden = true;
@@ -38,8 +111,7 @@ function setStatsCard(player) {
     const heroConfig = heroClientConfig[player.heroId || els.heroId.value] || {};
     const resourceKind = entityResourceKind(player, heroConfig);
     const heroName = heroDisplayName(heroConfig) || player.heroId || '英雄';
-    els.heroPortrait.textContent = heroName.slice(0, 1);
-    els.heroPortrait.title = heroName;
+    setHeroPortrait(player, heroName);
     els.statLevel.textContent = `${player.level || 1}/${player.maxLevel || levelClientConfig.maxLevel || 18}`;
     els.statExp.textContent =
         player.nextLevelExp > 0 ? `${Math.floor(player.exp || 0)}/${Math.floor(player.nextLevelExp)}` : '满级';

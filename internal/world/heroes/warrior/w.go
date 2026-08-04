@@ -19,6 +19,7 @@ func ApplyW(w *world.World, entity *world.Entity, state world.SkillState, skill 
 	entity.Passive.MaxShield = warriorWShieldValue(entity, skill, state.Level)
 	entity.Passive.Shield = entity.Passive.MaxShield
 	entity.Passive.ShieldExpireTick = entity.Warrior.CourageUntilTick
+	beginAction(entity, "w", wID, tick, tick+secondsToTicks(skillMeta(skill, "castActionSeconds", 0.45), tickRate))
 	w.PutSkillEffect(world.SkillEffect{
 		ID:           w.NextEffectID("effect:warrior_w_shields:"),
 		Kind:         "warrior_w_shields",
